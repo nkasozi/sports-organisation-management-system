@@ -61,43 +61,61 @@ export function create_football_sport_preset(): CreateSportInput {
   };
 }
 
+type SportInputRule = {
+  is_broken: (input: CreateSportInput) => boolean;
+  message: string;
+};
+
+const SPORT_INPUT_RULES: readonly SportInputRule[] = [
+  {
+    is_broken: (input) => !input.name || input.name.trim().length < 2,
+    message: "Sport name must be at least 2 characters",
+  },
+  {
+    is_broken: (input) => !input.code || input.code.trim().length < 2,
+    message: "Sport code must be at least 2 characters",
+  },
+  {
+    is_broken: (input) => input.standard_game_duration_minutes < 1,
+    message: "Game duration must be at least 1 minute",
+  },
+  {
+    is_broken: (input) => !input.periods || input.periods.length === 0,
+    message: "At least one game period is required",
+  },
+  {
+    is_broken: (input) =>
+      !input.official_requirements.some((role) => role.is_mandatory),
+    message: "At least one mandatory official role is required",
+  },
+  {
+    is_broken: (input) =>
+      input.max_players_on_field < input.min_players_on_field,
+    message: "Maximum players on field must be >= minimum players",
+  },
+  {
+    is_broken: (input) => input.max_squad_size < input.max_players_on_field,
+    message: "Maximum squad size must be >= maximum players on field",
+  },
+  {
+    is_broken: (input) =>
+      input.min_players_per_fixture < input.min_players_on_field,
+    message: "Minimum players per fixture must be >= minimum players on field",
+  },
+  {
+    is_broken: (input) =>
+      input.max_players_per_fixture < input.min_players_per_fixture,
+    message:
+      "Maximum players per fixture must be >= minimum players per fixture",
+  },
+  {
+    is_broken: (input) => input.max_players_per_fixture > input.max_squad_size,
+    message: "Maximum players per fixture must be <= maximum squad size",
+  },
+];
+
 export function validate_sport_input(input: CreateSportInput): string[] {
-  const validation_errors: string[] = [];
-
-  if (!input.name || input.name.trim().length < 2) {
-    validation_errors.push("Sport name must be at least 2 characters");
-  }
-
-  if (!input.code || input.code.trim().length < 2) {
-    validation_errors.push("Sport code must be at least 2 characters");
-  }
-
-  if (input.standard_game_duration_minutes < 1) {
-    validation_errors.push("Game duration must be at least 1 minute");
-  }
-
-  if (!input.periods || input.periods.length === 0) {
-    validation_errors.push("At least one game period is required");
-  }
-
-  const mandatory_officials = input.official_requirements.filter(
-    (r) => r.is_mandatory,
+  return SPORT_INPUT_RULES.filter((rule) => rule.is_broken(input)).map(
+    (rule) => rule.message,
   );
-  if (mandatory_officials.length === 0) {
-    validation_errors.push("At least one mandatory official role is required");
-  }
-
-  if (input.max_players_on_field < input.min_players_on_field) {
-    validation_errors.push(
-      "Maximum players on field must be >= minimum players",
-    );
-  }
-
-  if (input.max_squad_size < input.max_players_on_field) {
-    validation_errors.push(
-      "Maximum squad size must be >= maximum players on field",
-    );
-  }
-
-  return validation_errors;
 }

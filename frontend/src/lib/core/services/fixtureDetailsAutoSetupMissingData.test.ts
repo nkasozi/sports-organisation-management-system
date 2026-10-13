@@ -33,6 +33,7 @@ describe("auto_create_fixture_details_setup", () => {
     const result = await auto_create_fixture_details_setup(
       fixture,
       dependencies,
+      [],
     );
     expect(result.success).toBe(false);
     if (!result.success)
@@ -50,6 +51,7 @@ describe("auto_create_fixture_details_setup", () => {
     const result = await auto_create_fixture_details_setup(
       fixture,
       dependencies,
+      [],
     );
     expect(result.success).toBe(false);
     if (!result.success)
@@ -67,6 +69,7 @@ describe("auto_create_fixture_details_setup", () => {
     const result = await auto_create_fixture_details_setup(
       fixture,
       dependencies,
+      [],
     );
     expect(result.success).toBe(false);
     if (!result.success)
@@ -87,6 +90,7 @@ describe("auto_create_fixture_details_setup", () => {
     const result = await auto_create_fixture_details_setup(
       fixture,
       dependencies,
+      [],
     );
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error).toMatch(/No Officials found/);
@@ -106,6 +110,7 @@ describe("auto_create_fixture_details_setup", () => {
     const result = await auto_create_fixture_details_setup(
       fixture,
       dependencies,
+      [],
     );
     expect(result.success).toBe(false);
     if (!result.success)

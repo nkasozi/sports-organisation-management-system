@@ -19,6 +19,8 @@ import type {
   calculate_team_standings,
 } from "$lib/presentation/logic/competitionStageResults";
 
+import type { MatchReportSportRules } from "./matchReportSportRules";
+
 export interface CompetitionResultsWorkspaceStateCommand {
   competition_format_state: CompetitionResultsCompetitionFormatState;
   selected_competition_state: CompetitionResultsSelectedCompetitionState;
@@ -37,6 +39,7 @@ export interface CompetitionResultsWorkspaceStateCommand {
   show_all_competitions_fixtures: boolean;
   team_fixtures_page: number;
   team_fixtures_per_page: number;
+  sport_rules: MatchReportSportRules;
 }
 
 export interface CompetitionResultsWorkspaceStateResult {

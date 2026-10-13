@@ -3,6 +3,8 @@ export const SPORT_USE_CASES_LOG_SCOPE = "[SportUseCases]";
 export const SportUseCaseEvent = {
   CREATE_NAME_MISSING: "sport_create_name_missing",
   CREATE_FAILED: "sport_create_failed",
+  CREATE_INVALID: "sport_create_invalid",
+  UPDATE_INVALID: "sport_update_invalid",
   UPDATE_ID_MISSING: "sport_update_id_missing",
   UPDATE_FAILED: "sport_update_failed",
   DELETE_ID_MISSING: "sport_delete_id_missing",

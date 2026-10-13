@@ -116,9 +116,7 @@ export function create_organization_use_cases(
   };
 }
 
-type OrganizationDefaultSeeder = (
-  organization_id: OrganizationId,
-) => Promise<void>;
+type OrganizationDefaultSeeder = (organization: Organization) => Promise<void>;
 
 function log_seed_defaults_failure(
   organization_id: OrganizationId,
@@ -141,9 +139,8 @@ async function create_organization_and_seed_defaults(
   if (!result.success) {
     return result;
   }
-  const organization_id = result.data.id;
-  seed_defaults(organization_id).catch((error: unknown) =>
-    log_seed_defaults_failure(organization_id, error),
+  seed_defaults(result.data).catch((error: unknown) =>
+    log_seed_defaults_failure(result.data.id, error),
   );
   return result;
 }

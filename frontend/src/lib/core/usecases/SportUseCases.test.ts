@@ -108,6 +108,10 @@ describe("SportUseCases", () => {
 
   describe("update", () => {
     it("should update with valid input", async () => {
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
+        success: true,
+        data: create_test_sport(),
+      });
       vi.mocked(mock_repository.update).mockResolvedValue({
         success: true,
         data: create_test_sport({ name: "Updated Sport" }),

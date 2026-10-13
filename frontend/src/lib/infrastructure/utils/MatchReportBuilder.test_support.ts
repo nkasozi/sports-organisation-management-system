@@ -1,6 +1,7 @@
 import type { Competition } from "$lib/core/entities/Competition";
 import type { Fixture, GameEvent } from "$lib/core/entities/Fixture";
 import type { Official } from "$lib/core/entities/Official";
+import { resolve_sport_event_source } from "$lib/core/entities/SportEventSource";
 import type { Team } from "$lib/core/entities/Team";
 import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
@@ -84,6 +85,8 @@ export function make_basic_context(
     home_lineup: [],
     away_lineup: [],
     assigned_officials: [],
+    event_source: resolve_sport_event_source(void 0, void 0),
+    periods: [],
     ...overrides,
   } as MatchReportBuildContext;
 }

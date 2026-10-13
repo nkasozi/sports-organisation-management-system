@@ -119,6 +119,11 @@ describe("competitionResultsWorkspaceState", () => {
         show_all_competitions_fixtures: true,
         team_fixtures_page: 1,
         team_fixtures_per_page: 1,
+        sport_rules: {
+          event_source: { sport_code: "", scoring_rules: [], card_types: [] },
+          periods: [],
+          card_types: [],
+        },
       } as never),
     ).toEqual({
       effective_points_config: { points_for_win: 3 },

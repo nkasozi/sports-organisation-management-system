@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { FieldMetadata } from "$lib/core/entities/BaseEntity";
+    import { get_input_type_for_field } from "$lib/presentation/logic/dynamicFormFieldDefaults";
 
     import {
         is_multiline_string_field_name,
@@ -104,16 +105,7 @@
 {:else}
     <input
         id={`field_${field.field_name}`}
-        type={field.field_name.includes("email")
-            ? "email"
-            : field.field_name.includes("phone") ||
-                field.field_name.includes("tel")
-              ? "tel"
-              : field.field_name.includes("url") ||
-                  field.field_name.includes("website") ||
-                  field.field_name.includes("link")
-                ? "url"
-                : "text"}
+        type={get_input_type_for_field(field)}
         class="input"
         value={string_value}
         placeholder={field.placeholder || field.display_name}

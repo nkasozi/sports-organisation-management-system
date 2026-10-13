@@ -8,6 +8,7 @@
         CompetitionResultsCompetitionFormatState,
         CompetitionResultsSelectedCompetitionState,
     } from "$lib/presentation/logic/competitionResultsPageContracts";
+    import type { MatchReportSportRules } from "$lib/presentation/logic/matchReportSportRules";
     import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
     import CompetitionResultsWorkspaceController from "./CompetitionResultsWorkspaceController.svelte";
@@ -20,6 +21,7 @@
         {
             status: PRESENCE_STATUS.MISSING,
         };
+    export let sport_rules: MatchReportSportRules;
     export let competition_format_state: CompetitionResultsCompetitionFormatState =
         {
             status: PRESENCE_STATUS.MISSING,
@@ -41,6 +43,7 @@
     bind:selected_competition_id
     {selected_competition_state}
     {competition_format_state}
+    {sport_rules}
     {competition_stages}
     {fixtures}
     {teams}

@@ -27,7 +27,7 @@ export const HELP_GUIDE_LIVE_STEPS: HelpGuideStep[] = [
     [
       "Navigate to Fixture Lineups",
       "Select the fixture to prepare",
-      "Choose starting XI (or appropriate number)",
+      "Choose the starting lineup for your sport",
       "Assign jersey numbers and positions",
       "Add substitute players",
       "Include team staff on the bench",

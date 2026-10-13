@@ -13,6 +13,8 @@ export const REGISTRY_LOG_EVENT = {
   PREVIOUS_ENTITY_UNAVAILABLE: "entity_event_previous_entity_unavailable",
   ORGANIZATION_DEFAULTS_SEED_FAILED:
     "use_case_registry_organization_defaults_seed_failed",
+  ORGANIZATION_SEED_SPORT_MISSING:
+    "use_case_registry_organization_seed_sport_missing",
 } as const;
 
 export const REGISTRY_ERROR_MESSAGE = {

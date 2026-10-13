@@ -1,4 +1,6 @@
 import type { GameEventType, GamePeriod } from "./FixtureTypes";
+import type { GameEventLogType } from "./GameEventLogTypes";
+import type { ScoreAward } from "./SportEventCatalogConstants";
 
 export interface QuickEventButton {
   id: GameEventType;
@@ -7,116 +9,10 @@ export interface QuickEventButton {
   color: string;
   affects_score: boolean;
   requires_player: boolean;
+  score_award: ScoreAward;
 }
 
-export const QUICK_EVENT_BUTTONS: QuickEventButton[] = [
-  {
-    id: "goal",
-    label: "Goal",
-    icon: "⚽",
-    color: "bg-green-500 hover:bg-green-600",
-    affects_score: true,
-    requires_player: true,
-  },
-  {
-    id: "own_goal",
-    label: "Own Goal",
-    icon: "🥅",
-    color: "bg-blue-500 hover:bg-blue-600",
-    affects_score: true,
-    requires_player: true,
-  },
-  {
-    id: "penalty_scored",
-    label: "Penalty ✓",
-    icon: "🎯",
-    color: "bg-green-600 hover:bg-green-700",
-    affects_score: true,
-    requires_player: true,
-  },
-  {
-    id: "penalty_missed",
-    label: "Penalty ✗",
-    icon: "❌",
-    color: "bg-red-400 hover:bg-red-500",
-    affects_score: false,
-    requires_player: true,
-  },
-  {
-    id: "yellow_card",
-    label: "Yellow",
-    icon: "🟨",
-    color: "bg-yellow-400 hover:bg-yellow-500",
-    affects_score: false,
-    requires_player: true,
-  },
-  {
-    id: "red_card",
-    label: "Red",
-    icon: "🟥",
-    color: "bg-red-600 hover:bg-red-700",
-    affects_score: false,
-    requires_player: true,
-  },
-  {
-    id: "second_yellow",
-    label: "2nd Yellow",
-    icon: "🟨🟥",
-    color: "bg-blue-600 hover:bg-blue-700",
-    affects_score: false,
-    requires_player: true,
-  },
-  {
-    id: "substitution",
-    label: "Sub",
-    icon: "🔄",
-    color: "bg-blue-500 hover:bg-blue-600",
-    affects_score: false,
-    requires_player: true,
-  },
-  {
-    id: "foul",
-    label: "Foul",
-    icon: "⚠️",
-    color: "bg-blue-500 hover:bg-blue-600",
-    affects_score: false,
-    requires_player: true,
-  },
-  {
-    id: "offside",
-    label: "Offside",
-    icon: "🚫",
-    color: "bg-purple-500 hover:bg-purple-600",
-    affects_score: false,
-    requires_player: false,
-  },
-  {
-    id: "corner",
-    label: "Corner",
-    icon: "🚩",
-    color: "bg-teal-500 hover:bg-teal-600",
-    affects_score: false,
-    requires_player: false,
-  },
-  {
-    id: "injury",
-    label: "Injury",
-    icon: "🏥",
-    color: "bg-red-500 hover:bg-red-600",
-    affects_score: false,
-    requires_player: true,
-  },
-  {
-    id: "var_review",
-    label: "VAR",
-    icon: "📺",
-    color: "bg-gray-600 hover:bg-gray-700",
-    affects_score: false,
-    requires_player: false,
-  },
-];
-
-export const GAME_EVENT_LABELS: Record<GameEventType, string> = {
+export const GAME_EVENT_LABELS: Record<GameEventLogType, string> = {
   goal: "Goal",
   own_goal: "Own Goal",
   penalty_scored: "Penalty Scored",
@@ -136,7 +32,7 @@ export const GAME_EVENT_LABELS: Record<GameEventType, string> = {
   period_end: "Period Ended",
 };
 
-export const GAME_EVENT_ICONS: Record<GameEventType, string> = {
+export const GAME_EVENT_ICONS: Record<GameEventLogType, string> = {
   goal: "⚽",
   own_goal: "🥅",
   penalty_scored: "🎯",

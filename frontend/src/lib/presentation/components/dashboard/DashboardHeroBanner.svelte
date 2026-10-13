@@ -1,4 +1,10 @@
 <script lang="ts">
+    import ConfirmationModal from "$lib/presentation/components/ui/ConfirmationModal.svelte";
+    import {
+        DEMO_RESET_DIALOG,
+        DEMO_RESET_DIALOG_TEXT,
+        type DemoResetDialogState,
+    } from "$lib/presentation/logic/dashboardDemoResetDialog";
     import { split_organization_name } from "$lib/presentation/logic/dashboardPageLogic";
 
     export let organization_name: string;
@@ -7,7 +13,14 @@
     export let is_resetting: boolean;
     export let on_reset: () => void;
 
+    let reset_dialog_state: DemoResetDialogState = DEMO_RESET_DIALOG.CLOSED;
+
     $: organization_name_parts = split_organization_name(organization_name);
+
+    function confirm_reset(): void {
+        reset_dialog_state = DEMO_RESET_DIALOG.CLOSED;
+        on_reset();
+    }
 </script>
 
 <div
@@ -37,7 +50,8 @@
             <div class="mt-4 md:mt-0">
                 <button
                     class="btn btn-primary-action mobile-touch"
-                    on:click={on_reset}
+                    on:click={() =>
+                        (reset_dialog_state = DEMO_RESET_DIALOG.OPEN)}
                     disabled={is_resetting}
                 >
                     {is_resetting ? "Resetting..." : "Reset Demo Data"}
@@ -46,3 +60,14 @@
         {/if}
     </div>
 </div>
+
+<ConfirmationModal
+    is_visible={reset_dialog_state === DEMO_RESET_DIALOG.OPEN}
+    title={DEMO_RESET_DIALOG_TEXT.TITLE}
+    message={DEMO_RESET_DIALOG_TEXT.MESSAGE}
+    confirm_text={DEMO_RESET_DIALOG_TEXT.CONFIRM}
+    is_destructive
+    is_processing={is_resetting}
+    on:confirm={confirm_reset}
+    on:cancel={() => (reset_dialog_state = DEMO_RESET_DIALOG.CLOSED)}
+/>

@@ -3,19 +3,13 @@ export const MATCH_REPORT_TEAM_SIDE = {
   AWAY: "away",
 } as const;
 
-export const MATCH_REPORT_GOAL_EVENT = {
+const MATCH_REPORT_GOAL_EVENT = {
   GOAL: "goal",
   OWN_GOAL: "own_goal",
   PENALTY_SCORED: "penalty_scored",
 } as const;
 
-export const MATCH_REPORT_GOAL_EVENT_TYPES: readonly string[] = [
-  MATCH_REPORT_GOAL_EVENT.GOAL,
-  MATCH_REPORT_GOAL_EVENT.OWN_GOAL,
-  MATCH_REPORT_GOAL_EVENT.PENALTY_SCORED,
-];
-
-export const MATCH_REPORT_FIELD_GOAL_LABEL = "FG";
+const MATCH_REPORT_FIELD_GOAL_LABEL = "FG";
 
 export const MATCH_REPORT_GOAL_ACTION_LABELS: Readonly<Record<string, string>> =
   {

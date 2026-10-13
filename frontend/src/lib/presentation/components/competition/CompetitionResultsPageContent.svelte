@@ -11,6 +11,7 @@
         CompetitionResultsCompetitionFormatState,
         CompetitionResultsSelectedCompetitionState,
     } from "$lib/presentation/logic/competitionResultsPageContracts";
+    import type { MatchReportSportRules } from "$lib/presentation/logic/matchReportSportRules";
     import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
     import CompetitionResultsWorkspace from "./CompetitionResultsWorkspace.svelte";
@@ -27,6 +28,7 @@
         {
             status: PRESENCE_STATUS.MISSING,
         };
+    export let sport_rules: MatchReportSportRules;
     export let competition_format_state: CompetitionResultsCompetitionFormatState =
         {
             status: PRESENCE_STATUS.MISSING,
@@ -104,6 +106,20 @@
             <div
                 class="bg-white dark:bg-accent-800 shadow-sm border-y border-accent-200 dark:border-accent-700 -mx-4 px-4 py-8 text-center sm:mx-0 sm:p-12 sm:border sm:rounded-lg"
             >
+                {#if can_change_organizations}
+                    <select
+                        aria-label="Organization"
+                        bind:value={selected_organization_id}
+                        on:change={() => void on_organization_change()}
+                        class="select-styled w-full sm:w-auto sm:min-w-[240px] mb-6"
+                    >
+                        {#each organizations as organization}
+                            <option value={organization.id}
+                                >{organization.name}</option
+                            >
+                        {/each}
+                    </select>
+                {/if}
                 <svg
                     class="mx-auto h-12 w-12 text-accent-400"
                     fill="none"
@@ -139,6 +155,7 @@
                 bind:selected_competition_id
                 {selected_competition_state}
                 {competition_format_state}
+                {sport_rules}
                 {competition_stages}
                 {fixtures}
                 {teams}

@@ -6,10 +6,7 @@ import type { Sport } from "$lib/core/entities/Sport";
 import type { Team } from "$lib/core/entities/Team";
 import { get_team_staff_full_name } from "$lib/core/entities/TeamStaff";
 import type { Venue } from "$lib/core/entities/Venue";
-import type {
-  CardTypeConfig,
-  MatchStaffEntry,
-} from "$lib/core/types/MatchReportTypes";
+import type { MatchStaffEntry } from "$lib/core/types/MatchReportTypes";
 import {
   get_organization_use_cases,
   get_team_staff_use_cases,
@@ -19,6 +16,8 @@ import {
   generate_match_report_filename,
   type MatchReportBuildContext,
 } from "$lib/infrastructure/utils/MatchReportBuilder";
+
+import { build_match_report_sport_rules } from "./matchReportSportRules";
 
 type OrganizationUseCases = ReturnType<typeof get_organization_use_cases>;
 type TeamStaffUseCases = ReturnType<typeof get_team_staff_use_cases>;
@@ -98,17 +97,6 @@ async function load_report_staff(
   };
 }
 
-function build_report_card_types(sport: Sport | undefined): CardTypeConfig[] {
-  return (
-    sport?.card_types?.map((card_type) => ({
-      id: card_type.id,
-      name: card_type.name,
-      color: card_type.color,
-      event_type: `${card_type.id}_card`,
-    })) || []
-  );
-}
-
 function build_report_output(
   context: MatchReportBuildContext,
   home_team: Team,
@@ -152,7 +140,7 @@ export async function build_live_game_detail_report(
     assigned_officials: assigned_officials_data,
     home_staff: staff.home_staff,
     away_staff: staff.away_staff,
-    card_types: build_report_card_types(sport),
+    ...build_match_report_sport_rules(sport, competition),
     organization_name,
     venue_name: venue?.name,
     organization_logo_url,

@@ -2,6 +2,7 @@ import type { UntrackedWriteScope } from "$lib/adapters/repositories/syncOutbox/
 
 import type { SystemUser } from "../../core/entities/SystemUser";
 import type { ScalarInput } from "../../core/types/DomainScalars";
+import { create_none_option } from "../../core/types/Option";
 import type { Result } from "../../core/types/Result";
 import {
   create_failure_result,
@@ -97,6 +98,7 @@ async function seed_default_organization_entities(
   const org_seed_result = await seed_default_lookup_entities_with_origin(
     organization_id,
     origin,
+    create_none_option(),
   );
   if (!org_seed_result.success)
     return create_failure_result(

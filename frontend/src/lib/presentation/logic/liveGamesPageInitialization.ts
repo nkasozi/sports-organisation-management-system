@@ -24,6 +24,7 @@ import {
   type LiveGamesPageNotReadyResult,
   type LiveGamesPagePermissions,
 } from "./liveGamesPageInitializationTypes";
+import { select_live_games_organization_id } from "./liveGamesStartResume";
 import { PRESENCE_STATUS } from "./presenceStatus";
 
 function create_empty_live_games_fixture_state(): LiveGamesFixtureState {
@@ -109,19 +110,21 @@ async function load_ready_live_games_page(
     };
   }
   const organizations = organizations_result.data;
-  const selected_organization_id = organizations[0]?.id || "";
+  const selected_organization_id = select_live_games_organization_id(
+    organizations,
+    command.search_parameters,
+  );
   const fixture_state_result =
     await refresh_live_games_page_fixture_state_result({
       auth_state: command.auth_state,
       fixture_state_dependencies: command.fixture_state_dependencies,
       organization_id: selected_organization_id,
     });
-  if (!fixture_state_result.success) {
+  if (!fixture_state_result.success)
     return {
       status: LIVE_GAMES_PAGE_STATUS.ERROR,
       error_message: fixture_state_result.error,
     };
-  }
   const fixture_state = fixture_state_result.data;
   return {
     status: LIVE_GAMES_PAGE_STATUS.READY,

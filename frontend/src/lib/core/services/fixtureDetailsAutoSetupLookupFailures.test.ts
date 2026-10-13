@@ -24,6 +24,7 @@ describe("auto_create_fixture_details_setup lookup failures", () => {
     const result = await auto_create_fixture_details_setup(
       makeFixture(),
       dependencies,
+      [],
     );
     expect(result).toEqual({
       success: false,
@@ -56,6 +57,7 @@ describe("auto_create_fixture_details_setup lookup failures", () => {
     const result = await auto_create_fixture_details_setup(
       makeFixture(),
       dependencies,
+      [],
     );
     expect(result.success).toBe(false);
   });
@@ -69,6 +71,7 @@ describe("auto_create_fixture_details_setup lookup failures", () => {
     const result = await auto_create_fixture_details_setup(
       makeFixture(),
       dependencies,
+      [],
     );
     expect(result.success).toBe(false);
     expect(error_spy).toHaveBeenCalledWith(

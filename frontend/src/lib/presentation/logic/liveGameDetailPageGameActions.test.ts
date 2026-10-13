@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { NO_SCORE_AWARD } from "$lib/core/entities/SportEventCatalog";
+
 import {
   confirm_live_game_extra_time_action,
   end_live_game_detail_action,
@@ -94,6 +96,7 @@ describe("liveGameDetailPageGameActions", () => {
     expect(fixture_use_cases.record_game_event).toHaveBeenCalledWith(
       "fixture-1",
       expect.objectContaining({ description: "Match ended. Final score: 2-1" }),
+      NO_SCORE_AWARD,
     );
   });
 

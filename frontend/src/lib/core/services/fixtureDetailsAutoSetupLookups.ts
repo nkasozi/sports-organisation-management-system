@@ -13,6 +13,7 @@ import {
   FIXTURE_DETAILS_AUTO_SETUP_LOOKUP_FAILED_MESSAGE,
   FIXTURE_DETAILS_AUTO_SETUP_PAGE_SIZE,
 } from "./FixtureDetailsAutoSetupConstants";
+import type { OfficialRoleSource } from "./officialRoleSlots";
 
 export interface AutoSetupDependencies {
   fixture_details_setup_use_cases: FixtureDetailsSetupUseCases;
@@ -28,12 +29,21 @@ interface IdentifiedItem {
   id: string;
 }
 
-export type AutoSetupLookups = Record<AutoSetupLookupName, IdentifiedItem[]>;
-
-type LookupEntry = [
+type ListLookupName = Exclude<
   AutoSetupLookupName,
-  Result<PaginatedResult<IdentifiedItem>>,
-];
+  typeof FIXTURE_DETAILS_AUTO_SETUP_LOOKUP.OFFICIAL_ROLES
+>;
+
+export type AutoSetupLookups = Record<ListLookupName, IdentifiedItem[]> & {
+  official_roles: OfficialRoleSource[];
+};
+
+type LookupEntry = [ListLookupName, Result<PaginatedResult<IdentifiedItem>>];
+
+interface FetchedLookups {
+  entries: LookupEntry[];
+  roles: Result<PaginatedResult<OfficialRoleSource>>;
+}
 
 const TEAM_HOLDER_TYPE = "team";
 const COMPETITION_OFFICIAL_HOLDER_TYPE = "competition_official";
@@ -41,7 +51,7 @@ const COMPETITION_OFFICIAL_HOLDER_TYPE = "competition_official";
 async function fetch_lookup_entries(
   fixture: Fixture,
   dependencies: AutoSetupDependencies,
-): Promise<LookupEntry[]> {
+): Promise<FetchedLookups> {
   const { jersey_color_use_cases, official_use_cases } = dependencies;
   const page = {
     page_number: 1,
@@ -61,41 +71,58 @@ async function fetch_lookup_entries(
       fixture.competition_id,
     ),
     official_use_cases.list({ organization_id: fixture.organization_id }, page),
-    dependencies.game_official_role_use_cases.list({}, page),
+    dependencies.game_official_role_use_cases.list(
+      { organization_id: fixture.organization_id },
+      page,
+    ),
   ]);
-  return [
-    [FIXTURE_DETAILS_AUTO_SETUP_LOOKUP.HOME_JERSEYS, results[0]],
-    [FIXTURE_DETAILS_AUTO_SETUP_LOOKUP.AWAY_JERSEYS, results[1]],
-    [FIXTURE_DETAILS_AUTO_SETUP_LOOKUP.OFFICIAL_JERSEYS, results[2]],
-    [FIXTURE_DETAILS_AUTO_SETUP_LOOKUP.OFFICIALS, results[3]],
-    [FIXTURE_DETAILS_AUTO_SETUP_LOOKUP.OFFICIAL_ROLES, results[4]],
-  ];
+  return {
+    entries: [
+      [FIXTURE_DETAILS_AUTO_SETUP_LOOKUP.HOME_JERSEYS, results[0]],
+      [FIXTURE_DETAILS_AUTO_SETUP_LOOKUP.AWAY_JERSEYS, results[1]],
+      [FIXTURE_DETAILS_AUTO_SETUP_LOOKUP.OFFICIAL_JERSEYS, results[2]],
+      [FIXTURE_DETAILS_AUTO_SETUP_LOOKUP.OFFICIALS, results[3]],
+    ],
+    roles: results[4],
+  };
+}
+
+function fail_lookup(
+  fixture: Fixture,
+  lookup: AutoSetupLookupName,
+  error: string,
+): Result<never> {
+  return fail_use_case({
+    code: UseCaseErrorCode.DEPENDENCY_FAILED,
+    event: FIXTURE_DETAILS_AUTO_SETUP_EVENT.LOOKUP_FAILED,
+    log_scope: FIXTURE_DETAILS_AUTO_SETUP_LOG_SCOPE,
+    context: { fixture_id: fixture.id, lookup },
+    user_message: FIXTURE_DETAILS_AUTO_SETUP_LOOKUP_FAILED_MESSAGE,
+    technical_detail: error,
+  });
 }
 
 export async function load_auto_setup_lookups(
   fixture: Fixture,
   dependencies: AutoSetupDependencies,
 ): Promise<Result<AutoSetupLookups>> {
-  const entries = await fetch_lookup_entries(fixture, dependencies);
-  const lookups: Partial<AutoSetupLookups> = {};
+  const { entries, roles } = await fetch_lookup_entries(fixture, dependencies);
+  const lookups: Partial<Record<ListLookupName, IdentifiedItem[]>> = {};
   for (const [lookup, result] of entries) {
-    if (!result.success) {
-      return fail_use_case({
-        code: UseCaseErrorCode.DEPENDENCY_FAILED,
-        event: FIXTURE_DETAILS_AUTO_SETUP_EVENT.LOOKUP_FAILED,
-        log_scope: FIXTURE_DETAILS_AUTO_SETUP_LOG_SCOPE,
-        context: { fixture_id: fixture.id, lookup },
-        user_message: FIXTURE_DETAILS_AUTO_SETUP_LOOKUP_FAILED_MESSAGE,
-        technical_detail: result.error,
-      });
-    }
+    if (!result.success) return fail_lookup(fixture, lookup, result.error);
     lookups[lookup] = result.data.items;
   }
+  if (!roles.success)
+    return fail_lookup(
+      fixture,
+      FIXTURE_DETAILS_AUTO_SETUP_LOOKUP.OFFICIAL_ROLES,
+      roles.error,
+    );
   return create_success_result({
     home_jerseys: lookups.home_jerseys ?? [],
     away_jerseys: lookups.away_jerseys ?? [],
     official_jerseys: lookups.official_jerseys ?? [],
     officials: lookups.officials ?? [],
-    official_roles: lookups.official_roles ?? [],
+    official_roles: roles.data.items,
   });
 }

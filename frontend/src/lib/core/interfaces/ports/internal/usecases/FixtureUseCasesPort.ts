@@ -6,6 +6,7 @@ import type {
   GamePeriod,
   UpdateFixtureInput,
 } from "../../../../entities/Fixture";
+import type { ScoreAward } from "../../../../entities/SportEventCatalogConstants";
 import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
   AsyncResult,
@@ -50,6 +51,7 @@ export interface FixtureUseCasesPort extends BaseUseCasesPort<
   record_game_event(
     id: ScalarValueInput<Fixture["id"]>,
     event: GameEvent,
+    score_award: ScoreAward,
   ): AsyncResult<Fixture>;
   update_period(
     id: ScalarValueInput<Fixture["id"]>,

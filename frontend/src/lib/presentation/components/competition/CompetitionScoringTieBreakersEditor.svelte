@@ -36,7 +36,14 @@
             <span
                 class="text-sm font-semibold text-accent-900 dark:text-accent-100"
             >
-                {effective_tie_breakers.join(" → ")}
+                {effective_tie_breakers
+                    .map(
+                        (tie_breaker) =>
+                            all_tie_breakers.find(
+                                (option) => option.value === tie_breaker,
+                            )?.label ?? tie_breaker,
+                    )
+                    .join(" → ")}
             </span>
         </div>
     </div>

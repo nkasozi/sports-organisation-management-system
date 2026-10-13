@@ -44,6 +44,19 @@ describe("PlayerTeamMembership", () => {
     expect(too_high_errors).toContain("Jersey number must be between 1 and 99");
   });
 
+  it("accepts a jersey number left blank on the form", () => {
+    const errors = validate_player_team_membership_input({
+      organization_id: "org_1",
+      player_id: "player_1",
+      team_id: "team_1",
+      start_date: "2025-01-01",
+      jersey_number: "" as unknown as number,
+      status: "active",
+    });
+
+    expect(errors).toEqual([]);
+  });
+
   it("creates a reasonable empty input", () => {
     const input = create_empty_player_team_membership_input();
 

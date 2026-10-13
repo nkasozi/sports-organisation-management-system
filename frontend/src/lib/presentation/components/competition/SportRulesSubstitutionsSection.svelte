@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { Sport } from "$lib/core/entities/Sport";
     import InfoTooltip from "$lib/presentation/components/ui/InfoTooltip.svelte";
+    import { format_substitution_limit } from "$lib/presentation/logic/sportRulesCustomizerLogic";
 
     export let sport: Sport;
     export let current_max_substitutions: number = 0;
@@ -45,7 +46,9 @@
                 >
                 <span
                     class="text-lg font-semibold text-accent-900 dark:text-accent-100"
-                    >{current_max_substitutions} subs</span
+                    >{format_substitution_limit(
+                        current_max_substitutions,
+                    )}</span
                 >
                 {#if current_rolling_substitutions}<span
                         class="text-xs px-2 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
@@ -62,7 +65,9 @@
             <span class="text-sm text-accent-500 dark:text-accent-400"
                 >Default:</span
             ><span class="text-sm text-accent-600 dark:text-accent-400"
-                >{sport.substitution_rules.max_substitutions_per_game} subs</span
+                >{format_substitution_limit(
+                    sport.substitution_rules.max_substitutions_per_game,
+                )}</span
             >
         </div>
     </div>

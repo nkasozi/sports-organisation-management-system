@@ -26,6 +26,7 @@ describe("auto_create_fixture_details_setup", () => {
     const result = await auto_create_fixture_details_setup(
       fixture,
       dependencies,
+      [],
     );
     expect(result.success).toBe(true);
     expect(
@@ -48,6 +49,7 @@ describe("auto_create_fixture_details_setup", () => {
     const result = await auto_create_fixture_details_setup(
       fixture,
       dependencies,
+      [],
     );
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error).toBe("fail");
@@ -77,6 +79,7 @@ describe("auto_create_fixture_details_setup", () => {
     const result = await auto_create_fixture_details_setup(
       fixture,
       dependencies,
+      [],
     );
     expect(result.success).toBe(true);
     const input = vi.mocked(dependencies.fixture_details_setup_use_cases.create)

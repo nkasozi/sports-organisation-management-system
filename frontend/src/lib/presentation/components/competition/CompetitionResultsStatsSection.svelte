@@ -37,13 +37,13 @@
             <h3
                 class="text-base sm:text-lg font-semibold text-accent-900 dark:text-accent-100 mb-4 flex items-center gap-2"
             >
-                <span>⚽</span> Top Scorers
+                <span>🏅</span> Top Scorers
             </h3>
             {#if stats_filtered_scorers.length === 0}
                 <div class="text-center py-4 text-gray-500 dark:text-gray-400">
                     {stats_team_filter === COMPETITION_STATS_ALL_TEAMS_FILTER
-                        ? "No goals scored yet."
-                        : `No goals scored by ${stats_team_filter} yet.`}
+                        ? "No scores recorded yet."
+                        : `No scores recorded for ${stats_team_filter} yet.`}
                 </div>
             {:else}
                 <div class="space-y-2">
@@ -73,7 +73,7 @@
                             </div>
                             <span
                                 class="text-lg sm:text-xl font-bold text-accent-900 dark:text-accent-100 ml-2"
-                                >{player.goals}</span
+                                >{player.points}</span
                             >
                         </div>
                     {/each}

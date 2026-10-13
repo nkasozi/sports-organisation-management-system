@@ -2,6 +2,7 @@ import {
   create_game_event,
   type QuickEventButton,
 } from "$lib/core/entities/Fixture";
+import { NO_SCORE_AWARD } from "$lib/core/entities/SportEventCatalog";
 import { get_fixture_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
 
 type FixtureUseCases = ReturnType<typeof get_fixture_use_cases>;
@@ -28,6 +29,7 @@ export async function record_live_game_detail_event(
         : event_description || selected_event_type.label,
       secondary_player_name || "",
     ),
+    selected_event_type.score_award,
   );
 }
 
@@ -47,5 +49,6 @@ export async function record_live_game_extra_time_event(
       "",
       `${minutes_added} min added time - ${period_label}`,
     ),
+    NO_SCORE_AWARD,
   );
 }

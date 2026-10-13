@@ -7,15 +7,36 @@ import {
   build_live_games_resume_start_url,
   find_fixture_to_resume_starting,
   resume_start_if_requested,
+  select_live_games_organization_id,
 } from "./liveGamesStartResume";
 
 const SCHEDULED_FIXTURE = { id: "fixture-1", status: "scheduled" };
 const LIVE_FIXTURE = { id: "fixture-2", status: "in_progress" };
 
 describe("resuming a game start after fixture details are saved", () => {
-  it("builds a live games link that names the fixture to start", () => {
-    expect(build_live_games_resume_start_url("fixture-1")).toBe(
-      "/live-games?start_fixture_id=fixture-1",
+  it("builds a live games link that names the fixture and its organisation", () => {
+    expect(build_live_games_resume_start_url("fixture-1", "org-9")).toBe(
+      "/live-games?start_fixture_id=fixture-1&organization_id=org-9",
+    );
+  });
+
+  it("selects the organisation named in the link", () => {
+    const organizations = [{ id: "org-1" }, { id: "org-9" }];
+
+    expect(
+      select_live_games_organization_id(
+        organizations,
+        new URLSearchParams("organization_id=org-9"),
+      ),
+    ).toBe("org-9");
+    expect(
+      select_live_games_organization_id(
+        organizations,
+        new URLSearchParams("organization_id=org-unknown"),
+      ),
+    ).toBe("org-1");
+    expect(select_live_games_organization_id([], new URLSearchParams(""))).toBe(
+      "",
     );
   });
 

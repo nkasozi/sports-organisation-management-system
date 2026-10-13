@@ -3,10 +3,13 @@
 
     import { page } from "$app/stores";
     import {
+        get_competition_use_cases,
         get_fixture_use_cases,
         get_game_official_role_use_cases,
         get_jersey_color_use_cases,
         get_official_use_cases,
+        get_organization_use_cases,
+        get_sport_use_cases,
     } from "$lib/infrastructure/registry/useCaseFactories";
     import EntityCrudWrapper from "$lib/presentation/components/EntityCrudWrapper.svelte";
     import { load_fixture_details_setup_auto_populated_data } from "$lib/presentation/logic/fixtureDetailsSetupAutoPopulate";
@@ -31,6 +34,9 @@
             jersey_color_use_cases,
             official_use_cases,
             game_official_role_use_cases,
+            competition_use_cases: get_competition_use_cases(),
+            organization_use_cases: get_organization_use_cases(),
+            sport_use_cases: get_sport_use_cases(),
         });
     }
 
@@ -40,8 +46,10 @@
         if (fixture_id) {
             initial_view = "create";
             initial_create_data = await load_auto_populated_data(fixture_id);
-            after_save_redirect_url =
-                build_live_games_resume_start_url(fixture_id);
+            after_save_redirect_url = build_live_games_resume_start_url(
+                fixture_id,
+                String(initial_create_data.organization_id ?? ""),
+            );
             info_message =
                 "No fixture details were found for this game. Please review the pre-filled details below (jersey colors and officials) and save to continue starting the game.";
         }

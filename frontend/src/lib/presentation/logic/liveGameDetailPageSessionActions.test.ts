@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { NO_SCORE_AWARD } from "$lib/core/entities/SportEventCatalog";
+
 import {
   end_live_game_detail_action,
   start_live_game_detail_action,
@@ -120,6 +122,7 @@ describe("liveGameDetailPageSessionActions", () => {
         minute: 95,
         description: "Match ended. Final score: 2-1",
       }),
+      NO_SCORE_AWARD,
     );
     expect(result).toEqual({
       success: true,

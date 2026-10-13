@@ -3,7 +3,9 @@ import type {
   IsoDateString,
   ScalarInput,
 } from "../types/DomainScalars";
+import { OptionStatus } from "../types/Option";
 import type { BaseEntity } from "./BaseEntity";
+import { read_provided_number } from "./EntityValidation";
 import type { MembershipStatusValue } from "./StatusConstants";
 import { MEMBERSHIP_STATUS } from "./StatusConstants";
 
@@ -40,6 +42,19 @@ export function create_empty_player_team_membership_input(
   };
 }
 
+function is_jersey_number_out_of_range(raw_value: unknown): boolean {
+  const provided_number = read_provided_number(raw_value);
+  switch (provided_number.status) {
+    case OptionStatus.NONE:
+      return false;
+    case OptionStatus.SOME:
+      return (
+        provided_number.value !== 0 &&
+        (provided_number.value < 1 || provided_number.value > 99)
+      );
+  }
+}
+
 export function validate_player_team_membership_input(
   input: CreatePlayerTeamMembershipInput,
 ): string[] {
@@ -61,10 +76,7 @@ export function validate_player_team_membership_input(
     validation_errors.push("Start date is required");
   }
 
-  if (
-    input.jersey_number !== 0 &&
-    (input.jersey_number < 1 || input.jersey_number > 99)
-  ) {
+  if (is_jersey_number_out_of_range(input.jersey_number)) {
     validation_errors.push("Jersey number must be between 1 and 99");
   }
 

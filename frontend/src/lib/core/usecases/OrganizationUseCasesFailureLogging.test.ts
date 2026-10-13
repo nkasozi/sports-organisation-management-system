@@ -58,7 +58,9 @@ describe("OrganizationUseCases failure logging", () => {
     );
     const result = await use_cases.create(create_valid_input());
     expect(result.success).toBe(true);
-    expect(seed_defaults).toHaveBeenCalledWith("org-123");
+    expect(seed_defaults).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "org-123" }),
+    );
   });
 
   it("keeps the created organization and logs when seeding fails", async () => {

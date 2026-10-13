@@ -1,4 +1,5 @@
 import type { Competition } from "$lib/core/entities/Competition";
+import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
 import type { CompetitionTeam } from "$lib/core/entities/CompetitionTeam";
 import type { Team } from "$lib/core/entities/Team";
 import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
@@ -13,6 +14,11 @@ import type {
   EntityListResult,
   EntityResult,
 } from "./competitionResultsPageTypes";
+import { load_competition_sport_rules } from "./competitionSportLookup";
+import {
+  build_match_report_sport_rules,
+  type MatchReportSportRules,
+} from "./matchReportSportRules";
 
 const COMPETITION_RESULTS_BUNDLE_PAGINATION = {
   page_number: 1,
@@ -33,6 +39,7 @@ function create_empty_competition_results_competition_bundle(): CompetitionResul
     teams: [],
     team_map: new Map(),
     fixtures: [],
+    sport_rules: build_match_report_sport_rules(void 0, void 0),
   };
 }
 
@@ -97,44 +104,70 @@ async function load_competition_results_teams(
   );
 }
 
+async function load_competition_results_stages(
+  dependencies: CompetitionResultsDependencies,
+  selected_competition_id: string,
+): Promise<CompetitionStage[]> {
+  return extract_competition_results_items(
+    await dependencies.competition_stage_use_cases.list_stages_by_competition(
+      selected_competition_id,
+      { ...COMPETITION_RESULTS_BUNDLE_PAGINATION },
+    ),
+  );
+}
+
+async function load_bundle_sport_rules(
+  dependencies: CompetitionResultsDependencies,
+  selected_competition_state: CompetitionResultsSelectedCompetitionState,
+): Promise<MatchReportSportRules> {
+  switch (selected_competition_state.status) {
+    case PRESENCE_STATUS.MISSING:
+      return build_match_report_sport_rules(void 0, void 0);
+    case PRESENCE_STATUS.PRESENT:
+      return load_competition_sport_rules(
+        selected_competition_state.competition,
+        dependencies,
+      );
+  }
+}
+
 export async function load_selected_competition_bundle(
   dependencies: CompetitionResultsDependencies,
   selected_competition_id: string,
 ): Promise<CompetitionResultsCompetitionBundle> {
-  if (!selected_competition_id) {
+  if (!selected_competition_id)
     return create_empty_competition_results_competition_bundle();
-  }
-  const competition_result = await dependencies.competition_use_cases.get_by_id(
-    selected_competition_id,
+  const selected_competition_state = build_selected_competition_state(
+    await dependencies.competition_use_cases.get_by_id(selected_competition_id),
   );
-  const selected_competition_state =
-    build_selected_competition_state(competition_result);
   const competition_format_state = await load_competition_format_state(
     dependencies,
     selected_competition_state,
   );
-  const competition_stages_result =
-    await dependencies.competition_stage_use_cases.list_stages_by_competition(
-      selected_competition_id,
-      { ...COMPETITION_RESULTS_BUNDLE_PAGINATION },
-    );
+  const competition_stages = await load_competition_results_stages(
+    dependencies,
+    selected_competition_id,
+  );
   const teams = await load_competition_results_teams(
     dependencies,
     selected_competition_id,
   );
-  const fixtures_result =
+  const fixtures = extract_competition_results_items(
     await dependencies.fixture_use_cases.list_fixtures_by_competition(
       selected_competition_id,
-    );
-
+    ),
+  );
+  const sport_rules = await load_bundle_sport_rules(
+    dependencies,
+    selected_competition_state,
+  );
   return {
     selected_competition_state,
     competition_format_state,
-    competition_stages: extract_competition_results_items(
-      competition_stages_result,
-    ),
+    competition_stages,
     teams,
     team_map: new Map(teams.map((team: Team) => [team.id, team])),
-    fixtures: extract_competition_results_items(fixtures_result),
+    fixtures,
+    sport_rules,
   };
 }

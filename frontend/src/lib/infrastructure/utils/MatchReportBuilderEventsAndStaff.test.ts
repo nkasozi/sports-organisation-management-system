@@ -27,10 +27,10 @@ describe("build_match_report_data", () => {
     });
     const ctx = make_basic_context({ fixture });
     const report = build_match_report_data(ctx);
-    const half_time = report.score_by_period.find(
-      (p) => p.period_name === "Half-time",
+    const first_half = report.score_by_period.find(
+      (p) => p.period_name === "First Half",
     );
-    expect(half_time?.home_score).toBe(2);
+    expect(first_half?.home_score).toBe(2);
   });
 
   it("own_goal event credits home team even if team_side is away", () => {
@@ -46,11 +46,11 @@ describe("build_match_report_data", () => {
     });
     const ctx = make_basic_context({ fixture });
     const report = build_match_report_data(ctx);
-    const half_time = report.score_by_period.find(
-      (p) => p.period_name === "Half-time",
+    const first_half = report.score_by_period.find(
+      (p) => p.period_name === "First Half",
     );
-    expect(half_time?.home_score).toBe(1);
-    expect(half_time?.away_score).toBe(0);
+    expect(first_half?.home_score).toBe(1);
+    expect(first_half?.away_score).toBe(0);
   });
 
   it("home_staff and away_staff propagated to team info", () => {

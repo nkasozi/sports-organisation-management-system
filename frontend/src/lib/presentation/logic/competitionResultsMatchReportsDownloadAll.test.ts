@@ -5,6 +5,7 @@ import {
   fixture,
   team_map,
 } from "./competitionResultsMatchReports.test_support";
+import { build_match_report_sport_rules } from "./matchReportSportRules";
 
 const {
   build_assigned_officials_mock,
@@ -48,6 +49,8 @@ vi.mock("$lib/presentation/logic/competitionResultsMatchReportHelpers", () => ({
     resolve_match_report_organization_name_mock,
 }));
 
+const TEST_SPORT_RULES = build_match_report_sport_rules(void 0, void 0);
+
 describe("competitionResultsMatchReports", () => {
   beforeEach(() => {
     build_assigned_officials_mock.mockReset();
@@ -73,6 +76,7 @@ describe("competitionResultsMatchReports", () => {
       download_all_fixture_reports({
         completed_fixtures: [],
         selected_competition_state: { status: "missing" },
+        sport_rules: TEST_SPORT_RULES,
         team_map,
         organization_logo_url: "/logo.svg",
         dependencies: {} as never,
@@ -114,6 +118,7 @@ describe("competitionResultsMatchReports", () => {
             name: "Summer Cup",
           },
         } as never,
+        sport_rules: TEST_SPORT_RULES,
         team_map,
         organization_logo_url: "/logo.svg",
         dependencies: {
@@ -161,6 +166,7 @@ describe("competitionResultsMatchReports", () => {
       download_all_fixture_reports({
         completed_fixtures: [fixture as never],
         selected_competition_state: { status: "missing" },
+        sport_rules: TEST_SPORT_RULES,
         team_map,
         organization_logo_url: "/logo.svg",
         dependencies: {

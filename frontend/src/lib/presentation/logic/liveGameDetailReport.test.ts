@@ -72,7 +72,7 @@ describe("liveGameDetailReport", () => {
       } as never,
       { organization_id: "organization-1" } as never,
       {
-        card_types: [{ id: "yellow", name: "Yellow", color: "#ff0" }],
+        card_types: [{ id: "yellow_card", name: "Yellow", color: "#ff0" }],
       } as never,
       { name: "Lions" } as never,
       { name: "Tigers" } as never,
@@ -91,7 +91,7 @@ describe("liveGameDetailReport", () => {
         away_staff: [{ role: "Staff", name: "Ava Cole" }],
         card_types: [
           {
-            id: "yellow",
+            id: "yellow_card",
             name: "Yellow",
             color: "#ff0",
             event_type: "yellow_card",
@@ -153,7 +153,9 @@ describe("liveGameDetailReport", () => {
         organization_name: "SPORT-SYNC",
         home_staff: [],
         away_staff: [],
-        card_types: [],
+        card_types: expect.arrayContaining([
+          expect.objectContaining({ event_type: "yellow_card" }),
+        ]),
       }),
     );
   });

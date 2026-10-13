@@ -16,6 +16,10 @@
     } from "$lib/presentation/logic/competitionResultsPageContracts";
     import { create_competition_results_page_controller_runtime } from "$lib/presentation/logic/competitionResultsPageControllerRuntime";
     import { type CompetitionResultsSelectedBundle } from "$lib/presentation/logic/competitionResultsPageState";
+    import {
+        build_match_report_sport_rules,
+        type MatchReportSportRules,
+    } from "$lib/presentation/logic/matchReportSportRules";
     import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
     import {
         auth_store,
@@ -41,6 +45,10 @@
         fixtures: Fixture[] = [],
         teams: Team[] = [],
         team_map: Map<string, Team> = new Map(),
+        sport_rules: MatchReportSportRules = build_match_report_sport_rules(
+            void 0,
+            void 0,
+        ),
         loading_state: LoadingState = "loading",
         fixtures_loading = false,
         error_message = "",
@@ -56,6 +64,7 @@
         fixtures = bundle.fixtures;
         teams = bundle.teams;
         team_map = bundle.team_map;
+        sport_rules = bundle.sport_rules;
     }
 
     function build_competition_results_profile_state() {
@@ -139,6 +148,7 @@
     bind:selected_competition_id
     {selected_competition_state}
     {competition_format_state}
+    {sport_rules}
     {competition_stages}
     {fixtures}
     {teams}

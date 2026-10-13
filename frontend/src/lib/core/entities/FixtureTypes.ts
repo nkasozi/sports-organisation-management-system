@@ -14,7 +14,7 @@ export type FixtureStatus = FixtureStatusValue;
 
 export type GamePeriod = GamePeriodValue | (string & {});
 
-export type GameEventType = GameEventLogType;
+export type GameEventType = GameEventLogType | (string & {});
 
 export interface GameEvent {
   id: EntityId;

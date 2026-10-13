@@ -24,7 +24,7 @@ export const GAME_ACTION_EVENT = {
   RELOAD_AFTER_LINEUPS_FAILED: "game_reload_after_lineups_failed",
 } as const;
 
-export type GameActionEvent =
+type GameActionEvent =
   (typeof GAME_ACTION_EVENT)[keyof typeof GAME_ACTION_EVENT];
 
 type GameActionFailure = { success: false; error_message: string };

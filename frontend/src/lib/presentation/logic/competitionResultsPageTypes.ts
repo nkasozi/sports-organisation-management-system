@@ -10,6 +10,8 @@ import type {
   CompetitionResultsCompetitionFormatState,
   CompetitionResultsSelectedCompetitionState,
 } from "./competitionResultsPageContracts";
+import type { CompetitionSportLookupDependencies } from "./competitionSportLookup";
+import type { MatchReportSportRules } from "./matchReportSportRules";
 
 export interface EntityListResult<EntityType> {
   success: boolean;
@@ -28,7 +30,8 @@ export interface CompetitionResultsDependencies {
     list: (
       filters?: Record<string, string>,
     ) => Promise<EntityListResult<Organization>>;
-  };
+  } & CompetitionSportLookupDependencies["organization_use_cases"];
+  sport_use_cases: CompetitionSportLookupDependencies["sport_use_cases"];
   competition_use_cases: {
     list: (
       filters: Record<string, string>,
@@ -70,4 +73,5 @@ export interface CompetitionResultsCompetitionBundle {
   teams: Team[];
   team_map: Map<string, Team>;
   fixtures: Fixture[];
+  sport_rules: MatchReportSportRules;
 }

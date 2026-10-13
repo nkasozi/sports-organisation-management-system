@@ -2,6 +2,8 @@ import type { Mock } from "vitest";
 
 export type AutoSetupDependenciesMock = {
   competition_use_cases: { get_by_id: Mock };
+  organization_use_cases: { get_by_id: Mock };
+  sport_use_cases: { get_by_id: Mock };
   get_current_role: Mock;
   can_access_route: Mock;
   update_checks: Mock;

@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
+import {
+  create_score_award_resolver,
+  NO_SCORE_AWARD,
+} from "../entities/SportEventCatalog";
 import { create_fixture_game_events } from "./FixtureGameEventsUseCases";
+
+const LEGACY_SCORING = create_score_award_resolver([]);
 
 const mocks = vi.hoisted(() => ({ emit_entity_updated: vi.fn() }));
 
@@ -125,6 +131,7 @@ describe("create_fixture_game_events", () => {
         await create_fixture_game_events(repository as never).record_game_event(
           "fx1",
           event as never,
+          LEGACY_SCORING(event_type),
         )
       ).success,
     ).toBe(true);
@@ -143,9 +150,9 @@ describe("create_fixture_game_events", () => {
     );
     const not_found = { success: false, error: "Fixture not found" };
 
-    expect(await use_cases.record_game_event("fx1", {} as never)).toEqual(
-      not_found,
-    );
+    expect(
+      await use_cases.record_game_event("fx1", {} as never, NO_SCORE_AWARD),
+    ).toEqual(not_found);
     expect(await use_cases.end_fixture("fx1")).toEqual(not_found);
     expect(await use_cases.end_fixture(" ")).toEqual({
       success: false,

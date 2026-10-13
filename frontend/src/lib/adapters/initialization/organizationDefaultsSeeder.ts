@@ -1,5 +1,7 @@
 import type { Organization } from "../../core/entities/Organization";
+import type { Sport } from "../../core/entities/Sport";
 import type { ScalarValueInput } from "../../core/types/DomainScalars";
+import type { Option } from "../../core/types/Option";
 import type { AsyncResult } from "../../core/types/Result";
 import {
   create_failure_result,
@@ -62,16 +64,19 @@ async function execute_seed_step(
 
 export function seed_default_lookup_entities_for_organization(
   organization_id: ScalarValueInput<Organization["id"]>,
+  seed_sport: Option<Sport>,
 ): AsyncResult<OrgSeedResult> {
   return seed_default_lookup_entities_with_origin(
     organization_id,
     USER_WRITE_ORIGIN,
+    seed_sport,
   );
 }
 
 export async function seed_default_lookup_entities_with_origin(
   organization_id: ScalarValueInput<Organization["id"]>,
   origin: RepositoryWriteOrigin,
+  seed_sport: Option<Sport>,
 ): AsyncResult<OrgSeedResult> {
   console.log("[OrganizationDefaults] Starting seeding", {
     event: INITIALIZATION_EVENT.ORG_SEEDING_STARTED,
@@ -79,8 +84,8 @@ export async function seed_default_lookup_entities_with_origin(
   });
   const counts: Partial<Record<OrgSeedCountKey, number>> = {};
   const steps = [
-    ...build_reference_data_steps(organization_id, origin),
-    ...build_role_and_format_steps(organization_id, origin),
+    ...build_reference_data_steps(organization_id, origin, seed_sport),
+    ...build_role_and_format_steps(organization_id, origin, seed_sport),
   ];
   for (const step of steps) {
     const step_result = await execute_seed_step(step, organization_id);

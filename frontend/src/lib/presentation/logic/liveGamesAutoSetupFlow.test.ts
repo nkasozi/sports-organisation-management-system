@@ -27,6 +27,10 @@ describe("liveGamesAutoSetupFlow", () => {
   function create_dependencies(): AutoSetupDependenciesMock {
     return {
       competition_use_cases: { get_by_id: vi.fn() },
+      organization_use_cases: {
+        get_by_id: vi.fn(async () => ({ success: false, error: "missing" })),
+      },
+      sport_use_cases: { get_by_id: vi.fn() },
       get_current_role: vi.fn(() => "player"),
       can_access_route: vi.fn(() => false),
       update_checks: vi.fn(),

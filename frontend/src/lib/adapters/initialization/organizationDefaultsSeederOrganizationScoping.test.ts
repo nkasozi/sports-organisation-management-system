@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Organization } from "$lib/core/entities/Organization";
+import { create_none_option } from "$lib/core/types/Option";
 
 import { seed_default_lookup_entities_for_organization } from "./organizationDefaultsSeeder";
 
@@ -95,13 +96,20 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
+const seed_without_sport = (
+  organization_id: string,
+): ReturnType<typeof seed_default_lookup_entities_for_organization> =>
+  seed_default_lookup_entities_for_organization(
+    organization_id,
+    create_none_option(),
+  );
+
 describe("seed_default_lookup_entities_for_organization", () => {
   it("passes the correct organization_id to player position seeder", async () => {
     const { create_default_player_positions_for_organization } =
       await import("../repositories/InBrowserPlayerPositionRepository");
 
-    const result =
-      await seed_default_lookup_entities_for_organization("org-positions-test");
+    const result = await seed_without_sport("org-positions-test");
     expect(result.success).toBe(true);
 
     expect(
@@ -113,8 +121,7 @@ describe("seed_default_lookup_entities_for_organization", () => {
     const { create_default_game_event_types_for_organization } =
       await import("../repositories/InBrowserGameEventTypeRepository");
 
-    const result =
-      await seed_default_lookup_entities_for_organization("org-events-test");
+    const result = await seed_without_sport("org-events-test");
     expect(result.success).toBe(true);
 
     expect(
@@ -126,8 +133,7 @@ describe("seed_default_lookup_entities_for_organization", () => {
     const { create_default_team_staff_roles_for_organization } =
       await import("../repositories/InBrowserTeamStaffRoleRepository");
 
-    const result =
-      await seed_default_lookup_entities_for_organization("org-staff-test");
+    const result = await seed_without_sport("org-staff-test");
     expect(result.success).toBe(true);
 
     expect(
@@ -136,15 +142,13 @@ describe("seed_default_lookup_entities_for_organization", () => {
   });
 
   it("resolves with a success result", async () => {
-    const result =
-      await seed_default_lookup_entities_for_organization("org-success");
+    const result = await seed_without_sport("org-success");
 
     expect(result.success).toBe(true);
   });
 
   it("returns OrgSeedResult with all six seeded counts when all steps succeed", async () => {
-    const result =
-      await seed_default_lookup_entities_for_organization("org-counts");
+    const result = await seed_without_sport("org-counts");
 
     expect(result.success).toBe(true);
     if (!result.success) return;

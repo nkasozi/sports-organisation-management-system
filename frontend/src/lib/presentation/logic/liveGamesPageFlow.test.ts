@@ -28,6 +28,7 @@ describe("liveGamesPageFlow", () => {
   it("initializes the page with organizations and fixture state", async () => {
     const fixture_state_dependencies = create_fixture_state_dependencies();
     const result = await initialize_live_games_page({
+      search_parameters: new URLSearchParams(""),
       ensure_auth_profile: async () => ({ success: true, error_message: "" }),
       auth_state: create_auth_state({
         current_token: create_present_auth_token_state(create_auth_token()),
@@ -55,6 +56,7 @@ describe("liveGamesPageFlow", () => {
   it("returns denied state when fixture read access is not allowed", async () => {
     const fixture_state_dependencies = create_fixture_state_dependencies();
     const result = await initialize_live_games_page({
+      search_parameters: new URLSearchParams(""),
       ensure_auth_profile: async () => ({ success: true, error_message: "" }),
       auth_state: create_auth_state({
         current_token: create_present_auth_token_state(create_auth_token()),
@@ -115,6 +117,7 @@ describe("liveGamesPageFlow", () => {
       fixture_use_cases: { list: async () => ({ success: false }) },
     };
     const result = await initialize_live_games_page({
+      search_parameters: new URLSearchParams(""),
       ensure_auth_profile: async () => ({ success: true, error_message: "" }),
       auth_state: create_auth_state({
         current_token: create_present_auth_token_state(create_auth_token()),

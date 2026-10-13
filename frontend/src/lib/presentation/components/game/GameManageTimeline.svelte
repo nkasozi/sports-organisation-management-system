@@ -6,7 +6,7 @@
         get_event_label,
     } from "$lib/core/entities/Fixture";
     import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
-    import { get_event_bg_class } from "$lib/presentation/logic/gameManageState";
+    import { get_event_bg_class } from "$lib/presentation/logic/gameEventDisplay";
 
     import { GAME_EVENT_TEAM_SIDE } from "./gameDisplayConstants";
 
@@ -110,7 +110,7 @@
                             {#if is_home_event}
                                 <div class="flex-1 pr-8 flex justify-end">
                                     <div
-                                        class={`max-w-xs w-full rounded-lg border-r-4 p-3 shadow-sm text-right ${get_event_bg_class(event).replace("border-l-", "border-r-")}`}
+                                        class={`max-w-xs w-full rounded-lg border-r-4 p-3 shadow-sm text-right ${get_event_bg_class(event.event_type).replace("border-l-", "border-r-")}`}
                                     >
                                         <div
                                             class="flex items-center justify-end gap-2 mb-1"
@@ -147,7 +147,7 @@
                                 <div class="flex-1 pr-8"></div>
                                 <div class="flex-1 pl-8 flex justify-start">
                                     <div
-                                        class={`max-w-xs w-full rounded-lg border-l-4 p-3 shadow-sm text-left ${get_event_bg_class(event)}`}
+                                        class={`max-w-xs w-full rounded-lg border-l-4 p-3 shadow-sm text-left ${get_event_bg_class(event.event_type)}`}
                                     >
                                         <div
                                             class="flex items-center justify-start gap-2 mb-1"

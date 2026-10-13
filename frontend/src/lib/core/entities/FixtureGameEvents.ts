@@ -1,18 +1,14 @@
 import type { ScalarInput } from "../types/DomainScalars";
-import type { QuickEventButton } from "./FixtureGameEventConfig";
 import {
   GAME_EVENT_ICONS,
-  GAME_EVENT_LABELS,
   GAME_PERIOD_DISPLAY_NAMES,
-  QUICK_EVENT_BUTTONS,
 } from "./FixtureGameEventConfig";
 import type { GameEvent, GameEventType, GamePeriod } from "./FixtureTypes";
+import { get_known_event_label } from "./SportEventCatalog";
 
 export type { QuickEventButton } from "./FixtureGameEventConfig";
 
-export function get_quick_event_buttons(): QuickEventButton[] {
-  return QUICK_EVENT_BUTTONS;
-}
+const UNKNOWN_EVENT_ICON = "•";
 
 export function create_game_event(
   event_type: GameEventType,
@@ -37,11 +33,14 @@ export function create_game_event(
 }
 
 export function get_event_label(event_type: GameEventType): string {
-  return GAME_EVENT_LABELS[event_type];
+  return get_known_event_label(event_type);
 }
 
 export function get_event_icon(event_type: GameEventType): string {
-  return GAME_EVENT_ICONS[event_type];
+  return (
+    (GAME_EVENT_ICONS as Readonly<Record<string, string>>)[event_type] ??
+    UNKNOWN_EVENT_ICON
+  );
 }
 
 export function format_event_time(

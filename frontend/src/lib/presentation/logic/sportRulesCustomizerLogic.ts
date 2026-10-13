@@ -145,3 +145,12 @@ export function has_custom_squad_limits(
     has_rule_override(rule_overrides, "max_squad_size")
   );
 }
+
+const UNLIMITED_SUBSTITUTIONS_LABEL = "Unlimited subs";
+const SUBSTITUTIONS_SUFFIX = "subs";
+
+export function format_substitution_limit(max_substitutions: number): string {
+  return max_substitutions < 0
+    ? UNLIMITED_SUBSTITUTIONS_LABEL
+    : `${max_substitutions} ${SUBSTITUTIONS_SUFFIX}`;
+}

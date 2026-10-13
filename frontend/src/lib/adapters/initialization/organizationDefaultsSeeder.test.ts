@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Organization } from "$lib/core/entities/Organization";
+import { create_none_option } from "$lib/core/types/Option";
 
 import { seed_default_lookup_entities_for_organization } from "./organizationDefaultsSeeder";
 
@@ -95,18 +96,24 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
+const seed_without_sport = (
+  organization_id: string,
+): ReturnType<typeof seed_default_lookup_entities_for_organization> =>
+  seed_default_lookup_entities_for_organization(
+    organization_id,
+    create_none_option(),
+  );
+
 describe("seed_default_lookup_entities_for_organization", () => {
   it("calls seed_with_data on the gender repository", async () => {
-    const result =
-      await seed_default_lookup_entities_for_organization("org-abc");
+    const result = await seed_without_sport("org-abc");
     expect(result.success).toBe(true);
 
     expect(mock_gender_seed).toHaveBeenCalledTimes(1);
   });
 
   it("seeds genders with data that includes the given organization_id", async () => {
-    const result =
-      await seed_default_lookup_entities_for_organization("org-abc");
+    const result = await seed_without_sport("org-abc");
     expect(result.success).toBe(true);
 
     const seeded_genders = mock_gender_seed.mock.calls[0][0] as Array<{
@@ -118,16 +125,14 @@ describe("seed_default_lookup_entities_for_organization", () => {
   });
 
   it("calls seed_with_data on the identification type repository", async () => {
-    const result =
-      await seed_default_lookup_entities_for_organization("org-abc");
+    const result = await seed_without_sport("org-abc");
     expect(result.success).toBe(true);
 
     expect(mock_identification_type_seed).toHaveBeenCalledTimes(1);
   });
 
   it("seeds identification types with data that includes the given organization_id", async () => {
-    const result =
-      await seed_default_lookup_entities_for_organization("org-abc");
+    const result = await seed_without_sport("org-abc");
     expect(result.success).toBe(true);
 
     const seeded = mock_identification_type_seed.mock.calls[0][0] as Array<{
@@ -139,40 +144,35 @@ describe("seed_default_lookup_entities_for_organization", () => {
   });
 
   it("calls seed_with_data on the player position repository", async () => {
-    const result =
-      await seed_default_lookup_entities_for_organization("org-abc");
+    const result = await seed_without_sport("org-abc");
     expect(result.success).toBe(true);
 
     expect(mock_player_position_seed).toHaveBeenCalledTimes(1);
   });
 
   it("calls seed_with_data on the game official role repository", async () => {
-    const result =
-      await seed_default_lookup_entities_for_organization("org-abc");
+    const result = await seed_without_sport("org-abc");
     expect(result.success).toBe(true);
 
     expect(mock_game_official_role_seed).toHaveBeenCalledTimes(1);
   });
 
   it("calls seed_with_data on the game event type repository", async () => {
-    const result =
-      await seed_default_lookup_entities_for_organization("org-abc");
+    const result = await seed_without_sport("org-abc");
     expect(result.success).toBe(true);
 
     expect(mock_game_event_type_seed).toHaveBeenCalledTimes(1);
   });
 
   it("calls seed_with_data on the team staff role repository", async () => {
-    const result =
-      await seed_default_lookup_entities_for_organization("org-abc");
+    const result = await seed_without_sport("org-abc");
     expect(result.success).toBe(true);
 
     expect(mock_team_staff_role_seed).toHaveBeenCalledTimes(1);
   });
 
   it("seeds all six repositories in a single call", async () => {
-    const result =
-      await seed_default_lookup_entities_for_organization("org-xyz");
+    const result = await seed_without_sport("org-xyz");
     expect(result.success).toBe(true);
 
     expect(mock_gender_seed).toHaveBeenCalledTimes(1);

@@ -1,4 +1,9 @@
 import type { Fixture } from "$lib/core/entities/Fixture";
+import {
+  SCORE_AWARD_KIND,
+  SCORE_CREDITED_SIDE,
+  type ScoreAwardResolver,
+} from "$lib/core/entities/SportEventCatalog";
 import type { Team } from "$lib/core/entities/Team";
 import {
   GAME_EVENT_TYPE,
@@ -17,11 +22,18 @@ const ALL_TEAMS_FILTER = "all";
 const UNKNOWN_TEAM_NAME = "Unknown";
 const STATS_LEADERBOARD_SIZE = 10;
 const RED_CARD_WEIGHT = 2;
+const YELLOW_CARD_EVENTS: ReadonlySet<string> = new Set([
+  GAME_EVENT_TYPE.YELLOW_CARD,
+]);
+const RED_CARD_EVENTS: ReadonlySet<string> = new Set([
+  GAME_EVENT_TYPE.RED_CARD,
+  GAME_EVENT_TYPE.SECOND_YELLOW,
+]);
 
 export interface PlayerStats {
   player_name: string;
   team_name: string;
-  goals: number;
+  points: number;
   assists: number;
   yellow_cards: number;
   red_cards: number;
@@ -45,7 +57,7 @@ function get_or_create_player_stats(
   const created_player_stats: PlayerStats = {
     player_name: game_event.player_name,
     team_name: team?.name ?? UNKNOWN_TEAM_NAME,
-    goals: 0,
+    points: 0,
     assists: 0,
     yellow_cards: 0,
     red_cards: 0,
@@ -54,34 +66,28 @@ function get_or_create_player_stats(
   return created_player_stats;
 }
 
-function apply_game_event_to_player_stats(
+function apply_card_to_player_stats(
   player_stats: PlayerStats,
   game_event: FixtureGameEvent,
 ): PlayerStats {
-  switch (game_event.event_type) {
-    case GAME_EVENT_TYPE.GOAL:
-    case GAME_EVENT_TYPE.PENALTY_SCORED:
-      player_stats.goals += 1;
-      return player_stats;
-    case GAME_EVENT_TYPE.YELLOW_CARD:
-      player_stats.yellow_cards += 1;
-      return player_stats;
-    case GAME_EVENT_TYPE.RED_CARD:
-    case GAME_EVENT_TYPE.SECOND_YELLOW:
-      player_stats.red_cards += 1;
-      return player_stats;
-    case GAME_EVENT_TYPE.OWN_GOAL:
-    case GAME_EVENT_TYPE.PENALTY_MISSED:
-    case GAME_EVENT_TYPE.GREEN_CARD:
-    case GAME_EVENT_TYPE.SUBSTITUTION:
-    case GAME_EVENT_TYPE.FOUL:
-    case GAME_EVENT_TYPE.OFFSIDE:
-    case GAME_EVENT_TYPE.CORNER:
-    case GAME_EVENT_TYPE.FREE_KICK:
-    case GAME_EVENT_TYPE.INJURY:
-    case GAME_EVENT_TYPE.VAR_REVIEW:
-    case GAME_EVENT_TYPE.PERIOD_START:
-    case GAME_EVENT_TYPE.PERIOD_END:
+  if (YELLOW_CARD_EVENTS.has(game_event.event_type))
+    player_stats.yellow_cards += 1;
+  if (RED_CARD_EVENTS.has(game_event.event_type)) player_stats.red_cards += 1;
+  return player_stats;
+}
+
+function apply_game_event_to_player_stats(
+  player_stats: PlayerStats,
+  game_event: FixtureGameEvent,
+  resolve_score: ScoreAwardResolver,
+): PlayerStats {
+  const award = resolve_score(game_event.event_type);
+  switch (award.kind) {
+    case SCORE_AWARD_KIND.NONE:
+      return apply_card_to_player_stats(player_stats, game_event);
+    case SCORE_AWARD_KIND.CREDIT:
+      if (award.credited_side === SCORE_CREDITED_SIDE.ACTING)
+        player_stats.points += award.points;
       return player_stats;
   }
 }
@@ -89,6 +95,7 @@ function apply_game_event_to_player_stats(
 export function calculate_player_stats(
   fixtures: Fixture[],
   team_map: Map<string, Team>,
+  resolve_score: ScoreAwardResolver,
 ): PlayerStats[] {
   const stats_map = new Map<string, PlayerStats>();
 
@@ -98,12 +105,13 @@ export function calculate_player_stats(
       apply_game_event_to_player_stats(
         get_or_create_player_stats(stats_map, fixture, game_event, team_map),
         game_event,
+        resolve_score,
       );
     }
   }
 
   return [...stats_map.values()].sort(
-    (left: PlayerStats, right: PlayerStats) => right.goals - left.goals,
+    (left: PlayerStats, right: PlayerStats) => right.points - left.points,
   );
 }
 
@@ -120,13 +128,13 @@ export function filter_and_sort_scorers(
   team_filter: string,
 ): PlayerStats[] {
   return stats
-    .filter((player_stats: PlayerStats) => player_stats.goals > 0)
+    .filter((player_stats: PlayerStats) => player_stats.points > 0)
     .filter(
       (player_stats: PlayerStats) =>
         team_filter === ALL_TEAMS_FILTER ||
         player_stats.team_name === team_filter,
     )
-    .sort((left: PlayerStats, right: PlayerStats) => right.goals - left.goals)
+    .sort((left: PlayerStats, right: PlayerStats) => right.points - left.points)
     .slice(0, STATS_LEADERBOARD_SIZE);
 }
 

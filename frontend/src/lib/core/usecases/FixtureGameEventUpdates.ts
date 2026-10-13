@@ -6,6 +6,12 @@ import type {
   UpdateFixtureInput,
 } from "../entities/Fixture";
 import { TEAM_SIDE } from "../entities/GameEventLogTypes";
+import {
+  SCORE_AWARD_KIND,
+  SCORE_CREDITED_SIDE,
+  type ScoreAward,
+  type ScoreCreditedSide,
+} from "../entities/SportEventCatalogConstants";
 import type { FixtureRepository } from "../interfaces/ports";
 import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult } from "../types/Result";
@@ -18,7 +24,6 @@ import {
   FIXTURE_ENTITY_TYPE,
   FIXTURE_EVENT,
   FIXTURE_LOG_SCOPE,
-  SCORE_EVENT_TYPE,
 } from "./FixtureUseCaseConstants";
 
 export interface FixtureUpdatePlan {
@@ -41,20 +46,7 @@ type PreviousFixtureState =
   | { status: typeof PREVIOUS_FIXTURE_STATUS.KNOWN; fixture: Fixture }
   | { status: typeof PREVIOUS_FIXTURE_STATUS.UNKNOWN };
 
-const SCORE_CREDIT = {
-  ACTING_SIDE: "acting_side",
-  OPPOSING_SIDE: "opposing_side",
-  NO_SIDE: "no_side",
-} as const;
-
-type ScoreCredit = (typeof SCORE_CREDIT)[keyof typeof SCORE_CREDIT];
-
 type FixtureTeamSide = GameEvent["team_side"];
-
-const SCORING_EVENT_TYPES: ReadonlySet<GameEvent["event_type"]> = new Set([
-  SCORE_EVENT_TYPE.GOAL,
-  SCORE_EVENT_TYPE.PENALTY_SCORED,
-]);
 
 const log_target = create_log_target_builder(FIXTURE_LOG_SCOPE);
 
@@ -124,15 +116,6 @@ export async function update_tracking_previous(
   });
 }
 
-function classify_score_credit(
-  event_type: GameEvent["event_type"],
-): ScoreCredit {
-  if (SCORING_EVENT_TYPES.has(event_type)) return SCORE_CREDIT.ACTING_SIDE;
-  return event_type === SCORE_EVENT_TYPE.OWN_GOAL
-    ? SCORE_CREDIT.OPPOSING_SIDE
-    : SCORE_CREDIT.NO_SIDE;
-}
-
 function opposing_side(team_side: FixtureTeamSide): FixtureTeamSide {
   switch (team_side) {
     case TEAM_SIDE.HOME:
@@ -144,25 +127,31 @@ function opposing_side(team_side: FixtureTeamSide): FixtureTeamSide {
   }
 }
 
-function credited_side(event: GameEvent): FixtureTeamSide {
-  const credit = classify_score_credit(event.event_type);
-  switch (credit) {
-    case SCORE_CREDIT.ACTING_SIDE:
+function credited_side(
+  event: GameEvent,
+  credited: ScoreCreditedSide,
+): FixtureTeamSide {
+  switch (credited) {
+    case SCORE_CREDITED_SIDE.ACTING:
       return event.team_side;
-    case SCORE_CREDIT.OPPOSING_SIDE:
+    case SCORE_CREDITED_SIDE.OPPOSING:
       return opposing_side(event.team_side);
-    case SCORE_CREDIT.NO_SIDE:
-      return TEAM_SIDE.MATCH;
   }
 }
 
-export function calculate_score_delta(event: GameEvent): {
-  home: number;
-  away: number;
-} {
-  const side = credited_side(event);
-  return {
-    home: side === TEAM_SIDE.HOME ? 1 : 0,
-    away: side === TEAM_SIDE.AWAY ? 1 : 0,
-  };
+export function calculate_score_delta(
+  event: GameEvent,
+  award: ScoreAward,
+): { home: number; away: number } {
+  switch (award.kind) {
+    case SCORE_AWARD_KIND.NONE:
+      return { home: 0, away: 0 };
+    case SCORE_AWARD_KIND.CREDIT: {
+      const side = credited_side(event, award.credited_side);
+      return {
+        home: side === TEAM_SIDE.HOME ? award.points : 0,
+        away: side === TEAM_SIDE.AWAY ? award.points : 0,
+      };
+    }
+  }
 }

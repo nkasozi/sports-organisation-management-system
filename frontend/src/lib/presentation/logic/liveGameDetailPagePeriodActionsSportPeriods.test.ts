@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { NO_SCORE_AWARD } from "$lib/core/entities/SportEventCatalog";
+
 import { confirm_live_game_period_action } from "./liveGameDetailPagePeriodActions";
 import { build_period_button_config } from "./liveGameDetailPeriodState";
 
@@ -102,6 +104,7 @@ describe("ending a period follows the sport's own period sequence", () => {
     expect(fixture_use_cases.record_game_event).toHaveBeenCalledWith(
       "fixture-1",
       expect.objectContaining({ description: "1st Quarter ended" }),
+      NO_SCORE_AWARD,
     );
   });
 
@@ -126,6 +129,7 @@ describe("ending a period follows the sport's own period sequence", () => {
     expect(fixture_use_cases.record_game_event).toHaveBeenCalledWith(
       "fixture-1",
       expect.objectContaining({ description: "2nd Quarter started" }),
+      NO_SCORE_AWARD,
     );
   });
 });

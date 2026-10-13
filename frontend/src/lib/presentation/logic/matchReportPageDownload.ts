@@ -1,7 +1,6 @@
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
 import type { Team } from "$lib/core/entities/Team";
-import type { CardTypeConfig } from "$lib/core/types/MatchReportTypes";
 import {
   type AsyncResult,
   create_failure_result,
@@ -29,6 +28,7 @@ import {
   MATCH_REPORT_EVENT,
   MATCH_REPORT_MESSAGE,
 } from "./matchReportPageMessages";
+import { build_match_report_sport_rules } from "./matchReportSportRules";
 import { PRESENCE_STATUS } from "./presenceStatus";
 
 export interface MatchReportDownloadCommand {
@@ -43,23 +43,6 @@ export interface MatchReportDownloadCommand {
   away_players: LineupPlayer[];
   organization_logo_url: string;
   dependencies: MatchReportPageDownloadDependencies;
-}
-
-function build_match_report_card_types(
-  sport_state: MatchReportSportState,
-): CardTypeConfig[] {
-  if (sport_state.status === PRESENCE_STATUS.MISSING) {
-    return [];
-  }
-
-  return (
-    sport_state.sport.card_types?.map((current_card_type) => ({
-      id: current_card_type.id,
-      name: current_card_type.name,
-      color: current_card_type.color,
-      event_type: `${current_card_type.id}_card`,
-    })) || []
-  );
 }
 
 async function load_match_report_organization_name(
@@ -106,7 +89,14 @@ function build_match_report_download_context(
     assigned_officials: command.assigned_officials_data,
     home_staff: team_staff.home_staff,
     away_staff: team_staff.away_staff,
-    card_types: build_match_report_card_types(command.sport_state),
+    ...build_match_report_sport_rules(
+      command.sport_state.status === PRESENCE_STATUS.PRESENT
+        ? command.sport_state.sport
+        : void 0,
+      command.competition_state.status === PRESENCE_STATUS.PRESENT
+        ? command.competition_state.competition
+        : void 0,
+    ),
     organization_name,
     venue_name:
       command.venue_state.status === PRESENCE_STATUS.PRESENT
