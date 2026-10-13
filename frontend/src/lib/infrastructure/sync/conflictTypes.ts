@@ -3,23 +3,39 @@ import type {
   IsoDateTimeString,
   Name,
 } from "$lib/core/types/DomainScalars";
+import { is_string_value } from "$lib/infrastructure/utils/runtimeTypeGuards";
 
-export type ConflictResolutionAction = "keep_local" | "keep_remote" | "merge";
+export const ConflictResolutionActionKind = {
+  KEEP_LOCAL: "keep_local",
+  KEEP_REMOTE: "keep_remote",
+  MERGE: "merge",
+} as const;
+
+export type ConflictResolutionAction =
+  (typeof ConflictResolutionActionKind)[keyof typeof ConflictResolutionActionKind];
+
+export const ConflictFieldValueStatus = {
+  UNKNOWN: "unknown",
+  KNOWN: "known",
+} as const;
 
 export type ConflictFieldValue<TValue> =
-  | { status: "unknown" }
-  | { status: "known"; value: TValue };
+  | { status: typeof ConflictFieldValueStatus.UNKNOWN }
+  | { status: typeof ConflictFieldValueStatus.KNOWN; value: TValue };
+
+const OBJECT_TYPE_NAME = "object";
+const UNKNOWN_ENTITY_ID_LABEL = "unknown";
 
 export function create_unknown_conflict_field_value<
   TValue,
 >(): ConflictFieldValue<TValue> {
-  return { status: "unknown" };
+  return { status: ConflictFieldValueStatus.UNKNOWN };
 }
 
 export function create_known_conflict_field_value<TValue>(
   value: TValue,
 ): ConflictFieldValue<TValue> {
-  return { status: "known", value };
+  return { status: ConflictFieldValueStatus.KNOWN, value };
 }
 
 export interface FieldDifference {
@@ -102,28 +118,35 @@ export function compute_field_differences(
   return differences;
 }
 
+function arrays_are_equal(a: unknown[], b: unknown[]): boolean {
+  return (
+    a.length === b.length &&
+    a.every((value, index) => values_are_equal(value, b[index]))
+  );
+}
+
+function is_present_object(value: unknown): value is Record<string, unknown> {
+  return typeof value === OBJECT_TYPE_NAME && value != void 0;
+}
+
+function objects_are_equal(
+  a: Record<string, unknown>,
+  b: Record<string, unknown>,
+): boolean {
+  const a_keys = Object.keys(a);
+  return (
+    a_keys.length === Object.keys(b).length &&
+    a_keys.every((key) => values_are_equal(a[key], b[key]))
+  );
+}
+
 function values_are_equal(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (a == void 0 && b == void 0) return true;
   if (typeof a !== typeof b) return false;
-
-  if (Array.isArray(a) && Array.isArray(b)) {
-    if (a.length !== b.length) return false;
-    return a.every((val, idx) => values_are_equal(val, b[idx]));
-  }
-
-  if (typeof a === "object" && a != void 0 && b != void 0) {
-    const a_keys = Object.keys(a as object);
-    const b_keys = Object.keys(b as object);
-    if (a_keys.length !== b_keys.length) return false;
-    return a_keys.every((key) =>
-      values_are_equal(
-        (a as Record<string, unknown>)[key],
-        (b as Record<string, unknown>)[key],
-      ),
-    );
-  }
-
+  if (Array.isArray(a) && Array.isArray(b)) return arrays_are_equal(a, b);
+  if (is_present_object(a) && is_present_object(b))
+    return objects_are_equal(a, b);
   return false;
 }
 
@@ -144,20 +167,20 @@ export function get_entity_display_name(
   data: Record<string, unknown>,
   table_name: string,
 ): string {
-  if (data.name && typeof data.name === "string") {
+  if (data.name && is_string_value(data.name)) {
     return data.name;
   }
 
   if (
     data.first_name &&
     data.last_name &&
-    typeof data.first_name === "string" &&
-    typeof data.last_name === "string"
+    is_string_value(data.first_name) &&
+    is_string_value(data.last_name)
   ) {
     return `${data.first_name} ${data.last_name}`;
   }
 
-  if (data.title && typeof data.title === "string") {
+  if (data.title && is_string_value(data.title)) {
     return data.title;
   }
 
@@ -166,5 +189,5 @@ export function get_entity_display_name(
     .replace(/s$/, "")
     .replace(/\b\w/g, (c) => c.toUpperCase());
 
-  return `${formatted_table} (${data.id || "unknown"})`;
+  return `${formatted_table} (${data.id || UNKNOWN_ENTITY_ID_LABEL})`;
 }

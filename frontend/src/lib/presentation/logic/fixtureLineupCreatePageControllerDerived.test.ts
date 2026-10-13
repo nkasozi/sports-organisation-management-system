@@ -106,7 +106,7 @@ describe("fixtureLineupCreatePageControllerDerived", () => {
       expect.objectContaining({
         organization_is_restricted: true,
         team_is_restricted: true,
-        user_team_id: "team-a",
+        user_team: { status: "some", value: "team-a" },
         non_scheduled_fixtures_count: 1,
         fixtures_for_organization: [
           expect.objectContaining({ id: "fixture-1" }),

@@ -26,8 +26,12 @@ describe("layoutSessionFlowDependencies", () => {
       pull_user_scoped_record_from_convex: vi.fn(),
       clear_session_sync_flag: vi.fn(),
       sign_out: vi.fn(),
+      sign_out_and_tear_down_device: vi.fn(),
+      show_session_notice: vi.fn(),
       goto: vi.fn(),
       delay: vi.fn(),
+      get_unsynced_local_change_count: vi.fn(),
+      confirm_discard_unsynced_local_changes: vi.fn(),
     };
 
     const dependencies = create_layout_login_sync_dependencies(
@@ -36,6 +40,10 @@ describe("layoutSessionFlowDependencies", () => {
 
     expect(dependencies.auth_store).toBe(command.auth_store);
     expect(dependencies.sync_store).toBe(command.sync_store);
+    expect(dependencies.sign_out_and_tear_down_device).toBe(
+      command.sign_out_and_tear_down_device,
+    );
+    expect(dependencies.show_session_notice).toBe(command.show_session_notice);
     expect(dependencies.initial_sync_store.start_sync).toBe(
       initial_sync_store.start_sync,
     );

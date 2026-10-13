@@ -7,15 +7,21 @@ import type {
   UpdateOrganizationInput,
 } from "../../core/entities/Organization";
 import type { Sport } from "../../core/entities/Sport";
+import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 import type {
   OrganizationFilter,
   OrganizationRepository,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
-import type { PaginatedAsyncResult } from "../../core/types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
-
-const FIELD_HOCKEY_SPORT_CODE = "FIELD_HOCKEY";
+import { create_default_organizations } from "./InBrowserOrganizationRepositoryDefaults";
+import { reset_repository_data } from "./InBrowserRepositoryReset";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
+import type { RepositoryWriteOrigin } from "./InBrowserRepositoryWriteOrigin";
 
 const ENTITY_PREFIX = "org";
 
@@ -97,95 +103,25 @@ class InBrowserOrganizationRepository
   async find_active_organizations(
     options?: QueryOptions,
   ): PaginatedAsyncResult<Organization> {
-    return this.find_all({ status: "active" }, options);
+    return this.find_all({ status: ENTITY_STATUS.ACTIVE }, options);
   }
 }
 
-function find_sport_id_by_code(
-  seeded_sports: Sport[],
-  sport_code: string,
-): string {
-  const matched_sport = seeded_sports.find(
-    (sport) => sport.code.toUpperCase() === sport_code.toUpperCase(),
-  );
-  if (!matched_sport) {
-    console.error("[OrganizationRepository] Sport not found in seeded sports", {
-      event: "sport_lookup_failed",
-      sport_code,
-      available_codes: seeded_sports.map((sport) => sport.code),
-    });
-    return "";
-  }
-  return matched_sport.id;
-}
-
-function create_default_organizations(
-  seeded_sports: Sport[],
-): import("$lib/core/types/DomainScalars").ScalarInput<Organization>[] {
-  const now = new Date().toISOString();
-  const field_hockey_sport_id = find_sport_id_by_code(
-    seeded_sports,
-    FIELD_HOCKEY_SPORT_CODE,
-  );
-
-  return [
-    {
-      id: "org_default_1",
-      name: "Uganda Hockey Association",
-      description:
-        "The governing body for field hockey in Uganda - organizing national competitions, developing players, and promoting hockey across the country",
-      sport_id: field_hockey_sport_id,
-      founded_date: "1972-06-15",
-      contact_email: "info@ugandahockey.org",
-      contact_phone: "+256-700-123-456",
-      address: "Lugogo Hockey Stadium, Kampala, Uganda",
-      website: "https://ugandahockey.org",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-  ];
-}
-
-type OrganizationRepositoryState =
-  | { status: "uninitialized" }
-  | { status: "ready"; repository: InBrowserOrganizationRepository };
-
-let organization_repository_state: OrganizationRepositoryState = {
-  status: "uninitialized",
-};
+const get_concrete_repository: () => InBrowserOrganizationRepository =
+  create_lazy_repository_accessor(() => new InBrowserOrganizationRepository());
 
 export function get_organization_repository(): OrganizationRepository {
-  if (organization_repository_state.status === "ready") {
-    return organization_repository_state.repository;
-  }
-
-  const repository = new InBrowserOrganizationRepository();
-
-  organization_repository_state = { status: "ready", repository };
-
-  return repository;
-}
-
-async function ensure_default_organization_exists(
-  seeded_sports: Sport[],
-): Promise<void> {
-  const repository =
-    get_organization_repository() as InBrowserOrganizationRepository;
-  const has_data = await repository.has_data();
-  if (!has_data) {
-    await repository.seed_with_data(
-      create_default_organizations(seeded_sports),
-    );
-  }
+  return get_concrete_repository();
 }
 
 export async function reset_organization_repository(
   seeded_sports: Sport[],
-): Promise<void> {
-  const repository =
-    get_organization_repository() as InBrowserOrganizationRepository;
-  await repository.clear_all_data();
-  const default_orgs = create_default_organizations(seeded_sports);
-  await repository.seed_with_data(default_orgs);
+  origin: RepositoryWriteOrigin,
+): AsyncResult<number> {
+  const defaults_result = create_default_organizations(seeded_sports);
+  if (!defaults_result.success) return defaults_result;
+  return reset_repository_data(
+    get_concrete_repository().with_write_origin(origin),
+    defaults_result.data,
+  );
 }

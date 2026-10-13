@@ -40,7 +40,7 @@ describe("gameManageActions", () => {
         .mockResolvedValue({ success: true, data: { id: "fixture-1" } }),
     };
 
-    await record_game_manage_event(
+    const record_game_manage_event_result = await record_game_manage_event(
       {
         fixture_id: "fixture-1",
         selected_event_type: { id: "goal", label: "Goal" } as never,
@@ -51,6 +51,7 @@ describe("gameManageActions", () => {
       },
       fixture_use_cases as never,
     );
+    expect(record_game_manage_event_result.success).toBe(true);
 
     expect(fixture_use_cases.record_game_event).toHaveBeenCalledWith(
       "fixture-1",

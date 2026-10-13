@@ -6,7 +6,7 @@
         LineupPlayer,
         PlayerTimeOnStatus,
     } from "$lib/core/entities/FixtureLineup";
-    import type { Team } from "$lib/core/entities/Team";
+    import type { Option } from "$lib/core/types/Option";
     import GameManageTimeline from "$lib/presentation/components/game/GameManageTimeline.svelte";
     import LiveGameHeader from "$lib/presentation/components/game/LiveGameHeader.svelte";
     import LiveGameInfoSummary from "$lib/presentation/components/game/LiveGameInfoSummary.svelte";
@@ -15,11 +15,16 @@
     import LiveGameQuickActions from "$lib/presentation/components/game/LiveGameQuickActions.svelte";
     import type { PeriodButtonConfig } from "$lib/presentation/logic/liveGameDetailState";
 
-    export let fixture: Fixture | undefined;
-    export let home_team: Team | undefined;
-    export let away_team: Team | undefined;
+    import type { GameTeamSide } from "./gameDisplayConstants";
+    import {
+        build_live_game_team_labels,
+        LIVE_GAME_DETAIL_CONTENT_STATUS,
+        type LiveGameDetailContentState,
+    } from "./liveGameDetailContentState";
+    import { LIVE_GAME_DETAIL_TEXT } from "./liveGameDetailMessages";
+
+    export let content_state: LiveGameDetailContentState;
     export let organization_name: string;
-    export let competition_name: string;
     export let home_score: number;
     export let away_score: number;
     export let current_period_label: string;
@@ -30,7 +35,7 @@
     export let is_game_completed: boolean;
     export let show_extra_time_button: boolean;
     export let downloading_report: boolean;
-    export let period_button_config: PeriodButtonConfig | undefined;
+    export let period_button_config: Option<PeriodButtonConfig>;
     export let permission_info_message: string;
     export let all_event_buttons: QuickEventButton[];
     export let home_players: LineupPlayer[];
@@ -51,8 +56,6 @@
     export let officials_color: string;
     export let assigned_officials: Array<{ name: string; role_name: string }>;
     export let sorted_events: Fixture["game_events"];
-    export let is_loading: boolean;
-    export let error_message: string;
     export let on_back: () => void;
     export let on_start: () => void;
     export let on_toggle_clock: () => void;
@@ -62,7 +65,7 @@
     export let on_download_match_report: () => Promise<boolean>;
     export let on_open_event_modal: (
         event_button: QuickEventButton,
-        team_side: "home" | "away",
+        team_side: GameTeamSide,
     ) => void;
     export let on_toggle_home_lineup: () => void;
     export let on_toggle_away_lineup: () => void;
@@ -82,34 +85,48 @@
 </script>
 
 <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
-    {#if is_loading}<div class="flex justify-center items-center min-h-screen">
+    {#if content_state.status === LIVE_GAME_DETAIL_CONTENT_STATUS.LOADING}<div
+            class="flex justify-center items-center min-h-screen"
+        >
             <div
                 class="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-600"
             ></div>
-        </div>{:else if error_message}<div class="max-w-2xl mx-auto p-6">
+        </div>{:else if content_state.status === LIVE_GAME_DETAIL_CONTENT_STATUS.FAILED}<div
+            class="max-w-2xl mx-auto p-6"
+        >
             <div
                 class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center"
             >
                 <h3
                     class="text-lg font-medium text-red-800 dark:text-red-200 mb-2"
                 >
-                    Error Loading Game
+                    {LIVE_GAME_DETAIL_TEXT.ERROR_TITLE}
                 </h3>
-                <p class="text-red-600 dark:text-red-400">{error_message}</p>
+                <p class="text-red-600 dark:text-red-400">
+                    {content_state.message}
+                </p>
                 <button
                     type="button"
                     class="btn btn-outline mt-4"
-                    on:click={on_back}>Back to Live Games</button
+                    on:click={on_back}
+                    >{LIVE_GAME_DETAIL_TEXT.BACK_TO_LIVE_GAMES}</button
                 >
             </div>
-        </div>{:else if fixture}<div class="flex flex-col min-h-screen">
+        </div>{:else if content_state.status === LIVE_GAME_DETAIL_CONTENT_STATUS.READY}{@const fixture =
+            content_state.fixture}{@const team_labels =
+            build_live_game_team_labels(
+                fixture,
+                content_state.home_team,
+                content_state.away_team,
+            )}
+        <div class="flex flex-col min-h-screen">
             <LiveGameHeader
                 {organization_name}
-                {competition_name}
+                competition_name={content_state.competition_name}
                 fixture_status={fixture.status}
                 scheduled_time={fixture.scheduled_time}
-                {home_team}
-                {away_team}
+                home_team={content_state.home_team}
+                away_team={content_state.away_team}
                 {home_score}
                 {away_score}
                 {current_period_label}
@@ -132,8 +149,8 @@
                     this={live_game_permission_banner_component}
                     {permission_info_message}
                 />{/if}{#if is_game_active && can_modify_game}<LiveGameQuickActions
-                    home_team_name={home_team?.name ?? "Home"}
-                    away_team_name={away_team?.name ?? "Away"}
+                    home_team_name={team_labels.home_name}
+                    away_team_name={team_labels.away_name}
                     {all_event_buttons}
                     {is_clock_running}
                     {on_open_event_modal}
@@ -143,14 +160,8 @@
                     <svelte:component
                         this={live_game_lineup_section_component}
                         fixture_status={fixture.status}
-                        home_team_name={home_team?.name ??
-                            (fixture.status === "scheduled"
-                                ? "Home Team"
-                                : "Home")}
-                        away_team_name={away_team?.name ??
-                            (fixture.status === "scheduled"
-                                ? "Away Team"
-                                : "Away")}
+                        home_team_name={team_labels.lineup_home_name}
+                        away_team_name={team_labels.lineup_away_name}
                         {home_players}
                         {away_players}
                         {home_starters}
@@ -178,8 +189,8 @@
                         {sorted_events}
                         fixture_status={fixture.status}
                         {is_game_active}
-                        home_team_name={home_team?.name ?? "Home"}
-                        away_team_name={away_team?.name ?? "Away"}
+                        home_team_name={team_labels.home_name}
+                        away_team_name={team_labels.away_name}
                     />
                 </div>
             </div>

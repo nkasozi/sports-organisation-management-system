@@ -8,13 +8,18 @@
     import type { Competition } from "$lib/core/entities/Competition";
     import type { Organization } from "$lib/core/entities/Organization";
     import type { Team } from "$lib/core/entities/Team";
-    import { type UserScopeProfile } from "$lib/core/interfaces/ports";
     import type { CalendarEvent } from "$lib/core/interfaces/ports/internal/usecases/ActivityUseCasesPort";
     import {
         get_use_cases_container,
         type UseCasesContainer,
     } from "$lib/infrastructure/container";
     import {
+        type CalendarDeleteActivityPromptState,
+        create_hidden_calendar_delete_activity_prompt_state,
+    } from "$lib/presentation/logic/calendarDeleteActivityPrompt";
+    import { create_calendar_delete_activity_prompt_actions } from "$lib/presentation/logic/calendarDeleteActivityPromptActions";
+    import {
+        build_calendar_profile_state,
         can_user_add_activities,
         can_user_change_organizations,
         extract_url_org_id,
@@ -28,6 +33,7 @@
     } from "$lib/presentation/logic/calendarPageState";
     import { auth_store } from "$lib/presentation/stores/auth";
 
+    import CalendarDeleteActivityPrompt from "./CalendarDeleteActivityPrompt.svelte";
     import CalendarPageOverlays from "./CalendarPageOverlays.svelte";
     import CalendarPageView from "./CalendarPageView.svelte";
     const use_cases: UseCasesContainer = get_use_cases_container();
@@ -53,20 +59,13 @@
             create_empty_activity_form_values(),
         toast_visible = false,
         toast_message = "",
-        toast_type: "success" | "error" | "warning" | "info" = "info";
+        toast_type: "success" | "error" | "warning" | "info" = "info",
+        delete_prompt_state: CalendarDeleteActivityPromptState =
+            create_hidden_calendar_delete_activity_prompt_state();
 
-    $: current_auth_profile_state = (() => {
-        const current_profile = get(auth_store).current_profile;
-
-        if (current_profile.status !== "present") {
-            return { status: "missing" as const };
-        }
-
-        return {
-            status: "present" as const,
-            profile: current_profile.profile as unknown as UserScopeProfile,
-        };
-    })();
+    $: current_auth_profile_state = build_calendar_profile_state(
+        get(auth_store).current_profile,
+    );
     $: url_org_id = extract_url_org_id(get(page).url.searchParams);
     $: selected_organization_name = resolve_selected_organization_name(
         organizations,
@@ -126,14 +125,16 @@
         show_toast,
         use_cases,
     });
+    const delete_prompt_actions =
+        create_calendar_delete_activity_prompt_actions({
+            get_prompt_state: () => delete_prompt_state,
+            set_prompt_state: (state: CalendarDeleteActivityPromptState) =>
+                (delete_prompt_state = state),
+            delete_activity: runtime.delete_current_activity,
+        });
 
     async function handle_delete_activity(): Promise<void> {
-        if (
-            !editing_activity ||
-            !confirm("Are you sure you want to delete this activity?")
-        )
-            return;
-        await runtime.delete_current_activity();
+        if (editing_activity) delete_prompt_actions.request_choice();
     }
     onMount(runtime.initialize);
 </script>
@@ -159,7 +160,9 @@
         current_auth_profile_state,
         url_org_id,
     )}
-    can_user_add_activities={can_user_add_activities(current_auth_profile_state)}
+    can_user_add_activities={can_user_add_activities(
+        current_auth_profile_state,
+    )}
     on_organization_change={runtime.handle_organization_change}
     on_open_create_modal={() => runtime.handle_date_click()}
     on_open_subscribe_modal={runtime.open_subscribe_modal}
@@ -189,4 +192,9 @@
     on_close_category_modal={() => (show_category_modal = false)}
     on_create_category={runtime.handle_create_category}
     on_close_subscribe_modal={runtime.close_subscribe_modal}
+/>
+<CalendarDeleteActivityPrompt
+    prompt_state={delete_prompt_state}
+    on_cancel={delete_prompt_actions.cancel}
+    on_confirm={delete_prompt_actions.confirm}
 />

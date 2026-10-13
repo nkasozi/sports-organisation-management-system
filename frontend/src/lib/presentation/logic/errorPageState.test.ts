@@ -39,4 +39,33 @@ describe("errorPageState", () => {
       accent_color: "red",
     });
   });
+
+  it("returns an access-denied configuration for forbidden pages", () => {
+    expect(get_error_config(403)).toEqual({
+      icon: "shield",
+      title: "Access Denied",
+      subtitle: "Permission required",
+      description:
+        "You don't have permission to view this page. Contact your administrator if you believe this is an error.",
+      primary_action_label: "Go Home",
+      primary_action_href: "/",
+      secondary_action_label: "Contact Support",
+      show_error_code: false,
+      accent_color: "red",
+    });
+  });
+
+  it("returns the full sign-in configuration for unauthenticated access", () => {
+    expect(get_error_config(401)).toEqual({
+      icon: "lock",
+      title: "Authentication Required",
+      subtitle: "Sign in to continue",
+      description: "You need to be signed in to access this page.",
+      primary_action_label: "Sign In",
+      primary_action_href: "/sign-in",
+      secondary_action_label: "Go Home",
+      show_error_code: false,
+      accent_color: "blue",
+    });
+  });
 });

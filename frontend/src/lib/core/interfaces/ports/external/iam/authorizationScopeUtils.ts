@@ -1,13 +1,27 @@
 import { ANY_VALUE } from "./AuthenticationPort";
 import type { ScopeDimension, UserScopeProfile } from "./AuthorizationPort";
 
+const AUTHORIZATION_SCOPE_PROFILE_STATUS = {
+  MISSING: "missing",
+  PRESENT: "present",
+} as const;
+
 type AuthorizationScopeProfileState =
-  | { status: "missing" }
-  | { status: "present"; profile: UserScopeProfile };
+  | { status: typeof AUTHORIZATION_SCOPE_PROFILE_STATUS.MISSING }
+  | {
+      status: typeof AUTHORIZATION_SCOPE_PROFILE_STATUS.PRESENT;
+      profile: UserScopeProfile;
+    };
 
 type AuthorizationScopeProfileInput =
   | AuthorizationScopeProfileState
   | UserScopeProfile;
+
+const FILTERABLE_SCOPE_DIMENSIONS: readonly ScopeDimension[] = [
+  "organization_id",
+  "team_id",
+  "player_id",
+];
 
 function build_scope_profile_state(
   profile: AuthorizationScopeProfileInput,
@@ -16,108 +30,77 @@ function build_scope_profile_state(
     return profile;
   }
 
-  return { status: "present", profile };
+  return { status: AUTHORIZATION_SCOPE_PROFILE_STATUS.PRESENT, profile };
 }
 
-function has_unrestricted_scope(
+function read_restricted_scope_value(
   profile: AuthorizationScopeProfileInput,
   dimension: ScopeDimension,
-): boolean {
+): string {
   const profile_state = build_scope_profile_state(profile);
 
-  if (profile_state.status !== "present") {
-    return true;
+  switch (profile_state.status) {
+    case AUTHORIZATION_SCOPE_PROFILE_STATUS.MISSING:
+      return "";
+    case AUTHORIZATION_SCOPE_PROFILE_STATUS.PRESENT: {
+      const value = profile_state.profile[dimension];
+      return is_unrestricted_value(value) ? "" : (value ?? "");
+    }
   }
-
-  return is_unrestricted_value(profile_state.profile[dimension]);
 }
 
 export function is_scope_restricted(
   profile: AuthorizationScopeProfileInput,
   dimension: ScopeDimension,
 ): boolean {
-  return !has_unrestricted_scope(profile, dimension);
+  return read_restricted_scope_value(profile, dimension).length > 0;
 }
 
 export function get_scope_value(
   profile: AuthorizationScopeProfileInput,
   dimension: ScopeDimension,
 ): string {
-  const profile_state = build_scope_profile_state(profile);
-
-  if (profile_state.status !== "present") {
-    return "";
-  }
-
-  const value = profile_state.profile[dimension];
-
-  if (is_unrestricted_value(value)) {
-    return "";
-  }
-
-  return value ?? "";
+  return read_restricted_scope_value(profile, dimension);
 }
 
 export function get_authorization_restricted_fields(
   profile: AuthorizationScopeProfileInput,
 ): Set<string> {
-  const restricted = new Set<string>();
+  return new Set<string>(
+    FILTERABLE_SCOPE_DIMENSIONS.filter((dimension) =>
+      is_scope_restricted(profile, dimension),
+    ),
+  );
+}
 
-  if (is_scope_restricted(profile, "organization_id")) {
-    restricted.add("organization_id");
+function build_scope_value_map(
+  profile: AuthorizationScopeProfileInput,
+  dimensions: readonly ScopeDimension[],
+): Record<string, string> {
+  const values: Record<string, string> = {};
+  for (const dimension of dimensions) {
+    const value = get_scope_value(profile, dimension);
+    if (value) values[dimension] = value;
   }
-  if (is_scope_restricted(profile, "team_id")) {
-    restricted.add("team_id");
-  }
-  if (is_scope_restricted(profile, "player_id")) {
-    restricted.add("player_id");
-  }
-  return restricted;
+  return values;
 }
 
 export function get_authorization_preselect_values(
   profile: AuthorizationScopeProfileInput,
 ): Record<string, string> {
-  const preselect_values: Record<string, string> = {};
-  const org_value = get_scope_value(profile, "organization_id");
-
-  if (org_value) {
-    preselect_values["organization_id"] = org_value;
-  }
-  const team_value = get_scope_value(profile, "team_id");
-
-  if (team_value) {
-    preselect_values["team_id"] = team_value;
-  }
-  const player_value = get_scope_value(profile, "player_id");
-
-  if (player_value) {
-    preselect_values["player_id"] = player_value;
-  }
-  return preselect_values;
+  return build_scope_value_map(profile, FILTERABLE_SCOPE_DIMENSIONS);
 }
 
 export function build_authorization_list_filter(
   profile: AuthorizationScopeProfileInput,
   entity_fields: string[],
 ): Record<string, string> {
-  const filter: Record<string, string> = {};
-  const org_value = get_scope_value(profile, "organization_id");
-
-  if (org_value && entity_fields.includes("organization_id")) {
-    filter["organization_id"] = org_value;
-  }
-  const team_value = get_scope_value(profile, "team_id");
-
-  if (team_value && entity_fields.includes("team_id")) {
-    filter["team_id"] = team_value;
-  }
-  const player_value = get_scope_value(profile, "player_id");
-
-  if (player_value && entity_fields.includes("player_id")) {
-    filter["player_id"] = player_value;
-  }
-  return filter;
+  return build_scope_value_map(
+    profile,
+    FILTERABLE_SCOPE_DIMENSIONS.filter((dimension) =>
+      entity_fields.includes(dimension),
+    ),
+  );
 }
 
 export function is_field_restricted_by_authorization(

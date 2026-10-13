@@ -77,4 +77,38 @@ describe("sync_scope", () => {
       ),
     ).toEqual([matching_record, global_record]);
   });
+
+  it("scopes id-filtered roles to their organization instead of every tenant", () => {
+    const caller = create_system_user_record({ role: PLAYER_ROLE });
+    const own_organization_player = {
+      local_id: "player_1",
+      organization_id: ORGANIZATION_ID,
+    };
+    const foreign_player = {
+      local_id: "player_2",
+      organization_id: "organization_2",
+    };
+
+    expect(
+      filter_records_by_organization_scope(
+        [own_organization_player, foreign_player],
+        caller,
+        "players",
+        build_scope_filter(caller, PLAYER_ENTITY_TYPE),
+      ),
+    ).toEqual([own_organization_player]);
+  });
+
+  it("denies every record to callers without an organization", () => {
+    const caller = create_system_user_record({ organization_id: "" });
+
+    expect(
+      filter_records_by_organization_scope(
+        [{ local_id: "record_1", organization_id: ORGANIZATION_ID }],
+        caller,
+        TEAMS_TABLE_NAME,
+        build_scope_filter(caller, TEAM_ENTITY_TYPE),
+      ),
+    ).toEqual([]);
+  });
 });

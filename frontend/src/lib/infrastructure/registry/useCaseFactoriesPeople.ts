@@ -30,6 +30,7 @@ import type { TeamUseCases } from "../../core/usecases/TeamUseCases";
 import { create_team_use_cases } from "../../core/usecases/TeamUseCases";
 import { auth_store } from "../../presentation/stores/auth";
 import { get_repository_container } from "../container";
+import { CURRENT_PROFILE_PRESENT_STATUS } from "./registryConstants";
 
 export function get_official_associated_team_use_cases(): OfficialAssociatedTeamUseCases {
   return create_official_associated_team_use_cases(
@@ -43,7 +44,7 @@ export function get_official_performance_rating_use_cases(): OfficialPerformance
     () => {
       const current_profile_state = get(auth_store).current_profile;
 
-      if (current_profile_state.status !== "present") {
+      if (current_profile_state.status !== CURRENT_PROFILE_PRESENT_STATUS) {
         return { status: "anonymous" };
       }
 

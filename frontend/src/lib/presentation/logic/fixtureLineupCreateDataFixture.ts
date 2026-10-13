@@ -1,120 +1,53 @@
-import { get_sport_by_id } from "$lib/adapters/persistence/sportService";
+import type { Competition } from "$lib/core/entities/Competition";
 import type { Team } from "$lib/core/entities/Team";
 import { get_authorization_preselect_values } from "$lib/core/interfaces/ports";
-import { build_error_message } from "$lib/core/services/fixtureLineupWizard";
+import {
+  create_none_option,
+  create_some_option,
+  type Option,
+  OptionStatus,
+} from "$lib/core/types/Option";
 import { build_fixture_team_label_map } from "$lib/presentation/logic/fixtureLineupCreateState";
+import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
+import {
+  create_fixture_data_failure,
+  FIXTURE_DATA_FAILURE_REASON,
+  type FixtureDataStep,
+  type FixtureRelatedRecords,
+  load_fixture_competition,
+  load_fixture_related_records,
+  load_scheduled_fixture,
+  resolve_fixture_player_limits,
+} from "./fixtureLineupCreateDataFixtureLoaders";
+import {
+  build_teams_with_existing_lineups,
+  collect_fixture_teams,
+  type FixtureLineupPlayerLimits,
+  resolve_auto_selected_team_id,
+} from "./fixtureLineupCreateDataFixtureRules";
 import type {
   FixtureLineupCreateDependencies,
   FixtureLineupCreateFixtureData,
 } from "./fixtureLineupCreateDataTypes";
 import type { FixtureLineupCreateAuthProfileState } from "./fixtureLineupCreatePageContracts";
 
-export async function load_fixture_lineup_create_fixture_data(
-  fixture_id: string,
-  current_auth_profile_state: FixtureLineupCreateAuthProfileState,
-  dependencies: FixtureLineupCreateDependencies,
-): Promise<
-  | { success: true; data: FixtureLineupCreateFixtureData }
-  | { success: false; error_message: string; should_clear_fixture: boolean }
-> {
-  const fixture_result =
-    await dependencies.fixture_use_cases.get_by_id(fixture_id);
-  if (!fixture_result.success || !fixture_result.data)
-    return {
-      success: false,
-      error_message: build_error_message(
-        "Failed to load fixture.",
-        "The selected fixture could not be found.",
-        "Refresh the page and try selecting the fixture again.",
-      ),
-      should_clear_fixture: true,
-    };
-  const selected_fixture = fixture_result.data;
-  if (selected_fixture.status !== "scheduled")
-    return {
-      success: false,
-      error_message: build_error_message(
-        "This fixture cannot accept lineup submissions.",
-        `The fixture status is "${selected_fixture.status.replace(/_/g, " ")}". Only fixtures with "scheduled" status can receive new lineups.`,
-        "Select a different fixture that is still scheduled.",
-      ),
-      should_clear_fixture: true,
-    };
-  const competition_result = await dependencies.competition_use_cases.get_by_id(
-    selected_fixture.competition_id,
-  );
-  if (!competition_result.success || !competition_result.data)
-    return {
-      success: false,
-      error_message: build_error_message(
-        "Failed to load competition for fixture.",
-        "Competition data is required to determine lineup rules.",
-        "Ensure the fixture has a valid competition, then retry.",
-      ),
-      should_clear_fixture: false,
-    };
-  const competition = competition_result.data;
-  const [
-    organization_result,
-    competition_teams_result,
-    home_team_result,
-    away_team_result,
-    existing_lineups_result,
-  ] = await Promise.all([
-    dependencies.organization_use_cases.get_by_id(competition.organization_id),
-    dependencies.competition_team_use_cases.list_teams_in_competition(
-      competition.id,
-      { page_number: 1, page_size: 2000 },
-    ),
-    dependencies.team_use_cases.get_by_id(selected_fixture.home_team_id),
-    dependencies.team_use_cases.get_by_id(selected_fixture.away_team_id),
-    dependencies.lineup_use_cases.list_lineups_by_fixture(fixture_id, {
-      page: 1,
-      page_size: 100,
-    }),
+interface FixtureTeamContext {
+  teams: Team[];
+  available_teams: Team[];
+  competition_teams_for_fixture: FixtureLineupCreateFixtureData["competition_teams_for_fixture"];
+  fixture_team_label_by_team_id: Map<string, string>;
+  teams_with_existing_lineups: Map<string, string>;
+}
+
+function build_fixture_team_context(
+  related_records: FixtureRelatedRecords,
+): FixtureTeamContext {
+  const teams = collect_fixture_teams([
+    related_records.home_team,
+    related_records.away_team,
   ]);
-  let min_players = 2;
-  let max_players = 18;
-  let starters_count = 11;
-  if (organization_result.success && organization_result.data?.sport_id) {
-    const sport_result = await get_sport_by_id(
-      organization_result.data.sport_id,
-    );
-    if (sport_result.success && sport_result.data) {
-      min_players = sport_result.data.min_players_per_fixture || 2;
-      max_players = sport_result.data.max_players_per_fixture || 18;
-      starters_count = sport_result.data.max_players_on_field || 11;
-    }
-  }
-  if (competition.rule_overrides) {
-    if (
-      Object.prototype.hasOwnProperty.call(
-        competition.rule_overrides,
-        "min_players_on_field",
-      )
-    )
-      min_players = competition.rule_overrides.min_players_on_field!;
-    if (
-      Object.prototype.hasOwnProperty.call(
-        competition.rule_overrides,
-        "max_squad_size",
-      )
-    )
-      max_players = competition.rule_overrides.max_squad_size!;
-    if (
-      Object.prototype.hasOwnProperty.call(
-        competition.rule_overrides,
-        "max_players_on_field",
-      )
-    )
-      starters_count = competition.rule_overrides.max_players_on_field!;
-  }
-  const teams: Team[] = [];
-  if (home_team_result.success && home_team_result.data)
-    teams.push(home_team_result.data);
-  if (away_team_result.success && away_team_result.data)
-    teams.push(away_team_result.data);
+  const competition_teams_result = related_records.competition_teams;
   const competition_teams_for_fixture =
     competition_teams_result.success && competition_teams_result.data
       ? competition_teams_result.data.items
@@ -123,71 +56,120 @@ export async function load_fixture_lineup_create_fixture_data(
     teams,
     competition_teams_for_fixture,
   );
-  const teams_with_existing_lineups = new Map<string, string>();
-  if (existing_lineups_result.success && existing_lineups_result.data) {
-    for (const lineup of existing_lineups_result.data.items) {
-      const matching_team = teams.find(
-        (team: Team) => team.id === lineup.team_id,
-      );
-      teams_with_existing_lineups.set(
-        lineup.team_id,
-        matching_team
-          ? fixture_team_label_by_team_id.get(matching_team.id) ||
-              matching_team.name
-          : lineup.team_id,
-      );
-    }
-  }
+  const lineups_result = related_records.lineups;
+  const teams_with_existing_lineups = build_teams_with_existing_lineups(
+    lineups_result.success && lineups_result.data
+      ? lineups_result.data.items
+      : [],
+    teams,
+    fixture_team_label_by_team_id,
+  );
   const available_teams = teams.filter(
     (team: Team) => !teams_with_existing_lineups.has(team.id),
   );
-  if (available_teams.length === 0 && teams.length > 0)
-    return {
-      success: false,
-      error_message: build_error_message(
-        "All teams have already submitted lineups for this fixture.",
-        `"${competition.name}" already has lineups from all participating teams.`,
-        "Select a different fixture that still needs team lineups.",
-      ),
-      should_clear_fixture: true,
-    };
+  return {
+    teams,
+    available_teams,
+    competition_teams_for_fixture,
+    fixture_team_label_by_team_id,
+    teams_with_existing_lineups,
+  };
+}
+
+function find_team_availability_failure(
+  team_context: FixtureTeamContext,
+  competition: Competition,
+  preselected_team: Option<string>,
+): FixtureDataStep<boolean> {
+  if (
+    team_context.available_teams.length === 0 &&
+    team_context.teams.length > 0
+  )
+    return create_fixture_data_failure(
+      "All teams have already submitted lineups for this fixture.",
+      `"${competition.name}" already has lineups from all participating teams.`,
+      "Select a different fixture that still needs team lineups.",
+      true,
+      FIXTURE_DATA_FAILURE_REASON.ALL_TEAMS_SUBMITTED,
+    );
+  if (
+    preselected_team.status === OptionStatus.SOME &&
+    team_context.teams_with_existing_lineups.has(preselected_team.value)
+  )
+    return create_fixture_data_failure(
+      "Your team has already submitted a lineup for this fixture.",
+      "Each team can only submit one lineup per fixture.",
+      "Select a different fixture or view your existing lineup.",
+      true,
+      FIXTURE_DATA_FAILURE_REASON.TEAM_ALREADY_SUBMITTED,
+    );
+  return { success: true, data: true };
+}
+
+function build_fixture_data_result(
+  selected_fixture: FixtureLineupCreateFixtureData["selected_fixture"],
+  competition: Competition,
+  limits: FixtureLineupPlayerLimits,
+  team_context: FixtureTeamContext,
+  current_auth_profile_state: FixtureLineupCreateAuthProfileState,
+): FixtureDataStep<FixtureLineupCreateFixtureData> {
   const preselect_values =
-    current_auth_profile_state.status === "present"
+    current_auth_profile_state.status === PRESENCE_STATUS.PRESENT
       ? get_authorization_preselect_values(current_auth_profile_state.profile)
       : {};
-  if (
-    preselect_values.team_id &&
-    teams_with_existing_lineups.has(preselect_values.team_id)
-  )
-    return {
-      success: false,
-      error_message: build_error_message(
-        "Your team has already submitted a lineup for this fixture.",
-        "Each team can only submit one lineup per fixture.",
-        "Select a different fixture or view your existing lineup.",
-      ),
-      should_clear_fixture: true,
-    };
+  const preselected_team: Option<string> = preselect_values.team_id
+    ? create_some_option(preselect_values.team_id)
+    : create_none_option();
+  const availability_step = find_team_availability_failure(
+    team_context,
+    competition,
+    preselected_team,
+  );
+  if (!availability_step.success) return availability_step;
   return {
     success: true,
     data: {
       selected_fixture,
       organization_id: competition.organization_id,
-      min_players,
-      max_players,
-      starters_count,
-      teams,
-      available_teams,
-      competition_teams_for_fixture,
-      fixture_team_label_by_team_id,
-      teams_with_existing_lineups,
-      auto_selected_team_id:
-        preselect_values.team_id &&
-        available_teams.some(
-          (team: Team) => team.id === preselect_values.team_id,
-        )
-          ? preselect_values.team_id
-          : "",
+      ...limits,
+      ...team_context,
+      auto_selected_team_id: resolve_auto_selected_team_id(
+        preselected_team,
+        team_context.available_teams,
+      ),
     },
   };
+}
+
+export async function load_fixture_lineup_create_fixture_data(
+  fixture_id: string,
+  current_auth_profile_state: FixtureLineupCreateAuthProfileState,
+  dependencies: FixtureLineupCreateDependencies,
+): Promise<FixtureDataStep<FixtureLineupCreateFixtureData>> {
+  const fixture_step = await load_scheduled_fixture(fixture_id, dependencies);
+  if (!fixture_step.success) return fixture_step;
+  const selected_fixture = fixture_step.data;
+  const competition_step = await load_fixture_competition(
+    selected_fixture,
+    dependencies,
+  );
+  if (!competition_step.success) return competition_step;
+  const competition = competition_step.data;
+  const related_records = await load_fixture_related_records(
+    fixture_id,
+    selected_fixture,
+    competition,
+    dependencies,
+  );
+  const limits = await resolve_fixture_player_limits(
+    related_records.organization,
+    competition,
+  );
+  return build_fixture_data_result(
+    selected_fixture,
+    competition,
+    limits,
+    build_fixture_team_context(related_records),
+    current_auth_profile_state,
+  );
 }

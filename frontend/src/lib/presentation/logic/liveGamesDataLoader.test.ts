@@ -1,9 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { assert, describe, expect, it } from "vitest";
 
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Organization } from "$lib/core/entities/Organization";
 import { ANY_VALUE } from "$lib/core/interfaces/ports";
 import {
+  type EntityScope,
   parse_entity_scope,
   type ScalarInput,
 } from "$lib/core/types/DomainScalars";
@@ -18,12 +19,10 @@ type LiveGamesProfileState = Parameters<
   typeof load_live_games_fixture_state
 >[1];
 
-function create_entity_scope(value: string) {
+function create_entity_scope(value: string): EntityScope {
   const entity_scope_result = parse_entity_scope(value);
 
-  if (!entity_scope_result.success) {
-    throw new Error(entity_scope_result.error);
-  }
+  assert(entity_scope_result.success, "Expected a valid entity scope");
 
   return entity_scope_result.data;
 }
@@ -115,7 +114,10 @@ describe("liveGamesDataLoader", () => {
       },
     });
 
-    expect(result.map((organization) => organization.id)).toEqual(["org_2"]);
+    assert(result.success, "Expected organizations to load");
+    expect(result.data.map((organization) => organization.id)).toEqual([
+      "org_2",
+    ]);
   });
 
   it("loads fixture state and excludes completed fixtures", async () => {
@@ -167,9 +169,12 @@ describe("liveGamesDataLoader", () => {
       "org_1",
     );
 
-    expect(result.fixtures.map((fixture) => fixture.id)).toEqual(["fixture_1"]);
-    expect(result.team_names.team_1).toBe("Team team_1");
-    expect(result.competition_names.comp_1).toBe("National League");
-    expect(result.sport_names.comp_1).toBe("Hockey");
+    assert(result.success, "Expected fixture state to load");
+    expect(result.data.fixtures.map((fixture) => fixture.id)).toEqual([
+      "fixture_1",
+    ]);
+    expect(result.data.team_names.team_1).toBe("Team team_1");
+    expect(result.data.competition_names.comp_1).toBe("National League");
+    expect(result.data.sport_names.comp_1).toBe("Hockey");
   });
 });

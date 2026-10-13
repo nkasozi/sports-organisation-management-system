@@ -10,11 +10,27 @@ import type {
 } from "../types/DomainScalars";
 import {
   parse_description_text,
-  parse_email_address,
   parse_non_negative_integer_value,
   parse_optional_media_url_value,
 } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
+import {
+  check_condition,
+  check_optional_email_address,
+  collect_validation_errors,
+  is_blank_text,
+} from "./EntityValidation";
+
+const OFFICIAL_VALIDATION_MESSAGES = {
+  FIRST_NAME_REQUIRED: "First name is required",
+  LAST_NAME_REQUIRED: "Last name is required",
+  ORGANIZATION_REQUIRED: "Organization is required",
+  GENDER_REQUIRED: "Gender is required",
+  INVALID_EMAIL: "Invalid email format",
+  INVALID_YEARS_OF_EXPERIENCE: "Years of experience must be zero or greater",
+  INVALID_PROFILE_IMAGE: "Profile image URL is invalid",
+  INVALID_NOTES: "Notes are invalid",
+} as const;
 
 export type OfficialStatus = EntityStatus;
 
@@ -38,22 +54,6 @@ export interface Official extends BaseEntity {
   status: OfficialStatus;
 }
 
-function get_official_avatar(official: Official): string {
-  return official.profile_image_url && official.profile_image_url.trim() !== ""
-    ? official.profile_image_url
-    : DEFAULT_OFFICIAL_AVATAR;
-}
-
-function get_official_initials(official: Official): string {
-  const first_initial = official.first_name
-    ? official.first_name.charAt(0).toUpperCase()
-    : "";
-  const last_initial = official.last_name
-    ? official.last_name.charAt(0).toUpperCase()
-    : "";
-  return `${first_initial}${last_initial}` || "??";
-}
-
 export type CreateOfficialInput = Omit<
   ScalarInput<Official>,
   "id" | "created_at" | "updated_at"
@@ -64,76 +64,39 @@ export function get_official_full_name(official: Official): string {
   return `${official.first_name} ${official.last_name}`.trim();
 }
 
-function create_empty_official_input(
-  organization_id: CreateOfficialInput["organization_id"] = "",
-): CreateOfficialInput {
-  return {
-    first_name: "",
-    last_name: "",
-    gender_id: "",
-    email: "",
-    phone: "",
-    date_of_birth: "",
-    organization_id,
-    years_of_experience: 0,
-    nationality: "",
-    profile_image_url: "",
-    emergency_contact_name: "",
-    emergency_contact_phone: "",
-    notes: "",
-    status: "active",
-  };
-}
-
 export function validate_official_input(input: CreateOfficialInput): string[] {
-  const validation_errors: string[] = [];
-
-  if (!input.first_name || input.first_name.trim().length < 1) {
-    validation_errors.push("First name is required");
-  }
-
-  if (!input.last_name || input.last_name.trim().length < 1) {
-    validation_errors.push("Last name is required");
-  }
-
-  if (!input.organization_id) {
-    validation_errors.push("Organization is required");
-  }
-
-  if (!input.gender_id || input.gender_id.trim().length === 0) {
-    validation_errors.push("Gender is required");
-  }
-
-  if (input.email.length > 0) {
-    const email_result = parse_email_address(
+  return collect_validation_errors([
+    check_condition(
+      !is_blank_text(input.first_name),
+      OFFICIAL_VALIDATION_MESSAGES.FIRST_NAME_REQUIRED,
+    ),
+    check_condition(
+      !is_blank_text(input.last_name),
+      OFFICIAL_VALIDATION_MESSAGES.LAST_NAME_REQUIRED,
+    ),
+    check_condition(
+      Boolean(input.organization_id),
+      OFFICIAL_VALIDATION_MESSAGES.ORGANIZATION_REQUIRED,
+    ),
+    check_condition(
+      !is_blank_text(input.gender_id),
+      OFFICIAL_VALIDATION_MESSAGES.GENDER_REQUIRED,
+    ),
+    check_optional_email_address(
       input.email,
-      "Invalid email format",
-    );
-    if (!email_result.success) {
-      validation_errors.push(email_result.error);
-    }
-  }
-
-  const years_of_experience_result = parse_non_negative_integer_value(
-    input.years_of_experience,
-    "Years of experience must be zero or greater",
-  );
-  if (!years_of_experience_result.success) {
-    validation_errors.push(years_of_experience_result.error);
-  }
-
-  const profile_image_result = parse_optional_media_url_value(
-    input.profile_image_url,
-    "Profile image URL is invalid",
-  );
-  if (!profile_image_result.success) {
-    validation_errors.push(profile_image_result.error);
-  }
-
-  const notes_result = parse_description_text(input.notes, "Notes are invalid");
-  if (!notes_result.success) {
-    validation_errors.push(notes_result.error);
-  }
-
-  return validation_errors;
+      OFFICIAL_VALIDATION_MESSAGES.INVALID_EMAIL,
+    ),
+    parse_non_negative_integer_value(
+      input.years_of_experience,
+      OFFICIAL_VALIDATION_MESSAGES.INVALID_YEARS_OF_EXPERIENCE,
+    ),
+    parse_optional_media_url_value(
+      input.profile_image_url,
+      OFFICIAL_VALIDATION_MESSAGES.INVALID_PROFILE_IMAGE,
+    ),
+    parse_description_text(
+      input.notes,
+      OFFICIAL_VALIDATION_MESSAGES.INVALID_NOTES,
+    ),
+  ]);
 }

@@ -32,12 +32,7 @@ describe("InBrowserBaseRepositoryHelpers", () => {
   it("formats repository errors and paginated result metadata", () => {
     const first_team = create_entity({ id: "team_1" });
 
-    expect(
-      format_repository_error(new Error("disk failed"), "load teams"),
-    ).toBe("Failed to load teams: disk failed");
-    expect(format_repository_error("unknown", "save team")).toBe(
-      "Failed to save team: Unknown error occurred",
-    );
+    expect(format_repository_error("load teams")).toBe("Failed to load teams");
 
     expect(
       create_paginated_result_from_options([first_team], 42, {

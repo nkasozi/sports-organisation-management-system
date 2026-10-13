@@ -4,6 +4,7 @@ import type { Sport } from "$lib/core/entities/Sport";
 import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
 import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
 import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
+import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
 import type {
   CompetitionCreatePageDependencies,
@@ -24,48 +25,58 @@ export type CompetitionCreateRawTokenState =
   | { status: "missing" }
   | { status: "present"; value: string };
 
-export async function initialize_competition_create_page(command: {
-  current_auth_profile_state: CompetitionCreateProfileState;
-  dependencies: CompetitionCreatePageDependencies;
-  is_organization_restricted: boolean;
-  raw_token_state: CompetitionCreateRawTokenState;
-}): Promise<{
+export interface CompetitionCreatePageInitializationResult {
   access_denied: boolean;
   error_message: string;
   organization_options: SelectOption[];
   organizations: Organization[];
   preselected_organization_id: string;
-}> {
+}
+
+function build_empty_competition_create_initialization_result(
+  access_denied: boolean,
+  error_message: string,
+): CompetitionCreatePageInitializationResult {
+  return {
+    access_denied,
+    error_message,
+    organization_options: [],
+    organizations: [],
+    preselected_organization_id: "",
+  };
+}
+
+async function is_competition_create_access_denied(
+  raw_token_state: CompetitionCreateRawTokenState,
+): Promise<boolean> {
+  if (raw_token_state.status !== PRESENCE_STATUS.PRESENT) {
+    return false;
+  }
+  const authorization_check =
+    await get_authorization_adapter().check_entity_authorized(
+      raw_token_state.value,
+      "competition",
+      "create",
+    );
+  return authorization_check.success && !authorization_check.data.is_authorized;
+}
+
+export async function initialize_competition_create_page(command: {
+  current_auth_profile_state: CompetitionCreateProfileState;
+  dependencies: CompetitionCreatePageDependencies;
+  is_organization_restricted: boolean;
+  raw_token_state: CompetitionCreateRawTokenState;
+}): Promise<CompetitionCreatePageInitializationResult> {
   const auth_result = await ensure_auth_profile();
   if (!auth_result.success) {
-    return {
-      access_denied: false,
-      error_message: auth_result.error_message,
-      organization_options: [],
-      organizations: [],
-      preselected_organization_id: "",
-    };
+    return build_empty_competition_create_initialization_result(
+      false,
+      auth_result.error_message,
+    );
   }
 
-  if (command.raw_token_state.status === "present") {
-    const authorization_check =
-      await get_authorization_adapter().check_entity_authorized(
-        command.raw_token_state.value,
-        "competition",
-        "create",
-      );
-    if (
-      authorization_check.success &&
-      !authorization_check.data.is_authorized
-    ) {
-      return {
-        access_denied: true,
-        error_message: "",
-        organization_options: [],
-        organizations: [],
-        preselected_organization_id: "",
-      };
-    }
+  if (await is_competition_create_access_denied(command.raw_token_state)) {
+    return build_empty_competition_create_initialization_result(true, "");
   }
 
   const organizations_result = await load_competition_create_organizations({

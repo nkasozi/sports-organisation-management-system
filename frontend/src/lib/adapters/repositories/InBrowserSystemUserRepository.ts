@@ -19,11 +19,14 @@ import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../core/types/Result";
-import {
-  create_failure_result,
-  create_success_result,
-} from "../../core/types/Result";
+import { create_success_result } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import { find_rows_by_index } from "./InBrowserRepositoryIndexLookup";
+import {
+  create_warning_failure_details,
+  execute_repository_operation,
+} from "./InBrowserRepositoryQueryRunner";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
 import {
   apply_system_user_filter,
   apply_system_user_updates,
@@ -31,6 +34,18 @@ import {
 } from "./InBrowserSystemUserRepositoryUtils";
 
 const ENTITY_PREFIX = "usr";
+
+enum SYSTEM_USER_INDEX {
+  EMAIL = "email",
+}
+
+function is_admin_user(user: SystemUser): boolean {
+  return check_data_permission(
+    user.role as UserRole,
+    "org_administrator_level",
+    "read",
+  );
+}
 export { resolve_organization_id_for_role } from "./InBrowserSystemUserRepositoryUtils";
 
 export class InBrowserSystemUserRepository
@@ -99,28 +114,20 @@ export class InBrowserSystemUserRepository
   async find_by_email(
     email: ScalarValueInput<SystemUser["email"]>,
   ): PaginatedAsyncResult<SystemUser> {
-    try {
-      const users = await this.database.system_users
-        .where("email")
-        .equals(email.trim().toLowerCase())
-        .toArray();
-      return create_success_result(
-        this.create_paginated_result(users, users.length),
-      );
-    } catch (error) {
-      console.warn(
+    const users_result = await find_rows_by_index({
+      table: this.database.system_users,
+      index_name: SYSTEM_USER_INDEX.EMAIL,
+      value: email.trim().toLowerCase(),
+      failure: create_warning_failure_details(
         "[SystemUserRepository] Failed to find system user by email",
-        {
-          event: "repository_find_system_user_by_email_failed",
-          error: String(error),
-        },
-      );
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to find system user by email: ${error_message}`,
-      );
-    }
+        "repository_find_system_user_by_email_failed",
+        "find system user by email",
+      ),
+    });
+    if (!users_result.success) return users_result;
+    return create_success_result(
+      this.create_paginated_result(users_result.data, users_result.data.length),
+    );
   }
 
   async find_by_role(
@@ -136,55 +143,28 @@ export class InBrowserSystemUserRepository
     return this.find_all({ status: "active" }, options);
   }
 
-  async find_admins(options?: QueryOptions): PaginatedAsyncResult<SystemUser> {
-    try {
-      let filtered = await this.database.system_users.toArray();
-      filtered = filtered.filter((u) =>
-        check_data_permission(
-          u.role as UserRole,
-          "org_administrator_level",
-          "read",
-        ),
-      );
-      const sorted = this.apply_sort(filtered, options);
-      const paginated = this.apply_pagination(sorted, options);
-      return create_success_result(
-        this.create_paginated_result(paginated, filtered.length, options),
-      );
-    } catch (error) {
-      console.warn("[SystemUserRepository] Failed to find admin users", {
-        event: "repository_find_admin_users_failed",
-        error: String(error),
-      });
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to find admin users: ${error_message}`,
-      );
-    }
+  find_admins(options?: QueryOptions): PaginatedAsyncResult<SystemUser> {
+    return execute_repository_operation(
+      create_warning_failure_details(
+        "[SystemUserRepository] Failed to find admin users",
+        "repository_find_admin_users_failed",
+        "find admin users",
+      ),
+      async () => {
+        const admins = (await this.database.system_users.toArray()).filter(
+          is_admin_user,
+        );
+        const sorted = this.apply_sort(admins, options);
+        const paginated = this.apply_pagination(sorted, options);
+        return this.create_paginated_result(paginated, admins.length, options);
+      },
+    );
   }
 }
 
-type SystemUserRepositoryState =
-  | { status: "uninitialized" }
-  | { status: "ready"; repository: InBrowserSystemUserRepository };
-
-let system_user_repository_state: SystemUserRepositoryState = {
-  status: "uninitialized",
-};
+const get_concrete_repository: () => InBrowserSystemUserRepository =
+  create_lazy_repository_accessor(() => new InBrowserSystemUserRepository());
 
 export function get_system_user_repository(): InBrowserSystemUserRepository {
-  if (system_user_repository_state.status === "ready") {
-    return system_user_repository_state.repository;
-  }
-
-  const repository = new InBrowserSystemUserRepository();
-  system_user_repository_state = { status: "ready", repository };
-
-  return repository;
-}
-
-async function reset_system_user_repository(): Promise<void> {
-  const repository = get_system_user_repository();
-  await repository.clear_all_data();
+  return get_concrete_repository();
 }

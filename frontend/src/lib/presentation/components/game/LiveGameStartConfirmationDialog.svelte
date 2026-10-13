@@ -6,15 +6,20 @@
     } from "$lib/presentation/logic/liveGameStartConfirmation";
     import { get_live_game_matchup_label } from "$lib/presentation/logic/liveGamesViewLogic";
 
-    export let pending_start_fixture_state: LiveGamesPendingStartFixtureState = {
-        status: "idle",
-    };
+    import { LIVE_GAMES_PENDING_START_STATUS } from "./liveGamesConstants";
+
+    export let pending_start_fixture_state: LiveGamesPendingStartFixtureState =
+        {
+            status: LIVE_GAMES_PENDING_START_STATUS.IDLE,
+        };
     export let team_names: Record<string, string> = {};
     export let on_cancel: () => void;
     export let on_confirm: () => void;
 
-    function should_show_date_warning(current_fixture: LiveGamesPendingStartFixtureState): boolean {
-        if (current_fixture.status === "idle") {
+    function should_show_date_warning(
+        current_fixture: LiveGamesPendingStartFixtureState,
+    ): boolean {
+        if (current_fixture.status === LIVE_GAMES_PENDING_START_STATUS.IDLE) {
             return false;
         }
 
@@ -25,7 +30,7 @@
     }
 </script>
 
-{#if pending_start_fixture_state.status === "confirming"}
+{#if pending_start_fixture_state.status === LIVE_GAMES_PENDING_START_STATUS.CONFIRMING}
     <div
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6"
         role="dialog"

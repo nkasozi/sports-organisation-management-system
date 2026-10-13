@@ -8,9 +8,15 @@
         LiveGameDetailPageState,
         LiveGameDetailToastState,
     } from "$lib/presentation/logic/liveGameDetailPageState";
+    import {
+        derive_live_game_detail_open_modal,
+        LIVE_GAME_DETAIL_MODAL,
+    } from "$lib/presentation/logic/liveGameDetailPageStateMachine";
 
+    import { to_option } from "./liveGameDetailContentState";
     import LiveGameEventModal from "./LiveGameEventModal.svelte";
     import LiveGameExtraTimeModal from "./LiveGameExtraTimeModal.svelte";
+    import { build_live_game_detail_pending_start_state } from "./liveGamesConstants";
     import LiveGameStartConfirmationDialog from "./LiveGameStartConfirmationDialog.svelte";
 
     export let page_state: LiveGameDetailPageState;
@@ -34,18 +40,21 @@
     export let on_event_minute_change: (minute: number) => void;
     export let on_event_description_change: (description: string) => void;
     export let on_dismiss_toast: () => void;
+
+    $: open_modal = derive_live_game_detail_open_modal(modal_state);
 </script>
 
 <LiveGameStartConfirmationDialog
-    pending_start_fixture_state={page_state.fixture
-        ? { status: "confirming", fixture: page_state.fixture }
-        : { status: "idle" }}
+    pending_start_fixture_state={build_live_game_detail_pending_start_state(
+        open_modal === LIVE_GAME_DETAIL_MODAL.START,
+        page_state.fixture,
+    )}
     team_names={view_state.team_names}
     on_cancel={on_close_start}
     on_confirm={() => void on_start_confirm()}
 />
 <ConfirmationModal
-    is_visible={modal_state.show_end_modal}
+    is_visible={open_modal === LIVE_GAME_DETAIL_MODAL.END}
     title="End Game"
     message={`Are you sure you want to end this game with the current score of ${view_state.home_score} - ${view_state.away_score}?`}
     confirm_text="End Game"
@@ -55,7 +64,7 @@
     on:cancel={on_close_end}
 />
 {#if view_state.period_button_config}<ConfirmationModal
-        is_visible={modal_state.show_period_modal}
+        is_visible={open_modal === LIVE_GAME_DETAIL_MODAL.PERIOD}
         title={view_state.period_button_config.is_end_action
             ? "End Period"
             : "Start Period"}
@@ -67,7 +76,7 @@
         on:cancel={on_close_period}
     />{/if}
 <LiveGameExtraTimeModal
-    is_visible={modal_state.show_extra_time_modal}
+    is_visible={open_modal === LIVE_GAME_DETAIL_MODAL.EXTRA_TIME}
     extra_minutes_to_add={page_state.extra_minutes_to_add}
     is_updating={page_state.is_updating}
     on_close={on_close_extra_time}
@@ -76,7 +85,7 @@
 />
 <LiveGameEventModal
     is_visible={event_state.show_event_modal}
-    selected_event_type={event_state.selected_event_type}
+    selected_event_type_option={to_option(event_state.selected_event_type)}
     selected_team_side={event_state.selected_team_side}
     home_team_name={page_state.home_team?.name || "Home"}
     away_team_name={page_state.away_team?.name || "Away"}

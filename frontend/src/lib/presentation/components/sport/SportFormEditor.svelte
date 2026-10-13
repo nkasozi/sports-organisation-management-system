@@ -6,6 +6,10 @@
     import SportCardTypesSection from "./SportCardTypesSection.svelte";
     import SportFormActions from "./SportFormActions.svelte";
     import SportFormHeader from "./SportFormHeader.svelte";
+    import {
+        SPORT_FORM_SECTION,
+        type SportFormSectionId,
+    } from "./sportFormSectionConstants";
     import SportFormTabs from "./SportFormTabs.svelte";
     import SportFoulCategoriesSection from "./SportFoulCategoriesSection.svelte";
     import SportOfficialsSection from "./SportOfficialsSection.svelte";
@@ -27,7 +31,7 @@
         | ((preset_type: SportPresetType) => void)
         | undefined = undefined;
 
-    let active_section: string = "basic";
+    let active_section: SportFormSectionId = SPORT_FORM_SECTION.BASIC;
 </script>
 
 <div class="space-y-6">
@@ -42,28 +46,28 @@
             class="px-4 py-6 sm:px-6"
             on:submit|preventDefault={() => void on_submit()}
         >
-            {#if active_section === "basic"}
+            {#if active_section === SPORT_FORM_SECTION.BASIC}
                 <SportBasicSection bind:form_data {errors} />
             {/if}
-            {#if active_section === "periods"}
+            {#if active_section === SPORT_FORM_SECTION.PERIODS}
                 <SportPeriodsSection bind:form_data />
             {/if}
-            {#if active_section === "cards"}
+            {#if active_section === SPORT_FORM_SECTION.CARDS}
                 <SportCardTypesSection bind:form_data />
             {/if}
-            {#if active_section === "fouls"}
+            {#if active_section === SPORT_FORM_SECTION.FOULS}
                 <SportFoulCategoriesSection bind:form_data />
             {/if}
-            {#if active_section === "officials"}
+            {#if active_section === SPORT_FORM_SECTION.OFFICIALS}
                 <SportOfficialsSection bind:form_data />
             {/if}
-            {#if active_section === "scoring"}
+            {#if active_section === SPORT_FORM_SECTION.SCORING}
                 <SportScoringSection bind:form_data />
             {/if}
-            {#if active_section === "overtime"}
+            {#if active_section === SPORT_FORM_SECTION.OVERTIME}
                 <SportOvertimeSection bind:form_data />
             {/if}
-            {#if active_section === "substitutions"}
+            {#if active_section === SPORT_FORM_SECTION.SUBSTITUTIONS}
                 <SportSubstitutionsSection bind:form_data />
             {/if}
 

@@ -5,6 +5,7 @@ const dexie_mock_state = vi.hoisted(() => {
     close: ReturnType<typeof vi.fn>;
     delete: ReturnType<typeof vi.fn>;
     version: ReturnType<typeof vi.fn>;
+    use: ReturnType<typeof vi.fn>;
   }> = [];
 
   class MockDexie {
@@ -12,7 +13,10 @@ const dexie_mock_state = vi.hoisted(() => {
 
     close = vi.fn();
     delete = vi.fn(async () => {});
-    version = vi.fn(() => ({ stores: vi.fn() }));
+    version = vi.fn(() => ({
+      stores: vi.fn(() => ({ upgrade: vi.fn() })),
+    }));
+    use = vi.fn(() => this);
 
     constructor(_database_name: string) {
       created_instances.push(this);
@@ -51,6 +55,20 @@ describe("database reset", () => {
       "SportSyncDB",
     );
     expect(dexie_mock_state.created_instances).toHaveLength(1);
+  });
+
+  it("registers the sync outbox middleware on every new database instance", async () => {
+    const database_module = await import("./database");
+
+    database_module.get_database();
+    await database_module.reset_database();
+
+    expect(dexie_mock_state.created_instances).toHaveLength(2);
+    for (const instance of dexie_mock_state.created_instances) {
+      expect(instance.use).toHaveBeenCalledWith(
+        expect.objectContaining({ name: "SyncOutboxMiddleware" }),
+      );
+    }
   });
 
   it("replaces an existing runtime database instance during reset", async () => {

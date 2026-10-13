@@ -1,252 +1,191 @@
 <script lang="ts">
-  import type { CompetitionRuleOverrides } from "$lib/core/entities/Competition";
-  import type { Sport, SportGamePeriod } from "$lib/core/entities/Sport";
-  import type { ScalarInput } from "$lib/core/types/DomainScalars";
+    import type { CompetitionRuleOverrides } from "$lib/core/entities/Competition";
+    import type { Sport } from "$lib/core/entities/Sport";
+    import {
+        format_periods_summary,
+        get_effective_periods,
+        get_max_players_on_field,
+        get_max_squad_size,
+        get_max_substitutions,
+        get_min_players_on_field,
+        get_overtime_enabled,
+        get_return_after_substitution,
+        get_rolling_substitutions,
+        has_custom_squad_limits,
+        has_rule_override,
+    } from "$lib/presentation/logic/sportRulesCustomizerLogic";
+    import {
+        apply_sport_rules_override_action,
+        create_sport_rules_customizing_state,
+        set_sport_rules_section_customizing,
+        SPORT_RULES_FLAG_ACTION as FLAG_ACTION,
+        SPORT_RULES_NUMBER_ACTION as NUMBER_ACTION,
+        SPORT_RULES_SECTION as SECTION,
+        SPORT_RULES_STRUCTURE_ACTION as STRUCTURE_ACTION,
+        type SportRulesFlagAction,
+        type SportRulesNumberAction,
+        type SportRulesOverrideAction,
+        type SportRulesSection,
+    } from "$lib/presentation/logic/sportRulesOverrideActions";
 
-  import SportRulesEmptyState from "./SportRulesEmptyState.svelte";
-  import SportRulesOvertimeSection from "./SportRulesOvertimeSection.svelte";
-  import SportRulesPeriodsSection from "./SportRulesPeriodsSection.svelte";
-  import SportRulesSquadLimitsSection from "./SportRulesSquadLimitsSection.svelte";
-  import SportRulesSubstitutionsSection from "./SportRulesSubstitutionsSection.svelte";
+    import SportRulesEmptyState from "./SportRulesEmptyState.svelte";
+    import SportRulesOvertimeSection from "./SportRulesOvertimeSection.svelte";
+    import SportRulesPeriodsSection from "./SportRulesPeriodsSection.svelte";
+    import SportRulesSquadLimitsSection from "./SportRulesSquadLimitsSection.svelte";
+    import SportRulesSubstitutionsSection from "./SportRulesSubstitutionsSection.svelte";
 
-  type EditableSportGamePeriod = ScalarInput<SportGamePeriod>;
+    export let sport: Sport | undefined;
+    export let rule_overrides: CompetitionRuleOverrides = {};
 
-  export let sport: Sport | undefined;
-  export let rule_overrides: CompetitionRuleOverrides = {};
+    let customizing_state = create_sport_rules_customizing_state();
 
-  let is_customizing_periods: boolean = false;
-  let is_customizing_squad_limits: boolean = false;
-  let is_customizing_substitutions: boolean = false;
-  let is_customizing_overtime: boolean = false;
+    function apply_action(action: SportRulesOverrideAction): void {
+        rule_overrides = apply_sport_rules_override_action(
+            rule_overrides,
+            action,
+        );
+    }
 
-  function resolve_rule_value<T>(
-    override_value: T | undefined,
-    sport_value: T | undefined,
-    fallback_value: T,
-  ): T {
-    return override_value ?? sport_value ?? fallback_value;
-  }
+    function set_customizing(
+        section: SportRulesSection,
+        is_customizing: boolean,
+    ): void {
+        customizing_state = set_sport_rules_section_customizing(
+            customizing_state,
+            section,
+            is_customizing,
+        );
+    }
 
-  function get_substitution_rules(): NonNullable<
-    CompetitionRuleOverrides["substitution_rules"]
-  > {
-    rule_overrides.substitution_rules ??= {};
-    return rule_overrides.substitution_rules;
-  }
+    function reset_section(section: SportRulesSection): void {
+        apply_action({ type: STRUCTURE_ACTION.RESET_SECTION, section });
+        set_customizing(section, false);
+    }
 
-  function get_overtime_rules(): NonNullable<
-    CompetitionRuleOverrides["overtime_rules"]
-  > {
-    rule_overrides.overtime_rules ??= {};
-    return rule_overrides.overtime_rules;
-  }
-
-  function get_effective_periods(): EditableSportGamePeriod[] {
-    return rule_overrides.periods ?? sport?.periods ?? [];
-  }
-
-  function get_total_playing_time(periods: EditableSportGamePeriod[]): number {
-    return periods
-      .filter((p) => !p.is_break)
-      .reduce((sum, p) => sum + p.duration_minutes, 0);
-  }
-
-  function format_periods_summary(periods: EditableSportGamePeriod[]): string {
-    const playing_periods = periods.filter((p) => !p.is_break);
-    const total_time = get_total_playing_time(periods);
-    const period_count = playing_periods.length;
-
-    if (period_count === 0) return "No periods defined";
-    if (period_count === 2) return `2 halves (${total_time} min)`;
-    if (period_count === 4) return `4 quarters (${total_time} min)`;
-    if (period_count === 3) return `3 periods (${total_time} min)`;
-    return `${period_count} periods (${total_time} min)`;
-  }
-
-  function get_max_players_on_field(): number {
-    return resolve_rule_value(
-      rule_overrides.max_players_on_field,
-      sport?.max_players_on_field,
-      11,
-    );
-  }
-
-  function get_min_players_on_field(): number {
-    return resolve_rule_value(
-      rule_overrides.min_players_on_field,
-      sport?.min_players_on_field,
-      7,
-    );
-  }
-
-  function get_max_squad_size(): number {
-    return resolve_rule_value(
-      rule_overrides.max_squad_size,
-      sport?.max_squad_size,
-      20,
-    );
-  }
-
-  function get_max_substitutions(): number {
-    return resolve_rule_value(
-      rule_overrides.substitution_rules?.max_substitutions_per_game,
-      sport?.substitution_rules.max_substitutions_per_game,
-      5,
-    );
-  }
-
-  function get_rolling_substitutions(): boolean {
-    return resolve_rule_value(
-      rule_overrides.substitution_rules?.rolling_substitutions_allowed,
-      sport?.substitution_rules.rolling_substitutions_allowed,
-      false,
-    );
-  }
-
-  function get_return_after_substitution(): boolean {
-    return resolve_rule_value(
-      rule_overrides.substitution_rules?.return_after_substitution_allowed,
-      sport?.substitution_rules.return_after_substitution_allowed,
-      false,
-    );
-  }
-
-  function get_overtime_enabled(): boolean {
-    return resolve_rule_value(
-      rule_overrides.overtime_rules?.is_enabled,
-      sport?.overtime_rules.is_enabled,
-      true,
-    );
-  }
-
-  function handle_periods_change(
-    event: CustomEvent<EditableSportGamePeriod[]>,
-  ): void {
-    rule_overrides.periods = event.detail;
-    rule_overrides.game_duration_minutes = get_total_playing_time(event.detail);
-  }
-
-  function update_max_players(value: number): void {
-    rule_overrides.max_players_on_field = value;
-  }
-
-  function update_min_players(value: number): void {
-    rule_overrides.min_players_on_field = value;
-  }
-
-  function update_max_squad(value: number): void {
-    rule_overrides.max_squad_size = value;
-  }
-
-  function update_max_substitutions(value: number): void {
-    get_substitution_rules().max_substitutions_per_game = value;
-  }
-
-  function update_rolling_substitutions(value: boolean): void {
-    get_substitution_rules().rolling_substitutions_allowed = value;
-  }
-
-  function update_return_after_substitution(value: boolean): void {
-    get_substitution_rules().return_after_substitution_allowed = value;
-  }
-
-  function update_overtime_enabled(value: boolean): void {
-    get_overtime_rules().is_enabled = value;
-  }
-
-  function has_rule_override(field_name: keyof CompetitionRuleOverrides): boolean {
-    return Object.prototype.hasOwnProperty.call(rule_overrides, field_name);
-  }
-
-  function clear_rule_override(field_name: keyof CompetitionRuleOverrides): void {
-    delete rule_overrides[field_name];
-  }
-
-  function reset_game_periods(): void {
-    clear_rule_override("periods");
-    clear_rule_override("game_duration_minutes");
-    is_customizing_periods = false;
-  }
-
-  function reset_squad_limits(): void {
-    clear_rule_override("max_players_on_field");
-    clear_rule_override("min_players_on_field");
-    clear_rule_override("max_squad_size");
-    is_customizing_squad_limits = false;
-  }
-
-  function reset_substitutions(): void {
-    clear_rule_override("substitution_rules");
-    is_customizing_substitutions = false;
-  }
-
-  function reset_overtime(): void {
-    clear_rule_override("overtime_rules");
-    is_customizing_overtime = false;
-  }
+    const update_number =
+        (type: SportRulesNumberAction) =>
+        (value: number): void =>
+            apply_action({ type, value });
+    const update_flag =
+        (type: SportRulesFlagAction) =>
+        (value: boolean): void =>
+            apply_action({ type, value });
 </script>
 
 <div class="space-y-6">
-  {#if !sport}
-    <SportRulesEmptyState />
-  {:else}
-    <div class="border border-accent-200 dark:border-accent-700 rounded-lg p-6">
-      <h3
-        class="mb-6 text-lg font-semibold text-accent-900 dark:text-accent-100"
-      >
-        Customize Sport Rules <span class="text-primary-600">{sport.name}</span>
-      </h3>
-      <div class="space-y-6">
-        <SportRulesPeriodsSection
-          periods={rule_overrides.periods ?? [...(sport.periods ?? [])]}
-          current_summary={format_periods_summary(get_effective_periods())}
-          default_summary={format_periods_summary(sport.periods ?? [])}
-          has_custom_periods={has_rule_override("periods")}
-          {is_customizing_periods}
-          on_customize={() => (is_customizing_periods = true)}
-          on_periods_change={(periods) =>
-            handle_periods_change({ detail: periods } as CustomEvent)}
-          on_reset={reset_game_periods}
-        />
-        <SportRulesSquadLimitsSection
-          {sport}
-          current_max_players={get_max_players_on_field()}
-          current_min_players={get_min_players_on_field()}
-          current_max_squad={get_max_squad_size()}
-          has_custom_limits={has_rule_override("max_players_on_field") ||
-            has_rule_override("min_players_on_field") ||
-            has_rule_override("max_squad_size")}
-          {is_customizing_squad_limits}
-          on_customize={() => (is_customizing_squad_limits = true)}
-          on_reset={reset_squad_limits}
-          on_max_players_change={update_max_players}
-          on_min_players_change={update_min_players}
-          on_max_squad_change={update_max_squad}
-        />
-        <SportRulesSubstitutionsSection
-          {sport}
-          current_max_substitutions={get_max_substitutions()}
-          current_rolling_substitutions={get_rolling_substitutions()}
-          current_return_after_substitution={get_return_after_substitution()}
-          has_custom_substitutions={Boolean(rule_overrides.substitution_rules)}
-          {is_customizing_substitutions}
-          on_customize={() => (is_customizing_substitutions = true)}
-          on_reset={reset_substitutions}
-          on_max_substitutions_change={update_max_substitutions}
-          on_rolling_substitutions_change={update_rolling_substitutions}
-          on_return_after_substitution_change={update_return_after_substitution}
-        />
-        <SportRulesOvertimeSection
-          current_overtime_enabled={get_overtime_enabled()}
-          default_overtime_enabled={sport.overtime_rules.is_enabled}
-          default_overtime_type={sport.overtime_rules.overtime_type}
-          has_custom_overtime={Boolean(rule_overrides.overtime_rules)}
-          {is_customizing_overtime}
-          on_customize={() => (is_customizing_overtime = true)}
-          on_reset={reset_overtime}
-          on_overtime_enabled_change={update_overtime_enabled}
-        />
-      </div>
-    </div>
-  {/if}
+    {#if !sport}
+        <SportRulesEmptyState />
+    {:else}
+        <div
+            class="border border-accent-200 dark:border-accent-700 rounded-lg p-6"
+        >
+            <h3
+                class="mb-6 text-lg font-semibold text-accent-900 dark:text-accent-100"
+            >
+                Customize Sport Rules <span class="text-primary-600"
+                    >{sport.name}</span
+                >
+            </h3>
+            <div class="space-y-6">
+                <SportRulesPeriodsSection
+                    periods={rule_overrides.periods ?? [
+                        ...(sport.periods ?? []),
+                    ]}
+                    current_summary={format_periods_summary(
+                        get_effective_periods(rule_overrides, sport),
+                    )}
+                    default_summary={format_periods_summary(
+                        sport.periods ?? [],
+                    )}
+                    has_custom_periods={has_rule_override(
+                        rule_overrides,
+                        "periods",
+                    )}
+                    is_customizing_periods={customizing_state.periods}
+                    on_customize={() => set_customizing(SECTION.PERIODS, true)}
+                    on_periods_change={(periods) =>
+                        apply_action({
+                            type: STRUCTURE_ACTION.SET_PERIODS,
+                            periods,
+                        })}
+                    on_reset={() => reset_section(SECTION.PERIODS)}
+                />
+                <SportRulesSquadLimitsSection
+                    {sport}
+                    current_max_players={get_max_players_on_field(
+                        rule_overrides,
+                        sport,
+                    )}
+                    current_min_players={get_min_players_on_field(
+                        rule_overrides,
+                        sport,
+                    )}
+                    current_max_squad={get_max_squad_size(
+                        rule_overrides,
+                        sport,
+                    )}
+                    has_custom_limits={has_custom_squad_limits(rule_overrides)}
+                    is_customizing_squad_limits={customizing_state.squad_limits}
+                    on_customize={() =>
+                        set_customizing(SECTION.SQUAD_LIMITS, true)}
+                    on_reset={() => reset_section(SECTION.SQUAD_LIMITS)}
+                    on_max_players_change={update_number(
+                        NUMBER_ACTION.SET_MAX_PLAYERS,
+                    )}
+                    on_min_players_change={update_number(
+                        NUMBER_ACTION.SET_MIN_PLAYERS,
+                    )}
+                    on_max_squad_change={update_number(
+                        NUMBER_ACTION.SET_MAX_SQUAD,
+                    )}
+                />
+                <SportRulesSubstitutionsSection
+                    {sport}
+                    current_max_substitutions={get_max_substitutions(
+                        rule_overrides,
+                        sport,
+                    )}
+                    current_rolling_substitutions={get_rolling_substitutions(
+                        rule_overrides,
+                        sport,
+                    )}
+                    current_return_after_substitution={get_return_after_substitution(
+                        rule_overrides,
+                        sport,
+                    )}
+                    has_custom_substitutions={Boolean(
+                        rule_overrides.substitution_rules,
+                    )}
+                    is_customizing_substitutions={customizing_state.substitutions}
+                    on_customize={() =>
+                        set_customizing(SECTION.SUBSTITUTIONS, true)}
+                    on_reset={() => reset_section(SECTION.SUBSTITUTIONS)}
+                    on_max_substitutions_change={update_number(
+                        NUMBER_ACTION.SET_MAX_SUBSTITUTIONS,
+                    )}
+                    on_rolling_substitutions_change={update_flag(
+                        FLAG_ACTION.SET_ROLLING_SUBSTITUTIONS,
+                    )}
+                    on_return_after_substitution_change={update_flag(
+                        FLAG_ACTION.SET_RETURN_AFTER_SUBSTITUTION,
+                    )}
+                />
+                <SportRulesOvertimeSection
+                    current_overtime_enabled={get_overtime_enabled(
+                        rule_overrides,
+                        sport,
+                    )}
+                    default_overtime_enabled={sport.overtime_rules.is_enabled}
+                    default_overtime_type={sport.overtime_rules.overtime_type}
+                    has_custom_overtime={Boolean(rule_overrides.overtime_rules)}
+                    is_customizing_overtime={customizing_state.overtime}
+                    on_customize={() => set_customizing(SECTION.OVERTIME, true)}
+                    on_reset={() => reset_section(SECTION.OVERTIME)}
+                    on_overtime_enabled_change={update_flag(
+                        FLAG_ACTION.SET_OVERTIME_ENABLED,
+                    )}
+                />
+            </div>
+        </div>
+    {/if}
 </div>

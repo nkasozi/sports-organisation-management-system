@@ -5,16 +5,16 @@ import type { OfficialPerformanceRating } from "$lib/core/entities/OfficialPerfo
 import type { Organization } from "$lib/core/entities/Organization";
 import { get_scope_value } from "$lib/core/interfaces/ports";
 
+import { OFFICIAL_EVENT, OFFICIAL_MESSAGE } from "./officialEventConstants";
 import {
   type OfficialLeaderboardProfileState,
   type OfficialLeaderboardViewState,
   rebuild_official_leaderboard_view,
   resolve_official_leaderboard_organizations,
 } from "./officialLeaderboardPageState";
+import { PRESENCE_STATUS } from "./presenceStatus";
 
 const LEADERBOARD_PAGE_SIZE = 1000;
-const LEADERBOARD_LOAD_ERROR_MESSAGE =
-  "Failed to load leaderboard data. Please try again.";
 
 type ListResult<T> = Promise<{ success: boolean; data?: { items: T[] } }>;
 
@@ -60,10 +60,20 @@ type OfficialLeaderboardPageStateResult =
   | { success: false; error_message: string }
   | { success: true; data: OfficialLeaderboardPageData };
 
-export async function load_official_leaderboard_page_state(command: {
-  profile_state: OfficialLeaderboardProfileState;
-  dependencies: OfficialLeaderboardPageDependencies;
-}): Promise<OfficialLeaderboardPageStateResult> {
+type ResolvedListResult<T> = Awaited<ListResult<T>>;
+
+interface OfficialLeaderboardDatasetResults {
+  organization_result: ResolvedListResult<Organization>;
+  ratings_result: ResolvedListResult<OfficialPerformanceRating>;
+  officials_result: ResolvedListResult<Official>;
+  fixtures_result: ResolvedListResult<Fixture>;
+  stages_result: ResolvedListResult<CompetitionStage>;
+}
+
+async function fetch_official_leaderboard_datasets(
+  dependencies: OfficialLeaderboardPageDependencies,
+): Promise<OfficialLeaderboardDatasetResults> {
+  const page_options = { page_size: LEADERBOARD_PAGE_SIZE };
   const [
     organization_result,
     ratings_result,
@@ -71,82 +81,89 @@ export async function load_official_leaderboard_page_state(command: {
     fixtures_result,
     stages_result,
   ] = await Promise.all([
-    command.dependencies.organization_use_cases.list(),
-    command.dependencies.official_performance_rating_use_cases.list(
-      {},
-      {
-        page_size: LEADERBOARD_PAGE_SIZE,
-      },
-    ),
-    command.dependencies.official_use_cases.list(
-      {},
-      {
-        page_size: LEADERBOARD_PAGE_SIZE,
-      },
-    ),
-    command.dependencies.fixture_use_cases.list(
-      {},
-      {
-        page_size: LEADERBOARD_PAGE_SIZE,
-      },
-    ),
-    command.dependencies.competition_stage_use_cases.list(
-      {},
-      {
-        page_size: LEADERBOARD_PAGE_SIZE,
-      },
-    ),
+    dependencies.organization_use_cases.list(),
+    dependencies.official_performance_rating_use_cases.list({}, page_options),
+    dependencies.official_use_cases.list({}, page_options),
+    dependencies.fixture_use_cases.list({}, page_options),
+    dependencies.competition_stage_use_cases.list({}, page_options),
   ]);
+  return {
+    organization_result,
+    ratings_result,
+    officials_result,
+    fixtures_result,
+    stages_result,
+  };
+}
 
-  if (
-    !ratings_result.success ||
-    !officials_result.success ||
-    !fixtures_result.success ||
-    !stages_result.success
-  ) {
-    console.error("[OfficialLeaderboard] Data load failed", {
-      event: "official_leaderboard_load_failed",
-      ratings_ok: ratings_result.success,
-      officials_ok: officials_result.success,
-      fixtures_ok: fixtures_result.success,
-      stages_ok: stages_result.success,
-    });
-    return { success: false, error_message: LEADERBOARD_LOAD_ERROR_MESSAGE };
-  }
-
-  const organizations = resolve_official_leaderboard_organizations(
-    organization_result.success ? (organization_result.data?.items ?? []) : [],
-    command.profile_state,
+function have_required_leaderboard_datasets_loaded(
+  results: OfficialLeaderboardDatasetResults,
+): boolean {
+  return (
+    results.ratings_result.success &&
+    results.officials_result.success &&
+    results.fixtures_result.success &&
+    results.stages_result.success
   );
-  const selected_organization_id = organizations[0]?.id ?? "";
-  const all_ratings = ratings_result.data?.items ?? [];
-  const all_officials = officials_result.data?.items ?? [];
-  const all_fixtures = fixtures_result.data?.items ?? [];
-  const all_stages = stages_result.data?.items ?? [];
-  const user_official_id =
-    command.profile_state.status === "present"
-      ? (get_scope_value(command.profile_state.profile, "official_id") ?? "")
-      : "";
-  const rebuilt_view = rebuild_official_leaderboard_view({
-    all_ratings,
-    all_officials,
-    all_fixtures,
-    all_stages,
-    selected_organization_id,
-    user_official_id,
-  });
+}
+
+function resolve_leaderboard_user_official_id(
+  profile_state: OfficialLeaderboardProfileState,
+): string {
+  return profile_state.status === PRESENCE_STATUS.PRESENT
+    ? (get_scope_value(profile_state.profile, "official_id") ?? "")
+    : "";
+}
+
+function build_official_leaderboard_page_data(
+  results: OfficialLeaderboardDatasetResults,
+  profile_state: OfficialLeaderboardProfileState,
+): OfficialLeaderboardPageData {
+  const organizations = resolve_official_leaderboard_organizations(
+    results.organization_result.success
+      ? (results.organization_result.data?.items ?? [])
+      : [],
+    profile_state,
+  );
+  const datasets = {
+    selected_organization_id: organizations[0]?.id ?? "",
+    user_official_id: resolve_leaderboard_user_official_id(profile_state),
+    all_ratings: results.ratings_result.data?.items ?? [],
+    all_officials: results.officials_result.data?.items ?? [],
+    all_fixtures: results.fixtures_result.data?.items ?? [],
+    all_stages: results.stages_result.data?.items ?? [],
+  };
+  return {
+    organizations,
+    ...datasets,
+    ...rebuild_official_leaderboard_view(datasets),
+  };
+}
+
+export async function load_official_leaderboard_page_state(command: {
+  profile_state: OfficialLeaderboardProfileState;
+  dependencies: OfficialLeaderboardPageDependencies;
+}): Promise<OfficialLeaderboardPageStateResult> {
+  const results = await fetch_official_leaderboard_datasets(
+    command.dependencies,
+  );
+
+  if (!have_required_leaderboard_datasets_loaded(results)) {
+    console.error("[OfficialLeaderboard] Data load failed", {
+      event: OFFICIAL_EVENT.LEADERBOARD_LOAD_FAILED,
+      ratings_ok: results.ratings_result.success,
+      officials_ok: results.officials_result.success,
+      fixtures_ok: results.fixtures_result.success,
+      stages_ok: results.stages_result.success,
+    });
+    return {
+      success: false,
+      error_message: OFFICIAL_MESSAGE.LEADERBOARD_LOAD_FAILED,
+    };
+  }
 
   return {
     success: true,
-    data: {
-      organizations,
-      selected_organization_id,
-      user_official_id,
-      all_ratings,
-      all_officials,
-      all_fixtures,
-      all_stages,
-      ...rebuilt_view,
-    },
+    data: build_official_leaderboard_page_data(results, command.profile_state),
   };
 }

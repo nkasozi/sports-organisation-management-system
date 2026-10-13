@@ -34,6 +34,10 @@ import {
 } from "../core/usecases/SystemUserUseCases";
 import { create_team_use_cases } from "../core/usecases/TeamUseCases";
 import {
+  CONTAINER_STATE_STATUS,
+  NON_BROWSER_BASE_URL,
+} from "./containerConstants";
+import {
   create_in_browser_repository_container,
   type RepositoryContainer,
 } from "./RepositoryContainerFactory";
@@ -54,48 +58,78 @@ export interface UseCasesContainer {
   organization_settings_use_cases: OrganizationSettingsUseCasesPort;
 }
 
-type RepositoryContainerState =
-  | { status: "uninitialized" }
-  | { status: "ready"; container: RepositoryContainer };
-type UseCasesContainerState =
-  | { status: "uninitialized" }
-  | { status: "ready"; container: UseCasesContainer };
-type AppSettingsStorageState =
-  | { status: "uninitialized" }
-  | { status: "ready"; storage: AppSettingsPort };
+type ContainerState<T> =
+  | { status: typeof CONTAINER_STATE_STATUS.UNINITIALIZED }
+  | { status: typeof CONTAINER_STATE_STATUS.READY; value: T };
 
-let repository_container_state: RepositoryContainerState = {
-  status: "uninitialized",
+type CoreUseCases = Pick<
+  UseCasesContainer,
+  | "organization_use_cases"
+  | "competition_use_cases"
+  | "team_use_cases"
+  | "player_use_cases"
+  | "official_use_cases"
+  | "fixture_use_cases"
+  | "competition_stage_use_cases"
+>;
+
+type SupportingUseCases = Omit<UseCasesContainer, keyof CoreUseCases>;
+
+let repository_container_state: ContainerState<RepositoryContainer> = {
+  status: CONTAINER_STATE_STATUS.UNINITIALIZED,
 };
-let use_cases_container_state: UseCasesContainerState = {
-  status: "uninitialized",
+let use_cases_container_state: ContainerState<UseCasesContainer> = {
+  status: CONTAINER_STATE_STATUS.UNINITIALIZED,
 };
+let app_settings_storage_state: ContainerState<AppSettingsPort> = {
+  status: CONTAINER_STATE_STATUS.UNINITIALIZED,
+};
+
+function resolve_container_state<T>(
+  state: ContainerState<T>,
+  create: () => T,
+): { status: typeof CONTAINER_STATE_STATUS.READY; value: T } {
+  switch (state.status) {
+    case CONTAINER_STATE_STATUS.READY:
+      return state;
+    case CONTAINER_STATE_STATUS.UNINITIALIZED:
+      return { status: CONTAINER_STATE_STATUS.READY, value: create() };
+  }
+}
 
 export function get_repository_container(): RepositoryContainer {
-  if (repository_container_state.status === "ready") {
-    return repository_container_state.container;
-  }
-
-  const container = create_in_browser_repository_container();
-  repository_container_state = { status: "ready", container };
-
-  return container;
+  const ready_state = resolve_container_state(
+    repository_container_state,
+    create_in_browser_repository_container,
+  );
+  repository_container_state = ready_state;
+  return ready_state.value;
 }
 
 export function get_use_cases_container(): UseCasesContainer {
-  if (use_cases_container_state.status === "ready") {
-    return use_cases_container_state.container;
-  }
-
-  const container = create_use_cases_container(get_repository_container());
-  use_cases_container_state = { status: "ready", container };
-
-  return container;
+  const ready_state = resolve_container_state(use_cases_container_state, () =>
+    create_use_cases_container(get_repository_container()),
+  );
+  use_cases_container_state = ready_state;
+  return ready_state.value;
 }
 
-function create_use_cases_container(
+export function get_app_settings_storage(): AppSettingsPort {
+  const ready_state = resolve_container_state(
+    app_settings_storage_state,
+    () => new DexieAppSettingsAdapter(),
+  );
+  app_settings_storage_state = ready_state;
+  return ready_state.value;
+}
+
+function get_browser_base_url(): string {
+  return "window" in globalThis ? window.location.origin : NON_BROWSER_BASE_URL;
+}
+
+function create_core_use_cases(
   repositories: RepositoryContainer,
-): UseCasesContainer {
+): CoreUseCases {
   return {
     organization_use_cases: create_organization_use_cases(
       repositories.organization_repository,
@@ -116,6 +150,17 @@ function create_use_cases_container(
     fixture_use_cases: create_fixture_use_cases(
       repositories.fixture_repository,
     ),
+    competition_stage_use_cases: create_competition_stage_use_cases(
+      repositories.competition_stage_repository,
+      repositories.fixture_repository,
+    ),
+  };
+}
+
+function create_supporting_use_cases(
+  repositories: RepositoryContainer,
+): SupportingUseCases {
+  return {
     activity_use_cases: create_activity_use_cases({
       activity_repository: repositories.activity_repository,
       activity_category_repository: repositories.activity_category_repository,
@@ -128,8 +173,7 @@ function create_use_cases_container(
     ),
     calendar_token_use_cases: create_calendar_token_use_cases({
       calendar_token_repository: repositories.calendar_token_repository,
-      get_base_url: () =>
-        typeof window !== "undefined" ? window.location.origin : "",
+      get_base_url: get_browser_base_url,
     }),
     system_user_use_cases: create_system_user_use_cases(
       repositories.system_user_repository,
@@ -137,45 +181,17 @@ function create_use_cases_container(
     audit_log_use_cases: create_audit_log_use_cases(
       repositories.audit_log_repository,
     ),
-    competition_stage_use_cases: create_competition_stage_use_cases(
-      repositories.competition_stage_repository,
-      repositories.fixture_repository,
-    ),
     organization_settings_use_cases: create_organization_settings_use_cases(
       repositories.organization_settings_repository,
     ),
   };
 }
 
-function reset_container(): void {
-  repository_container_state = { status: "uninitialized" };
-  use_cases_container_state = { status: "uninitialized" };
-}
-
-function inject_test_repository_container(
-  test_container: RepositoryContainer,
-): void {
-  repository_container_state = { status: "ready", container: test_container };
-  use_cases_container_state = { status: "uninitialized" };
-}
-
-let app_settings_storage_state: AppSettingsStorageState = {
-  status: "uninitialized",
-};
-
-export function get_app_settings_storage(): AppSettingsPort {
-  if (app_settings_storage_state.status === "ready") {
-    return app_settings_storage_state.storage;
-  }
-
-  const storage = new DexieAppSettingsAdapter();
-  app_settings_storage_state = { status: "ready", storage };
-
-  return storage;
-}
-
-function inject_test_use_cases_container(
-  test_container: UseCasesContainer,
-): void {
-  use_cases_container_state = { status: "ready", container: test_container };
+function create_use_cases_container(
+  repositories: RepositoryContainer,
+): UseCasesContainer {
+  return {
+    ...create_core_use_cases(repositories),
+    ...create_supporting_use_cases(repositories),
+  };
 }

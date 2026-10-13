@@ -6,13 +6,9 @@ import type {
 } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 import type { GamePeriod } from "./Fixture";
+import type { GameStatusValue } from "./StatusConstants";
 
-export type LiveGameStatus =
-  | "pre_game"
-  | "in_progress"
-  | "paused"
-  | "completed"
-  | "abandoned";
+export type LiveGameStatus = GameStatusValue;
 
 export interface LiveGameLog extends BaseEntity {
   organization_id: EntityId;
@@ -57,100 +53,6 @@ export type UpdateLiveGameLogInput = Partial<
     "id" | "created_at" | "updated_at" | "fixture_id"
   >
 >;
-
-function create_empty_live_game_log_input(
-  organization_id: CreateLiveGameLogInput["organization_id"] = "",
-  fixture_id: CreateLiveGameLogInput["fixture_id"] = "",
-): CreateLiveGameLogInput {
-  return {
-    organization_id,
-    fixture_id,
-    home_lineup_id: "",
-    away_lineup_id: "",
-    current_period: "pre_game",
-    game_status: "pre_game",
-    started_by_user_id: "",
-    notes: "",
-    status: "active",
-  };
-}
-
-function validate_live_game_log_input(
-  input: CreateLiveGameLogInput | UpdateLiveGameLogInput,
-): { is_valid: boolean; errors: Record<string, string> } {
-  const errors: Record<string, string> = {};
-
-  if ("organization_id" in input && !input.organization_id?.trim()) {
-    errors.organization_id = "Organization is required";
-  }
-
-  if ("fixture_id" in input && !input.fixture_id?.trim()) {
-    errors.fixture_id = "Fixture is required";
-  }
-
-  if (
-    "game_status" in input &&
-    input.game_status &&
-    !(
-      [
-        "pre_game",
-        "in_progress",
-        "paused",
-        "completed",
-        "abandoned",
-      ] as LiveGameStatus[]
-    ).includes(input.game_status)
-  ) {
-    errors.game_status = "Invalid game status";
-  }
-
-  if (
-    "home_team_score" in input &&
-    typeof input.home_team_score === "number" &&
-    input.home_team_score < 0
-  ) {
-    errors.home_team_score = "Home team score cannot be negative";
-  }
-
-  if (
-    "away_team_score" in input &&
-    typeof input.away_team_score === "number" &&
-    input.away_team_score < 0
-  ) {
-    errors.away_team_score = "Away team score cannot be negative";
-  }
-
-  if (
-    "current_minute" in input &&
-    typeof input.current_minute === "number" &&
-    input.current_minute < 0
-  ) {
-    errors.current_minute = "Current minute cannot be negative";
-  }
-
-  return {
-    is_valid: Object.keys(errors).length === 0,
-    errors,
-  };
-}
-
-function get_live_game_log_display(log: LiveGameLog): string {
-  const score = `${log.home_team_score} - ${log.away_team_score}`;
-  const minute = log.current_minute > 0 ? `${log.current_minute}'` : "";
-  const status_label = get_live_game_status_label(log.game_status);
-  return `${score} ${minute} (${status_label})`.trim();
-}
-
-function get_live_game_status_label(status: LiveGameStatus): string {
-  const labels: Record<LiveGameStatus, string> = {
-    pre_game: "Pre-Game",
-    in_progress: "In Progress",
-    paused: "Paused",
-    completed: "Full Time",
-    abandoned: "Abandoned",
-  };
-  return labels[status] || status;
-}
 
 export const LIVE_GAME_STATUS_OPTIONS = [
   { value: "pre_game", label: "Pre-Game" },

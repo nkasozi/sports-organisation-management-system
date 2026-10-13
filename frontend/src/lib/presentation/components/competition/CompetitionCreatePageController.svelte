@@ -28,19 +28,22 @@
         is_competition_team_count_valid,
         normalize_competition_auto_squad_settings,
     } from "$lib/presentation/logic/competitionCreatePageState";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
+    import type { ToastType } from "$lib/presentation/logic/toastConfig";
     import { auth_store } from "$lib/presentation/stores/auth";
 
     import CompetitionCreatePageShell from "./CompetitionCreatePageShell.svelte";
+    import { COMPETITION_ROUTES } from "./competitionTabConstants";
 
     let form_data: CreateCompetitionInput = create_empty_competition_input(),
         organizations: Organization[] = [],
         competition_formats: CompetitionFormat[] = [],
         selected_team_ids: Set<string> = new Set(),
         selected_format_state: CompetitionCreateSelectedFormatState = {
-            status: "missing",
+            status: PRESENCE_STATUS.MISSING,
         },
         selected_sport_state: CompetitionCreateSelectedSportState = {
-            status: "missing",
+            status: PRESENCE_STATUS.MISSING,
         },
         is_loading_organizations = true,
         is_loading_formats = true,
@@ -50,20 +53,20 @@
         error_message = "",
         toast_visible = false,
         toast_message = "",
-        toast_type: "success" | "error" | "info" = "info",
+        toast_type: ToastType = "info",
         organization_options: SelectOption[] = [],
         competition_format_options: SelectOption[] = [],
         team_options: SelectOption[] = [];
 
-    function build_competition_create_profile_state(): CompetitionCreateProfileState {
-        const current_profile = $auth_store.current_profile;
-
-        if (current_profile.status !== "present") {
-            return { status: "missing" };
+    function build_competition_create_profile_state(
+        current_profile: typeof $auth_store.current_profile,
+    ): CompetitionCreateProfileState {
+        if (current_profile.status !== PRESENCE_STATUS.PRESENT) {
+            return { status: PRESENCE_STATUS.MISSING };
         }
 
         return {
-            status: "present",
+            status: PRESENCE_STATUS.PRESENT,
             profile: current_profile.profile as unknown as UserScopeProfile,
         };
     }
@@ -71,23 +74,29 @@
     function build_competition_create_raw_token_state(): CompetitionCreateRawTokenState {
         const current_token = $auth_store.current_token;
 
-        if (current_token.status !== "present") {
-            return { status: "missing" };
+        if (current_token.status !== PRESENCE_STATUS.PRESENT) {
+            return { status: PRESENCE_STATUS.MISSING };
         }
 
-        return { status: "present", value: current_token.token.raw_token };
+        return {
+            status: PRESENCE_STATUS.PRESENT,
+            value: current_token.token.raw_token,
+        };
     }
 
-    $: current_auth_profile_state = build_competition_create_profile_state();
+    $: current_auth_profile_state = build_competition_create_profile_state(
+        $auth_store.current_profile,
+    );
     $: is_organization_restricted =
-        current_auth_profile_state.status === "present" &&
+        current_auth_profile_state.status === PRESENCE_STATUS.PRESENT &&
         is_scope_restricted(
             current_auth_profile_state.profile,
             "organization_id",
         );
     $: form_data.team_ids = Array.from(selected_team_ids);
-    $: format_team_requirements =
-        get_competition_format_team_requirements(selected_format_state);
+    $: format_team_requirements = get_competition_format_team_requirements(
+        selected_format_state,
+    );
     $: is_team_count_valid = is_competition_team_count_valid(
         selected_format_state,
         selected_team_ids.size,
@@ -98,10 +107,7 @@
         if (next_form_data !== form_data) form_data = next_form_data;
     }
 
-    function show_toast(
-        message: string,
-        type: "success" | "error" | "info",
-    ): void {
+    function show_toast(message: string, type: ToastType): void {
         toast_message = message;
         toast_type = type;
         toast_visible = true;
@@ -133,10 +139,12 @@
         set_organization_options: (value: SelectOption[]) =>
             (organization_options = value),
         set_organizations: (value: Organization[]) => (organizations = value),
-        set_selected_format_state: (value: CompetitionCreateSelectedFormatState) =>
-            (selected_format_state = value),
-        set_selected_sport_state: (value: CompetitionCreateSelectedSportState) =>
-            (selected_sport_state = value),
+        set_selected_format_state: (
+            value: CompetitionCreateSelectedFormatState,
+        ) => (selected_format_state = value),
+        set_selected_sport_state: (
+            value: CompetitionCreateSelectedSportState,
+        ) => (selected_sport_state = value),
         set_selected_team_ids: (value: Set<string>) =>
             (selected_team_ids = value),
         set_team_options: (value: SelectOption[]) => (team_options = value),
@@ -170,7 +178,7 @@
     {toast_message}
     {toast_type}
     bind:toast_visible
-    on_cancel={() => goto("/competitions")}
+    on_cancel={() => void goto(COMPETITION_ROUTES.LIST)}
     on_organization_change={runtime.handle_organization_change}
     on_format_change={runtime.handle_format_change}
     on_toggle_team={runtime.handle_team_toggle}

@@ -19,7 +19,38 @@ import type {
   PaginatedAsyncResult,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import {
+  apply_entity_filter_rules,
+  type EntityFilterRule,
+  equals_rule,
+  FILTER_RULE_ACTIVATION,
+  predicate_rule,
+} from "./InBrowserRepositoryFilterRules";
+import {
+  convert_page_pagination_to_query_options,
+  map_paginated_items,
+  type PagePagination,
+} from "./InBrowserRepositoryPagedQueries";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
 const ENTITY_PREFIX = "gameevent";
+
+const EVENT_LOG_FILTER_RULES: EntityFilterRule<
+  GameEventLog,
+  GameEventLogFilter
+>[] = [
+  equals_rule("organization_id"),
+  equals_rule("live_game_log_id"),
+  equals_rule("fixture_id"),
+  equals_rule("event_type"),
+  equals_rule("team_side"),
+  predicate_rule(
+    "player_id",
+    (event, filter) =>
+      event.player_id === filter.player_id ||
+      event.secondary_player_id === filter.player_id,
+  ),
+  equals_rule("voided", FILTER_RULE_ACTIVATION.WHEN_KEY_PRESENT),
+];
 
 class InBrowserGameEventLogRepository
   extends InBrowserBaseRepository<
@@ -84,98 +115,55 @@ class InBrowserGameEventLogRepository
     entities: GameEventLog[],
     filter: GameEventLogFilter,
   ): GameEventLog[] {
-    let filtered = entities;
-    if (filter.organization_id) {
-      filtered = filtered.filter(
-        (e) => e.organization_id === filter.organization_id,
-      );
-    }
-    if (filter.live_game_log_id) {
-      filtered = filtered.filter(
-        (e) => e.live_game_log_id === filter.live_game_log_id,
-      );
-    }
-    if (filter.fixture_id) {
-      filtered = filtered.filter((e) => e.fixture_id === filter.fixture_id);
-    }
-    if (filter.event_type) {
-      filtered = filtered.filter((e) => e.event_type === filter.event_type);
-    }
-    if (filter.team_side) {
-      filtered = filtered.filter((e) => e.team_side === filter.team_side);
-    }
-    if (filter.player_id) {
-      filtered = filtered.filter(
-        (e) =>
-          e.player_id === filter.player_id ||
-          e.secondary_player_id === filter.player_id,
-      );
-    }
-    if ("voided" in filter) {
-      filtered = filtered.filter((e) => e.voided === filter.voided);
-    }
-    return filtered;
-  }
-
-  private build_query_options(pagination?: {
-    page: number;
-    page_size: number;
-  }) {
-    return pagination
-      ? { page_number: pagination.page, page_size: pagination.page_size }
-      : void 0;
+    return apply_entity_filter_rules(entities, filter, EVENT_LOG_FILTER_RULES);
   }
 
   async get_events_for_live_game(
     live_game_log_id: GameEventLog["live_game_log_id"],
-    options?: { page: number; page_size: number },
+    options?: PagePagination,
   ): PaginatedAsyncResult<GameEventLog> {
     return this.find_all(
       { live_game_log_id, voided: false },
-      this.build_query_options(options),
+      convert_page_pagination_to_query_options(options),
     );
   }
 
   async get_events_for_fixture(
     fixture_id: GameEventLog["fixture_id"],
-    options?: { page: number; page_size: number },
+    options?: PagePagination,
   ): PaginatedAsyncResult<GameEventLog> {
     return this.find_all(
       { fixture_id, voided: false },
-      this.build_query_options(options),
+      convert_page_pagination_to_query_options(options),
     );
   }
 
   async get_events_for_player(
     player_id: GameEventLog["player_id"],
-    options?: { page: number; page_size: number },
+    options?: PagePagination,
   ): PaginatedAsyncResult<GameEventLog> {
     return this.find_all(
       { player_id, voided: false },
-      this.build_query_options(options),
+      convert_page_pagination_to_query_options(options),
     );
   }
 
   async get_scoring_events_for_live_game(
     live_game_log_id: GameEventLog["live_game_log_id"],
   ): AsyncResult<GameEventLog[]> {
-    const result = await this.find_all({ live_game_log_id, voided: false });
-    if (!result.success) return { success: false, error: result.error };
-    return {
-      success: true,
-      data: result.data.items.filter((e) => is_scoring_event(e.event_type)),
-    };
+    return map_paginated_items(
+      await this.find_all({ live_game_log_id, voided: false }),
+      (items) => items.filter((e) => is_scoring_event(e.event_type)),
+    );
   }
 
   async get_card_events_for_live_game(
     live_game_log_id: GameEventLog["live_game_log_id"],
   ): AsyncResult<GameEventLog[]> {
-    const result = await this.find_all({ live_game_log_id, voided: false });
-    if (!result.success) return { success: false, error: result.error };
-    return {
-      success: true,
-      data: result.data.items.filter((e) => is_card_event(e.event_type)),
-    };
+    return map_paginated_items(
+      await this.find_all({ live_game_log_id, voided: false }),
+      (items) => items.filter((e) => is_card_event(e.event_type)),
+    );
   }
 
   async void_event(
@@ -193,24 +181,5 @@ class InBrowserGameEventLogRepository
   }
 }
 
-type GameEventLogRepositoryState =
-  | { status: "uninitialized" }
-  | {
-      status: "ready";
-      repository: InBrowserGameEventLogRepository;
-    };
-
-let game_event_log_repository_state: GameEventLogRepositoryState = {
-  status: "uninitialized",
-};
-
-export function get_game_event_log_repository(): GameEventLogRepository {
-  if (game_event_log_repository_state.status === "ready") {
-    return game_event_log_repository_state.repository;
-  }
-
-  const repository = new InBrowserGameEventLogRepository();
-  game_event_log_repository_state = { status: "ready", repository };
-
-  return repository;
-}
+export const get_game_event_log_repository: () => GameEventLogRepository =
+  create_lazy_repository_accessor(() => new InBrowserGameEventLogRepository());

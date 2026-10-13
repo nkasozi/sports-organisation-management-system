@@ -5,7 +5,10 @@
         get_event_icon,
         get_event_label,
     } from "$lib/core/entities/Fixture";
+    import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
     import { get_event_bg_class } from "$lib/presentation/logic/gameManageState";
+
+    import { GAME_EVENT_TEAM_SIDE } from "./gameDisplayConstants";
 
     export let sorted_events: GameEvent[];
     export let fixture_status: Fixture["status"];
@@ -46,7 +49,7 @@
                 No Events Yet
             </h3>
             <p class="text-gray-500 dark:text-gray-400 text-sm">
-                {#if fixture_status === "scheduled"}
+                {#if fixture_status === FIXTURE_STATUS.SCHEDULED}
                     Start the game to begin recording events
                 {:else if is_game_active}
                     Use the buttons above to record match events
@@ -63,8 +66,10 @@
 
             <div class="space-y-4">
                 {#each sorted_events as event}
-                    {@const is_home_event = event.team_side === "home"}
-                    {@const is_match_event = event.team_side === "match"}
+                    {@const is_home_event =
+                        event.team_side === GAME_EVENT_TEAM_SIDE.HOME}
+                    {@const is_match_event =
+                        event.team_side === GAME_EVENT_TEAM_SIDE.MATCH}
 
                     {#if is_match_event}
                         <div class="relative flex items-center justify-center">

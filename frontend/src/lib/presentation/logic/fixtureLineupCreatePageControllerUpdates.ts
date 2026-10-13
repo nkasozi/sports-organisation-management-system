@@ -27,24 +27,9 @@ export function build_fixture_lineup_create_reference_state(
   };
 }
 
-export function build_fixture_lineup_create_fixture_change_state(
-  fixture_change_result: {
-    error_message: string;
-    form_data: Partial<CreateFixtureLineupInput>;
-    selected_fixture_state: FixtureLineupCreateFixtureState;
-    selected_organization_state: FixtureLineupCreateOrganizationState;
-    min_players: number;
-    max_players: number;
-    starters_count: number;
-    available_teams: Team[];
-    fixture_team_label_by_team_id: Map<string, string>;
-    teams_with_existing_lineups: Map<string, string>;
-    fixtures_with_complete_lineups: Set<string>;
-  },
-  form_data: CreateFixtureLineupInput,
-): {
+interface FixtureLineupCreateFixtureChangeResult {
   error_message: string;
-  form_data: CreateFixtureLineupInput;
+  form_data: Partial<CreateFixtureLineupInput>;
   selected_fixture_state: FixtureLineupCreateFixtureState;
   selected_organization_state: FixtureLineupCreateOrganizationState;
   min_players: number;
@@ -53,10 +38,22 @@ export function build_fixture_lineup_create_fixture_change_state(
   available_teams: Team[];
   fixture_team_label_by_team_id: Map<string, string>;
   teams_with_existing_lineups: Map<string, string>;
+  fixtures_with_complete_lineups: Set<string>;
+}
+
+interface FixtureLineupCreateFixtureChangeState extends Omit<
+  FixtureLineupCreateFixtureChangeResult,
+  "form_data"
+> {
+  form_data: CreateFixtureLineupInput;
   selected_team_state: FixtureLineupCreateTeamState;
   team_players: FixtureLineupCreateTeamData["team_players"];
-  fixtures_with_complete_lineups: Set<string>;
-} {
+}
+
+export function build_fixture_lineup_create_fixture_change_state(
+  fixture_change_result: FixtureLineupCreateFixtureChangeResult,
+  form_data: CreateFixtureLineupInput,
+): FixtureLineupCreateFixtureChangeState {
   return {
     error_message: fixture_change_result.error_message,
     form_data: { ...form_data, ...fixture_change_result.form_data },

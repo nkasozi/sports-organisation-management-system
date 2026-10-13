@@ -2,25 +2,31 @@
     import type { Competition } from "$lib/core/entities/Competition";
     import type { Fixture } from "$lib/core/entities/Fixture";
     import type { Organization } from "$lib/core/entities/Organization";
+    import Toast from "$lib/presentation/components/ui/Toast.svelte";
     import type { CompetitionResultsCompetitionFormatState } from "$lib/presentation/logic/competitionResultsPageContracts";
     import type {
         CardSortMode,
         PlayerStats,
     } from "$lib/presentation/logic/competitionResultsStats";
     import { derive_competition_results_workspace_state } from "$lib/presentation/logic/competitionResultsWorkspaceState";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
+    import type { ToastType } from "$lib/presentation/logic/toastConfig";
 
+    import { COMPETITION_RESULTS_DOWNLOAD_TEXT } from "./competitionResultsDisplayConstants";
     import CompetitionResultsShell from "./CompetitionResultsShell.svelte";
+    import type { CompetitionResultsTab } from "./competitionTabConstants";
 
     export let organizations: Organization[];
     export let selected_organization_id: string;
     export let competitions: Competition[];
     export let selected_competition_id: string;
-    export let competition_format_state: CompetitionResultsCompetitionFormatState = {
-        status: "missing",
-    };
+    export let competition_format_state: CompetitionResultsCompetitionFormatState =
+        {
+            status: PRESENCE_STATUS.MISSING,
+        };
     export let can_change_organizations: boolean;
     export let share_link_copied: boolean;
-    export let active_tab: "standings" | "fixtures" | "results" | "stats";
+    export let active_tab: CompetitionResultsTab;
     export let fixtures_loading: boolean;
     export let workspace_state: ReturnType<
         typeof derive_competition_results_workspace_state
@@ -62,6 +68,40 @@
         competition_id: string,
     ) => string;
     export let get_team_logo_url: (team_id: string) => string;
+
+    let toast_visible = false,
+        toast_message = "",
+        toast_type: ToastType = "info";
+
+    function show_download_toast(
+        succeeded: boolean,
+        success_message: string,
+        failure_message: string,
+    ): boolean {
+        toast_message = succeeded ? success_message : failure_message;
+        toast_type = succeeded ? "success" : "error";
+        toast_visible = true;
+        return succeeded;
+    }
+
+    async function download_match_report_with_feedback(
+        fixture: Fixture,
+        event: MouseEvent,
+    ): Promise<boolean> {
+        return show_download_toast(
+            await on_download_match_report(fixture, event),
+            COMPETITION_RESULTS_DOWNLOAD_TEXT.REPORT_DOWNLOADED,
+            COMPETITION_RESULTS_DOWNLOAD_TEXT.REPORT_FAILED,
+        );
+    }
+
+    async function download_all_reports_with_feedback(): Promise<boolean> {
+        return show_download_toast(
+            await on_download_all_reports(),
+            COMPETITION_RESULTS_DOWNLOAD_TEXT.ALL_REPORTS_DOWNLOADED,
+            COMPETITION_RESULTS_DOWNLOAD_TEXT.ALL_REPORTS_FAILED,
+        );
+    }
 </script>
 
 <CompetitionResultsShell
@@ -117,7 +157,14 @@
     {on_copy_share_link}
     {on_team_click}
     {on_open_match_report}
-    {on_download_all_reports}
-    {on_download_match_report}
+    on_download_all_reports={download_all_reports_with_feedback}
+    on_download_match_report={download_match_report_with_feedback}
     {on_close_team_fixtures_panel}
+/>
+
+<Toast
+    message={toast_message}
+    type={toast_type}
+    is_visible={toast_visible}
+    on:dismiss={() => (toast_visible = false)}
 />

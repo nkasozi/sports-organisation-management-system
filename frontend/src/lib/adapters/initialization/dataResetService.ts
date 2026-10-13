@@ -1,8 +1,19 @@
 import { get } from "svelte/store";
 
 import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
+import { create_system_write_origin } from "$lib/adapters/repositories/InBrowserRepositoryWriteOrigin";
+import {
+  sync_change_tracking_gate,
+  UntrackedWriteReason,
+} from "$lib/adapters/repositories/syncOutbox/syncChangeTrackingGate";
+import { run_untracked_write_scope } from "$lib/adapters/repositories/syncOutbox/untrackedWriteScope";
+import type { UntrackedWriteScope } from "$lib/adapters/repositories/syncOutbox/untrackedWriteScopeToken";
 import { get_app_settings_storage } from "$lib/infrastructure/container";
 import {
+  enqueue_all_local_records_for_push,
+  pause_remote_change_subscriptions,
+  reset_local_sync_bookkeeping,
+  resume_remote_change_subscriptions,
   set_pulling_from_remote,
   start_background_sync,
   stop_background_sync,
@@ -11,99 +22,147 @@ import { clear_all_demo_data_in_convex } from "$lib/infrastructure/sync/convexSy
 import { clear_session_sync_flag } from "$lib/presentation/stores/initialSyncStore";
 import { sync_store } from "$lib/presentation/stores/syncStore";
 
-import { reset_competition_format_repository } from "../repositories/InBrowserCompetitionFormatRepository";
-import { reset_competition_repository } from "../repositories/InBrowserCompetitionRepository";
-import { reset_competition_team_repository } from "../repositories/InBrowserCompetitionTeamRepository";
-import { reset_fixture_details_setup_repository } from "../repositories/InBrowserFixtureDetailsSetupRepository";
-import { reset_fixture_lineup_repository } from "../repositories/InBrowserFixtureLineupRepository";
-import { reset_fixture_repository } from "../repositories/InBrowserFixtureRepository";
-import { reset_game_event_type_repository } from "../repositories/InBrowserGameEventTypeRepository";
-import { reset_game_official_role_repository } from "../repositories/InBrowserGameOfficialRoleRepository";
-import { reset_jersey_color_repository } from "../repositories/InBrowserJerseyColorRepository";
-import { reset_official_repository } from "../repositories/InBrowserOfficialRepository";
-import { reset_organization_repository } from "../repositories/InBrowserOrganizationRepository";
-import { reset_player_position_repository } from "../repositories/InBrowserPlayerPositionRepository";
-import { reset_player_profile_repository } from "../repositories/InBrowserPlayerProfileRepository";
-import { reset_player_repository } from "../repositories/InBrowserPlayerRepository";
-import { reset_player_team_membership_repository } from "../repositories/InBrowserPlayerTeamMembershipRepository";
-import { reset_profile_link_repository } from "../repositories/InBrowserProfileLinkRepository";
-import { reset_qualification_repository } from "../repositories/InBrowserQualificationRepository";
-import { reset_sport_repository } from "../repositories/InBrowserSportRepository";
-import { reset_team_profile_repository } from "../repositories/InBrowserTeamProfileRepository";
-import { reset_team_repository } from "../repositories/InBrowserTeamRepository";
-import { reset_team_staff_repository } from "../repositories/InBrowserTeamStaffRepository";
-import { reset_team_staff_role_repository } from "../repositories/InBrowserTeamStaffRoleRepository";
-import { reset_venue_repository } from "../repositories/InBrowserVenueRepository";
+import { reset_all_local_repositories } from "./dataResetRepositoryResets";
 import { seed_all_data_if_needed } from "./seedingService";
 
-export async function reset_all_data(
-  on_progress?: (message: string, percentage: number) => void,
-): Promise<boolean> {
-  if (typeof window === "undefined") return false;
+type ResetProgressReporter = (message: string, percentage: number) => void;
 
-  const report = (message: string, percentage: number): void => {
-    on_progress?.(message, percentage);
+const PUSH_SYNC_DIRECTION = "push";
+const BROWSER_GLOBAL_TYPE_UNDEFINED = "undefined";
+
+const ResetProgress = {
+  STOPPING_SYNC: { message: "Stopping background sync...", percentage: 5 },
+  CLEARING_SERVER: { message: "Clearing server data...", percentage: 10 },
+  SKIPPING_SERVER: {
+    message: "Skipping server clear (not signed in)...",
+    percentage: 10,
+  },
+  CLEARING_SETTINGS: { message: "Clearing app settings...", percentage: 20 },
+  RESETTING_STORES: { message: "Resetting data stores...", percentage: 35 },
+  SEEDING: { message: "Seeding demo data...", percentage: 65 },
+  FINISHING: { message: "Finishing up...", percentage: 95 },
+  PUSHING: { message: "Pushing data to server...", percentage: 97 },
+} as const;
+
+type ResetProgressStep = (typeof ResetProgress)[keyof typeof ResetProgress];
+
+function create_progress_reporter(
+  on_progress: ResetProgressReporter,
+): (step: ResetProgressStep) => boolean {
+  return (step: ResetProgressStep): boolean => {
+    on_progress(step.message, step.percentage);
+    return true;
   };
+}
 
-  report("Stopping background sync...", 5);
-  stop_background_sync();
-  set_pulling_from_remote(true);
-
-  const user_is_signed_in = get(is_signed_in);
-
-  if (user_is_signed_in) {
-    report("Clearing server data...", 10);
-    await clear_all_demo_data_in_convex();
-  } else {
-    report("Skipping server clear (not signed in)...", 10);
-    console.log("[DataReset] User not signed in — skipping Convex clear");
+async function clear_server_data_when_signed_in(
+  report: (step: ResetProgressStep) => boolean,
+): Promise<boolean> {
+  if (!get(is_signed_in)) {
+    report(ResetProgress.SKIPPING_SERVER);
+    console.log("[DataReset] Skipping Convex clear for a signed-out user", {
+      event: "data_reset_server_clear_skipped",
+    });
+    return true;
   }
+  report(ResetProgress.CLEARING_SERVER);
+  const cleared = await clear_all_demo_data_in_convex();
+  if (!cleared)
+    console.error("[DataReset] Server clear failed; local data left intact", {
+      event: "data_reset_server_clear_failed",
+    });
+  return cleared;
+}
 
-  report("Clearing app settings...", 20);
+async function rebuild_local_data_in_scope(
+  scope: UntrackedWriteScope,
+  report: (step: ResetProgressStep) => boolean,
+): Promise<boolean> {
+  report(ResetProgress.RESETTING_STORES);
+  if (!(await reset_local_sync_bookkeeping())) return false;
+  const repositories_reset = await reset_all_local_repositories(
+    create_system_write_origin(scope),
+    scope.scope_id,
+  );
+  if (!repositories_reset) return false;
+  report(ResetProgress.SEEDING);
+  return (await seed_all_data_if_needed()).success;
+}
+
+async function rebuild_local_data_without_tracking(
+  report: (step: ResetProgressStep) => boolean,
+): Promise<boolean> {
+  const rebuild_result = await run_untracked_write_scope(
+    sync_change_tracking_gate,
+    UntrackedWriteReason.DATA_RESET,
+    (scope: UntrackedWriteScope) => rebuild_local_data_in_scope(scope, report),
+  );
+  return rebuild_result.success && rebuild_result.data;
+}
+
+async function resume_sync_and_push_when_signed_in(
+  report: (step: ResetProgressStep) => boolean,
+): Promise<boolean> {
+  if (!get(is_signed_in)) {
+    console.log(
+      "[DataReset] Background sync not restarted for signed-out user",
+      { event: "data_reset_sync_restart_skipped" },
+    );
+    return true;
+  }
+  start_background_sync();
+  report(ResetProgress.PUSHING);
+  await enqueue_all_local_records_for_push();
+  const push_result = await sync_store.sync_now(PUSH_SYNC_DIRECTION);
+  if (!push_result.success)
+    console.error("[DataReset] Reseeded data could not be pushed", {
+      event: "data_reset_push_failed",
+    });
+  return push_result.success;
+}
+
+async function rebuild_after_server_clear(
+  report: (step: ResetProgressStep) => boolean,
+): Promise<boolean> {
+  report(ResetProgress.CLEARING_SETTINGS);
   await get_app_settings_storage().clear_all_settings();
   await clear_session_sync_flag();
-
-  report("Resetting data stores...", 35);
-  const seeded_sports = await reset_sport_repository();
-  await reset_organization_repository(seeded_sports);
-
-  await reset_team_repository();
-  await reset_competition_repository();
-  await reset_player_repository();
-  await reset_player_team_membership_repository();
-  await reset_official_repository();
-  await reset_fixture_repository();
-  await reset_fixture_details_setup_repository();
-  await reset_fixture_lineup_repository();
-  await reset_team_staff_repository();
-  await reset_game_event_type_repository();
-  await reset_player_position_repository();
-  await reset_team_staff_role_repository();
-  await reset_game_official_role_repository();
-  await reset_competition_format_repository();
-  await reset_venue_repository();
-  await reset_jersey_color_repository();
-  await reset_competition_team_repository();
-  await reset_player_profile_repository();
-  await reset_team_profile_repository();
-  await reset_profile_link_repository();
-  await reset_qualification_repository();
-
-  report("Seeding demo data...", 65);
-  await seed_all_data_if_needed();
-
-  report("Finishing up...", 95);
+  const rebuilt = await rebuild_local_data_without_tracking(report);
+  report(ResetProgress.FINISHING);
   set_pulling_from_remote(false);
-
-  if (get(is_signed_in)) {
-    start_background_sync();
-    report("Pushing data to server...", 97);
-    await sync_store.sync_now("push");
-  } else {
-    console.log(
-      "[DataReset] User not signed in — skipping background sync start",
-    );
+  if (!rebuilt) {
+    console.error("[DataReset] Local rebuild failed; nothing was pushed", {
+      event: "data_reset_local_rebuild_failed",
+    });
+    return false;
   }
+  return resume_sync_and_push_when_signed_in(report);
+}
 
-  return true;
+async function run_reset_steps(
+  report: (step: ResetProgressStep) => boolean,
+): Promise<boolean> {
+  const cleared = await clear_server_data_when_signed_in(report);
+  if (!cleared) {
+    set_pulling_from_remote(false);
+    return false;
+  }
+  return rebuild_after_server_clear(report);
+}
+
+export async function reset_all_data(
+  on_progress: ResetProgressReporter,
+): Promise<boolean> {
+  if (typeof window === BROWSER_GLOBAL_TYPE_UNDEFINED) return false;
+  const report = create_progress_reporter(on_progress);
+  report(ResetProgress.STOPPING_SYNC);
+  stop_background_sync();
+  pause_remote_change_subscriptions();
+  set_pulling_from_remote(true);
+  const succeeded = await run_reset_steps(report);
+  resume_remote_change_subscriptions();
+  console.log("[DataReset] Data reset finished", {
+    event: succeeded ? "data_reset_finished" : "data_reset_failed",
+  });
+  return succeeded;
 }

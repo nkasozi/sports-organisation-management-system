@@ -22,8 +22,48 @@ import {
   create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import {
+  apply_entity_filter_rules,
+  type EntityFilterRule,
+  equals_rule,
+  FILTER_RULE_ACTIVATION,
+  predicate_rule,
+  text_contains_rule,
+} from "./InBrowserRepositoryFilterRules";
+import {
+  create_warning_failure_details,
+  run_repository_query,
+} from "./InBrowserRepositoryQueryRunner";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
 
 const ENTITY_PREFIX = "activity";
+
+const ACTIVITY_FILTER_RULES: EntityFilterRule<Activity, ActivityFilter>[] = [
+  text_contains_rule("title_contains", (activity) => activity.title),
+  equals_rule("organization_id"),
+  equals_rule("category_id"),
+  equals_rule("category_type"),
+  predicate_rule("team_id", (activity, filter) =>
+    activity.team_ids.some((team_id) => team_id === filter.team_id),
+  ),
+  equals_rule("competition_id"),
+  equals_rule("fixture_id"),
+  equals_rule("status"),
+  equals_rule("source_type"),
+  predicate_rule(
+    "start_date_after",
+    (activity, filter) =>
+      new Date(activity.start_datetime) >=
+      new Date(filter.start_date_after as string),
+  ),
+  predicate_rule(
+    "start_date_before",
+    (activity, filter) =>
+      new Date(activity.start_datetime) <=
+      new Date(filter.start_date_before as string),
+  ),
+  equals_rule("is_all_day", FILTER_RULE_ACTIVATION.WHEN_KEY_PRESENT),
+];
 
 class InBrowserActivityRepository
   extends InBrowserBaseRepository<
@@ -61,55 +101,7 @@ class InBrowserActivityRepository
     entities: Activity[],
     filter: ActivityFilter,
   ): Activity[] {
-    let filtered = entities;
-    if (filter.title_contains) {
-      const term = filter.title_contains.toLowerCase();
-      filtered = filtered.filter((a) => a.title.toLowerCase().includes(term));
-    }
-    if (filter.organization_id) {
-      filtered = filtered.filter(
-        (a) => a.organization_id === filter.organization_id,
-      );
-    }
-    if (filter.category_id) {
-      filtered = filtered.filter((a) => a.category_id === filter.category_id);
-    }
-    if (filter.category_type) {
-      filtered = filtered.filter(
-        (a) => a.category_type === filter.category_type,
-      );
-    }
-    if (filter.team_id) {
-      filtered = filtered.filter((activity) =>
-        activity.team_ids.some((team_id) => team_id === filter.team_id),
-      );
-    }
-    if (filter.competition_id) {
-      filtered = filtered.filter(
-        (a) => a.competition_id === filter.competition_id,
-      );
-    }
-    if (filter.fixture_id) {
-      filtered = filtered.filter((a) => a.fixture_id === filter.fixture_id);
-    }
-    if (filter.status) {
-      filtered = filtered.filter((a) => a.status === filter.status);
-    }
-    if (filter.source_type) {
-      filtered = filtered.filter((a) => a.source_type === filter.source_type);
-    }
-    if (filter.start_date_after) {
-      const after = new Date(filter.start_date_after);
-      filtered = filtered.filter((a) => new Date(a.start_datetime) >= after);
-    }
-    if (filter.start_date_before) {
-      const before = new Date(filter.start_date_before);
-      filtered = filtered.filter((a) => new Date(a.start_datetime) <= before);
-    }
-    if ("is_all_day" in filter) {
-      filtered = filtered.filter((a) => a.is_all_day === filter.is_all_day);
-    }
-    return filtered;
+    return apply_entity_filter_rules(entities, filter, ACTIVITY_FILTER_RULES);
   }
 
   async find_by_organization(
@@ -162,51 +154,29 @@ class InBrowserActivityRepository
     source_type: Activity["source_type"],
     source_id: ScalarValueInput<Activity["source_id"]>,
   ): AsyncResult<Activity> {
-    try {
-      const all = await this.database.activities.toArray();
-      const matched_activity = all.find(
-        (activity) =>
-          activity.source_type === source_type &&
-          activity.source_id === source_id,
-      );
-
-      if (!matched_activity) {
-        return create_failure_result(
-          build_activity_not_found_by_source_error(source_type, source_id),
+    return run_repository_query(
+      create_warning_failure_details(
+        "[ActivityRepository] Failed to find activity by source",
+        "repository_find_activity_by_source_failed",
+        "find activity by source",
+      ),
+      async () => {
+        const matched_activity = (
+          await this.database.activities.toArray()
+        ).find(
+          (activity) =>
+            activity.source_type === source_type &&
+            activity.source_id === source_id,
         );
-      }
-
-      return create_success_result(matched_activity);
-    } catch (error) {
-      console.warn("[ActivityRepository] Failed to find activity by source", {
-        event: "repository_find_activity_by_source_failed",
-        error: String(error),
-      });
-      const msg =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(`Failed to find activity by source: ${msg}`);
-    }
+        return matched_activity
+          ? create_success_result(matched_activity)
+          : create_failure_result(
+              build_activity_not_found_by_source_error(source_type, source_id),
+            );
+      },
+    );
   }
 }
 
-type ActivityRepositoryState =
-  | { status: "uninitialized" }
-  | {
-      status: "ready";
-      repository: InBrowserActivityRepository;
-    };
-
-let activity_repository_state: ActivityRepositoryState = {
-  status: "uninitialized",
-};
-
-export function get_activity_repository(): ActivityRepository {
-  if (activity_repository_state.status === "ready") {
-    return activity_repository_state.repository;
-  }
-
-  const repository = new InBrowserActivityRepository();
-  activity_repository_state = { status: "ready", repository };
-
-  return repository;
-}
+export const get_activity_repository: () => ActivityRepository =
+  create_lazy_repository_accessor(() => new InBrowserActivityRepository());

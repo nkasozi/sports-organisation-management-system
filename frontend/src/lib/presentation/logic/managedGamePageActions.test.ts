@@ -81,18 +81,20 @@ describe("managedGamePageActions", () => {
       data: { id: "fixture-1" },
     });
 
-    await start_managed_game({
+    const start_managed_game_result = await start_managed_game({
       fixture: create_present_managed_game_fixture_state({
         id: "fixture-1",
       } as never),
       fixture_use_cases: { start_fixture: vi.fn() } as never,
     });
-    await end_managed_game({
+    expect(start_managed_game_result.success).toBe(true);
+    const end_managed_game_result = await end_managed_game({
       fixture: create_present_managed_game_fixture_state({
         id: "fixture-1",
       } as never),
       fixture_use_cases: { end_fixture: vi.fn() } as never,
     });
+    expect(end_managed_game_result.success).toBe(true);
 
     expect(start_game_session_mock).toHaveBeenCalledWith("fixture-1", {
       start_fixture: expect.any(Function),
@@ -119,7 +121,7 @@ describe("managedGamePageActions", () => {
       },
     });
 
-    await record_managed_game_event({
+    const record_managed_game_event_result = await record_managed_game_event({
       fixture: create_present_managed_game_fixture_state({
         id: "fixture-1",
       } as never),
@@ -134,7 +136,8 @@ describe("managedGamePageActions", () => {
       event_description: "Volley",
       fixture_use_cases: { record_game_event: vi.fn() } as never,
     });
-    await change_managed_game_period({
+    expect(record_managed_game_event_result.success).toBe(true);
+    const change_managed_game_period_result = await change_managed_game_period({
       fixture: create_present_managed_game_fixture_state({
         id: "fixture-1",
       } as never),
@@ -145,7 +148,8 @@ describe("managedGamePageActions", () => {
         update_period: vi.fn(),
       } as never,
     });
-    await end_managed_game_period({
+    expect(change_managed_game_period_result.success).toBe(true);
+    const end_managed_game_period_result = await end_managed_game_period({
       fixture: create_present_managed_game_fixture_state({
         id: "fixture-1",
       } as never),
@@ -155,6 +159,7 @@ describe("managedGamePageActions", () => {
         update_period: vi.fn(),
       } as never,
     });
+    expect(end_managed_game_period_result.success).toBe(true);
 
     expect(record_game_manage_event_mock).toHaveBeenCalledWith(
       expect.objectContaining({

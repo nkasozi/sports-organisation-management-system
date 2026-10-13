@@ -1,523 +1,174 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   type ConvexRealtimeSync,
   create_convex_realtime_sync,
+  DEFAULT_CHANGE_MARKER_QUERY,
   type RealtimeSyncDependencies,
-  type TableChangeInfo,
 } from "./convexRealtimeSync";
 
-function create_mock_subscription(): { unsubscribe: ReturnType<typeof vi.fn> } {
-  return { unsubscribe: vi.fn() } as { unsubscribe: ReturnType<typeof vi.fn> };
+type ChangeHandler = (result: unknown) => unknown;
+
+interface RealtimeHarness {
+  sync: ConvexRealtimeSync;
+  on_update: ReturnType<typeof vi.fn>;
+  unsubscribe: ReturnType<typeof vi.fn>;
+  pull_table: RealtimeSyncDependencies["pull_table"];
+  on_table_pulled: ReturnType<typeof vi.fn>;
+  emit: (table_name: string, latest_sequence: number) => Promise<void>;
 }
 
-function create_mock_subscribable_client(): RealtimeSyncDependencies["subscribable_client"] & {
-  onUpdate: ReturnType<typeof vi.fn>;
-} {
-  return {
-    onUpdate: vi.fn().mockReturnValue(create_mock_subscription()),
-  } as RealtimeSyncDependencies["subscribable_client"] & {
-    onUpdate: ReturnType<typeof vi.fn>;
-  };
-}
-
-function create_mock_pull_table(): RealtimeSyncDependencies["pull_table"] {
-  return vi.fn().mockResolvedValue({ success: true, records_pulled: 0 });
-}
-
-function create_dependencies(
-  overrides: Partial<RealtimeSyncDependencies> = {},
-): RealtimeSyncDependencies {
-  return {
-    subscribable_client: create_mock_subscribable_client(),
-    pull_table: create_mock_pull_table(),
+function create_harness(
+  pull_table: RealtimeSyncDependencies["pull_table"] = vi
+    .fn()
+    .mockResolvedValue({ success: true, records_pulled: 1 }),
+): RealtimeHarness {
+  const handlers = new Map<string, ChangeHandler>();
+  const unsubscribe = vi.fn();
+  const on_update = vi.fn(
+    (
+      _query: unknown,
+      args: Record<string, unknown>,
+      handler: ChangeHandler,
+    ) => {
+      handlers.set(String(args.table_name), handler);
+      return { unsubscribe };
+    },
+  );
+  const on_table_pulled = vi.fn(() => true);
+  const sync = create_convex_realtime_sync({
+    subscribable_client: { onUpdate: on_update },
+    pull_table,
     table_names: ["teams", "players"],
-    ...overrides,
-  } as RealtimeSyncDependencies;
+    query_reference: DEFAULT_CHANGE_MARKER_QUERY,
+    on_table_pulled,
+  });
+  const emit = async (
+    table_name: string,
+    latest_sequence: number,
+  ): Promise<void> => {
+    handlers.get(table_name)?.({ table_name, latest_sequence });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  };
+  return { sync, on_update, unsubscribe, pull_table, on_table_pulled, emit };
 }
 
 describe("ConvexRealtimeSync", () => {
-  let sync_service: ConvexRealtimeSync;
-  let deps: RealtimeSyncDependencies;
-
-  beforeEach(() => {
-    deps = create_dependencies();
-    sync_service = create_convex_realtime_sync(deps);
-  });
+  let active_sync: ConvexRealtimeSync;
 
   afterEach(() => {
-    sync_service.stop();
+    active_sync?.stop();
   });
 
-  describe("start", () => {
-    it("creates subscriptions for each table", () => {
-      const started = sync_service.start();
-
-      expect(started).toBe(true);
-      expect(deps.subscribable_client.onUpdate).toHaveBeenCalledTimes(2);
-    });
-
-    it("passes correct query reference and args for each table", () => {
-      sync_service.start();
-
-      const calls = (
-        deps.subscribable_client.onUpdate as ReturnType<typeof vi.fn>
-      ).mock.calls;
-      expect(calls[0][1]).toEqual({ table_name: "teams" });
-      expect(calls[1][1]).toEqual({ table_name: "players" });
-    });
-
-    it("returns false when already started", () => {
-      sync_service.start();
-      const second_start = sync_service.start();
-
-      expect(second_start).toBe(false);
-    });
-
-    it("reports running after start", () => {
-      sync_service.start();
-
-      expect(sync_service.is_running()).toBe(true);
-    });
+  it("subscribes to the change marker of every table", () => {
+    const harness = create_harness();
+    active_sync = harness.sync;
+    expect(harness.sync.start()).toBe(true);
+    expect(harness.sync.start()).toBe(false);
+    expect(harness.on_update).toHaveBeenCalledTimes(2);
+    expect(harness.on_update).toHaveBeenCalledWith(
+      DEFAULT_CHANGE_MARKER_QUERY,
+      { table_name: "teams" },
+      expect.any(Function),
+    );
   });
 
-  describe("stop", () => {
-    it("unsubscribes from all table subscriptions", () => {
-      const mock_sub_1 = create_mock_subscription();
-      const mock_sub_2 = create_mock_subscription();
-      const client = create_mock_subscribable_client();
-      client.onUpdate
-        .mockReturnValueOnce(mock_sub_1)
-        .mockReturnValueOnce(mock_sub_2);
-
-      const local_deps = create_dependencies({ subscribable_client: client });
-      const local_sync = create_convex_realtime_sync(local_deps);
-      local_sync.start();
-
-      const stopped = local_sync.stop();
-
-      expect(stopped).toBe(true);
-      expect(mock_sub_1.unsubscribe).toHaveBeenCalledOnce();
-      expect(mock_sub_2.unsubscribe).toHaveBeenCalledOnce();
-    });
-
-    it("returns false when not running", () => {
-      const stopped = sync_service.stop();
-
-      expect(stopped).toBe(false);
-    });
-
-    it("reports not running after stop", () => {
-      sync_service.start();
-      sync_service.stop();
-
-      expect(sync_service.is_running()).toBe(false);
-    });
+  it("pulls on the first callback so changes made before subscribing are not skipped", async () => {
+    const harness = create_harness();
+    active_sync = harness.sync;
+    harness.sync.start();
+    await harness.emit("teams", 12);
+    expect(harness.pull_table).toHaveBeenCalledWith("teams");
+    expect(harness.on_table_pulled).toHaveBeenCalledWith("teams");
   });
 
-  describe("change detection", () => {
-    it("does not trigger pull on first callback (initial snapshot)", () => {
-      const client = create_mock_subscribable_client();
-      const pull_table = create_mock_pull_table();
-      const local_deps = create_dependencies({
-        subscribable_client: client,
-        pull_table,
-      });
-      const local_sync = create_convex_realtime_sync(local_deps);
-      local_sync.start();
+  it("does not pull again when the marker has not moved past what was pulled", async () => {
+    const harness = create_harness();
+    active_sync = harness.sync;
+    harness.sync.start();
+    await harness.emit("teams", 12);
+    await harness.emit("teams", 12);
+    expect(harness.pull_table).toHaveBeenCalledTimes(1);
+  });
 
-      const callback = client.onUpdate.mock.calls[0][2];
-      callback({
-        table_name: "teams",
-        record_count: 5,
-        latest_modified_at: "2024-06-15T12:00:00.000Z",
-      });
+  it("ignores empty tables", async () => {
+    const harness = create_harness();
+    active_sync = harness.sync;
+    harness.sync.start();
+    await harness.emit("teams", 0);
+    expect(harness.pull_table).not.toHaveBeenCalled();
+  });
 
-      expect(pull_table).not.toHaveBeenCalled();
-    });
-
-    it("triggers pull when latest_timestamp changes", () => {
-      const client = create_mock_subscribable_client();
-      const pull_table = create_mock_pull_table();
-      const local_deps = create_dependencies({
-        subscribable_client: client,
-        pull_table,
-      });
-      const local_sync = create_convex_realtime_sync(local_deps);
-      local_sync.start();
-
-      const callback = client.onUpdate.mock.calls[0][2];
-
-      callback({
-        table_name: "teams",
-        record_count: 5,
-        latest_modified_at: "2024-06-15T12:00:00.000Z",
-      });
-
-      callback({
-        table_name: "teams",
-        record_count: 6,
-        latest_modified_at: "2024-06-15T13:00:00.000Z",
-      });
-
-      expect(pull_table).toHaveBeenCalledWith(
-        "teams",
-        "2024-06-15T12:00:00.000Z",
-      );
-    });
-
-    it("does not trigger pull when latest_timestamp is unchanged", () => {
-      const client = create_mock_subscribable_client();
-      const pull_table = create_mock_pull_table();
-      const local_deps = create_dependencies({
-        subscribable_client: client,
-        pull_table,
-      });
-      const local_sync = create_convex_realtime_sync(local_deps);
-      local_sync.start();
-
-      const callback = client.onUpdate.mock.calls[0][2];
-
-      callback({
-        table_name: "teams",
-        record_count: 5,
-        latest_modified_at: "2024-06-15T12:00:00.000Z",
-      });
-
-      callback({
-        table_name: "teams",
-        record_count: 5,
-        latest_modified_at: "2024-06-15T12:00:00.000Z",
-      });
-
-      expect(pull_table).not.toHaveBeenCalled();
-    });
-
-    it("passes previous timestamp as since_timestamp to pull_table", () => {
-      const client = create_mock_subscribable_client();
-      const pull_table = create_mock_pull_table();
-      const local_deps = create_dependencies({
-        subscribable_client: client,
-        pull_table,
-      });
-      const local_sync = create_convex_realtime_sync(local_deps);
-      local_sync.start();
-
-      const callback = client.onUpdate.mock.calls[0][2];
-
-      callback({
-        table_name: "teams",
-        record_count: 3,
-        latest_modified_at: "2024-01-01T00:00:00.000Z",
-      });
-
-      callback({
-        table_name: "teams",
-        record_count: 4,
-        latest_modified_at: "2024-06-15T12:00:00.000Z",
-      });
-
-      expect(pull_table).toHaveBeenCalledWith(
-        "teams",
-        "2024-01-01T00:00:00.000Z",
-      );
-    });
-
-    it("tracks each table independently", () => {
-      const client = create_mock_subscribable_client();
-      const pull_table = create_mock_pull_table();
-      const local_deps = create_dependencies({
-        subscribable_client: client,
-        pull_table,
-      });
-      const local_sync = create_convex_realtime_sync(local_deps);
-      local_sync.start();
-
-      const teams_callback = client.onUpdate.mock.calls[0][2];
-      const players_callback = client.onUpdate.mock.calls[1][2];
-
-      teams_callback({
-        table_name: "teams",
-        record_count: 3,
-        latest_modified_at: "2024-01-01T00:00:00.000Z",
-      });
-
-      players_callback({
-        table_name: "players",
-        record_count: 10,
-        latest_modified_at: "2024-02-01T00:00:00.000Z",
-      });
-
-      teams_callback({
-        table_name: "teams",
-        record_count: 4,
-        latest_modified_at: "2024-06-15T12:00:00.000Z",
-      });
-
-      expect(pull_table).toHaveBeenCalledTimes(1);
-      expect(pull_table).toHaveBeenCalledWith(
-        "teams",
-        "2024-01-01T00:00:00.000Z",
-      );
+  it("coalesces markers that arrive while a pull is running", async () => {
+    let release_first_pull: (value: unknown) => void = () => true;
+    const pull_table = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            release_first_pull = () =>
+              resolve({ success: true, records_pulled: 1 });
+          }),
+      )
+      .mockResolvedValue({ success: true, records_pulled: 1 });
+    const harness = create_harness(pull_table);
+    active_sync = harness.sync;
+    harness.sync.start();
+    await harness.emit("teams", 1);
+    await harness.emit("teams", 2);
+    await harness.emit("teams", 3);
+    release_first_pull(true);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(pull_table).toHaveBeenCalledTimes(2);
+    expect(harness.sync.get_table_status("teams")).toMatchObject({
+      status: "found",
+      table_status: { remote_latest_sequence: 3, pulled_through_sequence: 3 },
     });
   });
 
-  describe("get_watched_tables", () => {
-    it("returns the list of watched table names", () => {
-      expect(sync_service.get_watched_tables()).toEqual(["teams", "players"]);
+  it("retries on the next marker after a failed pull", async () => {
+    const pull_table = vi
+      .fn()
+      .mockResolvedValueOnce({ success: false, records_pulled: 0 })
+      .mockResolvedValue({ success: true, records_pulled: 1 });
+    const harness = create_harness(pull_table);
+    active_sync = harness.sync;
+    harness.sync.start();
+    await harness.emit("teams", 4);
+    await harness.emit("teams", 4);
+    expect(pull_table).toHaveBeenCalledTimes(2);
+    expect(harness.on_table_pulled).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps operating when a pull throws", async () => {
+    const pull_table = vi.fn().mockRejectedValue(new Error("network down"));
+    const harness = create_harness(pull_table);
+    active_sync = harness.sync;
+    harness.sync.start();
+    await harness.emit("teams", 4);
+    expect(harness.sync.is_running()).toBe(true);
+  });
+
+  it("unsubscribes and forgets state on stop", () => {
+    const harness = create_harness();
+    harness.sync.start();
+    expect(harness.sync.stop()).toBe(true);
+    expect(harness.sync.stop()).toBe(false);
+    expect(harness.unsubscribe).toHaveBeenCalledTimes(2);
+    expect(harness.sync.get_table_status("teams")).toEqual({
+      status: "missing",
     });
   });
 
-  describe("get_table_status", () => {
-    it("returns status for each watched table after receiving data", () => {
-      const client = create_mock_subscribable_client();
-      const local_deps = create_dependencies({ subscribable_client: client });
-      const local_sync = create_convex_realtime_sync(local_deps);
-      local_sync.start();
-
-      const callback = client.onUpdate.mock.calls[0][2];
-      callback({
-        table_name: "teams",
-        record_count: 5,
-        latest_modified_at: "2024-06-15T12:00:00.000Z",
-      });
-
-      const status = local_sync.get_table_status("teams");
-
-      expect(status).toEqual({
-        status: "found",
-        table_status: {
-          table_name: "teams",
-          remote_record_count: 5,
-          remote_latest_timestamp: "2024-06-15T12:00:00.000Z",
-          pull_count: 0,
-        },
-      });
-    });
-
-    it("returns a missing status for unknown table", () => {
-      expect(sync_service.get_table_status("nonexistent")).toEqual({
-        status: "missing",
-      });
-    });
-
-    it("increments pull_count after each triggered pull", () => {
-      const client = create_mock_subscribable_client();
-      const pull_table = create_mock_pull_table();
-      const local_deps = create_dependencies({
-        subscribable_client: client,
-        pull_table,
-      });
-      const local_sync = create_convex_realtime_sync(local_deps);
-      local_sync.start();
-
-      const callback = client.onUpdate.mock.calls[0][2];
-
-      callback({
-        table_name: "teams",
-        record_count: 5,
-        latest_modified_at: "2024-01-01T00:00:00.000Z",
-      });
-
-      callback({
-        table_name: "teams",
-        record_count: 6,
-        latest_modified_at: "2024-02-01T00:00:00.000Z",
-      });
-
-      callback({
-        table_name: "teams",
-        record_count: 7,
-        latest_modified_at: "2024-03-01T00:00:00.000Z",
-      });
-
-      const status = local_sync.get_table_status("teams");
-      expect(status).toEqual({
-        status: "found",
-        table_status: {
-          table_name: "teams",
-          remote_record_count: 7,
-          remote_latest_timestamp: "2024-03-01T00:00:00.000Z",
-          pull_count: 2,
-        },
-      });
-    });
-  });
-
-  describe("error handling", () => {
-    it("continues operating when pull_table fails", async () => {
-      const client = create_mock_subscribable_client();
-      const pull_table = vi.fn().mockRejectedValue(new Error("Network error"));
-      const local_deps = create_dependencies({
-        subscribable_client: client,
-        pull_table,
-      });
-      const local_sync = create_convex_realtime_sync(local_deps);
-      local_sync.start();
-
-      const callback = client.onUpdate.mock.calls[0][2];
-
-      callback({
-        table_name: "teams",
-        record_count: 5,
-        latest_modified_at: "2024-01-01T00:00:00.000Z",
-      });
-
-      callback({
-        table_name: "teams",
-        record_count: 6,
-        latest_modified_at: "2024-02-01T00:00:00.000Z",
-      });
-
-      expect(local_sync.is_running()).toBe(true);
-    });
-  });
-
-  describe("restart", () => {
-    it("can be stopped and restarted cleanly", () => {
-      const client = create_mock_subscribable_client();
-      const local_deps = create_dependencies({ subscribable_client: client });
-      const local_sync = create_convex_realtime_sync(local_deps);
-
-      local_sync.start();
-      expect(client.onUpdate).toHaveBeenCalledTimes(2);
-
-      local_sync.stop();
-      expect(local_sync.is_running()).toBe(false);
-
-      local_sync.start();
-      expect(client.onUpdate).toHaveBeenCalledTimes(4);
-      expect(local_sync.is_running()).toBe(true);
-    });
-  });
-
-  describe("on_table_pulled callback", () => {
-    function fire_initial_then_change(
-      client: ReturnType<typeof create_mock_subscribable_client>,
-      table_index: number,
-      table_name: string,
-    ): void {
-      const callback = client.onUpdate.mock.calls[table_index][2];
-      callback({
-        table_name,
-        record_count: 3,
-        latest_modified_at: "2024-01-01T00:00:00.000Z",
-      } as TableChangeInfo);
-      callback({
-        table_name,
-        record_count: 4,
-        latest_modified_at: "2024-06-01T00:00:00.000Z",
-      } as TableChangeInfo);
-    }
-
-    it("invokes on_table_pulled with the correct table_name after a successful pull", async () => {
-      const client = create_mock_subscribable_client();
-      const pull_table = vi
-        .fn()
-        .mockResolvedValue({ success: true, records_pulled: 3 });
-      const on_table_pulled = vi.fn();
-
-      const local_deps = create_dependencies({
-        subscribable_client: client,
-        pull_table,
-        on_table_pulled,
-      });
-      const local_sync = create_convex_realtime_sync(local_deps);
-      local_sync.start();
-
-      fire_initial_then_change(client, 0, "teams");
-
-      await Promise.resolve();
-
-      expect(on_table_pulled).toHaveBeenCalledWith("teams");
-    });
-
-    it("does not invoke on_table_pulled on the initial snapshot (no pull triggered)", () => {
-      const client = create_mock_subscribable_client();
-      const pull_table = create_mock_pull_table();
-      const on_table_pulled = vi.fn();
-
-      const local_deps = create_dependencies({
-        subscribable_client: client,
-        pull_table,
-        on_table_pulled,
-      });
-      const local_sync = create_convex_realtime_sync(local_deps);
-      local_sync.start();
-
-      const callback = client.onUpdate.mock.calls[0][2];
-      callback({
-        table_name: "teams",
-        record_count: 5,
-        latest_modified_at: "2024-01-01T00:00:00.000Z",
-      } as TableChangeInfo);
-
-      expect(pull_table).not.toHaveBeenCalled();
-      expect(on_table_pulled).not.toHaveBeenCalled();
-    });
-
-    it("does not invoke on_table_pulled when timestamp is unchanged", () => {
-      const client = create_mock_subscribable_client();
-      const pull_table = create_mock_pull_table();
-      const on_table_pulled = vi.fn();
-
-      const local_deps = create_dependencies({
-        subscribable_client: client,
-        pull_table,
-        on_table_pulled,
-      });
-      const local_sync = create_convex_realtime_sync(local_deps);
-      local_sync.start();
-
-      const callback = client.onUpdate.mock.calls[0][2];
-      const change = {
-        table_name: "teams",
-        record_count: 5,
-        latest_modified_at: "2024-01-01T00:00:00.000Z",
-      } as TableChangeInfo;
-      callback(change);
-      callback(change);
-
-      expect(pull_table).not.toHaveBeenCalled();
-      expect(on_table_pulled).not.toHaveBeenCalled();
-    });
-
-    it("works correctly when on_table_pulled is not provided (optional)", () => {
-      const client = create_mock_subscribable_client();
-      const pull_table = create_mock_pull_table();
-
-      const local_deps = create_dependencies({
-        subscribable_client: client,
-        pull_table,
-      });
-      const local_sync = create_convex_realtime_sync(local_deps);
-      local_sync.start();
-
-      expect(() => fire_initial_then_change(client, 0, "teams")).not.toThrow();
-    });
-
-    it("receives the table_name for the table that actually changed", async () => {
-      const client = create_mock_subscribable_client();
-      const pull_table = vi
-        .fn()
-        .mockResolvedValue({ success: true, records_pulled: 1 });
-      const on_table_pulled = vi.fn();
-
-      const local_deps = create_dependencies({
-        subscribable_client: client,
-        pull_table,
-        on_table_pulled,
-        table_names: ["teams", "players"],
-      });
-      const local_sync = create_convex_realtime_sync(local_deps);
-      local_sync.start();
-
-      fire_initial_then_change(client, 1, "players");
-
-      await Promise.resolve();
-
-      expect(on_table_pulled).toHaveBeenCalledWith("players");
-      expect(on_table_pulled).not.toHaveBeenCalledWith("teams");
+  it("reports watched tables and the latest seen sequences", async () => {
+    const harness = create_harness();
+    active_sync = harness.sync;
+    harness.sync.start();
+    await harness.emit("players", 5);
+    expect(harness.sync.get_watched_tables()).toEqual(["teams", "players"]);
+    expect(harness.sync.get_all_table_statuses()).toEqual({
+      teams: "0",
+      players: "5",
     });
   });
 });

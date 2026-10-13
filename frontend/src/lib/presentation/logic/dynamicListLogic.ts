@@ -4,6 +4,13 @@ import type {
   FieldMetadata,
 } from "../../core/entities/BaseEntity";
 import type { SubEntityFilter } from "../../core/types/SubEntityFilter";
+import { DYNAMIC_FORM_FIELD_TYPE } from "./dynamicFormConstants";
+import { LIST_SORT_DIRECTION, type ListSortDirection } from "./listConstants";
+import { PRESENCE_STATUS } from "./presenceStatus";
+import { is_object_value, is_string_value } from "./runtimeTypeGuards";
+
+const DYNAMIC_LIST_UNKNOWN_ERROR_MESSAGE = "Unknown error";
+const DYNAMIC_LIST_DEFAULT_DISPLAY_NAME = "Entity";
 export {
   apply_id_filter_to_entities,
   build_entity_authorization_filter,
@@ -40,7 +47,7 @@ export function extract_items_from_result_data(
 ): BaseEntity[] {
   if (!data) return [];
   if (Array.isArray(data)) return data;
-  if (typeof data === "object" && "items" in data) return data.items;
+  if (is_object_value(data) && "items" in data) return data.items;
   return [];
 }
 
@@ -49,8 +56,7 @@ export function extract_total_count_from_result_data(
 ): number {
   if (!data) return 0;
   if (Array.isArray(data)) return data.length;
-  if (typeof data === "object" && "total_count" in data)
-    return data.total_count;
+  if (is_object_value(data) && "total_count" in data) return data.total_count;
   return 0;
 }
 
@@ -59,13 +65,10 @@ export function extract_error_message_from_result(result?: {
   error?: string;
   error_message?: string;
 }): string {
-  if (!result) return "Unknown error";
-  if (!result.success) {
-    if ("error_message" in result && result.error_message)
-      return result.error_message;
-    if ("error" in result && result.error) return result.error;
-  }
-  return "Unknown error";
+  if (!result || result.success) return DYNAMIC_LIST_UNKNOWN_ERROR_MESSAGE;
+  if (result.error_message) return result.error_message;
+  if (result.error) return result.error;
+  return DYNAMIC_LIST_UNKNOWN_ERROR_MESSAGE;
 }
 
 export function build_default_visible_column_names(
@@ -74,7 +77,8 @@ export function build_default_visible_column_names(
 ): string[] {
   if (!fields || fields.length === 0) return [];
   const displayable_fields = fields.filter(
-    (field: FieldMetadata) => field.field_type !== "sub_entity",
+    (field: FieldMetadata) =>
+      field.field_type !== DYNAMIC_FORM_FIELD_TYPE.SUB_ENTITY,
   );
   const explicitly_enabled_fields = displayable_fields.filter(
     (field: FieldMetadata) => field.show_in_list === true,
@@ -92,17 +96,20 @@ export function build_default_visible_column_names(
 export function toggle_sort_direction(
   current_column: string,
   clicked_column: string,
-  current_direction: "asc" | "desc",
-): { sort_column: string; sort_direction: "asc" | "desc" } {
+  current_direction: ListSortDirection,
+): { sort_column: string; sort_direction: ListSortDirection } {
   if (current_column === clicked_column) {
     return {
       sort_column: clicked_column,
-      sort_direction: current_direction === "asc" ? "desc" : "asc",
+      sort_direction:
+        current_direction === LIST_SORT_DIRECTION.ASCENDING
+          ? LIST_SORT_DIRECTION.DESCENDING
+          : LIST_SORT_DIRECTION.ASCENDING,
     };
   }
   return {
     sort_column: clicked_column,
-    sort_direction: "asc",
+    sort_direction: LIST_SORT_DIRECTION.ASCENDING,
   };
 }
 
@@ -117,26 +124,24 @@ export function toggle_column_in_set(
 }
 
 type DynamicListSubEntityFilterState =
-  | { status: "missing" }
-  | { status: "present"; filter: SubEntityFilter };
+  | { status: typeof PRESENCE_STATUS.MISSING }
+  | { status: typeof PRESENCE_STATUS.PRESENT; filter: SubEntityFilter };
 
 export function create_new_entity_with_defaults(
   sub_entity_filter_state: DynamicListSubEntityFilterState,
 ): Partial<BaseEntity> {
   const new_entity: Record<string, unknown> = { id: "" };
-  if (sub_entity_filter_state.status === "present") {
-    const sub_entity_filter = sub_entity_filter_state.filter;
-    new_entity[sub_entity_filter.foreign_key_field] =
-      sub_entity_filter.foreign_key_value;
-    if (
-      sub_entity_filter.holder_type_field &&
-      sub_entity_filter.holder_type_value
-    ) {
-      new_entity[sub_entity_filter.holder_type_field] =
-        sub_entity_filter.holder_type_value;
-    }
-  }
-
+  if (sub_entity_filter_state.status !== PRESENCE_STATUS.PRESENT)
+    return new_entity as Partial<BaseEntity>;
+  const sub_entity_filter = sub_entity_filter_state.filter;
+  new_entity[sub_entity_filter.foreign_key_field] =
+    sub_entity_filter.foreign_key_value;
+  if (
+    sub_entity_filter.holder_type_field &&
+    sub_entity_filter.holder_type_value
+  )
+    new_entity[sub_entity_filter.holder_type_field] =
+      sub_entity_filter.holder_type_value;
   return new_entity as Partial<BaseEntity>;
 }
 
@@ -155,28 +160,35 @@ export function remove_entities_by_ids(
 }
 
 type DynamicListMetadataState =
-  | { status: "missing" }
-  | { status: "present"; entity_metadata: EntityMetadata };
+  | { status: typeof PRESENCE_STATUS.MISSING }
+  | { status: typeof PRESENCE_STATUS.PRESENT; entity_metadata: EntityMetadata };
 
 export function build_display_name_from_metadata(
   metadata_state: DynamicListMetadataState,
   entity_type: string,
 ): string {
   if (
-    metadata_state.status === "present" &&
+    metadata_state.status === PRESENCE_STATUS.PRESENT &&
     metadata_state.entity_metadata.display_name
   ) {
     return metadata_state.entity_metadata.display_name;
   }
-  if (typeof entity_type === "string" && entity_type.length > 0) {
+  if (is_string_value(entity_type) && entity_type.length > 0) {
     return entity_type;
   }
-  return "Entity";
+  return DYNAMIC_LIST_DEFAULT_DISPLAY_NAME;
 }
 
+const DYNAMIC_LIST_COLUMN_RESPONSIVE_CLASSES: readonly string[] = [
+  "",
+  "hidden sm:table-cell",
+  "hidden md:table-cell",
+];
+const DYNAMIC_LIST_TRAILING_COLUMN_CLASS = "hidden lg:table-cell";
+
 export function get_column_responsive_class(column_index: number): string {
-  if (column_index === 0) return "";
-  if (column_index === 1) return "hidden sm:table-cell";
-  if (column_index === 2) return "hidden md:table-cell";
-  return "hidden lg:table-cell";
+  return (
+    DYNAMIC_LIST_COLUMN_RESPONSIVE_CLASSES[column_index] ??
+    DYNAMIC_LIST_TRAILING_COLUMN_CLASS
+  );
 }

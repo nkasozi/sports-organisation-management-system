@@ -1,8 +1,15 @@
 import { get_competition_team_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
+import { COMPETITION_DATA_LOADER_EVENTS } from "$lib/presentation/logic/competitionDataLoaderEvents";
+import { is_string_value } from "$lib/presentation/logic/runtimeTypeGuards";
 
 import type { BaseEntity } from "../../core/entities/BaseEntity";
-import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
 import { fetch_entities_for_type } from "./dynamicFormDataLoader";
+
+export {
+  fetch_teams_excluding_player_memberships,
+  fetch_teams_from_player_memberships,
+} from "./competitionPlayerTeamFetcher";
+export { fetch_venue_name_for_team } from "./competitionTeamVenueFetcher";
 
 type CompetitionTeamsResult = {
   teams: BaseEntity[];
@@ -10,64 +17,34 @@ type CompetitionTeamsResult = {
   competition_team_ids: Set<string>;
 };
 
-type PlayerMembershipTeamsResult = {
-  teams: BaseEntity[];
-  auto_select_team_id?: string;
-};
-
-export async function fetch_teams_from_competition(
-  competition_id: string,
+function resolve_exclude_value(
   form_data: Record<string, unknown>,
   exclude_field?: string,
-): Promise<CompetitionTeamsResult> {
-  const empty_result: CompetitionTeamsResult = {
-    teams: [],
-    all_competition_teams: [],
-    competition_team_ids: new Set(),
-  };
-  const competition_team_use_cases = get_competition_team_use_cases();
-  const comp_teams_result =
-    await competition_team_use_cases.list_teams_in_competition(competition_id, {
-      page_size: 100,
-    });
+): string {
+  const exclude_candidate = exclude_field ? form_data[exclude_field] : "";
+  return is_string_value(exclude_candidate) ? exclude_candidate : "";
+}
 
-  if (!comp_teams_result.success) {
-    console.warn(
-      "[DataLoader] Failed to load competition teams:",
-      competition_id,
-    );
-    return empty_result;
-  }
-
-  const competition_teams = comp_teams_result.data.items;
-  const competition_team_ids = new Set(
-    competition_teams.map((ct: { team_id: string }) => ct.team_id),
-  );
-  const all_teams = await fetch_entities_for_type("team");
-  if (all_teams.length === 0) {
-    console.warn(
-      "[DataLoader] Failed to load teams for competition:",
-      competition_id,
-    );
-    return { ...empty_result, competition_team_ids };
-  }
-
+function build_competition_teams_result(
+  competition_id: string,
+  all_teams: BaseEntity[],
+  competition_team_ids: Set<string>,
+  competition_teams_count: number,
+  exclusion: { exclude_field?: string; exclude_value: string },
+): CompetitionTeamsResult {
   const filtered_teams = all_teams.filter((team) =>
     competition_team_ids.has(team.id),
   );
-  const exclude_candidate = exclude_field ? form_data[exclude_field] : "";
-  const exclude_value =
-    typeof exclude_candidate === "string" ? exclude_candidate : "";
-  const final_teams = exclude_value
-    ? filtered_teams.filter((team) => team.id !== exclude_value)
+  const final_teams = exclusion.exclude_value
+    ? filtered_teams.filter((team) => team.id !== exclusion.exclude_value)
     : filtered_teams;
-
   console.debug("[DataLoader] Loaded competition teams", {
+    event: COMPETITION_DATA_LOADER_EVENTS.COMPETITION_TEAMS_LOADED,
     competition_id,
-    total: competition_teams.length,
+    total: competition_teams_count,
     filtered: final_teams.length,
-    exclude_field,
-    exclude_value,
+    exclude_field: exclusion.exclude_field,
+    exclude_value: exclusion.exclude_value,
   });
   return {
     teams: final_teams,
@@ -76,82 +53,56 @@ export async function fetch_teams_from_competition(
   };
 }
 
+function create_empty_competition_teams_result(
+  competition_team_ids: Set<string>,
+): CompetitionTeamsResult {
+  return { teams: [], all_competition_teams: [], competition_team_ids };
+}
+
+export async function fetch_teams_from_competition(
+  competition_id: string,
+  form_data: Record<string, unknown>,
+  exclude_field?: string,
+): Promise<CompetitionTeamsResult> {
+  const comp_teams_result =
+    await get_competition_team_use_cases().list_teams_in_competition(
+      competition_id,
+      { page_size: 100 },
+    );
+  if (!comp_teams_result.success) {
+    console.warn("[DataLoader] Failed to load competition teams", {
+      event: COMPETITION_DATA_LOADER_EVENTS.COMPETITION_TEAMS_LOAD_FAILED,
+      competition_id,
+      error: comp_teams_result.error,
+    });
+    return create_empty_competition_teams_result(new Set());
+  }
+  const competition_teams = comp_teams_result.data.items;
+  const competition_team_ids = new Set(
+    competition_teams.map((ct: { team_id: string }) => ct.team_id),
+  );
+  const all_teams = await fetch_entities_for_type("team");
+  if (all_teams.length === 0) {
+    console.warn("[DataLoader] Failed to load teams for competition", {
+      event: COMPETITION_DATA_LOADER_EVENTS.TEAMS_LOAD_FAILED,
+      competition_id,
+    });
+    return create_empty_competition_teams_result(competition_team_ids);
+  }
+  const exclude_value = resolve_exclude_value(form_data, exclude_field);
+  return build_competition_teams_result(
+    competition_id,
+    all_teams,
+    competition_team_ids,
+    competition_teams.length,
+    { exclude_field, exclude_value },
+  );
+}
+
 export async function fetch_stages_from_competition(
   competition_id: string,
 ): Promise<BaseEntity[]> {
   return fetch_entities_for_type("competitionstage", { competition_id }, 100);
-}
-
-export async function fetch_teams_from_player_memberships(
-  player_id: string,
-  field_current_value: string,
-): Promise<PlayerMembershipTeamsResult> {
-  const [memberships, all_teams] = await Promise.all([
-    fetch_entities_for_type("playerteammembership", { player_id }),
-    fetch_entities_for_type("team"),
-  ]);
-  const player_team_ids = new Set(
-    memberships.map((m) => (m as unknown as { team_id: string }).team_id),
-  );
-  const membership_teams = all_teams.filter((team) =>
-    player_team_ids.has(team.id),
-  );
-
-  console.debug("[DataLoader] Loaded player membership teams", {
-    player_id,
-    total_memberships: memberships.length,
-    team_count: membership_teams.length,
-  });
-  const auto_select_team_id =
-    membership_teams.length > 0 && !field_current_value
-      ? membership_teams[0].id
-      : void 0;
-  return { teams: membership_teams, auto_select_team_id };
-}
-
-export async function fetch_teams_excluding_player_memberships(
-  player_id: string,
-  cached_players: BaseEntity[],
-  organization_id: string,
-): Promise<BaseEntity[]> {
-  const [memberships, all_teams] = await Promise.all([
-    fetch_entities_for_type("playerteammembership", { player_id }),
-    fetch_entities_for_type("team"),
-  ]);
-  const player_team_ids = new Set(
-    memberships.map((m) => (m as unknown as { team_id: string }).team_id),
-  );
-  const selected_player = cached_players.find((p) => p.id === player_id);
-  const player_gender_id = (
-    selected_player as unknown as { gender_id?: string }
-  )?.gender_id;
-
-  console.debug("[DataLoader] Resolved player gender from cache", {
-    player_id,
-    player_found: !!selected_player,
-    player_gender_id,
-  });
-
-  const available_teams = all_teams.filter((team) => {
-    const t = team as unknown as {
-      organization_id?: string;
-      gender_id?: string;
-    };
-    const is_in_org = !organization_id || t.organization_id === organization_id;
-    const is_not_player_team = !player_team_ids.has(team.id);
-    const is_matching_gender =
-      !player_gender_id || !t.gender_id || t.gender_id === player_gender_id;
-    return is_in_org && is_not_player_team && is_matching_gender;
-  });
-
-  console.debug("[DataLoader] Loaded teams excluding player memberships", {
-    player_id,
-    player_gender_id,
-    total_memberships: memberships.length,
-    total_teams: all_teams.length,
-    available_count: available_teams.length,
-  });
-  return available_teams;
 }
 
 export function compute_teams_after_exclusion(
@@ -160,43 +111,4 @@ export function compute_teams_after_exclusion(
 ): BaseEntity[] {
   if (!exclude_value) return [...all_competition_teams];
   return all_competition_teams.filter((team) => team.id !== exclude_value);
-}
-
-export async function fetch_venue_name_for_team(
-  team_id: string,
-  all_competition_teams: BaseEntity[],
-): Promise<string> {
-  const selected_team_matches = all_competition_teams.filter(
-    (team) => team.id === team_id,
-  );
-  const selected_team =
-    selected_team_matches.length > 0
-      ? (selected_team_matches[0] as unknown as Record<string, unknown>)
-      : {};
-  const home_venue_id =
-    typeof selected_team.home_venue_id === "string"
-      ? selected_team.home_venue_id
-      : "";
-  if (!home_venue_id) return "";
-
-  const venue_use_cases_result = get_use_cases_for_entity_type("venue");
-  if (!venue_use_cases_result.success) {
-    console.warn("[DataLoader] Missing venue use cases");
-    return "";
-  }
-
-  const venue_result =
-    await venue_use_cases_result.data.get_by_id(home_venue_id);
-  if (!venue_result.success || !venue_result.data) {
-    console.warn("[DataLoader] Failed to load venue:", home_venue_id);
-    return "";
-  }
-
-  const venue_name_candidate = (
-    venue_result.data as unknown as Record<string, unknown>
-  ).name;
-  const venue_name =
-    typeof venue_name_candidate === "string" ? venue_name_candidate : "";
-  console.debug("[DataLoader] Resolved home venue name:", venue_name);
-  return venue_name;
 }

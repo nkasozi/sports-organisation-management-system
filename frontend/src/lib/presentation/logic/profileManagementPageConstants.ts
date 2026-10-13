@@ -24,3 +24,15 @@ export const PROFILE_MANAGEMENT_STATUS_CLASS_BY_VALUE: Record<string, string> =
   };
 
 export const PROFILE_MANAGEMENT_PREVIEW_PATH_SEPARATOR = "/";
+
+export const PROFILE_MANAGEMENT_ACCESS_STATUS = {
+  FAILED: "failed",
+  DENIED: "denied",
+  GRANTED: "granted",
+} as const;
+
+export const PROFILE_MANAGEMENT_PAGE_EVENT = {
+  PROFILES_LOAD_FAILED: "profile_management_profiles_load_failed",
+  RELATED_ENTITIES_LOAD_FAILED:
+    "profile_management_related_entities_load_failed",
+} as const;

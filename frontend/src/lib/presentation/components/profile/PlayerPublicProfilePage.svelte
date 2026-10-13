@@ -12,6 +12,7 @@
         PlayerPublicProfileStats,
         PlayerPublicTeamStats,
     } from "$lib/presentation/logic/playerPublicProfilePageState";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
     import PlayerPublicProfileLinks from "./PlayerPublicProfileLinks.svelte";
     import PlayerTeamStatsSection from "./PlayerTeamStatsSection.svelte";
@@ -63,11 +64,9 @@
     image_alt={get_player_full_name(player)}
     fallback_text={get_player_initials(player)}
     title={get_player_full_name(player)}
-    subtitle={
-        position_state.status === "present"
-            ? position_state.position.name
-            : ""
-    }
+    subtitle={position_state.status === PRESENCE_STATUS.PRESENT
+        ? position_state.position.name
+        : ""}
     summary={profile.profile_summary || ""}
     {metadata_items}
 />

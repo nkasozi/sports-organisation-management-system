@@ -62,7 +62,7 @@ describe("Qualification Entity", () => {
         "official-123",
       );
       input.certification_name = "Test Cert";
-      input.certification_level = "" as any;
+      input.certification_level = "" as typeof input.certification_level;
 
       const errors = validate_qualification_input(input);
       expect(errors).toContain("Certification level is required");
@@ -102,9 +102,9 @@ describe("Qualification Entity", () => {
   });
 
   describe("get_days_until_expiry", () => {
-    it("should return missing status when no expiry date", () => {
+    it("should return none when no expiry date", () => {
       const result = get_days_until_expiry("");
-      expect(result).toEqual({ status: "missing" });
+      expect(result).toEqual({ status: "none" });
     });
 
     it("should return negative number for expired qualifications", () => {
@@ -113,14 +113,14 @@ describe("Qualification Entity", () => {
       const result = get_days_until_expiry(
         past_date.toISOString().split("T")[0],
       );
-      expect(result).toMatchObject({ status: "present" });
+      expect(result).toMatchObject({ status: "some" });
 
-      if (result.status !== "present") {
-        expect(result.status).toBe("present");
+      if (result.status !== "some") {
+        expect(result.status).toBe("some");
         return;
       }
 
-      expect(result.day_count).toBeLessThan(0);
+      expect(result.value).toBeLessThan(0);
     });
 
     it("should return positive number for valid qualifications", () => {
@@ -129,14 +129,14 @@ describe("Qualification Entity", () => {
       const result = get_days_until_expiry(
         future_date.toISOString().split("T")[0],
       );
-      expect(result).toMatchObject({ status: "present" });
+      expect(result).toMatchObject({ status: "some" });
 
-      if (result.status !== "present") {
-        expect(result.status).toBe("present");
+      if (result.status !== "some") {
+        expect(result.status).toBe("some");
         return;
       }
 
-      expect(result.day_count).toBeGreaterThan(0);
+      expect(result.value).toBeGreaterThan(0);
     });
   });
 

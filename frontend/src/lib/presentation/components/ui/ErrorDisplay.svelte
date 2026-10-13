@@ -1,36 +1,37 @@
 <script lang="ts">
-    export let title: string = "Something went wrong";
-    export let message: string =
-        "An unexpected error occurred. Please try again.";
-    export let variant: "inline" | "page" = "inline";
+    import {
+        ERROR_DISPLAY_DEFAULT_TEXT,
+        ERROR_DISPLAY_SEVERITY,
+        ERROR_DISPLAY_SEVERITY_PALETTE,
+        ERROR_DISPLAY_VARIANT,
+        type ErrorDisplaySeverity,
+        type ErrorDisplayVariant,
+    } from "./errorDisplayStyles";
+
+    export let title: string = ERROR_DISPLAY_DEFAULT_TEXT.TITLE;
+    export let message: string = ERROR_DISPLAY_DEFAULT_TEXT.MESSAGE;
+    export let variant: ErrorDisplayVariant = ERROR_DISPLAY_VARIANT.INLINE;
     export let on_retry: (() => void) | undefined = undefined;
     export let on_back: (() => void) | undefined = undefined;
-    export let retry_label: string = "Try Again";
-    export let back_label: string = "Go Back";
-    export let severity: "warning" | "error" = "warning";
+    export let retry_label: string = ERROR_DISPLAY_DEFAULT_TEXT.RETRY;
+    export let back_label: string = ERROR_DISPLAY_DEFAULT_TEXT.BACK;
+    export let severity: ErrorDisplaySeverity = ERROR_DISPLAY_SEVERITY.WARNING;
+
+    $: palette = ERROR_DISPLAY_SEVERITY_PALETTE[severity];
 </script>
 
-{#if variant === "page"}
+{#if variant === ERROR_DISPLAY_VARIANT.PAGE}
     <div class="max-w-lg mx-auto px-4 py-12 animate-fade-in">
         <div
             class="bg-white dark:bg-accent-900 rounded-2xl shadow-lg border border-accent-200 dark:border-accent-700 overflow-hidden"
         >
-            <div
-                class="h-1.5 {severity === 'error'
-                    ? 'bg-secondary-500'
-                    : 'bg-primary-500'}"
-            ></div>
+            <div class="h-1.5 {palette.page_bar}"></div>
             <div class="p-6 sm:p-8 text-center">
                 <div
-                    class="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-5 {severity ===
-                    'error'
-                        ? 'bg-secondary-50 dark:bg-secondary-900/20'
-                        : 'bg-primary-50 dark:bg-primary-900/20'}"
+                    class="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-5 {palette.page_icon_circle}"
                 >
                     <svg
-                        class="w-8 h-8 {severity === 'error'
-                            ? 'text-secondary-500'
-                            : 'text-primary-500'}"
+                        class="w-8 h-8 {palette.page_icon}"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -59,10 +60,7 @@
                     {#if on_retry}
                         <button
                             type="button"
-                            class="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold rounded-[0.175rem] transition-all duration-200 w-full sm:w-auto {severity ===
-                            'error'
-                                ? 'bg-secondary-500 text-white hover:bg-secondary-600'
-                                : 'bg-primary-500 text-white hover:bg-primary-600'}"
+                            class="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold rounded-[0.175rem] transition-all duration-200 w-full sm:w-auto {palette.page_retry_button}"
                             on:click={on_retry}
                         >
                             <svg
@@ -109,28 +107,16 @@
     </div>
 {:else}
     <div
-        class="rounded-xl border overflow-hidden animate-fade-in {severity ===
-        'error'
-            ? 'border-secondary-200 dark:border-secondary-800/50 bg-secondary-50/50 dark:bg-secondary-900/10'
-            : 'border-primary-200 dark:border-primary-800/50 bg-primary-50/50 dark:bg-primary-900/10'}"
+        class="rounded-xl border overflow-hidden animate-fade-in {palette.inline_container}"
     >
-        <div
-            class="h-1 {severity === 'error'
-                ? 'bg-secondary-400'
-                : 'bg-primary-400'}"
-        ></div>
+        <div class="h-1 {palette.inline_bar}"></div>
         <div class="p-4">
             <div class="flex items-start gap-3">
                 <div
-                    class="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center mt-0.5 {severity ===
-                    'error'
-                        ? 'bg-secondary-100 dark:bg-secondary-900/30'
-                        : 'bg-primary-100 dark:bg-primary-900/30'}"
+                    class="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center mt-0.5 {palette.inline_icon_circle}"
                 >
                     <svg
-                        class="w-4.5 h-4.5 {severity === 'error'
-                            ? 'text-secondary-500'
-                            : 'text-primary-500'}"
+                        class="w-4.5 h-4.5 {palette.inline_icon}"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -159,10 +145,7 @@
                             {#if on_retry}
                                 <button
                                     type="button"
-                                    class="text-sm font-semibold transition-colors flex items-center gap-1.5 {severity ===
-                                    'error'
-                                        ? 'text-secondary-600 dark:text-secondary-400 hover:text-secondary-700 dark:hover:text-secondary-300'
-                                        : 'text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300'}"
+                                    class="text-sm font-semibold transition-colors flex items-center gap-1.5 {palette.inline_retry_button}"
                                     on:click={on_retry}
                                 >
                                     <svg

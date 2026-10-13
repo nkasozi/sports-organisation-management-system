@@ -1,9 +1,9 @@
 <script lang="ts">
-  import EntityCrudWrapper from "$lib/presentation/components/EntityCrudWrapper.svelte";
+    import EntityCrudWrapper from "$lib/presentation/components/EntityCrudWrapper.svelte";
 </script>
 
 <svelte:head>
-  <title>Staff Roles - Sports Management</title>
+    <title>Staff Roles - Sports Management</title>
 </svelte:head>
 
 <EntityCrudWrapper entity_type="TeamStaffRole" />

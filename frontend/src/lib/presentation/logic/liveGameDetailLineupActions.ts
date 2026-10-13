@@ -1,22 +1,34 @@
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type {
-  CreateFixtureLineupInput,
   LineupPlayer,
   PlayerTimeOnStatus,
 } from "$lib/core/entities/FixtureLineup";
-import type { Player } from "$lib/core/entities/Player";
 import type { Team } from "$lib/core/entities/Team";
-import {
-  get_fixture_lineup_use_cases,
-  get_player_team_membership_use_cases,
-  get_player_use_cases,
-} from "$lib/infrastructure/registry/useCaseFactories";
 
-type FixtureLineupUseCases = ReturnType<typeof get_fixture_lineup_use_cases>;
-type PlayerMembershipUseCases = ReturnType<
-  typeof get_player_team_membership_use_cases
->;
-type PlayerUseCases = ReturnType<typeof get_player_use_cases>;
+import {
+  auto_generate_live_game_lineup,
+  type FixtureLineupUseCases,
+  type PlayerMembershipUseCases,
+  type PlayerUseCases,
+} from "./liveGameDetailLineupAutoGeneration";
+
+export { auto_generate_live_game_lineup } from "./liveGameDetailLineupAutoGeneration";
+
+const DEFAULT_HOME_TEAM_NAME = "Home Team";
+const DEFAULT_AWAY_TEAM_NAME = "Away Team";
+const SUBMIT_LINEUPS_INSTRUCTION =
+  "Please submit lineups before starting the game.";
+const SAVE_PLAYER_STATUS_FAILED_MESSAGE = "Failed to save player status";
+
+type LineupAutoGenerationDependencies = {
+  player_membership_use_cases: PlayerMembershipUseCases;
+  player_use_cases: PlayerUseCases;
+  fixture_lineup_use_cases: FixtureLineupUseCases;
+};
+
+type EnsureLineupsResult =
+  | { success: true; reloaded_required: boolean }
+  | { success: false; error_message: string };
 
 export async function update_live_game_player_time_on(
   lineup_id: string,
@@ -38,65 +50,59 @@ export async function update_live_game_player_time_on(
     ? { success: true, updated_players }
     : {
         success: false,
-        error_message: "Failed to save player status",
+        error_message: SAVE_PLAYER_STATUS_FAILED_MESSAGE,
         updated_players,
       };
 }
 
-export async function auto_generate_live_game_lineup(
+function build_missing_squads_message(
+  home_lineup_missing: boolean,
+  away_lineup_missing: boolean,
+  home_team_name: string,
+  away_team_name: string,
+): string {
+  if (home_lineup_missing && away_lineup_missing)
+    return `Both teams (${home_team_name} and ${away_team_name}) have not submitted their squads for this fixture. ${SUBMIT_LINEUPS_INSTRUCTION}`;
+  const missing_team_name = home_lineup_missing
+    ? home_team_name
+    : away_team_name;
+  return `${missing_team_name} has not submitted their squad for this fixture. ${SUBMIT_LINEUPS_INSTRUCTION}`;
+}
+
+async function auto_generate_missing_lineups(
   fixture: Fixture,
-  team_id: string,
-  player_membership_use_cases: PlayerMembershipUseCases,
-  player_use_cases: PlayerUseCases,
-  fixture_lineup_use_cases: FixtureLineupUseCases,
-): Promise<boolean> {
-  const memberships_result = await player_membership_use_cases.list({
-    team_id,
-    status: "active",
-  });
-  const active_memberships = (
-    memberships_result.success ? memberships_result.data.items : []
-  ).filter((membership: { status: string }) => membership.status === "active");
-  if (active_memberships.length === 0) return false;
-  const player_results = await Promise.all(
-    active_memberships.map((membership: { player_id: string }) =>
-      player_use_cases.get_by_id(membership.player_id),
-    ),
-  );
-  const players = player_results.reduce<Player[]>((loaded_players, result) => {
-    if (!result.success) return loaded_players;
-    loaded_players.push(result.data);
-    return loaded_players;
-  }, []);
-  const selected_players: CreateFixtureLineupInput["selected_players"] =
-    active_memberships.map(
-      (membership: { player_id: string; jersey_number?: number }) => {
-        const player = players.find(
-          (current_player) => current_player?.id === membership.player_id,
-        );
-        return {
-          id: membership.player_id,
-          first_name: player?.first_name || "Unknown",
-          last_name: player?.last_name || "Player",
-          jersey_number: membership.jersey_number ?? 0,
-          position: "",
-          is_captain: false,
-          is_substitute: false,
-        };
-      },
+  missing_lineups: { home: boolean; away: boolean },
+  team_names: { home: string; away: string },
+  dependencies: LineupAutoGenerationDependencies,
+): Promise<EnsureLineupsResult> {
+  const sides = [
+    {
+      is_missing: missing_lineups.home,
+      team_id: fixture.home_team_id,
+      team_name: team_names.home,
+    },
+    {
+      is_missing: missing_lineups.away,
+      team_id: fixture.away_team_id,
+      team_name: team_names.away,
+    },
+  ];
+  for (const side of sides) {
+    if (!side.is_missing) continue;
+    const lineup_generated = await auto_generate_live_game_lineup(
+      fixture,
+      side.team_id,
+      dependencies.player_membership_use_cases,
+      dependencies.player_use_cases,
+      dependencies.fixture_lineup_use_cases,
     );
-  const lineup_input: CreateFixtureLineupInput = {
-    organization_id: fixture.organization_id,
-    fixture_id: fixture.id,
-    team_id,
-    selected_players,
-    status: "submitted",
-    submitted_by: "auto-generated",
-    submitted_at: new Date().toISOString(),
-    notes: "Auto-generated lineup at game start",
-  };
-  const create_result = await fixture_lineup_use_cases.create(lineup_input);
-  return create_result.success;
+    if (!lineup_generated)
+      return {
+        success: false,
+        error_message: `Failed to auto-generate lineup for ${side.team_name}`,
+      };
+  }
+  return { success: true, reloaded_required: true };
 }
 
 export async function ensure_live_game_lineups_before_start(
@@ -109,51 +115,30 @@ export async function ensure_live_game_lineups_before_start(
   player_membership_use_cases: PlayerMembershipUseCases,
   player_use_cases: PlayerUseCases,
   fixture_lineup_use_cases: FixtureLineupUseCases,
-): Promise<
-  | { success: true; reloaded_required: boolean }
-  | { success: false; error_message: string }
-> {
-  const home_lineup_missing = home_players.length === 0;
-  const away_lineup_missing = away_players.length === 0;
-  if (!home_lineup_missing && !away_lineup_missing)
+): Promise<EnsureLineupsResult> {
+  const missing_lineups = {
+    home: home_players.length === 0,
+    away: away_players.length === 0,
+  };
+  if (!missing_lineups.home && !missing_lineups.away)
     return { success: true, reloaded_required: false };
+  const team_names = {
+    home: home_team?.name || DEFAULT_HOME_TEAM_NAME,
+    away: away_team?.name || DEFAULT_AWAY_TEAM_NAME,
+  };
   if (!allow_auto_submission)
     return {
       success: false,
-      error_message:
-        home_lineup_missing && away_lineup_missing
-          ? `Both teams (${home_team?.name || "Home Team"} and ${away_team?.name || "Away Team"}) have not submitted their squads for this fixture. Please submit lineups before starting the game.`
-          : home_lineup_missing
-            ? `${home_team?.name || "Home Team"} has not submitted their squad for this fixture. Please submit lineups before starting the game.`
-            : `${away_team?.name || "Away Team"} has not submitted their squad for this fixture. Please submit lineups before starting the game.`,
+      error_message: build_missing_squads_message(
+        missing_lineups.home,
+        missing_lineups.away,
+        team_names.home,
+        team_names.away,
+      ),
     };
-  if (
-    home_lineup_missing &&
-    !(await auto_generate_live_game_lineup(
-      fixture,
-      fixture.home_team_id,
-      player_membership_use_cases,
-      player_use_cases,
-      fixture_lineup_use_cases,
-    ))
-  )
-    return {
-      success: false,
-      error_message: `Failed to auto-generate lineup for ${home_team?.name || "Home Team"}`,
-    };
-  if (
-    away_lineup_missing &&
-    !(await auto_generate_live_game_lineup(
-      fixture,
-      fixture.away_team_id,
-      player_membership_use_cases,
-      player_use_cases,
-      fixture_lineup_use_cases,
-    ))
-  )
-    return {
-      success: false,
-      error_message: `Failed to auto-generate lineup for ${away_team?.name || "Away Team"}`,
-    };
-  return { success: true, reloaded_required: true };
+  return auto_generate_missing_lineups(fixture, missing_lineups, team_names, {
+    player_membership_use_cases,
+    player_use_cases,
+    fixture_lineup_use_cases,
+  });
 }

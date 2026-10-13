@@ -1,3 +1,5 @@
+import { PRESENCE_STATUS } from "./presenceStatus";
+
 export interface WizardStep {
   is_completed?: boolean;
   is_optional?: boolean;
@@ -7,18 +9,18 @@ export interface WizardStep {
 }
 
 type WizardCurrentStepState =
-  | { status: "missing" }
-  | { status: "present"; step: WizardStep };
+  | { status: typeof PRESENCE_STATUS.MISSING }
+  | { status: typeof PRESENCE_STATUS.PRESENT; step: WizardStep };
 
 export function get_current_wizard_step(
   step_list: WizardStep[],
   index: number,
 ): WizardCurrentStepState {
   if (index < 0 || index >= step_list.length) {
-    return { status: "missing" };
+    return { status: PRESENCE_STATUS.MISSING };
   }
 
-  return { status: "present", step: step_list[index] };
+  return { status: PRESENCE_STATUS.PRESENT, step: step_list[index] };
 }
 
 export function get_wizard_progress_percentage(

@@ -1,47 +1,43 @@
 import type { BaseEntity } from "$lib/core/entities/BaseEntity";
-import type { GenericEntityUseCases } from "$lib/infrastructure/registry/entityUseCasesRegistry";
+import type { PaginatedAsyncResult } from "$lib/core/types/Result";
+
+import {
+  ID_COLUMN_SUFFIX,
+  MAX_PREVIEW_MATCHED_IDS,
+  NAME_COLUMN_SUFFIX,
+  NAME_RESOLUTION_EVENT,
+  NAME_RESOLUTION_LOG_SCOPE,
+  NAME_RESOLUTION_MESSAGES,
+  STRING_TYPE_NAME,
+} from "./NameResolutionConstants";
 
 export type NameResolutionResult =
   | { success: true; resolved_id: string }
   | { success: false; error_message: string };
 
+export interface NameSearchUseCases {
+  list(filter?: Record<string, unknown>): PaginatedAsyncResult<BaseEntity>;
+}
+
 export interface NameResolutionInput {
   entity_name: string;
   entity_type: string;
-  use_cases: GenericEntityUseCases<BaseEntity>;
+  use_cases: NameSearchUseCases;
 }
 
-interface MultipleMatchDetails {
-  matches_found: number;
-  matched_ids: string[];
-}
-function build_no_match_error_message(
-  entity_name: string,
-  entity_type: string,
-): string {
-  return `Error: No ${entity_type} found with name "${entity_name}". Cause: The name provided does not match any existing ${entity_type} records. Solution: Verify the name spelling, or use the ID column (${entity_type}_id) instead of the name column.`;
+function build_ids_preview(matched_ids: string[]): string {
+  const ids_preview = matched_ids.slice(0, MAX_PREVIEW_MATCHED_IDS).join(", ");
+  return matched_ids.length > MAX_PREVIEW_MATCHED_IDS
+    ? `${ids_preview}...`
+    : ids_preview;
 }
 
-function build_multiple_matches_error_message(
-  entity_name: string,
-  entity_type: string,
-  matches_found: number,
-  matched_ids: string[],
-): string {
-  const ids_preview = matched_ids.slice(0, 3).join(", ");
-  const ids_suffix = matched_ids.length > 3 ? "..." : "";
-  return `Error: Multiple ${entity_type}s found with name "${entity_name}" (${matches_found} matches: ${ids_preview}${ids_suffix}). Cause: The name is ambiguous and matches multiple records. Solution: Use the ID column (${entity_type}_id) instead of the name column to specify the exact record.`;
-}
-
-function build_empty_name_error_message(entity_type: string): string {
-  return `Error: Empty name provided for ${entity_type}. Cause: The name column value is blank or whitespace. Solution: Provide a valid name, or use the ID column (${entity_type}_id) instead.`;
-}
-
-function build_success_result(resolved_id: string): NameResolutionResult {
-  return { success: true, resolved_id };
-}
-
-function build_failure_result(error_message: string): NameResolutionResult {
+function build_failure_result(
+  event: string,
+  context: Record<string, unknown>,
+  error_message: string,
+): NameResolutionResult {
+  console.warn(NAME_RESOLUTION_LOG_SCOPE, { event, ...context });
   return { success: false, error_message };
 }
 
@@ -53,27 +49,9 @@ function normalize_name_for_comparison(name: string): string {
   return name.toLowerCase().trim();
 }
 
-function extract_entities_from_list_result(list_result: unknown): BaseEntity[] {
-  if (!list_result || typeof list_result !== "object") {
-    return [];
-  }
-
-  const result = list_result as Record<string, unknown>;
-
-  if (!result.data) {
-    return [];
-  }
-
-  if (Array.isArray(result.data)) {
-    return result.data as BaseEntity[];
-  }
-
-  const data_obj = result.data as Record<string, unknown>;
-  if (data_obj.items && Array.isArray(data_obj.items)) {
-    return data_obj.items as BaseEntity[];
-  }
-
-  return [];
+function read_entity_name(entity: BaseEntity): string {
+  const candidate: unknown = (entity as BaseEntity & { name?: unknown }).name;
+  return typeof candidate === STRING_TYPE_NAME ? String(candidate) : "";
 }
 
 function find_exact_matches_from_entities(
@@ -82,10 +60,47 @@ function find_exact_matches_from_entities(
 ): BaseEntity[] {
   const normalized_search = normalize_name_for_comparison(search_name);
   return entities.filter((entity) => {
-    const entity_name = (entity as BaseEntity & { name?: string }).name;
-    if (!entity_name) return false;
-    return normalize_name_for_comparison(entity_name) === normalized_search;
+    const entity_name = read_entity_name(entity);
+    return (
+      entity_name.length > 0 &&
+      normalize_name_for_comparison(entity_name) === normalized_search
+    );
   });
+}
+
+function resolve_from_matches(
+  exact_matches: BaseEntity[],
+  trimmed_name: string,
+  entity_type: string,
+): NameResolutionResult {
+  const messages = NAME_RESOLUTION_MESSAGES;
+  const [only_match] = exact_matches;
+  if (!only_match) {
+    return build_failure_result(
+      NAME_RESOLUTION_EVENT.NO_MATCH,
+      { entity_type },
+      messages.no_match(trimmed_name, entity_type),
+    );
+  }
+  if (exact_matches.length > 1) {
+    const matched_ids = exact_matches.map((e) => e.id);
+    return build_failure_result(
+      NAME_RESOLUTION_EVENT.AMBIGUOUS_MATCH,
+      { entity_type, matches_found: exact_matches.length },
+      messages.multiple_matches(
+        trimmed_name,
+        entity_type,
+        exact_matches.length,
+        build_ids_preview(matched_ids),
+      ),
+    );
+  }
+  console.debug(NAME_RESOLUTION_LOG_SCOPE, {
+    event: NAME_RESOLUTION_EVENT.RESOLVED,
+    entity_type,
+    resolved_id: only_match.id,
+  });
+  return { success: true, resolved_id: only_match.id };
 }
 
 export async function resolve_entity_name_to_id(
@@ -93,44 +108,31 @@ export async function resolve_entity_name_to_id(
 ): Promise<NameResolutionResult> {
   const { entity_name, entity_type, use_cases } = input;
   if (is_empty_or_whitespace(entity_name)) {
-    return build_failure_result(build_empty_name_error_message(entity_type));
+    return {
+      success: false,
+      error_message: NAME_RESOLUTION_MESSAGES.empty_name(entity_type),
+    };
   }
   const trimmed_name = entity_name.trim();
   const list_result = await use_cases.list({ name_contains: trimmed_name });
   if (!list_result.success) {
-    const error_msg =
-      "error_message" in list_result
-        ? list_result.error_message
-        : "error" in list_result
-          ? list_result.error
-          : "Unknown error";
-    return build_failure_result(
-      `Error: Failed to search for ${entity_type}. Cause: ${error_msg}. Solution: Try again or use the ID column instead.`,
-    );
-  }
-  const entities = extract_entities_from_list_result(list_result);
-  const exact_matches = find_exact_matches_from_entities(
-    entities,
-    trimmed_name,
-  );
-  if (exact_matches.length === 0) {
-    return build_failure_result(
-      build_no_match_error_message(trimmed_name, entity_type),
-    );
-  }
-
-  if (exact_matches.length === 1) {
-    return build_success_result(exact_matches[0].id);
-  }
-
-  const matched_ids = exact_matches.map((e) => e.id);
-  return build_failure_result(
-    build_multiple_matches_error_message(
-      trimmed_name,
+    console.error(NAME_RESOLUTION_LOG_SCOPE, {
+      event: NAME_RESOLUTION_EVENT.SEARCH_FAILED,
       entity_type,
-      exact_matches.length,
-      matched_ids,
-    ),
+      error: list_result.error,
+    });
+    return {
+      success: false,
+      error_message: NAME_RESOLUTION_MESSAGES.search_failed(
+        entity_type,
+        list_result.error,
+      ),
+    };
+  }
+  return resolve_from_matches(
+    find_exact_matches_from_entities(list_result.data.items, trimmed_name),
+    trimmed_name,
+    entity_type,
   );
 }
 
@@ -147,32 +149,32 @@ export async function resolve_multiple_names_to_ids(
 }
 
 export function convert_name_column_to_id_column(column_name: string): string {
-  return column_name.endsWith("_name")
-    ? column_name.slice(0, -"_name".length) + "_id"
+  return column_name.endsWith(NAME_COLUMN_SUFFIX)
+    ? column_name.slice(0, -NAME_COLUMN_SUFFIX.length) + ID_COLUMN_SUFFIX
     : column_name;
 }
 
 export function is_name_column(column_name: string): boolean {
-  return column_name.endsWith("_name");
+  return column_name.endsWith(NAME_COLUMN_SUFFIX);
 }
 
 export function extract_entity_type_from_name_column(
   column_name: string,
 ): string {
-  return column_name.endsWith("_name")
-    ? column_name.slice(0, -"_name".length)
+  return column_name.endsWith(NAME_COLUMN_SUFFIX)
+    ? column_name.slice(0, -NAME_COLUMN_SUFFIX.length)
     : column_name;
 }
 
 export function is_id_column(column_name: string): boolean {
-  return column_name.endsWith("_id");
+  return column_name.endsWith(ID_COLUMN_SUFFIX);
 }
 
 export function extract_entity_type_from_id_column(
   column_name: string,
 ): string {
-  return column_name.endsWith("_id")
-    ? column_name.slice(0, -"_id".length)
+  return column_name.endsWith(ID_COLUMN_SUFFIX)
+    ? column_name.slice(0, -ID_COLUMN_SUFFIX.length)
     : column_name;
 }
 

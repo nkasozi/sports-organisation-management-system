@@ -1,5 +1,6 @@
 import type { EntityId, Name, ScalarInput } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
+import { ENTITY_STATUS } from "./StatusConstants";
 
 export interface GameOfficialRole extends BaseEntity {
   name: Name;
@@ -19,99 +20,80 @@ export type CreateGameOfficialRoleInput = Omit<
 >;
 export type UpdateGameOfficialRoleInput = Partial<CreateGameOfficialRoleInput>;
 
-function create_empty_game_official_role_input(
-  sport_id: CreateGameOfficialRoleInput["sport_id"] = "",
-): CreateGameOfficialRoleInput {
-  return {
-    name: "",
-    code: "",
-    description: "",
-    sport_id,
+const DEFAULT_FOOTBALL_OFFICIAL_ROLES: ReadonlyArray<
+  Omit<CreateGameOfficialRoleInput, "organization_id">
+> = [
+  {
+    name: "Referee",
+    code: "REF",
+    description:
+      "Main match official responsible for enforcing the laws of the game",
+    sport_id: "",
+    is_on_field: true,
+    is_head_official: true,
+    display_order: 1,
+    status: ENTITY_STATUS.ACTIVE,
+  },
+  {
+    name: "Assistant Referee",
+    code: "AR",
+    description:
+      "Assists the referee, primarily with offside decisions and throw-in directions",
+    sport_id: "",
     is_on_field: true,
     is_head_official: false,
-    display_order: 0,
-    status: "active",
-    organization_id: "",
-  };
-}
-
-function get_default_football_official_roles(): Omit<
-  CreateGameOfficialRoleInput,
-  "organization_id"
->[] {
-  return [
-    {
-      name: "Referee",
-      code: "REF",
-      description:
-        "Main match official responsible for enforcing the laws of the game",
-      sport_id: "",
-      is_on_field: true,
-      is_head_official: true,
-      display_order: 1,
-      status: "active",
-    },
-    {
-      name: "Assistant Referee",
-      code: "AR",
-      description:
-        "Assists the referee, primarily with offside decisions and throw-in directions",
-      sport_id: "",
-      is_on_field: true,
-      is_head_official: false,
-      display_order: 2,
-      status: "active",
-    },
-    {
-      name: "Fourth Official",
-      code: "4TH",
-      description:
-        "Assists with administrative duties and substitution procedures",
-      sport_id: "",
-      is_on_field: false,
-      is_head_official: false,
-      display_order: 3,
-      status: "active",
-    },
-    {
-      name: "VAR Official",
-      code: "VAR",
-      description:
-        "Video Assistant Referee who reviews decisions using video footage",
-      sport_id: "",
-      is_on_field: false,
-      is_head_official: false,
-      display_order: 4,
-      status: "active",
-    },
-    {
-      name: "AVAR Official",
-      code: "AVAR",
-      description: "Assistant Video Assistant Referee",
-      sport_id: "",
-      is_on_field: false,
-      is_head_official: false,
-      display_order: 5,
-      status: "active",
-    },
-    {
-      name: "Goal Line Official",
-      code: "GLO",
-      description: "Additional assistant referee positioned near the goal line",
-      sport_id: "",
-      is_on_field: true,
-      is_head_official: false,
-      display_order: 6,
-      status: "active",
-    },
-  ];
-}
+    display_order: 2,
+    status: ENTITY_STATUS.ACTIVE,
+  },
+  {
+    name: "Fourth Official",
+    code: "4TH",
+    description:
+      "Assists with administrative duties and substitution procedures",
+    sport_id: "",
+    is_on_field: false,
+    is_head_official: false,
+    display_order: 3,
+    status: ENTITY_STATUS.ACTIVE,
+  },
+  {
+    name: "VAR Official",
+    code: "VAR",
+    description:
+      "Video Assistant Referee who reviews decisions using video footage",
+    sport_id: "",
+    is_on_field: false,
+    is_head_official: false,
+    display_order: 4,
+    status: ENTITY_STATUS.ACTIVE,
+  },
+  {
+    name: "AVAR Official",
+    code: "AVAR",
+    description: "Assistant Video Assistant Referee",
+    sport_id: "",
+    is_on_field: false,
+    is_head_official: false,
+    display_order: 5,
+    status: ENTITY_STATUS.ACTIVE,
+  },
+  {
+    name: "Goal Line Official",
+    code: "GLO",
+    description: "Additional assistant referee positioned near the goal line",
+    sport_id: "",
+    is_on_field: true,
+    is_head_official: false,
+    display_order: 6,
+    status: ENTITY_STATUS.ACTIVE,
+  },
+];
 
 export function get_default_football_official_roles_with_ids(
   organization_id: CreateGameOfficialRoleInput["organization_id"],
 ): import("$lib/core/types/DomainScalars").ScalarInput<GameOfficialRole>[] {
   const now = new Date().toISOString();
-  const input_roles = get_default_football_official_roles();
+  const input_roles = DEFAULT_FOOTBALL_OFFICIAL_ROLES;
   return input_roles.map((input, index) => ({
     ...input,
     id: `role_default_${index + 1}_${organization_id}` as GameOfficialRole["id"],
@@ -119,20 +101,4 @@ export function get_default_football_official_roles_with_ids(
     updated_at: now as BaseEntity["updated_at"],
     organization_id,
   }));
-}
-
-function validate_game_official_role_input(
-  input: CreateGameOfficialRoleInput,
-): string[] {
-  const validation_errors: string[] = [];
-
-  if (!input.name || input.name.trim().length < 2) {
-    validation_errors.push("Role name must be at least 2 characters");
-  }
-
-  if (!input.code || input.code.trim().length < 2) {
-    validation_errors.push("Role code must be at least 2 characters");
-  }
-
-  return validation_errors;
 }

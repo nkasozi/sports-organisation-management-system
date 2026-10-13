@@ -1,5 +1,6 @@
 import type { Player } from "$lib/core/entities/Player";
 import type { PlayerTeamMembership } from "$lib/core/entities/PlayerTeamMembership";
+import { WILDCARD_SCOPE } from "$lib/core/entities/StatusConstants";
 import type { Team } from "$lib/core/entities/Team";
 import {
   build_authorization_list_filter,
@@ -13,6 +14,7 @@ import {
   get_today_date,
   type PlayerAssignment,
 } from "$lib/presentation/logic/bulkPlayerAssignmentPageState";
+import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
 type EntityListResult<EntityType> = {
   success: boolean;
@@ -56,7 +58,7 @@ export type BulkPlayerAssignmentProfileState =
 export function build_bulk_player_assignment_auth_filter(
   profile_state: BulkPlayerAssignmentProfileState,
 ): Record<string, string> {
-  if (profile_state.status === "missing") return {};
+  if (profile_state.status === PRESENCE_STATUS.MISSING) return {};
 
   return build_authorization_list_filter(profile_state.profile, [
     "organization_id",
@@ -64,60 +66,90 @@ export function build_bulk_player_assignment_auth_filter(
   ]);
 }
 
-export async function load_bulk_player_assignment_page_data(command: {
-  profile_state: BulkPlayerAssignmentProfileState;
-  dependencies: BulkPlayerAssignmentPageDependencies;
-}): Promise<{
+type BulkPlayerAssignmentPageData = {
   all_player_assignments: PlayerAssignment[];
   error_message: string;
   gender_name_map: Map<string, string>;
   teams: Team[];
-}> {
-  const auth_filter = build_bulk_player_assignment_auth_filter(
-    command.profile_state,
+};
+
+function build_failed_page_data(
+  error_message: string,
+): BulkPlayerAssignmentPageData {
+  return {
+    teams: [],
+    all_player_assignments: [],
+    gender_name_map: new Map(),
+    error_message,
+  };
+}
+
+async function load_bulk_player_assignment_gender_name_map(
+  profile_state: BulkPlayerAssignmentProfileState,
+  dependencies: BulkPlayerAssignmentPageDependencies,
+): Promise<Map<string, string>> {
+  const user_organization_id =
+    profile_state.status === PRESENCE_STATUS.PRESENT
+      ? profile_state.profile.organization_id
+      : "";
+  const gender_filter: Record<string, string> =
+    user_organization_id && user_organization_id !== WILDCARD_SCOPE
+      ? { organization_id: user_organization_id }
+      : {};
+  const genders_result = await dependencies.gender_use_cases.list(
+    gender_filter,
+    { page_number: 1, page_size: 50 },
   );
-  const [teams_result, players_result, memberships_result] = await Promise.all([
-    command.dependencies.team_use_cases.list(auth_filter, {
+  return new Map(
+    (genders_result.success ? (genders_result.data?.items ?? []) : []).map(
+      (gender) => [gender.id, gender.name],
+    ),
+  );
+}
+
+function fetch_bulk_player_assignment_lists(
+  auth_filter: Record<string, string>,
+  dependencies: BulkPlayerAssignmentPageDependencies,
+): Promise<
+  [
+    EntityListResult<Team>,
+    EntityListResult<Player>,
+    EntityListResult<PlayerTeamMembership>,
+  ]
+> {
+  return Promise.all([
+    dependencies.team_use_cases.list(auth_filter, {
       page_number: 1,
       page_size: 200,
     }),
-    command.dependencies.player_use_cases.list(auth_filter, {
+    dependencies.player_use_cases.list(auth_filter, {
       page_number: 1,
       page_size: 500,
     }),
-    command.dependencies.membership_use_cases.list(auth_filter, {
+    dependencies.membership_use_cases.list(auth_filter, {
       page_number: 1,
       page_size: 1000,
     }),
   ]);
-  if (!teams_result.success) {
-    return {
-      teams: [],
-      all_player_assignments: [],
-      gender_name_map: new Map(),
-      error_message: "Failed to load teams",
-    };
-  }
-  if (!players_result.success) {
-    return {
-      teams: [],
-      all_player_assignments: [],
-      gender_name_map: new Map(),
-      error_message: "Failed to load players",
-    };
-  }
+}
+
+export async function load_bulk_player_assignment_page_data(command: {
+  profile_state: BulkPlayerAssignmentProfileState;
+  dependencies: BulkPlayerAssignmentPageDependencies;
+}): Promise<BulkPlayerAssignmentPageData> {
+  const auth_filter = build_bulk_player_assignment_auth_filter(
+    command.profile_state,
+  );
+  const [teams_result, players_result, memberships_result] =
+    await fetch_bulk_player_assignment_lists(auth_filter, command.dependencies);
+  if (!teams_result.success)
+    return build_failed_page_data("Failed to load teams");
+  if (!players_result.success)
+    return build_failed_page_data("Failed to load players");
   const teams = teams_result.data?.items ?? [];
-  const user_organization_id =
-    command.profile_state.status === "present"
-      ? command.profile_state.profile.organization_id
-      : "";
-  const gender_filter: Record<string, string> =
-    user_organization_id && user_organization_id !== "*"
-      ? { organization_id: user_organization_id }
-      : {};
-  const genders_result = await command.dependencies.gender_use_cases.list(
-    gender_filter,
-    { page_number: 1, page_size: 50 },
+  const gender_name_map = await load_bulk_player_assignment_gender_name_map(
+    command.profile_state,
+    command.dependencies,
   );
   return {
     teams,
@@ -127,11 +159,7 @@ export async function load_bulk_player_assignment_page_data(command: {
       teams,
       get_today_date(),
     ),
-    gender_name_map: new Map(
-      (genders_result.success ? (genders_result.data?.items ?? []) : []).map(
-        (gender) => [gender.id, gender.name],
-      ),
-    ),
+    gender_name_map,
     error_message: "",
   };
 }

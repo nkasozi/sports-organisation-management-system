@@ -74,7 +74,7 @@
                             ><span
                                 >{new Date(
                                     selected_event_details.start,
-                                    ).toLocaleDateString([], {
+                                ).toLocaleDateString([], {
                                     weekday: "long",
                                     year: "numeric",
                                     month: "long",

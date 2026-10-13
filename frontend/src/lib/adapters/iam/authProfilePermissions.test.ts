@@ -2,30 +2,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 import { create_success_result, type Result } from "../../core/types/Result";
+import { get_profile_permissions_impl } from "./authProfilePermissions";
+import { lookup_role_for_email, ROLE_LOOKUP_STATUS } from "./authRoleLookup";
 import {
-  get_profile_permissions_impl,
-  get_role_for_email,
-} from "./authProfilePermissions";
-
-function create_paginated_result<TData>(items: TData[]) {
-  return {
-    items,
-    total_count: items.length,
-    page_number: 1,
-    page_size: items.length || 1,
-    total_pages: 1,
-  };
-}
-
-function create_system_user(overrides: Record<string, unknown> = {}) {
-  return {
-    id: "system_user_1",
-    email: "admin@example.com",
-    role: "org_admin",
-    status: ENTITY_STATUS.ACTIVE,
-    ...overrides,
-  };
-}
+  create_paginated_result,
+  create_system_user,
+} from "./iamTestFixtures.test_support";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -39,12 +21,15 @@ describe("authProfilePermissions", () => {
         .mockResolvedValue(create_success_result(create_paginated_result([]))),
     };
 
-    const missing_user_result = await get_role_for_email(
+    const missing_user_result = await lookup_role_for_email(
       missing_user_repository as never,
       "missing@example.com",
     );
 
-    expect(missing_user_result.success).toBe(false);
+    expect(missing_user_result).toEqual({
+      status: ROLE_LOOKUP_STATUS.USER_REJECTED,
+      message: "Access denied",
+    });
 
     const inactive_user_repository = {
       find_by_email: vi
@@ -58,12 +43,15 @@ describe("authProfilePermissions", () => {
         ),
     };
 
-    const inactive_user_result = await get_role_for_email(
+    const inactive_user_result = await lookup_role_for_email(
       inactive_user_repository as never,
       "inactive@example.com",
     );
 
-    expect(inactive_user_result.success).toBe(false);
+    expect(inactive_user_result).toEqual({
+      status: ROLE_LOOKUP_STATUS.USER_REJECTED,
+      message: "Access denied",
+    });
 
     const active_user_repository = {
       find_by_email: vi
@@ -76,8 +64,11 @@ describe("authProfilePermissions", () => {
     };
 
     await expect(
-      get_role_for_email(active_user_repository as never, "admin@example.com"),
-    ).resolves.toEqual({ success: true, data: "org_admin" });
+      lookup_role_for_email(
+        active_user_repository as never,
+        "admin@example.com",
+      ),
+    ).resolves.toEqual({ status: ROLE_LOOKUP_STATUS.FOUND, role: "org_admin" });
   });
 
   it("returns cached permissions without re-verifying the token", async () => {
@@ -95,9 +86,7 @@ describe("authProfilePermissions", () => {
       verify_token: vi.fn(),
     };
     const authorization_cache = {
-      get_or_miss: vi
-        .fn()
-        .mockReturnValue({ is_hit: true, value: cached_result }),
+      lookup: vi.fn().mockReturnValue({ status: "hit", value: cached_result }),
       set: vi.fn(),
     };
 
@@ -133,7 +122,7 @@ describe("authProfilePermissions", () => {
         ),
     };
     const authorization_cache = {
-      get_or_miss: vi.fn().mockReturnValue({ is_hit: false }),
+      lookup: vi.fn().mockReturnValue({ status: "miss", reason: "absent" }),
       set: vi.fn(),
     };
 
@@ -165,7 +154,7 @@ describe("authProfilePermissions", () => {
       ),
     };
     const authorization_cache = {
-      get_or_miss: vi.fn().mockReturnValue({ is_hit: false }),
+      lookup: vi.fn().mockReturnValue({ status: "miss", reason: "absent" }),
       set: vi.fn(),
     };
 

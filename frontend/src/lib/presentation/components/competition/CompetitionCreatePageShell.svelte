@@ -3,6 +3,8 @@
     import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
     import Toast from "$lib/presentation/components/ui/Toast.svelte";
     import type { CompetitionCreateSelectedSportState } from "$lib/presentation/logic/competitionCreatePageFlow";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
+    import type { ToastType } from "$lib/presentation/logic/toastConfig";
 
     import CompetitionCreateEditor from "./CompetitionCreateEditor.svelte";
 
@@ -19,13 +21,13 @@
     export let is_team_count_valid = true;
     export let organization_options: SelectOption[] = [];
     export let selected_sport_state: CompetitionCreateSelectedSportState = {
-        status: "missing",
+        status: PRESENCE_STATUS.MISSING,
     };
     export let selected_team_ids: Set<string> = new Set();
     export let status_options: SelectOption[] = [];
     export let team_options: SelectOption[] = [];
     export let toast_message = "";
-    export let toast_type: "success" | "error" | "info" = "info";
+    export let toast_type: ToastType = "info";
     export let toast_visible = false;
     export let on_cancel: () => void = () => {};
     export let on_format_change: (
@@ -35,8 +37,9 @@
         event: CustomEvent<{ value: string }>,
     ) => Promise<void> = async () => {};
     export let on_submit: () => Promise<void> = async () => {};
-    export let on_toggle_auto_squad_submission: (enabled: boolean) => void =
-        () => {};
+    export let on_toggle_auto_squad_submission: (
+        enabled: boolean,
+    ) => void = () => {};
     export let on_toggle_team: (team_id: string) => boolean = () => false;
 </script>
 

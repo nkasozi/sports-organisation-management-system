@@ -15,6 +15,42 @@ export type FixtureLineupCreateWizardStep = {
   is_optional?: boolean;
 };
 
+function create_wizard_step(
+  step_key: FixtureLineupCreateWizardStep["step_key"],
+  step_title: string,
+  step_description: string,
+  is_completed: boolean,
+): FixtureLineupCreateWizardStep {
+  return { step_key, step_title, step_description, is_completed };
+}
+
+function build_selection_wizard_steps(
+  has_selected_organization: boolean,
+  has_selected_fixture: boolean,
+  has_selected_team: boolean,
+): FixtureLineupCreateWizardStep[] {
+  return [
+    create_wizard_step(
+      "organization",
+      "Organization",
+      "Choose the organization",
+      has_selected_organization,
+    ),
+    create_wizard_step(
+      "fixture",
+      "Fixture",
+      "Choose the fixture",
+      has_selected_fixture,
+    ),
+    create_wizard_step(
+      "team",
+      "Team",
+      "Choose home/away competition team",
+      has_selected_team,
+    ),
+  ];
+}
+
 export function build_fixture_lineup_create_wizard_steps(
   has_selected_organization: boolean,
   has_selected_fixture: boolean,
@@ -28,36 +64,23 @@ export function build_fixture_lineup_create_wizard_steps(
     selected_player_count >= minimum_players &&
     selected_player_count <= maximum_players;
   return [
-    {
-      step_key: "organization",
-      step_title: "Organization",
-      step_description: "Choose the organization",
-      is_completed: has_selected_organization,
-    },
-    {
-      step_key: "fixture",
-      step_title: "Fixture",
-      step_description: "Choose the fixture",
-      is_completed: has_selected_fixture,
-    },
-    {
-      step_key: "team",
-      step_title: "Team",
-      step_description: "Choose home/away competition team",
-      is_completed: has_selected_team,
-    },
-    {
-      step_key: "players",
-      step_title: "Players",
-      step_description: `Select ${minimum_players}-${maximum_players}`,
-      is_completed: players_completed,
-    },
-    {
-      step_key: "confirm",
-      step_title: "Confirm",
-      step_description: "Review + lock",
-      is_completed: players_completed && confirm_lock,
-    },
+    ...build_selection_wizard_steps(
+      has_selected_organization,
+      has_selected_fixture,
+      has_selected_team,
+    ),
+    create_wizard_step(
+      "players",
+      "Players",
+      `Select ${minimum_players}-${maximum_players}`,
+      players_completed,
+    ),
+    create_wizard_step(
+      "confirm",
+      "Confirm",
+      "Review + lock",
+      players_completed && confirm_lock,
+    ),
   ];
 }
 

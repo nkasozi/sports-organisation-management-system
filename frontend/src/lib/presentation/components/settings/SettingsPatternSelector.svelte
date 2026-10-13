@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { HEADER_FOOTER_STYLE } from "$lib/presentation/components/theme/themeConstants";
     import type { HeaderFooterStyle } from "$lib/presentation/stores/branding";
 
     export let label: string;
@@ -16,7 +17,7 @@
         <button
             type="button"
             class={`relative flex-1 p-3 rounded-[0.175rem] border-2 transition-all ${
-                selected_pattern === "pattern"
+                selected_pattern === HEADER_FOOTER_STYLE.PATTERN
                     ? "border-theme-primary-500 bg-theme-primary-50 dark:bg-theme-primary-900/20"
                     : "border-accent-200 dark:border-accent-700 hover:border-accent-300 dark:hover:border-accent-600"
             }`}
@@ -34,7 +35,7 @@
                 </div>
                 <span class="text-xs font-medium">Pattern</span>
             </div>
-            {#if selected_pattern === "pattern"}
+            {#if selected_pattern === HEADER_FOOTER_STYLE.PATTERN}
                 <div
                     class="absolute top-1 right-1 w-4 h-4 bg-theme-primary-500 rounded-full flex items-center justify-center"
                 >
@@ -57,7 +58,7 @@
         <button
             type="button"
             class={`relative flex-1 p-3 rounded-[0.175rem] border-2 transition-all ${
-                selected_pattern === "solid_color"
+                selected_pattern === HEADER_FOOTER_STYLE.SOLID_COLOR
                     ? "border-theme-primary-500 bg-theme-primary-50 dark:bg-theme-primary-900/20"
                     : "border-accent-200 dark:border-accent-700 hover:border-accent-300 dark:hover:border-accent-600"
             }`}
@@ -69,7 +70,7 @@
                 ></div>
                 <span class="text-xs font-medium">Solid</span>
             </div>
-            {#if selected_pattern === "solid_color"}
+            {#if selected_pattern === HEADER_FOOTER_STYLE.SOLID_COLOR}
                 <div
                     class="absolute top-1 right-1 w-4 h-4 bg-theme-primary-500 rounded-full flex items-center justify-center"
                 >

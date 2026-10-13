@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { DYNAMIC_ENTITY_LIST_MESSAGE } from "./dynamicEntityListMessages";
 import {
   load_dynamic_entity_list_entities,
   load_dynamic_entity_list_filter_options,
@@ -98,7 +99,7 @@ describe("dynamicEntityListRecords", () => {
     ).resolves.toEqual({
       auth_profile_missing: false,
       entities: [],
-      error_message: "No metadata found for entity type: team",
+      error_message: DYNAMIC_ENTITY_LIST_MESSAGE.LIST_UNAVAILABLE,
     });
   });
 
@@ -158,94 +159,5 @@ describe("dynamicEntityListRecords", () => {
       "playerteammembership",
       "read",
     );
-  });
-
-  it("loads entities through custom handlers and applies the merged filter", async () => {
-    const filtered_entities = [{ id: "entity-1" }];
-    const list = vi
-      .fn()
-      .mockResolvedValueOnce({ success: true, data: filtered_entities });
-
-    build_entity_authorization_filter_mock.mockReturnValueOnce({
-      status: "ready",
-      filter_state: {
-        status: "present",
-        filter: { organization_id: "org-1" },
-      },
-    });
-    build_filter_from_sub_entity_config_mock.mockReturnValueOnce({
-      team_id: "team-1",
-    });
-    merge_entity_list_filters_mock.mockReturnValueOnce({
-      organization_id: "org-1",
-      team_id: "team-1",
-    });
-    extract_items_from_result_data_mock.mockReturnValueOnce(filtered_entities);
-    apply_id_filter_to_entities_mock.mockReturnValueOnce(filtered_entities);
-
-    await expect(
-      load_dynamic_entity_list_entities({
-        crud_handlers: { list } as never,
-        current_profile_state: {
-          status: "present",
-          profile: { organization_id: "org-1" } as never,
-        },
-        display_name: "Teams",
-        entity_metadata: { fields: [] } as never,
-        entity_type: "team",
-        raw_token: "",
-        sub_entity_filter: {
-          foreign_key_field: "team_id",
-          foreign_key_value: "team-1",
-        } as never,
-      }),
-    ).resolves.toEqual({
-      auth_profile_missing: false,
-      entities: filtered_entities,
-      error_message: "",
-    });
-    expect(list).toHaveBeenCalledWith(
-      { organization_id: "org-1", team_id: "team-1" },
-      { page_size: 1000 },
-    );
-  });
-
-  it("falls back to entity use cases and surfaces list errors when custom handlers are absent", async () => {
-    build_entity_authorization_filter_mock.mockReturnValueOnce({
-      status: "ready",
-      filter_state: {
-        status: "present",
-        filter: {},
-      },
-    });
-    build_filter_from_sub_entity_config_mock.mockReturnValueOnce({});
-    merge_entity_list_filters_mock.mockReturnValueOnce({});
-    extract_error_message_from_result_mock.mockReturnValueOnce("List failed");
-    get_use_cases_for_entity_type_mock.mockReturnValueOnce({
-      success: true,
-      data: {
-        list: vi.fn().mockResolvedValueOnce({
-          success: false,
-          error_message: "List failed",
-        }),
-      },
-    });
-
-    await expect(
-      load_dynamic_entity_list_entities({
-        current_profile_state: {
-          status: "present",
-          profile: { organization_id: "org-1" } as never,
-        },
-        display_name: "Teams",
-        entity_metadata: { fields: [] } as never,
-        entity_type: "team",
-        raw_token: "",
-      }),
-    ).resolves.toEqual({
-      auth_profile_missing: false,
-      entities: [],
-      error_message: "List failed",
-    });
   });
 });

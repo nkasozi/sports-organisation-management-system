@@ -1,212 +1,154 @@
 import { v } from "convex/values";
 
-import { internal } from "./_generated/api";
 import { mutation } from "./_generated/server";
-import type { UserRole } from "./lib/auth_middleware";
 import {
-  check_permission,
-  get_entity_data_category,
-  require_auth,
-} from "./lib/auth_middleware";
-import { SecurityEventType } from "./lib/security_event_types";
+  ConvexErrorCode,
+  type ConvexFailure,
+  log_convex_failure,
+} from "./lib/convex_errors";
 import {
-  get_entity_type_for_table,
-  validate_record_organization_ownership,
-  validate_table_name,
-} from "./lib/sync_validation";
-import { validate_record_url_fields } from "./lib/url_validation";
+  authorize_batch_caller,
+  BatchOperation,
+} from "./lib/sync_batch_authorization";
+import { process_batch_record } from "./lib/sync_batch_record_processor";
 import {
-  has_meaningful_changes,
-  strip_convex_fields,
-} from "./sync_record_helpers";
+  type BatchBaseVersion,
+  BatchBaseVersionKind,
+  BatchFollowUpKind,
+  type BatchRecordConflict,
+  type BatchRecordDeletedRemotely,
+  type BatchRecordOutcome,
+  type BatchRecordResult,
+} from "./lib/sync_batch_record_types";
+import { validate_table_name } from "./lib/sync_validation";
+import {
+  base_version_validator,
+  type BaseVersion,
+} from "./lib/sync_versioning";
+
+export const MAX_BATCH_SIZE = 50;
+
+type BatchFailure = ConvexFailure & {
+  results: BatchRecordResult[];
+  has_conflicts: false;
+  conflicts: BatchRecordConflict[];
+  deleted_remotely: BatchRecordDeletedRemotely[];
+};
+
+interface BatchCollection {
+  results: BatchRecordResult[];
+  conflicts: BatchRecordConflict[];
+  deleted_remotely: BatchRecordDeletedRemotely[];
+}
+
+const BATCH_TOO_LARGE_EVENT = "sync_batch_too_large";
+
+export function reject_oversized_batch(
+  operation: string,
+  record_count: number,
+): ConvexFailure {
+  return log_convex_failure(ConvexErrorCode.BATCH_TOO_LARGE, {
+    event: BATCH_TOO_LARGE_EVENT,
+    operation,
+    record_count,
+    max_batch_size: MAX_BATCH_SIZE,
+  });
+}
+
+function build_batch_failure(failure: ConvexFailure): BatchFailure {
+  return {
+    ...failure,
+    results: [],
+    has_conflicts: false,
+    conflicts: [],
+    deleted_remotely: [],
+  };
+}
+
+function to_batch_base_version(
+  base_version: BaseVersion | undefined,
+): BatchBaseVersion {
+  return base_version
+    ? { kind: BatchBaseVersionKind.PROVIDED, base_version }
+    : { kind: BatchBaseVersionKind.LEGACY_CLIENT };
+}
+
+function collect_outcome(
+  collection: BatchCollection,
+  outcome: BatchRecordOutcome,
+): BatchCollection {
+  const results = [...collection.results, outcome.result];
+  switch (outcome.follow_up.kind) {
+    case BatchFollowUpKind.NONE:
+      return { ...collection, results };
+    case BatchFollowUpKind.CONFLICT:
+      return {
+        ...collection,
+        results,
+        conflicts: [...collection.conflicts, outcome.follow_up.conflict],
+      };
+    case BatchFollowUpKind.DELETED_REMOTELY:
+      return {
+        ...collection,
+        results,
+        deleted_remotely: [
+          ...collection.deleted_remotely,
+          outcome.follow_up.deleted_remotely,
+        ],
+      };
+  }
+}
 
 export const batch_upsert = mutation({
   args: {
     table_name: v.string(),
     records: v.array(
-      v.object({ local_id: v.string(), data: v.any(), version: v.number() }),
+      v.object({
+        local_id: v.string(),
+        data: v.any(),
+        version: v.number(),
+        base_version: v.optional(base_version_validator),
+      }),
     ),
     detect_conflicts: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const { table_name, records, detect_conflicts = false } = args;
-    const MAX_BATCH_SIZE = 50;
     if (records.length > MAX_BATCH_SIZE)
-      return {
-        success: false,
-        error: `Batch size ${records.length} exceeds maximum of ${MAX_BATCH_SIZE}`,
-        results: [],
-        has_conflicts: false,
-        conflicts: [],
-      };
+      return build_batch_failure(
+        reject_oversized_batch(BatchOperation.UPSERT, records.length),
+      );
     const table_validation = validate_table_name(table_name);
-    if (!table_validation.success)
-      return {
-        success: false,
-        error: table_validation.error,
-        results: [],
-        has_conflicts: false,
-        conflicts: [],
-      };
-    const entity_type = get_entity_type_for_table(table_name);
-    const auth_result = await require_auth(ctx);
-    if (!auth_result.success) {
-      await ctx.scheduler.runAfter(
-        0,
-        internal.security_audit.log_security_event,
-        {
-          event_type: SecurityEventType.AUTH_FAILURE,
-          entity_type,
-          details: `Unauthenticated batch_upsert attempt on ${table_name} with ${records.length} records`,
-        },
-      );
-      return {
-        success: false,
-        error: auth_result.error,
-        results: [],
-        has_conflicts: false,
-        conflicts: [],
-      };
-    }
-    const user_role = auth_result.data.role as UserRole;
-    const data_category = get_entity_data_category(entity_type);
-    if (
-      !check_permission(user_role, data_category, "create") &&
-      !check_permission(user_role, data_category, "update")
-    ) {
-      await ctx.scheduler.runAfter(
-        0,
-        internal.security_audit.log_security_event,
-        {
-          event_type: SecurityEventType.ACCESS_DENIED,
-          entity_type,
-          user_email: auth_result.data.email,
-          organization_id: auth_result.data.organization_id,
-          details: `Role "${user_role}" denied create/update on "${entity_type}" (${records.length} records)`,
-        },
-      );
-      return {
-        success: false,
-        error: `Role "${user_role}" does not have create or update permission for "${entity_type}"`,
-        results: [],
-        has_conflicts: false,
-        conflicts: [],
-      };
-    }
-    const synced_at = new Date().toISOString();
-    const results: Array<{
-      local_id: string;
-      success: boolean;
-      action: string;
-    }> = [];
-    const conflicts: Array<{
-      local_id: string;
-      local_data: Record<string, unknown>;
-      local_version: number;
-      remote_data: Record<string, unknown>;
-      remote_version: number;
-      remote_updated_at: string;
-      remote_updated_by?: string;
-    }> = [];
+    if (!table_validation.success) return build_batch_failure(table_validation);
+    const authorization = await authorize_batch_caller(ctx, {
+      operation: BatchOperation.UPSERT,
+      table_name,
+      record_count: records.length,
+    });
+    if (!authorization.success) return build_batch_failure(authorization);
+    let collection: BatchCollection = {
+      results: [],
+      conflicts: [],
+      deleted_remotely: [],
+    };
     for (const record of records) {
-      const existing = await ctx.db
-        .query(table_name as any)
-        .withIndex("by_local_id", (q) => q.eq("local_id", record.local_id))
-        .first();
-      const sanitized_data = { ...record.data } as Record<string, unknown>;
-      delete sanitized_data._id;
-      delete sanitized_data._creationTime;
-      const url_validation = validate_record_url_fields(sanitized_data);
-      if (!url_validation.is_valid) {
-        results.push({
+      const outcome = await process_batch_record(ctx, {
+        table_name: table_validation.data,
+        caller: authorization.data,
+        record: {
           local_id: record.local_id,
-          success: false,
-          action: "rejected_invalid_url",
-        });
-        continue;
-      }
-      const ownership_check = validate_record_organization_ownership(
-        sanitized_data,
-        auth_result.data,
-        table_name,
-      );
-      if (!ownership_check.success) {
-        results.push({
-          local_id: record.local_id,
-          success: false,
-          action: "rejected_wrong_organization",
-        });
-        continue;
-      }
-      if (table_name === "system_users") {
-        if (!sanitized_data.email) {
-          results.push({
-            local_id: record.local_id,
-            success: false,
-            action: "skipped_no_email",
-          });
-          continue;
-        }
-        if (!sanitized_data.role) sanitized_data.role = "player";
-      }
-      const record_data = {
-        ...sanitized_data,
-        local_id: record.local_id,
-        synced_at,
-        version: record.version,
-      };
-      if (existing) {
-        if (existing.version >= record.version) {
-          if (
-            detect_conflicts &&
-            has_meaningful_changes(record.data, existing)
-          ) {
-            conflicts.push({
-              local_id: record.local_id,
-              local_data: record.data,
-              local_version: record.version,
-              remote_data: strip_convex_fields(existing),
-              remote_version: existing.version,
-              remote_updated_at:
-                existing.updated_at || existing.synced_at || "",
-              ...(existing.updated_by
-                ? { remote_updated_by: existing.updated_by }
-                : {}),
-            });
-            results.push({
-              local_id: record.local_id,
-              success: true,
-              action: "conflict_detected",
-            });
-            continue;
-          }
-          results.push({
-            local_id: record.local_id,
-            success: true,
-            action: "skipped",
-          });
-          continue;
-        }
-        await ctx.db.patch(existing._id, record_data);
-        results.push({
-          local_id: record.local_id,
-          success: true,
-          action: "updated",
-        });
-        continue;
-      }
-      await ctx.db.insert(table_name as any, record_data);
-      results.push({
-        local_id: record.local_id,
-        success: true,
-        action: "created",
+          data: record.data,
+          version: record.version,
+          base: to_batch_base_version(record.base_version),
+        },
+        detect_conflicts,
       });
+      collection = collect_outcome(collection, outcome);
     }
     return {
       success: true,
-      results,
-      has_conflicts: conflicts.length > 0,
-      conflicts,
+      ...collection,
+      has_conflicts: collection.conflicts.length > 0,
     };
   },
 });

@@ -8,6 +8,7 @@ import {
   FIELD_HOCKEY_SUBSTITUTION_RULES,
 } from "./SportFieldHockeyPresetConfig";
 import type { CreateSportInput } from "./SportTypes";
+import { SPORT_STATUS } from "./SportTypes";
 
 export function create_field_hockey_sport_preset(): CreateSportInput {
   return {
@@ -33,6 +34,6 @@ export function create_field_hockey_sport_preset(): CreateSportInput {
       penalty_corner_enabled: true,
       self_pass_allowed: true,
     },
-    status: "active",
+    status: SPORT_STATUS.ACTIVE,
   };
 }

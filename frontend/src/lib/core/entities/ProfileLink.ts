@@ -7,6 +7,7 @@ import {
   type ScalarInput,
 } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
+import { ENTITY_STATUS } from "./StatusConstants";
 
 export interface ProfileLink extends BaseEntity {
   profile_id: EntityId;
@@ -53,7 +54,7 @@ export function create_empty_profile_link_input(
     title: "",
     url: "",
     display_order: 0,
-    status: "active",
+    status: ENTITY_STATUS.ACTIVE,
   };
 }
 

@@ -454,7 +454,8 @@ The application will be available at `http://localhost:5173`
 ### Type Checking
 
 ```bash
-npm run check
+npm run check          # svelte-check for src/ plus the Convex backend
+npm run check:convex   # Convex backend only (convex/tsconfig.json)
 ```
 
 ### Testing

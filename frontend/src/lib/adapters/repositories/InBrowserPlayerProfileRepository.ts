@@ -15,13 +15,41 @@ import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../core/types/Result";
-import {
-  create_failure_result,
-  create_success_result,
-} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import {
+  apply_entity_filter_rules,
+  type EntityFilterRule,
+  equals_rule,
+} from "./InBrowserRepositoryFilterRules";
+import { find_first_row_by_index } from "./InBrowserRepositoryIndexLookup";
+import {
+  create_warning_failure_details,
+  type RepositoryFailureDetails,
+} from "./InBrowserRepositoryQueryRunner";
+import { reset_repository_data } from "./InBrowserRepositoryReset";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
+import type { RepositoryWriteOrigin } from "./InBrowserRepositoryWriteOrigin";
 
 const ENTITY_PREFIX = "profile";
+
+const PROFILE_FILTER_RULES: EntityFilterRule<
+  PlayerProfile,
+  PlayerProfileFilter
+>[] = [
+  equals_rule("player_id"),
+  equals_rule("visibility"),
+  equals_rule("status"),
+];
+
+function describe_profile_failure(
+  lookup_field: string,
+): RepositoryFailureDetails {
+  return create_warning_failure_details(
+    `[PlayerProfileRepository] Failed to find profile by ${lookup_field}`,
+    `repository_find_profile_by_${lookup_field}_failed`,
+    `find profile by ${lookup_field}`,
+  );
+}
 export class InBrowserPlayerProfileRepository
   extends InBrowserBaseRepository<
     PlayerProfile,
@@ -70,82 +98,29 @@ export class InBrowserPlayerProfileRepository
     entities: PlayerProfile[],
     filter: PlayerProfileFilter,
   ): PlayerProfile[] {
-    let filtered = entities;
-
-    if (filter.player_id) {
-      filtered = filtered.filter(
-        (profile) => profile.player_id === filter.player_id,
-      );
-    }
-
-    if (filter.visibility) {
-      filtered = filtered.filter(
-        (profile) => profile.visibility === filter.visibility,
-      );
-    }
-
-    if (filter.status) {
-      filtered = filtered.filter((profile) => profile.status === filter.status);
-    }
-
-    return filtered;
+    return apply_entity_filter_rules(entities, filter, PROFILE_FILTER_RULES);
   }
 
   async find_by_player_id(
     player_id: PlayerProfile["player_id"],
   ): AsyncResult<PlayerProfile> {
-    try {
-      const profiles = await this.database.player_profiles
-        .where("player_id")
-        .equals(player_id)
-        .toArray();
-
-      if (profiles.length === 0) {
-        return create_failure_result(
-          `No profile found for player: ${player_id}`,
-        );
-      }
-
-      return create_success_result(profiles[0]);
-    } catch (error) {
-      console.warn(
-        "[PlayerProfileRepository] Failed to find profile by player_id",
-        {
-          event: "repository_find_profile_by_player_id_failed",
-          error: String(error),
-        },
-      );
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to find profile by player_id: ${error_message}`,
-      );
-    }
+    return find_first_row_by_index({
+      table: this.database.player_profiles,
+      index_name: "player_id",
+      value: player_id,
+      not_found_message: `No profile found for player: ${player_id}`,
+      failure: describe_profile_failure("player_id"),
+    });
   }
 
   async find_by_slug(slug: string): AsyncResult<PlayerProfile> {
-    try {
-      const profiles = await this.database.player_profiles
-        .where("profile_slug")
-        .equals(slug)
-        .toArray();
-
-      if (profiles.length === 0) {
-        return create_failure_result(`No profile found with slug: ${slug}`);
-      }
-
-      return create_success_result(profiles[0]);
-    } catch (error) {
-      console.warn("[PlayerProfileRepository] Failed to find profile by slug", {
-        event: "repository_find_profile_by_slug_failed",
-        error: String(error),
-      });
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to find profile by slug: ${error_message}`,
-      );
-    }
+    return find_first_row_by_index({
+      table: this.database.player_profiles,
+      index_name: "profile_slug",
+      value: slug,
+      not_found_message: `No profile found with slug: ${slug}`,
+      failure: describe_profile_failure("slug"),
+    });
   }
 
   async find_public_profiles(
@@ -185,28 +160,16 @@ function create_default_player_profiles(): import("$lib/core/types/DomainScalars
   ];
 }
 
-type PlayerProfileRepositoryState =
-  | { status: "uninitialized" }
-  | { status: "ready"; repository: InBrowserPlayerProfileRepository };
+export const get_player_profile_repository: () => PlayerProfileRepository =
+  create_lazy_repository_accessor(() => new InBrowserPlayerProfileRepository());
 
-let player_profile_repository_state: PlayerProfileRepositoryState = {
-  status: "uninitialized",
-};
-
-export function get_player_profile_repository(): PlayerProfileRepository {
-  if (player_profile_repository_state.status === "ready") {
-    return player_profile_repository_state.repository;
-  }
-
-  const repository = new InBrowserPlayerProfileRepository();
-  player_profile_repository_state = { status: "ready", repository };
-
-  return repository;
-}
-
-export async function reset_player_profile_repository(): Promise<void> {
-  const repository =
-    get_player_profile_repository() as InBrowserPlayerProfileRepository;
-  await repository.clear_all_data();
-  await repository.seed_with_data(create_default_player_profiles());
+export function reset_player_profile_repository(
+  origin: RepositoryWriteOrigin,
+): AsyncResult<number> {
+  return reset_repository_data(
+    (
+      get_player_profile_repository() as InBrowserPlayerProfileRepository
+    ).with_write_origin(origin),
+    create_default_player_profiles(),
+  );
 }

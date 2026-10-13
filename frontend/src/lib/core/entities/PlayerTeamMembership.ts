@@ -4,8 +4,10 @@ import type {
   ScalarInput,
 } from "../types/DomainScalars";
 import type { BaseEntity } from "./BaseEntity";
+import type { MembershipStatusValue } from "./StatusConstants";
+import { MEMBERSHIP_STATUS } from "./StatusConstants";
 
-export type PlayerTeamMembershipStatus = "active" | "inactive" | "ended";
+export type PlayerTeamMembershipStatus = MembershipStatusValue;
 
 export interface PlayerTeamMembership extends BaseEntity {
   organization_id: EntityId;
@@ -34,7 +36,7 @@ export function create_empty_player_team_membership_input(
     team_id,
     start_date: new Date().toISOString().split("T")[0],
     jersey_number: 1,
-    status: "active",
+    status: MEMBERSHIP_STATUS.ACTIVE,
   };
 }
 

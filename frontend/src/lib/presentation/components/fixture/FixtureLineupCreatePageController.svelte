@@ -5,17 +5,12 @@
     import { goto } from "$app/navigation";
     import type { Competition } from "$lib/core/entities/Competition";
     import type { Fixture } from "$lib/core/entities/Fixture";
-    import {
-        create_empty_fixture_lineup_input,
-        type CreateFixtureLineupInput,
-    } from "$lib/core/entities/FixtureLineup";
+    import type { CreateFixtureLineupInput } from "$lib/core/entities/FixtureLineup";
     import type { Organization } from "$lib/core/entities/Organization";
     import type { Team } from "$lib/core/entities/Team";
-    import type { UserScopeProfile } from "$lib/core/interfaces/ports/external/iam/AuthorizationPort";
     import type { TeamPlayer } from "$lib/core/services/teamPlayers";
     import { create_fixture_lineup_create_dependencies } from "$lib/presentation/logic/fixtureLineupCreateData";
     import type {
-        FixtureLineupCreateAuthProfileState,
         FixtureLineupCreateFixtureState,
         FixtureLineupCreateOrganizationState,
         FixtureLineupCreateTeamState,
@@ -24,101 +19,82 @@
         build_fixture_lineup_create_page_derived_state,
         sync_fixture_lineup_create_selected_organization,
     } from "$lib/presentation/logic/fixtureLineupCreatePageControllerDerived";
+    import { create_fixture_lineup_create_page_controller_state } from "$lib/presentation/logic/fixtureLineupCreatePageControllerInitialState";
     import { create_fixture_lineup_create_page_controller_runtime } from "$lib/presentation/logic/fixtureLineupCreatePageControllerRuntime";
+    import {
+        build_fixture_lineup_create_auth_profile_state,
+        build_fixture_lineup_create_page_view_handlers,
+        build_fixture_lineup_create_page_view_props,
+        has_authorization_defaults_changed,
+    } from "$lib/presentation/logic/fixtureLineupCreatePageControllerView";
     import { apply_fixture_lineup_authorization_defaults } from "$lib/presentation/logic/fixtureLineupCreatePageFlow";
-    import { get_player_role_label } from "$lib/presentation/logic/fixtureLineupCreateState";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
     import { auth_store } from "$lib/presentation/stores/auth";
 
     import FixtureLineupCreatePageView from "./FixtureLineupCreatePageView.svelte";
 
     const dependencies = create_fixture_lineup_create_dependencies();
-    let form_data: CreateFixtureLineupInput =
-            create_empty_fixture_lineup_input(),
-        selected_fixture_state: FixtureLineupCreateFixtureState = {
-            status: "missing",
-        },
-        selected_team_state: FixtureLineupCreateTeamState = {
-            status: "missing",
-        },
-        selected_organization_state: FixtureLineupCreateOrganizationState = {
-            status: "missing",
-        },
-        team_players: TeamPlayer[] = [],
-        min_players = 2,
-        max_players = 18,
-        starters_count = 11,
-        current_step_index = 0,
-        confirm_lock_understood = false,
-        player_search_text = "",
-        loading = true,
-        saving = false,
-        error_message = "",
-        organizations: Organization[] = [],
-        fixtures: Fixture[] = [],
-        all_teams: Team[] = [],
-        all_competitions: Competition[] = [],
-        available_teams: Team[] = [],
-        fixtures_with_complete_lineups = new Set<string>(),
-        validation_errors: Record<string, string> = {},
-        fixture_team_label_by_team_id = new Map<string, string>(),
-        teams_with_existing_lineups = new Map<string, string>();
-    let current_auth_profile_state: FixtureLineupCreateAuthProfileState = {
-        status: "missing",
-    };
-    function get_derived_state_input() {
-        return {
-            current_auth_profile_state,
-            form_data,
-            selected_organization_state,
-            selected_fixture_state,
-            selected_team_state,
-            team_players,
-            player_search_text,
-            organizations,
-            fixtures,
-            all_teams,
-            all_competitions,
-            available_teams,
-            fixtures_with_complete_lineups,
-            fixture_team_label_by_team_id,
-            min_players,
-            max_players,
-            confirm_lock_understood,
-        };
-    }
-
-    let derived_state = build_fixture_lineup_create_page_derived_state(
-        get_derived_state_input(),
-    );
-
+    let {
+        form_data,
+        selected_fixture_state,
+        selected_team_state,
+        selected_organization_state,
+        team_players,
+        min_players,
+        max_players,
+        starters_count,
+        current_step_index,
+        confirm_lock_understood,
+        player_search_text,
+        loading,
+        saving,
+        error_message,
+        organizations,
+        fixtures,
+        all_teams,
+        all_competitions,
+        available_teams,
+        fixtures_with_complete_lineups,
+        validation_errors,
+        fixture_team_label_by_team_id,
+        teams_with_existing_lineups,
+        current_auth_profile_state,
+    } = create_fixture_lineup_create_page_controller_state();
     $: current_auth_profile_state =
-        $auth_store.current_profile.status === "present"
-            ? {
-                  status: "present",
-                  profile:
-                      $auth_store.current_profile.profile as unknown as UserScopeProfile,
-              }
-            : {
-                  status: "missing",
-              };
-    $: derived_state = build_fixture_lineup_create_page_derived_state(
-        get_derived_state_input(),
-    );
+        build_fixture_lineup_create_auth_profile_state(
+            $auth_store.current_profile,
+        );
+    $: derived_state = build_fixture_lineup_create_page_derived_state({
+        current_auth_profile_state,
+        form_data,
+        selected_organization_state,
+        selected_fixture_state,
+        selected_team_state,
+        team_players,
+        player_search_text,
+        organizations,
+        fixtures,
+        all_teams,
+        all_competitions,
+        available_teams,
+        fixtures_with_complete_lineups,
+        fixture_team_label_by_team_id,
+        min_players,
+        max_players,
+        confirm_lock_understood,
+    });
     $: {
         const next_form_data = apply_fixture_lineup_authorization_defaults({
             form_data,
             current_auth_profile_state,
         });
-        if (
-            next_form_data.organization_id !== form_data.organization_id ||
-            next_form_data.team_id !== form_data.team_id
-        )
+        if (has_authorization_defaults_changed(form_data, next_form_data))
             form_data = next_form_data;
     }
     $: if (
         form_data.organization_id &&
         organizations.length > 0 &&
-        selected_organization_state.status === "missing"
+        selected_organization_state.status === PRESENCE_STATUS.MISSING
     )
         selected_organization_state =
             sync_fixture_lineup_create_selected_organization(
@@ -178,63 +154,42 @@
             (validation_errors = value),
     });
 
+    const view_handlers = build_fixture_lineup_create_page_view_handlers({
+        runtime,
+        goto,
+        get_starters_count: () => starters_count,
+    });
+    $: view_props = build_fixture_lineup_create_page_view_props({
+        derived_state,
+        form_data,
+        organizations,
+        selected_organization_state,
+        selected_team_state,
+        fixtures_with_complete_lineups,
+        teams_with_existing_lineups,
+        available_teams,
+    });
+
     onMount(() => void runtime.initialize_page());
 </script>
 
 <svelte:head><title>Create Fixture Lineup - Sport-Sync</title></svelte:head>
 
 <FixtureLineupCreatePageView
+    {...view_props}
+    {...view_handlers}
     {min_players}
     {max_players}
     {loading}
     {saving}
     {error_message}
     {validation_errors}
-    wizard_steps={derived_state.wizard_steps}
     bind:current_step_index
-    selected_organization_id={form_data.organization_id}
-    selected_fixture_id={form_data.fixture_id}
-    selected_team_id={form_data.team_id}
-    organization_select_options={derived_state.organization_select_options}
-    organization_is_restricted={derived_state.organization_is_restricted}
-    organizations_count={organizations.length}
-    has_selected_organization={selected_organization_state.status === "present"}
-    fixture_select_options={derived_state.fixture_select_options}
-    fixtures_for_organization_count={derived_state.fixtures_for_organization
-        .length}
-    all_fixtures_for_org_count={derived_state.all_fixtures_for_org.length}
-    non_scheduled_fixtures_count={derived_state.non_scheduled_fixtures_count}
-    fixtures_with_complete_lineups_count={fixtures_with_complete_lineups.size}
-    team_is_restricted={derived_state.team_is_restricted}
-    current_fixture_title={derived_state.current_fixture_title}
-    existing_lineup_team_names={Array.from(
-        teams_with_existing_lineups.values(),
-    )}
-    available_teams_count={available_teams.length}
-    team_select_options={derived_state.team_select_options}
-    selected_players={form_data.selected_players}
     {starters_count}
     {player_search_text}
-    filtered_team_players={derived_state.filtered_team_players}
-    selected_team_name={selected_team_state.status === "present"
-        ? selected_team_state.team.name
-        : ""}
     {confirm_lock_understood}
-    notes={form_data.notes || ""}
-    on_validate_step_change={runtime.handle_step_change_attempt}
-    on_cancel={() => void goto("/fixture-lineups")}
-    on_submit={runtime.handle_submit_locked_lineup}
-    on_organization_change={runtime.handle_organization_change}
-    on_fixture_change={(fixture_id) =>
-        void runtime.handle_fixture_change(fixture_id)}
-    on_team_change={(team_id) => void runtime.handle_team_change(team_id)}
     on_player_search_change={(search_text) =>
         (player_search_text = search_text)}
-    on_select_all={runtime.select_all_players}
-    on_deselect_all={runtime.deselect_all_players}
-    on_toggle_player={runtime.toggle_player_selection}
-    get_player_role_label={(player_index) =>
-        get_player_role_label(player_index, starters_count)}
     on_confirm_change={(is_checked) => (confirm_lock_understood = is_checked)}
     on_notes_change={(notes) => (form_data.notes = notes)}
 />

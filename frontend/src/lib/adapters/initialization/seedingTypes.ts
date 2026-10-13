@@ -3,32 +3,69 @@ import type { TeamStaffRole } from "$lib/core/entities/TeamStaffRole";
 import type { Venue } from "$lib/core/entities/Venue";
 import type { AppSettingsPort } from "$lib/core/interfaces/ports";
 import type { ScalarValueInput } from "$lib/core/types/DomainScalars";
+import {
+  type AsyncResult,
+  create_failure_result,
+  create_success_result,
+} from "$lib/core/types/Result";
 import { get_app_settings_storage } from "$lib/infrastructure/container";
 
 import type { DataSource } from "../../infrastructure/sync/convexSeedingService";
 import type { PositionIds } from "../../infrastructure/utils/seed/seedPlayerIds";
 import type { SeedCompetitionFormatIds } from "../../infrastructure/utils/SeedDataGenerator";
+import {
+  type DATA_SOURCE,
+  type SEED_OUTCOME,
+  SEEDING_COMPLETE_SETTING_KEY,
+  SEEDING_COMPLETION_STATE,
+  type SeedingCompletionState,
+  type SeedOutcome,
+  SETTING_TRUE_VALUE,
+} from "./initializationConstants";
+import {
+  INITIALIZATION_ERROR_CODE,
+  INITIALIZATION_EVENT,
+} from "./initializationEvents";
 
-export type SeedingStrategy =
-  | "skip_seeding"
-  | "convex_first_with_local_fallback"
-  | "convex_mandatory"
-  | "local_only";
+const SEEDING_STATE_SAVE_FAILED_MESSAGE =
+  "We could not finish setting up demo data. Please reload and try again.";
 
-export type SeedOutcome =
-  | "skipped"
-  | "convex_success"
-  | "local_fallback_success"
-  | "offline_mode"
-  | "convex_required_but_unavailable"
-  | "failed";
+export type { SeedingStrategy } from "./initializationConstants";
 
-export interface SeedResult {
-  success: boolean;
-  data_source: DataSource;
-  outcome: SeedOutcome;
+interface SeedResultShape<
+  TOutcome extends SeedOutcome,
+  TSuccess extends boolean,
+  TSource extends DataSource,
+> {
+  outcome: TOutcome;
+  success: TSuccess;
+  data_source: TSource;
   error_message: string;
 }
+
+export type SeedResult =
+  | SeedResultShape<typeof SEED_OUTCOME.SKIPPED, true, typeof DATA_SOURCE.NONE>
+  | SeedResultShape<
+      typeof SEED_OUTCOME.CONVEX_SUCCESS,
+      true,
+      typeof DATA_SOURCE.CONVEX
+    >
+  | SeedResultShape<
+      typeof SEED_OUTCOME.LOCAL_FALLBACK_SUCCESS,
+      true,
+      typeof DATA_SOURCE.LOCAL
+    >
+  | SeedResultShape<
+      typeof SEED_OUTCOME.OFFLINE_MODE,
+      true,
+      typeof DATA_SOURCE.LOCAL
+    >
+  | SeedResultShape<
+      typeof SEED_OUTCOME.CONVEX_REQUIRED_BUT_UNAVAILABLE,
+      false,
+      typeof DATA_SOURCE.NONE
+    >
+  | SeedResultShape<typeof SEED_OUTCOME.FAILED, false, typeof DATA_SOURCE.NONE>;
 
 export type { PositionIds } from "../../infrastructure/utils/seed/seedPlayerIds";
 
@@ -51,26 +88,41 @@ export interface SeedEntityIdLookups {
   competition_format_ids: SeedCompetitionFormatIds;
 }
 
-export type { DataSource } from "../../infrastructure/sync/convexSeedingService";
-
-const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v16";
-
 export async function is_seeding_already_complete(
   app_settings: AppSettingsPort = get_app_settings_storage(),
-): Promise<boolean> {
-  return (await app_settings.get_setting(SEEDING_COMPLETE_KEY)) === "true";
+): Promise<SeedingCompletionState> {
+  try {
+    const stored_value = await app_settings.get_setting(
+      SEEDING_COMPLETE_SETTING_KEY,
+    );
+    return stored_value === SETTING_TRUE_VALUE
+      ? SEEDING_COMPLETION_STATE.COMPLETE
+      : SEEDING_COMPLETION_STATE.NOT_COMPLETE;
+  } catch (error) {
+    console.error("[Seeding] Could not read the seeding completion marker", {
+      event: INITIALIZATION_EVENT.SEEDING_COMPLETION_UNREADABLE,
+      error_code: INITIALIZATION_ERROR_CODE.SEEDING_STATE_UNREADABLE,
+      error: String(error),
+    });
+    return SEEDING_COMPLETION_STATE.UNREADABLE;
+  }
 }
 
 export async function mark_seeding_complete(
   app_settings: AppSettingsPort = get_app_settings_storage(),
-): Promise<boolean> {
-  await app_settings.set_setting(SEEDING_COMPLETE_KEY, "true");
-  return true;
-}
-
-async function reset_seeding_flag(
-  app_settings: AppSettingsPort = get_app_settings_storage(),
-): Promise<boolean> {
-  await app_settings.remove_setting(SEEDING_COMPLETE_KEY);
-  return true;
+): AsyncResult<boolean> {
+  try {
+    await app_settings.set_setting(
+      SEEDING_COMPLETE_SETTING_KEY,
+      SETTING_TRUE_VALUE,
+    );
+    return create_success_result(true);
+  } catch (error) {
+    console.error("[Seeding] Could not save the seeding completion marker", {
+      event: INITIALIZATION_EVENT.SEEDING_COMPLETION_MARK_FAILED,
+      error_code: INITIALIZATION_ERROR_CODE.SEEDING_STATE_UNREADABLE,
+      error: String(error),
+    });
+    return create_failure_result(SEEDING_STATE_SAVE_FAILED_MESSAGE);
+  }
 }

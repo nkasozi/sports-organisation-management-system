@@ -1,16 +1,20 @@
 import type { EntityId, Name, ScalarInput } from "../types/DomainScalars";
 import type { BaseEntity } from "./BaseEntity";
 
+export const ACTIVITY_CATEGORY_TYPE = {
+  COMPETITION: "competition",
+  FIXTURE: "fixture",
+  TRAINING: "training",
+  ADMINISTRATIVE: "administrative",
+  TRANSFER_WINDOW: "transfer_window",
+  MEETING: "meeting",
+  MEDICAL: "medical",
+  TRAVEL: "travel",
+  CUSTOM: "custom",
+} as const;
+
 export type ActivityCategoryType =
-  | "competition"
-  | "fixture"
-  | "training"
-  | "administrative"
-  | "transfer_window"
-  | "meeting"
-  | "medical"
-  | "travel"
-  | "custom";
+  (typeof ACTIVITY_CATEGORY_TYPE)[keyof typeof ACTIVITY_CATEGORY_TYPE];
 
 export interface ActivityCategory extends BaseEntity {
   name: Name;
@@ -28,37 +32,6 @@ export type CreateActivityCategoryInput = Omit<
 >;
 
 export type UpdateActivityCategoryInput = Partial<CreateActivityCategoryInput>;
-
-const ACTIVITY_CATEGORY_COLORS = [
-  "#EF4444",
-  "#F97316",
-  "#F59E0B",
-  "#84CC16",
-  "#22C55E",
-  "#14B8A6",
-  "#06B6D4",
-  "#0EA5E9",
-  "#3B82F6",
-  "#6366F1",
-  "#8B5CF6",
-  "#A855F7",
-  "#D946EF",
-  "#EC4899",
-  "#F43F5E",
-] as const;
-
-const ACTIVITY_CATEGORY_ICONS = [
-  "trophy",
-  "calendar",
-  "users",
-  "briefcase",
-  "clipboard",
-  "heart",
-  "plane",
-  "flag",
-  "star",
-  "clock",
-] as const;
 
 export const DEFAULT_CATEGORY_COLORS: Record<ActivityCategoryType, string> = {
   competition: "#3B82F6",

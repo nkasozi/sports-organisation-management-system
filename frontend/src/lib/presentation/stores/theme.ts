@@ -4,44 +4,57 @@ import { browser } from "$app/environment";
 import { get_app_settings_storage } from "$lib/infrastructure/container";
 
 import { COLOR_PALETTES } from "./themeColorPalettes";
+import {
+  COLOR_NAME_MAP,
+  DARK_MODE_CLASS_NAME,
+  DEFAULT_THEME,
+  FALLBACK_PRIMARY_COLOR,
+  FALLBACK_SECONDARY_COLOR,
+  MEDIA_QUERY_CHANGE_EVENT,
+  PREFERS_DARK_COLOR_SCHEME_QUERY,
+  THEME_LOG_EVENTS,
+  THEME_MODE,
+  THEME_PALETTE_PREFIX,
+  THEME_STORAGE_KEY,
+} from "./themeConstants";
 import type { PaletteShade, ThemeColorName, ThemeConfig } from "./themeTypes";
 import { PALETTE_SHADES } from "./themeTypes";
 
+export { get_theme_classes } from "./themeClasses";
 export type { ThemeConfig } from "./themeTypes";
 
-const DEFAULT_THEME: ThemeConfig = {
-  mode: "dark",
-  primary_color: "red",
-  secondary_color: "blue",
-};
+function to_theme_mode(prefers_dark: boolean): ThemeConfig["mode"] {
+  return prefers_dark ? THEME_MODE.DARK : THEME_MODE.LIGHT;
+}
 
 function get_system_preference_theme(): ThemeConfig {
   const prefers_dark = window.matchMedia(
-    "(prefers-color-scheme: dark)",
+    PREFERS_DARK_COLOR_SCHEME_QUERY,
   ).matches;
-  return { ...DEFAULT_THEME, mode: prefers_dark ? "dark" : "light" };
+  return { ...DEFAULT_THEME, mode: to_theme_mode(prefers_dark) };
 }
 
 export const theme_store = writable<ThemeConfig>(DEFAULT_THEME);
 
+function apply_stored_theme(stored_theme_json: string): boolean {
+  try {
+    const parsed = JSON.parse(stored_theme_json) as Partial<ThemeConfig>;
+    theme_store.set({ ...DEFAULT_THEME, ...parsed });
+    return true;
+  } catch (error) {
+    console.warn("[theme] Stored theme unreadable; using system preference", {
+      event: THEME_LOG_EVENTS.PARSE_FAILED,
+      error: String(error),
+    });
+    return false;
+  }
+}
+
 export async function initialize_theme(): Promise<void> {
   if (!browser) return;
-  const stored_theme_json = await get_app_settings_storage().get_setting(
-    "sports-org-theme-v2",
-  );
-  if (stored_theme_json) {
-    try {
-      const parsed = JSON.parse(stored_theme_json) as Partial<ThemeConfig>;
-      theme_store.set({ ...DEFAULT_THEME, ...parsed });
-      return;
-    } catch {
-      console.warn(
-        "[theme] Failed to parse stored theme, falling back to system preference",
-        { event: "theme_parse_failed" },
-      );
-    }
-  }
-
+  const stored_theme_json =
+    await get_app_settings_storage().get_setting(THEME_STORAGE_KEY);
+  if (stored_theme_json && apply_stored_theme(stored_theme_json)) return;
   theme_store.set(get_system_preference_theme());
 }
 
@@ -61,16 +74,18 @@ function apply_palette_css_variables(
 function apply_theme_to_document(theme_config: ThemeConfig): void {
   if (!browser) return;
   const html_element = document.documentElement;
-  if (theme_config.mode === "dark") html_element.classList.add("dark");
-  else html_element.classList.remove("dark");
+  html_element.classList.toggle(
+    DARK_MODE_CLASS_NAME,
+    theme_config.mode === THEME_MODE.DARK,
+  );
   apply_palette_css_variables(
     html_element,
-    "primary",
+    THEME_PALETTE_PREFIX.PRIMARY,
     COLOR_PALETTES[theme_config.primary_color],
   );
   apply_palette_css_variables(
     html_element,
-    "secondary",
+    THEME_PALETTE_PREFIX.SECONDARY,
     COLOR_PALETTES[theme_config.secondary_color],
   );
 }
@@ -78,11 +93,11 @@ function apply_theme_to_document(theme_config: ThemeConfig): void {
 async function save_theme_to_storage(theme_config: ThemeConfig): Promise<void> {
   if (!browser) return;
   await get_app_settings_storage().set_setting(
-    "sports-org-theme-v2",
+    THEME_STORAGE_KEY,
     JSON.stringify(theme_config),
   );
   console.debug("[theme] Saved theme", {
-    event: "theme_saved",
+    event: THEME_LOG_EVENTS.SAVED,
     mode: theme_config.mode,
   });
 }
@@ -90,20 +105,20 @@ async function save_theme_to_storage(theme_config: ThemeConfig): Promise<void> {
 if (browser) {
   theme_store.subscribe((theme_config: ThemeConfig) => {
     apply_theme_to_document(theme_config);
-    save_theme_to_storage(theme_config).catch((error) => {
+    save_theme_to_storage(theme_config).catch((error: unknown) => {
       console.warn("[theme] Failed to persist theme", {
-        event: "theme_save_failed",
-        error,
+        event: THEME_LOG_EVENTS.SAVE_FAILED,
+        error: String(error),
       });
     });
   });
 
   window
-    .matchMedia("(prefers-color-scheme: dark)")
-    .addEventListener("change", (event) => {
+    .matchMedia(PREFERS_DARK_COLOR_SCHEME_QUERY)
+    .addEventListener(MEDIA_QUERY_CHANGE_EVENT, (event) => {
       theme_store.update((current_theme) => ({
         ...current_theme,
-        mode: event.matches ? "dark" : "light",
+        mode: to_theme_mode(event.matches),
       }));
     });
 }
@@ -111,78 +126,42 @@ if (browser) {
 export function toggle_theme_mode(): void {
   theme_store.update((current_theme) => ({
     ...current_theme,
-    mode: current_theme.mode === "light" ? "dark" : "light",
+    mode: to_theme_mode(current_theme.mode === THEME_MODE.LIGHT),
   }));
 }
 
-function set_primary_color(color: ThemeColorName): void {
-  theme_store.update((current_theme) => ({
-    ...current_theme,
-    primary_color: color,
-  }));
+function resolve_theme_color(
+  color_name: string,
+  fallback_color: ThemeColorName,
+): ThemeColorName {
+  return COLOR_NAME_MAP[color_name.toLowerCase()] || fallback_color;
 }
-
-function set_secondary_color(color: ThemeColorName): void {
-  theme_store.update((current_theme) => ({
-    ...current_theme,
-    secondary_color: color,
-  }));
-}
-
-const COLOR_NAME_MAP: Record<string, ThemeColorName> = {
-  yellow: "sky",
-  amber: "sky",
-  blue: "blue",
-  green: "green",
-  red: "red",
-  purple: "purple",
-  orange: "cyan",
-  teal: "teal",
-  pink: "pink",
-  indigo: "indigo",
-  emerald: "emerald",
-  cyan: "cyan",
-  rose: "rose",
-  violet: "violet",
-  fuchsia: "fuchsia",
-  lime: "lime",
-  sky: "sky",
-  slate: "slate",
-};
 
 export function update_theme_colors(options: {
   primaryColor?: string;
   secondaryColor?: string;
 }): void {
-  theme_store.update((current_theme) => {
-    const new_theme = { ...current_theme };
-    if (options.primaryColor)
-      new_theme.primary_color =
-        COLOR_NAME_MAP[options.primaryColor.toLowerCase()] || "blue";
-    if (options.secondaryColor)
-      new_theme.secondary_color =
-        COLOR_NAME_MAP[options.secondaryColor.toLowerCase()] || "red";
-    return new_theme;
-  });
+  theme_store.update((current_theme) => ({
+    ...current_theme,
+    ...(options.primaryColor
+      ? {
+          primary_color: resolve_theme_color(
+            options.primaryColor,
+            FALLBACK_PRIMARY_COLOR,
+          ),
+        }
+      : {}),
+    ...(options.secondaryColor
+      ? {
+          secondary_color: resolve_theme_color(
+            options.secondaryColor,
+            FALLBACK_SECONDARY_COLOR,
+          ),
+        }
+      : {}),
+  }));
 }
 
 export function reset_theme_to_default(): void {
   theme_store.set(DEFAULT_THEME);
-}
-
-export function get_theme_classes(
-  theme_config: ThemeConfig,
-): Record<string, string> {
-  return {
-    isDark: theme_config.mode === "dark" ? "true" : "false",
-    isLight: theme_config.mode === "light" ? "true" : "false",
-    primaryBg: "bg-theme-primary-500",
-    primaryText: "text-theme-primary-500",
-    secondaryBg: "bg-theme-secondary-500",
-    secondaryText: "text-theme-secondary-500",
-    cardBg: "bg-white dark:bg-gray-800",
-    textPrimary: "text-gray-900 dark:text-gray-100",
-    textSecondary: "text-gray-700 dark:text-gray-300",
-    border: "border-gray-200 dark:border-gray-700",
-  };
 }

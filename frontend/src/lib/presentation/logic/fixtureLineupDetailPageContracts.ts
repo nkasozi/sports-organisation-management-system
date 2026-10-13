@@ -3,9 +3,19 @@ import type { FixtureLineup } from "$lib/core/entities/FixtureLineup";
 import type { Team } from "$lib/core/entities/Team";
 import type { TeamPlayer } from "$lib/core/services/teamPlayers";
 
+export const FIXTURE_LINEUP_DETAIL_ORGANIZATION_SCOPE_STATUS = {
+  UNSCOPED: "unscoped",
+  SCOPED: "scoped",
+} as const;
+
 export type FixtureLineupDetailOrganizationScopeState =
-  | { status: "unscoped" }
-  | { status: "scoped"; organization_id: string };
+  | {
+      status: typeof FIXTURE_LINEUP_DETAIL_ORGANIZATION_SCOPE_STATUS.UNSCOPED;
+    }
+  | {
+      status: typeof FIXTURE_LINEUP_DETAIL_ORGANIZATION_SCOPE_STATUS.SCOPED;
+      organization_id: string;
+    };
 
 export type FixtureLineupDetailProfileState =
   | { status: "missing" }

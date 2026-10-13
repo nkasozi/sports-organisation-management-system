@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Fixture } from "$lib/core/entities/Fixture";
+    import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
     import Pagination from "$lib/presentation/components/ui/Pagination.svelte";
     import TeamLogoThumbnail from "$lib/presentation/components/ui/TeamLogoThumbnail.svelte";
 
@@ -31,7 +32,7 @@
                 fixture.stage_id || "",
             )}
             <div
-                class={`p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg ${fixture.status === "in_progress" ? "border border-red-200 dark:border-red-800" : ""}`}
+                class={`p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg ${fixture.status === FIXTURE_STATUS.IN_PROGRESS ? "border border-red-200 dark:border-red-800" : ""}`}
             >
                 <div class="flex items-center justify-between mb-2">
                     <div>
@@ -54,7 +55,7 @@
                             </div>
                         {/if}
                     </div>
-                    {#if fixture.status === "in_progress"}
+                    {#if fixture.status === FIXTURE_STATUS.IN_PROGRESS}
                         <div class="flex items-center gap-1.5">
                             <span class="relative flex h-2 w-2"
                                 ><span

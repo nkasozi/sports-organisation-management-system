@@ -2,10 +2,19 @@ import { faker } from "@faker-js/faker";
 
 import type { FieldMetadata } from "../../core/entities/BaseEntity";
 import {
+  FAKE_DATA_DEFAULT_LOCALE,
+  FAKE_DATA_EMPTY_VALUE,
+  FAKE_DATA_ERROR_MESSAGE,
+  FAKE_DATA_FIELD_TYPE,
+  FAKE_DATA_LOG_EVENT,
+  FAKE_DATA_SKIPPED_FIELD_NAMES,
+} from "./fakeDataConstants";
+import {
   generate_fake_date_value,
   generate_fake_number_value,
   generate_fake_string_value,
 } from "./fakeDataFieldGenerators";
+import { is_number_value } from "./runtimeTypeGuards";
 
 interface FakeDataGeneratorConfig {
   locale?: string;
@@ -13,11 +22,57 @@ interface FakeDataGeneratorConfig {
   enable_fake_data_generation?: boolean;
 }
 
-interface FakeDataGenerationResult {
-  success: boolean;
-  generated_data: Record<string, any>;
-  error_message?: string;
-  debug_info?: string;
+type FakeDataGenerationResult =
+  | { success: true; generated_data: Record<string, unknown> }
+  | { success: false; error_message: string };
+
+function generate_enum_value(field: FieldMetadata): unknown {
+  const enum_values = field.enum_values ?? [];
+  if (enum_values.length === 0) return FAKE_DATA_EMPTY_VALUE;
+  return faker.helpers.arrayElement(enum_values);
+}
+
+function generate_fake_value_for_field(field: FieldMetadata): unknown {
+  const field_name_lower = field.field_name.toLowerCase();
+  switch (field.field_type) {
+    case FAKE_DATA_FIELD_TYPE.ENUM:
+      return generate_enum_value(field);
+    case FAKE_DATA_FIELD_TYPE.STAGE_TEMPLATE_ARRAY:
+      return [];
+    case FAKE_DATA_FIELD_TYPE.STRING:
+      return generate_fake_string_value(field_name_lower, field.display_name);
+    case FAKE_DATA_FIELD_TYPE.NUMBER:
+      return generate_fake_number_value(field_name_lower);
+    case FAKE_DATA_FIELD_TYPE.BOOLEAN:
+      return faker.datatype.boolean();
+    case FAKE_DATA_FIELD_TYPE.DATE:
+      return generate_fake_date_value(field_name_lower);
+    case FAKE_DATA_FIELD_TYPE.FOREIGN_KEY:
+    case FAKE_DATA_FIELD_TYPE.STAR_RATING:
+    case FAKE_DATA_FIELD_TYPE.FILE:
+    case FAKE_DATA_FIELD_TYPE.SUB_ENTITY:
+    case FAKE_DATA_FIELD_TYPE.OFFICIAL_ASSIGNMENT_ARRAY:
+      return FAKE_DATA_EMPTY_VALUE;
+  }
+}
+
+function should_generate_field(field: FieldMetadata): boolean {
+  if (field.is_read_only) return false;
+  return !FAKE_DATA_SKIPPED_FIELD_NAMES.includes(field.field_name);
+}
+
+function build_fake_data(fields: FieldMetadata[]): Record<string, unknown> {
+  return Object.fromEntries(
+    fields
+      .filter(should_generate_field)
+      .map((field) => [field.field_name, generate_fake_value_for_field(field)]),
+  );
+}
+
+function apply_seed(seed: number | undefined): boolean {
+  if (!is_number_value(seed)) return false;
+  faker.seed(seed);
+  return true;
 }
 
 class FakeDataGeneratorService {
@@ -25,14 +80,11 @@ class FakeDataGeneratorService {
 
   constructor(config: FakeDataGeneratorConfig = {}) {
     this.config = {
-      locale: "en",
+      locale: FAKE_DATA_DEFAULT_LOCALE,
       enable_fake_data_generation: true,
       ...config,
     };
-
-    if (typeof this.config.seed === "number") {
-      faker.seed(this.config.seed);
-    }
+    apply_seed(this.config.seed);
   }
 
   generate_fake_data_for_entity_fields(
@@ -41,79 +93,18 @@ class FakeDataGeneratorService {
     if (!this.config.enable_fake_data_generation) {
       return {
         success: false,
-        generated_data: {},
-        error_message: "Fake data generation is disabled",
-        debug_info: "Check enable_fake_data_generation config setting",
+        error_message: FAKE_DATA_ERROR_MESSAGE.DISABLED,
       };
     }
-
     try {
-      const generated_data: Record<string, any> = {};
-
-      for (const field of fields) {
-        if (
-          field.is_read_only ||
-          field.field_name === "id" ||
-          field.field_name === "created_at" ||
-          field.field_name === "updated_at"
-        ) {
-          continue;
-        }
-
-        const fake_value = this.generate_fake_value_for_field(field);
-        generated_data[field.field_name] = fake_value;
-      }
-
-      return {
-        success: true,
-        generated_data,
-        debug_info: `Generated fake data for ${Object.keys(generated_data).length} fields`,
-      };
+      return { success: true, generated_data: build_fake_data(fields) };
     } catch (error) {
       console.warn("[FakeDataGenerator] Failed to generate fake data", {
-        event: "repository_generate_fake_data_failed",
+        event: FAKE_DATA_LOG_EVENT.GENERATION_FAILED,
+        field_count: fields.length,
         error: String(error),
       });
-      return {
-        success: false,
-        generated_data: {},
-        error_message: `Failed to generate fake data: ${error}`,
-        debug_info: "Error occurred during fake data generation process",
-      };
-    }
-  }
-
-  private generate_fake_value_for_field(field: FieldMetadata): any {
-    if (
-      field.field_type === "enum" &&
-      field.enum_values &&
-      field.enum_values.length > 0
-    ) {
-      return faker.helpers.arrayElement(field.enum_values);
-    }
-    if (field.field_type === "foreign_key") return "";
-    if (field.field_type === "stage_template_array") return [];
-
-    const field_name_lower = field.field_name.toLowerCase();
-
-    switch (field.field_type) {
-      case "string":
-        return generate_fake_string_value(field_name_lower, field.display_name);
-      case "number":
-        return generate_fake_number_value(field_name_lower);
-      case "boolean":
-        return faker.datatype.boolean();
-      case "date":
-        return generate_fake_date_value(field_name_lower);
-      default:
-        return "";
-    }
-  }
-
-  update_config(new_config: Partial<FakeDataGeneratorConfig>): void {
-    this.config = { ...this.config, ...new_config };
-    if (typeof new_config.seed === "number") {
-      faker.seed(new_config.seed);
+      return { success: false, error_message: FAKE_DATA_ERROR_MESSAGE.FAILED };
     }
   }
 
@@ -124,5 +115,5 @@ class FakeDataGeneratorService {
 
 export const fakeDataGenerator = new FakeDataGeneratorService({
   enable_fake_data_generation: true,
-  locale: "en",
+  locale: FAKE_DATA_DEFAULT_LOCALE,
 });

@@ -1,59 +1,45 @@
 import type { GameEventType } from "../../core/entities/GameEventType";
 import type { GameEventTypeFilter } from "../../core/interfaces/ports";
+import {
+  apply_entity_filter_rules,
+  type EntityFilterRule,
+  equals_rule,
+  FILTER_RULE_ACTIVATION,
+  predicate_rule,
+  text_contains_rule,
+} from "./InBrowserRepositoryFilterRules";
 
 const GLOBAL_GAME_EVENT_TYPE_SPORT_ID = "" as GameEventType["sport_id"];
+
+const GAME_EVENT_TYPE_FILTER_RULES: EntityFilterRule<
+  GameEventType,
+  GameEventTypeFilter
+>[] = [
+  text_contains_rule("name_contains", (entity) => entity.name),
+  equals_rule("code"),
+  predicate_rule(
+    "sport_id",
+    (entity, filter) =>
+      entity.sport_id === filter.sport_id ||
+      entity.sport_id === GLOBAL_GAME_EVENT_TYPE_SPORT_ID,
+    FILTER_RULE_ACTIVATION.WHEN_KEY_PRESENT,
+  ),
+  equals_rule("category"),
+  equals_rule("affects_score", FILTER_RULE_ACTIVATION.WHEN_KEY_PRESENT),
+  equals_rule("requires_player", FILTER_RULE_ACTIVATION.WHEN_KEY_PRESENT),
+  equals_rule("status"),
+  equals_rule("organization_id"),
+];
 
 export function apply_game_event_type_filter(
   entities: GameEventType[],
   filter: GameEventTypeFilter,
 ): GameEventType[] {
-  let filtered = entities;
-  if (filter.name_contains) {
-    const term = filter.name_contains.toLowerCase();
-    filtered = filtered.filter((entity: GameEventType) =>
-      entity.name.toLowerCase().includes(term),
-    );
-  }
-  if (filter.code) {
-    filtered = filtered.filter(
-      (entity: GameEventType) => entity.code === filter.code,
-    );
-  }
-  if ("sport_id" in filter) {
-    filtered = filtered.filter(
-      (entity: GameEventType) =>
-        entity.sport_id === filter.sport_id ||
-        entity.sport_id === GLOBAL_GAME_EVENT_TYPE_SPORT_ID,
-    );
-  }
-  if (filter.category) {
-    filtered = filtered.filter(
-      (entity: GameEventType) => entity.category === filter.category,
-    );
-  }
-  if ("affects_score" in filter) {
-    filtered = filtered.filter(
-      (entity: GameEventType) => entity.affects_score === filter.affects_score,
-    );
-  }
-  if ("requires_player" in filter) {
-    filtered = filtered.filter(
-      (entity: GameEventType) =>
-        entity.requires_player === filter.requires_player,
-    );
-  }
-  if (filter.status) {
-    filtered = filtered.filter(
-      (entity: GameEventType) => entity.status === filter.status,
-    );
-  }
-  if (filter.organization_id) {
-    filtered = filtered.filter(
-      (entity: GameEventType) =>
-        entity.organization_id === filter.organization_id,
-    );
-  }
-  return filtered;
+  return apply_entity_filter_rules(
+    entities,
+    filter,
+    GAME_EVENT_TYPE_FILTER_RULES,
+  );
 }
 
 export function sort_game_event_types(

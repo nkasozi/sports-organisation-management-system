@@ -1,9 +1,16 @@
 <script lang="ts">
     import CalendarSubscriptionManager from "$lib/presentation/components/calendar/CalendarSubscriptionManager.svelte";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
+    import { auth_store } from "$lib/presentation/stores/auth";
 
     export let is_visible: boolean;
     export let organization_id: string;
     export let on_close: () => void;
+
+    $: current_user_id =
+        $auth_store.current_profile.status === PRESENCE_STATUS.PRESENT
+            ? String($auth_store.current_profile.profile.id)
+            : "";
 </script>
 
 {#if is_visible}
@@ -53,7 +60,7 @@
                 <div class="p-4">
                     <CalendarSubscriptionManager
                         {organization_id}
-                        user_id="default-user"
+                        user_id={current_user_id}
                     />
                 </div>
             </div>

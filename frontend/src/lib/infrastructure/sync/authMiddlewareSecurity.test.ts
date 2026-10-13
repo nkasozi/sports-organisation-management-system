@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { require_auth } from "../../../../convex/lib/auth_middleware";
+import {
+  type ConvexContext,
+  require_auth,
+} from "../../../../convex/lib/auth_middleware";
 
 function create_mock_context(
   identity: { subject: string; email?: string } | undefined,
   system_user: Record<string, unknown> | undefined = undefined,
-): any {
-  return {
+): ConvexContext {
+  const mock_context = {
     auth: {
       getUserIdentity: async () => identity,
     },
@@ -17,7 +20,8 @@ function create_mock_context(
         }),
       }),
     },
-  } as any;
+  };
+  return mock_context as unknown as ConvexContext;
 }
 
 const AUTH_DENIED_MESSAGE = "Access denied";

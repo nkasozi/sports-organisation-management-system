@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 
 import type { DataAction } from "$lib/core/interfaces/ports";
+import { create_some_option } from "$lib/core/types/Option";
 
 import {
   check_entity_permission,
-  get_entity_data_category,
+  find_entity_data_category,
   get_role_permissions_sync,
   map_authorizable_action_to_data_action,
 } from "./authPermissionCore";
@@ -15,9 +16,15 @@ describe("authPermissionCore", () => {
   });
 
   it("maps entity types into the correct data categories", () => {
-    expect(get_entity_data_category("organization")).toBe("root_level");
-    expect(get_entity_data_category("team")).toBe("team_level");
-    expect(get_entity_data_category("fixturelineup")).toBe("player_level");
+    expect(find_entity_data_category("organization")).toEqual(
+      create_some_option("root_level"),
+    );
+    expect(find_entity_data_category("team")).toEqual(
+      create_some_option("team_level"),
+    );
+    expect(find_entity_data_category("fixturelineup")).toEqual(
+      create_some_option("player_level"),
+    );
   });
 
   it("adapts shared role permissions into CRUD permissions per category", () => {
@@ -45,11 +52,7 @@ describe("authPermissionCore", () => {
     }
   });
 
-  it("maps authorizable actions exhaustively and reports unknown roles as failures", () => {
-    const console_error_spy = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => {});
-
+  it("maps authorizable actions exhaustively", () => {
     expectTypeOf(
       map_authorizable_action_to_data_action,
     ).returns.toEqualTypeOf<DataAction>();
@@ -58,10 +61,5 @@ describe("authPermissionCore", () => {
     expect(map_authorizable_action_to_data_action("delete")).toBe("delete");
     expect(map_authorizable_action_to_data_action("list")).toBe("read");
     expect(map_authorizable_action_to_data_action("view")).toBe("read");
-    expect(get_role_permissions_sync("ghost_role" as never)).toEqual({
-      success: false,
-      error: 'Unknown role: "ghost_role"',
-    });
-    expect(console_error_spy).toHaveBeenCalled();
   });
 });

@@ -5,6 +5,8 @@ import {
   card_type_validator,
   foul_category_validator,
   official_requirement_validator,
+  ORGANIZATION_LOCAL_ID_INDEX_FIELDS,
+  ORGANIZATION_LOCAL_ID_INDEX_NAME,
   overtime_rule_validator,
   scoring_rule_validator,
   sport_game_period_validator,
@@ -27,7 +29,9 @@ export const schema_competition_tables = {
     founded_date: v.optional(v.string()),
     status: v.optional(v.string()),
     ...timestamp_fields,
-  }).index("by_local_id", ["local_id"]),
+  })
+    .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"]),
   competitions: defineTable({
     ...sync_metadata_fields,
     name: v.string(),
@@ -79,7 +83,12 @@ export const schema_competition_tables = {
     status: v.optional(v.string()),
     logo_url: v.optional(v.string()),
     ...timestamp_fields,
-  }).index("by_local_id", ["local_id"]),
+  })
+    .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"])
+    .index(ORGANIZATION_LOCAL_ID_INDEX_NAME, [
+      ...ORGANIZATION_LOCAL_ID_INDEX_FIELDS,
+    ]),
   teams: defineTable({
     ...sync_metadata_fields,
     name: v.string(),
@@ -101,5 +110,9 @@ export const schema_competition_tables = {
     ...timestamp_fields,
   })
     .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"])
+    .index(ORGANIZATION_LOCAL_ID_INDEX_NAME, [
+      ...ORGANIZATION_LOCAL_ID_INDEX_FIELDS,
+    ])
     .index("by_organization", ["organization_id"]),
 };

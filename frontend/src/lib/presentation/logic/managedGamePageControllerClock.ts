@@ -1,106 +1,79 @@
 import { browser } from "$app/environment";
 import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
-import type { ManagedGameLoadResult } from "$lib/presentation/logic/managedGamePageTypes";
 
 import {
-  apply_managed_game_bundle,
-  type ManagedGamePageState,
-  set_managed_game_loading_error,
-} from "./managedGamePageControllerState";
+  create_managed_game_clock_context,
+  type ManagedGameClockCommand,
+  type ManagedGameClockContext,
+  start_managed_game_clock,
+  stop_managed_game_clock,
+  toggle_managed_game_clock,
+  update_managed_game_clock_state,
+} from "./managedGamePageControllerClockTicking";
+import { apply_managed_game_bundle } from "./managedGamePageControllerState";
+import {
+  begin_managed_game_page_load,
+  complete_managed_game_page_load,
+  fail_managed_game_page_load,
+} from "./managedGamePageStateMachine";
 
-export function create_managed_game_clock_handlers(command: {
-  get_fixture_id: () => string;
-  get_state: () => ManagedGamePageState;
-  load_bundle: (fixture_id: string) => Promise<ManagedGameLoadResult>;
-  set_state: (state: ManagedGamePageState) => void;
-}): {
+const MISSING_FIXTURE_ID_MESSAGE = "No fixture ID provided";
+
+async function load_managed_game_fixture(
+  context: ManagedGameClockContext,
+): Promise<void> {
+  update_managed_game_clock_state(context, begin_managed_game_page_load);
+  const result = await context.command.load_bundle(
+    context.command.get_fixture_id(),
+  );
+  if (!result.success) {
+    update_managed_game_clock_state(context, (state) =>
+      fail_managed_game_page_load(state, result.error_message),
+    );
+    return;
+  }
+  update_managed_game_clock_state(context, (state) =>
+    complete_managed_game_page_load(
+      apply_managed_game_bundle(state, result.data),
+    ),
+  );
+}
+
+async function initialize_managed_game_clock(
+  context: ManagedGameClockContext,
+): Promise<void> {
+  if (!browser) return;
+  const auth_result = await ensure_auth_profile();
+  if (!auth_result.success) {
+    update_managed_game_clock_state(context, (state) =>
+      fail_managed_game_page_load(state, auth_result.error_message),
+    );
+    return;
+  }
+  if (!context.command.get_fixture_id()) {
+    update_managed_game_clock_state(context, (state) =>
+      fail_managed_game_page_load(state, MISSING_FIXTURE_ID_MESSAGE),
+    );
+    return;
+  }
+  await load_managed_game_fixture(context);
+}
+
+export function create_managed_game_clock_handlers(
+  command: ManagedGameClockCommand,
+): {
   cleanup: () => void;
   initialize: () => Promise<void>;
   start_clock: () => void;
   stop_clock: () => void;
   toggle_clock: () => void;
 } {
-  let clock_interval_state:
-    | { status: "stopped" }
-    | { status: "running"; interval_id: ReturnType<typeof setInterval> } = {
-    status: "stopped",
-  };
-
-  const update_state = (
-    updater: (state: ManagedGamePageState) => ManagedGamePageState,
-  ): ManagedGamePageState => {
-    const next_state = updater(command.get_state());
-    command.set_state(next_state);
-    return next_state;
-  };
-
-  const stop_clock = (): void => {
-    if (clock_interval_state.status === "running") {
-      clearInterval(clock_interval_state.interval_id);
-    }
-    clock_interval_state = { status: "stopped" };
-    update_state((state) => ({ ...state, is_clock_running: false }));
-  };
-
-  const start_clock = (): void => {
-    if (clock_interval_state.status === "running") return;
-    update_state((state) => ({ ...state, is_clock_running: true }));
-    const interval_id = setInterval(() => {
-      update_state((state) => ({
-        ...state,
-        game_clock_seconds: state.game_clock_seconds + 1,
-      }));
-    }, 1000);
-    clock_interval_state = { status: "running", interval_id };
-  };
-
-  const load_fixture = async (): Promise<void> => {
-    update_state((state) => ({
-      ...state,
-      is_loading: true,
-      error_message: "",
-    }));
-    const result = await command.load_bundle(command.get_fixture_id());
-    if (!result.success) {
-      update_state((state) =>
-        set_managed_game_loading_error(state, result.error_message),
-      );
-      return;
-    }
-    update_state((state) => ({
-      ...apply_managed_game_bundle(state, result.data),
-      is_loading: false,
-      error_message: "",
-    }));
-  };
-
+  const context = create_managed_game_clock_context(command);
   return {
-    initialize: async (): Promise<void> => {
-      if (!browser) return;
-      const auth_result = await ensure_auth_profile();
-      if (!auth_result.success) {
-        update_state((state) =>
-          set_managed_game_loading_error(state, auth_result.error_message),
-        );
-        return;
-      }
-      if (!command.get_fixture_id()) {
-        update_state((state) =>
-          set_managed_game_loading_error(state, "No fixture ID provided"),
-        );
-        return;
-      }
-      await load_fixture();
-    },
-    cleanup: (): void => stop_clock(),
-    start_clock,
-    stop_clock,
-    toggle_clock: (): void => {
-      if (command.get_state().is_clock_running) {
-        stop_clock();
-        return;
-      }
-      start_clock();
-    },
+    initialize: () => initialize_managed_game_clock(context),
+    cleanup: (): void => stop_managed_game_clock(context),
+    start_clock: (): void => start_managed_game_clock(context),
+    stop_clock: (): void => stop_managed_game_clock(context),
+    toggle_clock: (): void => toggle_managed_game_clock(context),
   };
 }

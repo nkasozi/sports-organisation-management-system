@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { create_live_game_detail_clock_handlers } from "./liveGameDetailControllerClock";
-import { create_live_game_detail_page_state } from "./liveGameDetailPageStateFactories";
+import {
+  create_clock_handlers,
+  create_state_store,
+} from "./liveGameDetailControllerClock.test_support";
 
 const {
   check_entity_authorized_mock,
@@ -50,32 +52,13 @@ describe("liveGameDetailControllerClock", () => {
     vi.useRealTimers();
   });
 
-  function create_state_store() {
-    let page_state = create_live_game_detail_page_state();
-    return {
-      get_page_state: () => page_state,
-      read_page_state: () => page_state,
-      set_page_state: (next_state: typeof page_state) => {
-        page_state = next_state;
-      },
-    };
-  }
-
   it("stores an auth error when initialization fails before data loading", async () => {
     const state_store = create_state_store();
     ensure_auth_profile_mock.mockResolvedValue({
       success: false,
       error_message: "Access denied",
     });
-    const handlers = create_live_game_detail_clock_handlers({
-      data_dependencies: {} as never,
-      fixture_id: () => "fixture-1",
-      get_event_state: vi.fn(),
-      get_page_state: state_store.get_page_state,
-      goto: vi.fn(),
-      raw_token: () => "",
-      set_page_state: state_store.set_page_state,
-    });
+    const handlers = create_clock_handlers(state_store);
 
     await handlers.initialize();
 
@@ -96,14 +79,9 @@ describe("liveGameDetailControllerClock", () => {
       success: true,
       data: { is_authorized: false },
     });
-    const handlers = create_live_game_detail_clock_handlers({
-      data_dependencies: {} as never,
-      fixture_id: () => "fixture-1",
-      get_event_state: vi.fn(),
-      get_page_state: state_store.get_page_state,
+    const handlers = create_clock_handlers(state_store, {
       goto,
-      raw_token: () => "token-1",
-      set_page_state: state_store.set_page_state,
+      raw_token: "token-1",
     });
 
     await handlers.initialize();
@@ -134,15 +112,7 @@ describe("liveGameDetailControllerClock", () => {
         game_clock_seconds: 0,
       },
     });
-    const handlers = create_live_game_detail_clock_handlers({
-      data_dependencies: {} as never,
-      fixture_id: () => "fixture-1",
-      get_event_state: vi.fn(),
-      get_page_state: state_store.get_page_state,
-      goto: vi.fn(),
-      raw_token: () => "",
-      set_page_state: state_store.set_page_state,
-    });
+    const handlers = create_clock_handlers(state_store);
 
     await expect(handlers.reload_fixture_bundle()).resolves.toEqual({
       id: "fixture-1",
@@ -169,15 +139,7 @@ describe("liveGameDetailControllerClock", () => {
       } as never,
       game_clock_seconds: 10,
     });
-    const handlers = create_live_game_detail_clock_handlers({
-      data_dependencies: {} as never,
-      fixture_id: () => "fixture-1",
-      get_event_state: vi.fn(),
-      get_page_state: state_store.get_page_state,
-      goto: vi.fn(),
-      raw_token: () => "",
-      set_page_state: state_store.set_page_state,
-    });
+    const handlers = create_clock_handlers(state_store);
 
     derive_live_game_detail_view_state_mock.mockReturnValue({
       is_current_period_playing: true,

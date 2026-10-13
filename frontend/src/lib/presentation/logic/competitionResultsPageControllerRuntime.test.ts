@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { create_competition_results_page_controller_runtime } from "./competitionResultsPageControllerRuntime";
+import { create_command } from "./competitionResultsPageControllerRuntime.test_support";
 
 const {
   create_empty_competition_results_bundle_mock,
@@ -58,50 +59,6 @@ vi.mock("./competitionResultsPageState", () => ({
 }));
 
 describe("competitionResultsPageControllerRuntime", () => {
-  function create_command() {
-    const state = {
-      organizations: [{ id: "organization-1", name: "Org One" }],
-      selected_competition_id: "competition-1",
-      selected_organization_id: "organization-1",
-    };
-
-    const command = {
-      apply_bundle: vi.fn(),
-      get_auth_state: () => ({
-        current_profile_state: {
-          status: "present",
-          profile: { organization_id: "organization-1" },
-        },
-      }),
-      get_is_public: () => true,
-      get_organizations: () => state.organizations as never,
-      get_page_url: () => new URL("https://example.com/competition-results"),
-      get_saved_organization_id: () => "organization-1",
-      get_selected_competition_id: () => state.selected_competition_id,
-      get_selected_organization_id: () => state.selected_organization_id,
-      is_browser: true,
-      set_can_change_organizations: vi.fn(),
-      set_competitions: vi.fn(),
-      set_error_message: vi.fn(),
-      set_fixtures_loading: vi.fn(),
-      set_is_using_cached_data: vi.fn(),
-      set_loading_state: vi.fn(),
-      set_organizations: vi.fn((value: unknown[]) => {
-        state.organizations = value as never;
-      }),
-      set_selected_competition_id: vi.fn((value: string) => {
-        state.selected_competition_id = value;
-      }),
-      set_selected_organization_id: vi.fn((value: string) => {
-        state.selected_organization_id = value;
-      }),
-      sync_branding_for_org: vi.fn().mockImplementation(async () => {}),
-      sync_public_organization: vi.fn().mockImplementation(async () => {}),
-    };
-
-    return { command, state };
-  }
-
   beforeEach(() => {
     create_empty_competition_results_bundle_mock.mockReset();
     derive_competition_results_can_change_organizations_mock.mockReset();
@@ -163,92 +120,5 @@ describe("competitionResultsPageControllerRuntime", () => {
       "competition-2",
     );
     expect(command.apply_bundle).toHaveBeenCalledWith({ fixture_count: 3 });
-  });
-
-  it("stops private-page initialization when auth fails", async () => {
-    const { command } = create_command();
-    ensure_auth_profile_mock.mockResolvedValueOnce({
-      success: false,
-      error_message: "Access denied",
-    });
-    extract_competition_results_url_params_mock.mockReturnValueOnce({
-      org_id: "",
-      competition_id: "",
-    });
-
-    await create_competition_results_page_controller_runtime({
-      ...command,
-      get_is_public: () => false,
-    } as never).initialize_page();
-
-    expect(command.set_error_message).toHaveBeenCalledWith("Access denied");
-    expect(command.set_loading_state).toHaveBeenCalledWith("error");
-  });
-
-  it("initializes the page state from the loaded competition results payload", async () => {
-    const { command } = create_command();
-    ensure_auth_profile_mock.mockResolvedValueOnce({ success: true });
-    extract_competition_results_url_params_mock.mockReturnValueOnce({
-      org_id: "organization-1",
-      competition_id: "competition-1",
-    });
-    derive_competition_results_can_change_organizations_mock.mockReturnValueOnce(
-      true,
-    );
-    initialize_competition_results_page_mock.mockResolvedValueOnce({
-      is_using_cached_data: false,
-      organizations: [{ id: "organization-1" }],
-      selected_organization_id: "organization-1",
-      competitions: [{ id: "competition-1" }],
-      selected_competition_id: "competition-1",
-      bundle: { fixture_count: 5 },
-    });
-
-    await create_competition_results_page_controller_runtime(
-      command as never,
-    ).initialize_page();
-
-    expect(
-      derive_competition_results_can_change_organizations_mock,
-    ).toHaveBeenCalledWith(
-      {
-        status: "present",
-        profile: { organization_id: "organization-1" },
-      },
-      "organization-1",
-    );
-    expect(command.set_can_change_organizations).toHaveBeenCalledWith(true);
-    expect(command.set_is_using_cached_data).toHaveBeenCalledWith(false);
-    expect(command.set_organizations).toHaveBeenCalledWith([
-      { id: "organization-1" },
-    ]);
-    expect(command.apply_bundle).toHaveBeenCalledWith({ fixture_count: 5 });
-    expect(command.set_loading_state).toHaveBeenLastCalledWith("success");
-  });
-
-  it("falls back to an empty bundle when initialization throws", async () => {
-    const { command } = create_command();
-    ensure_auth_profile_mock.mockResolvedValueOnce({ success: true });
-    extract_competition_results_url_params_mock.mockReturnValueOnce({
-      org_id: "organization-1",
-      competition_id: "competition-1",
-    });
-    derive_competition_results_can_change_organizations_mock.mockReturnValueOnce(
-      true,
-    );
-    initialize_competition_results_page_mock.mockRejectedValueOnce(
-      new Error("boom"),
-    );
-    create_empty_competition_results_bundle_mock.mockReturnValueOnce({
-      empty: true,
-    });
-
-    await create_competition_results_page_controller_runtime(
-      command as never,
-    ).initialize_page();
-
-    expect(command.set_error_message).toHaveBeenCalledWith("boom");
-    expect(command.set_loading_state).toHaveBeenLastCalledWith("error");
-    expect(command.apply_bundle).toHaveBeenCalledWith({ empty: true });
   });
 });

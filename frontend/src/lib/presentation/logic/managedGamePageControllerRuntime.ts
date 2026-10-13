@@ -18,7 +18,7 @@ type ManagedGameFixtureUseCases = Pick<
   "start_fixture" | "end_fixture" | "record_game_event" | "update_period"
 >;
 
-export function create_managed_game_controller_runtime(command: {
+type ManagedGameControllerRuntimeCommand = {
   before_start: (fixture: Fixture) => Promise<ManagedGameStartCheck>;
   fixture_use_cases: ManagedGameFixtureUseCases;
   get_fixture_id: () => string;
@@ -26,7 +26,9 @@ export function create_managed_game_controller_runtime(command: {
   goto: (path: string) => Promise<unknown>;
   load_bundle: (fixture_id: string) => Promise<ManagedGameLoadResult>;
   set_state: (state: ManagedGamePageState) => void;
-}): {
+};
+
+type ManagedGameControllerRuntime = {
   change_period: (new_period: GamePeriod) => Promise<void>;
   cleanup: () => void;
   end_current_period: () => Promise<void>;
@@ -42,7 +44,11 @@ export function create_managed_game_controller_runtime(command: {
   stop_clock: () => void;
   toggle_clock: () => void;
   cancel_event: () => void;
-} {
+};
+
+export function create_managed_game_controller_runtime(
+  command: ManagedGameControllerRuntimeCommand,
+): ManagedGameControllerRuntime {
   const clock_handlers = create_managed_game_clock_handlers({
     get_fixture_id: command.get_fixture_id,
     get_state: command.get_state,

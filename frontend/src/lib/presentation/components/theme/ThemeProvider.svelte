@@ -1,38 +1,40 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+    import { onMount } from "svelte";
 
-  import { theme_store } from "$lib/presentation/stores/theme";
+    import {
+        DARK_MODE_CLASS_NAME,
+        THEME_MODE,
+    } from "$lib/presentation/components/theme/themeConstants";
+    import {
+        theme_store,
+        type ThemeConfig,
+    } from "$lib/presentation/stores/theme";
 
-  let mounted = false;
+    let mounted = false;
 
-  onMount(() => {
-    mounted = true;
+    function apply_theme_mode_class(theme_config: ThemeConfig): boolean {
+        if (typeof document === typeof undefined) return false;
+        document.documentElement.classList.toggle(
+            DARK_MODE_CLASS_NAME,
+            theme_config.mode === THEME_MODE.DARK,
+        );
+        return true;
+    }
 
-    // Apply initial theme
-    theme_store.subscribe((theme_config) => {
-      if (typeof document !== "undefined") {
-        const html_element = document.documentElement;
-
-        // Apply dark/light mode class
-        if (theme_config.mode === "dark") {
-          html_element.classList.add("dark");
-        } else {
-          html_element.classList.remove("dark");
-        }
-      }
+    onMount(() => {
+        mounted = true;
+        return theme_store.subscribe(apply_theme_mode_class);
     });
-  });
 </script>
 
 {#if mounted}
-  <slot />
+    <slot />
 {:else}
-  <!-- Loading state to prevent flash of unstyled content -->
-  <div
-    class="min-h-screen bg-gray-50 dark:bg-accent-900 flex items-center justify-center"
-  >
     <div
-      class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"
-    ></div>
-  </div>
+        class="min-h-screen bg-gray-50 dark:bg-accent-900 flex items-center justify-center"
+    >
+        <div
+            class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"
+        ></div>
+    </div>
 {/if}

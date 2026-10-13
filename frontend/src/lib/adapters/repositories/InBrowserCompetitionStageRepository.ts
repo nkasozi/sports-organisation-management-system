@@ -12,13 +12,20 @@ import type {
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
-import {
-  create_failure_result,
-  create_success_result,
-} from "../../core/types/Result";
+import { create_success_result } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import { find_rows_by_index } from "./InBrowserRepositoryIndexLookup";
+import {
+  create_warning_failure_details,
+  with_failure_context,
+} from "./InBrowserRepositoryQueryRunner";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
 
 const ENTITY_PREFIX = "stage";
+
+enum COMPETITION_STAGE_INDEX {
+  COMPETITION_ID = "competition_id",
+}
 
 export class InBrowserCompetitionStageRepository
   extends InBrowserBaseRepository<
@@ -101,55 +108,38 @@ export class InBrowserCompetitionStageRepository
     competition_id: CompetitionStage["competition_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<CompetitionStage> {
-    try {
-      const all_stages = await this.database.competition_stages
-        .where("competition_id")
-        .equals(competition_id)
-        .toArray();
-
-      const sorted_stages = all_stages.sort(
-        (a, b) => a.stage_order - b.stage_order,
-      );
-
-      const total_count = sorted_stages.length;
-      const paginated_stages = this.apply_pagination(sorted_stages, options);
-
-      return create_success_result(
-        this.create_paginated_result(paginated_stages, total_count, options),
-      );
-    } catch (error) {
-      console.warn(
-        "[CompetitionStageRepository] Failed to fetch stages for competition",
-        {
-          event: "repository_fetch_stages_for_competition_failed",
-          error: String(error),
-        },
-      );
-      return create_failure_result(
-        `Failed to fetch stages for competition: ${error}`,
-      );
-    }
+    const stages_result = await find_rows_by_index({
+      table: this.database.competition_stages,
+      index_name: COMPETITION_STAGE_INDEX.COMPETITION_ID,
+      value: competition_id,
+      failure: with_failure_context(
+        create_warning_failure_details(
+          "[CompetitionStageRepository] Failed to fetch stages for competition",
+          "repository_fetch_stages_for_competition_failed",
+          "fetch stages for competition",
+        ),
+        { competition_id },
+      ),
+    });
+    if (!stages_result.success) return stages_result;
+    const sorted_stages = [...stages_result.data].sort(
+      (a, b) => a.stage_order - b.stage_order,
+    );
+    return create_success_result(
+      this.create_paginated_result(
+        this.apply_pagination(sorted_stages, options),
+        sorted_stages.length,
+        options,
+      ),
+    );
   }
 }
 
-type CompetitionStageRepositoryState =
-  | { status: "uninitialized" }
-  | {
-      status: "ready";
-      repository: InBrowserCompetitionStageRepository;
-    };
-
-let competition_stage_repository_state: CompetitionStageRepositoryState = {
-  status: "uninitialized",
-};
+const get_concrete_repository: () => InBrowserCompetitionStageRepository =
+  create_lazy_repository_accessor(
+    () => new InBrowserCompetitionStageRepository(),
+  );
 
 export function get_competition_stage_repository(): CompetitionStageRepository {
-  if (competition_stage_repository_state.status === "ready") {
-    return competition_stage_repository_state.repository;
-  }
-
-  const repository = new InBrowserCompetitionStageRepository();
-  competition_stage_repository_state = { status: "ready", repository };
-
-  return repository;
+  return get_concrete_repository();
 }

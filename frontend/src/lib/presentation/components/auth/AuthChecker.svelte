@@ -1,127 +1,138 @@
 <script lang="ts">
-  import { ConvexClient } from "convex/browser";
-  import { onDestroy,onMount } from "svelte";
-  import { get } from "svelte/store";
+    import { ConvexClient } from "convex/browser";
+    import { onDestroy, onMount } from "svelte";
+    import { get } from "svelte/store";
 
-  import { browser } from "$app/environment";
-  import { goto } from "$app/navigation";
-  import { page } from "$app/stores";
-  import { PUBLIC_CONVEX_URL } from "$env/static/public";
-  import { get_clerk } from "$lib/adapters/iam/clerkAuthService";
+    import { browser } from "$app/environment";
+    import { goto } from "$app/navigation";
+    import { page } from "$app/stores";
+    import { PUBLIC_CONVEX_URL } from "$env/static/public";
+    import {
+        get_clerk,
+        get_session_token,
+    } from "$lib/adapters/iam/clerkAuthService";
+    import {
+        AuthCheckerAccessStatus,
+        CURRENT_USER_PROFILE_QUERY,
+        verify_signed_in_user_access,
+    } from "$lib/presentation/logic/authCheckerAccess";
+    import {
+        AUTH_CHECKER_PRECHECK,
+        build_access_denied_redirect_path,
+        build_missing_email_redirect_path,
+        decide_auth_checker_precheck,
+        is_auth_checker_exempt_page,
+    } from "$lib/presentation/logic/authCheckerPrecheck";
 
-  let authorization_checked = false;
-  let is_checking = true;
-  let is_auth_page = false;
-  let unsubscribe_page: (() => void) | undefined = undefined;
+    let authorization_checked = false;
+    let is_checking = true;
+    let is_auth_page = false;
+    let unsubscribe_page: () => void = () => {};
 
-  function check_if_auth_page(pathname: string): boolean {
-    return pathname.startsWith("/sign-in") || pathname === "/unauthorized";
-  }
-
-  async function check_authorization(): Promise<void> {
-    if (!browser) {
-      is_checking = false;
-      return;
+    interface ClerkIdentitySnapshot {
+        clerk_ready: boolean;
+        is_signed_in: boolean;
+        has_email: boolean;
     }
 
-    const clerk_result = get_clerk();
-    if (!clerk_result.success) {
-      console.log("[AuthChecker] Clerk not initialized");
-      is_checking = false;
-      return;
-    }
-    const clerk = clerk_result.data;
+    const UNAVAILABLE_CLERK_IDENTITY: ClerkIdentitySnapshot = {
+        clerk_ready: false,
+        is_signed_in: false,
+        has_email: false,
+    };
 
-    const session = clerk.session;
-    const user = clerk.user;
-
-    const is_signed_in = !!session;
-    const primary_email_address = user?.emailAddresses?.[0];
-    const user_email = primary_email_address?.emailAddress ?? "";
-
-    if (!is_signed_in || authorization_checked || is_auth_page) {
-      is_checking = false;
-      return;
-    }
-
-    if (!user_email) {
-      console.error(
-        "[AuthChecker] Signed-in user has no email address — cannot authenticate",
-      );
-      const error_message = encodeURIComponent(
-        "Your account has no email address. Authentication requires an email. Please contact your administrator.",
-      );
-      await goto(`/unauthorized?message=${error_message}`);
-      is_checking = false;
-      return;
+    function read_clerk_identity(): ClerkIdentitySnapshot {
+        if (!browser) return UNAVAILABLE_CLERK_IDENTITY;
+        const clerk_result = get_clerk();
+        if (!clerk_result.success) return UNAVAILABLE_CLERK_IDENTITY;
+        const { session, user } = clerk_result.data;
+        const user_email = user?.emailAddresses?.[0]?.emailAddress ?? "";
+        return {
+            clerk_ready: true,
+            is_signed_in: !!session,
+            has_email: user_email.length > 0,
+        };
     }
 
-    authorization_checked = true;
-
-    if (!PUBLIC_CONVEX_URL) {
-      console.log(
-        "[AuthChecker] Convex not configured, skipping authorization check",
-      );
-      is_checking = false;
-      return;
+    async function query_profile_with_token(
+        session_token: string,
+    ): Promise<unknown> {
+        const convex = new ConvexClient(PUBLIC_CONVEX_URL);
+        convex.setAuth(async () => session_token);
+        const profile_response = await convex
+            .query(CURRENT_USER_PROFILE_QUERY as never, {} as never)
+            .finally(() => void convex.close());
+        return profile_response;
     }
 
-    try {
-      const convex = new ConvexClient(PUBLIC_CONVEX_URL);
-      const result = await convex.query(
-        "authorization:check_user_access" as any,
-        {
-          email: user_email,
-        },
-      );
-
-      if (!result.success) {
-        console.error("[AuthChecker] Authorization failed", {
-          event: "authorization_denied",
+    async function verify_access_with_convex(): Promise<void> {
+        const access_outcome = await verify_signed_in_user_access({
+            get_session_token,
+            query_current_user_profile: query_profile_with_token,
         });
-        const error_message = encodeURIComponent(
-          result.error || "Access denied",
-        );
-        await goto(`/unauthorized?message=${error_message}`);
-        return;
-      }
-
-      console.log("[AuthChecker] User authorized", {
-        event: "authorization_granted",
-      });
-    } catch (error) {
-      console.error("[AuthChecker] Authorization check failed:", error);
-    } finally {
-      is_checking = false;
+        if (access_outcome.status === AuthCheckerAccessStatus.DENIED)
+            await goto(
+                build_access_denied_redirect_path(access_outcome.message),
+            );
     }
-  }
 
-  onMount(() => {
-    is_auth_page = check_if_auth_page(get(page).url.pathname);
+    async function check_authorization(): Promise<void> {
+        const precheck = decide_auth_checker_precheck({
+            in_browser: browser,
+            ...read_clerk_identity(),
+            already_checked: authorization_checked,
+            is_auth_page,
+            convex_configured: Boolean(PUBLIC_CONVEX_URL),
+        });
+        console.log("[AuthChecker] Authorization precheck decided", {
+            event: "auth_checker_precheck_decided",
+            precheck,
+        });
+        switch (precheck) {
+            case AUTH_CHECKER_PRECHECK.MISSING_EMAIL:
+                await goto(build_missing_email_redirect_path());
+                break;
+            case AUTH_CHECKER_PRECHECK.CONVEX_NOT_CONFIGURED:
+                authorization_checked = true;
+                break;
+            case AUTH_CHECKER_PRECHECK.VERIFY_ACCESS:
+                authorization_checked = true;
+                await verify_access_with_convex();
+                break;
+            case AUTH_CHECKER_PRECHECK.SKIP:
+                break;
+        }
+        is_checking = false;
+    }
 
-    unsubscribe_page = page.subscribe((p) => {
-      is_auth_page = check_if_auth_page(p.url.pathname);
+    onMount(() => {
+        is_auth_page = is_auth_checker_exempt_page(get(page).url.pathname);
+
+        unsubscribe_page = page.subscribe((p) => {
+            is_auth_page = is_auth_checker_exempt_page(p.url.pathname);
+        });
+
+        void check_authorization();
     });
 
-    void check_authorization();
-  });
-
-  onDestroy(() => {
-    unsubscribe_page?.();
-  });
+    onDestroy(() => {
+        unsubscribe_page();
+    });
 </script>
 
 {#if is_checking}
-  <div
-    class="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900"
-  >
-    <div class="text-center">
-      <div
-        class="animate-spin rounded-full h-12 w-12 border-b-2 border-theme-primary-600 mx-auto"
-      ></div>
-      <p class="mt-4 text-gray-600 dark:text-gray-400">Verifying access...</p>
+    <div
+        class="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900"
+    >
+        <div class="text-center">
+            <div
+                class="animate-spin rounded-full h-12 w-12 border-b-2 border-theme-primary-600 mx-auto"
+            ></div>
+            <p class="mt-4 text-gray-600 dark:text-gray-400">
+                Verifying access...
+            </p>
+        </div>
     </div>
-  </div>
 {:else}
-  <slot />
+    <slot />
 {/if}

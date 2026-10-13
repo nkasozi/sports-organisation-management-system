@@ -2,6 +2,7 @@
     import SettingsSectionCard from "$lib/presentation/components/settings/SettingsSectionCard.svelte";
     import SettingsThemeColorPicker from "$lib/presentation/components/settings/SettingsThemeColorPicker.svelte";
     import SettingsThemePatternSettings from "$lib/presentation/components/settings/SettingsThemePatternSettings.svelte";
+    import { THEME_MODE } from "$lib/presentation/components/theme/themeConstants";
     import type { SettingsColorOption } from "$lib/presentation/logic/settingsPageState";
     import type { HeaderFooterStyle } from "$lib/presentation/stores/branding";
     import {
@@ -68,9 +69,9 @@
         <button
             type="button"
             role="switch"
-            aria-checked={$theme_store.mode === "dark"}
+            aria-checked={$theme_store.mode === THEME_MODE.DARK}
             class={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-                $theme_store.mode === "dark"
+                $theme_store.mode === THEME_MODE.DARK
                     ? "bg-primary-600"
                     : "bg-accent-200"
             }`}
@@ -78,13 +79,13 @@
         >
             <span
                 class={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                    $theme_store.mode === "dark"
+                    $theme_store.mode === THEME_MODE.DARK
                         ? "translate-x-5"
                         : "translate-x-0"
                 }`}
             >
                 <span class="flex h-full w-full items-center justify-center">
-                    {#if $theme_store.mode === "dark"}
+                    {#if $theme_store.mode === THEME_MODE.DARK}
                         <svg
                             class="h-3 w-3 text-primary-600"
                             fill="currentColor"

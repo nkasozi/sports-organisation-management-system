@@ -1,18 +1,105 @@
 import { v } from "convex/values";
 
 import { internal } from "./_generated/api";
-import { mutation } from "./_generated/server";
+import { mutation, type MutationCtx } from "./_generated/server";
 import {
-  build_scope_filter,
-  require_auth,
+  type ConvexResult,
+  DataAction,
   require_permission,
+  type SystemUserRecord,
 } from "./lib/auth_middleware";
+import { CallerScopeKind, resolve_caller_scope } from "./lib/caller_scope";
+import {
+  ConvexErrorCode,
+  type ConvexFailure,
+  log_convex_failure,
+  NO_ERROR_MESSAGE,
+} from "./lib/convex_errors";
 import { SecurityEventType } from "./lib/security_event_types";
+import { authorize_global_metadata_writer } from "./lib/sync_admin_support";
+import { ClearJobKind } from "./lib/sync_clear_job_types";
 import {
   get_entity_type_for_table,
   validate_table_name,
 } from "./lib/sync_validation";
+import { type ClearJobSliceSummary, start_clear_job } from "./sync_clear_jobs";
 import { DEMO_DATA_TABLE_NAMES } from "./sync_demo_tables";
+
+const IMMEDIATE_DELAY_MILLISECONDS = 0;
+const ORGANIZATION_ENTITY_TYPE = "organization";
+const NO_JOB_ID = "";
+const NOT_STARTED_STATUS = "not_started";
+const UNSCOPED_CLEAR_DENIED_EVENT = "clear_requester_unscoped";
+const SyncMetadataAction = {
+  UPDATED: "updated",
+  CREATED: "created",
+} as const;
+
+type ClearFailureResponse = ConvexFailure & {
+  deleted_count: number;
+  job_id: string;
+  job_status: typeof NOT_STARTED_STATUS;
+};
+
+type ClearSuccessResponse = {
+  success: true;
+  error: typeof NO_ERROR_MESSAGE;
+  deleted_count: number;
+  job_id: string;
+  job_status: ClearJobSliceSummary["job_status"];
+};
+
+function build_clear_failure(failure: ConvexFailure): ClearFailureResponse {
+  return {
+    ...failure,
+    deleted_count: 0,
+    job_id: NO_JOB_ID,
+    job_status: NOT_STARTED_STATUS,
+  };
+}
+
+function build_clear_success(
+  summary: ClearJobSliceSummary,
+): ClearSuccessResponse {
+  return {
+    success: true,
+    error: NO_ERROR_MESSAGE,
+    deleted_count: summary.deleted_count,
+    job_id: String(summary.job_id),
+    job_status: summary.job_status,
+  };
+}
+
+async function authorize_clear_requester(
+  ctx: MutationCtx,
+  entity_type: string,
+  attempted_operation: string,
+): Promise<ConvexResult<SystemUserRecord>> {
+  const permission = await require_permission(
+    ctx,
+    entity_type,
+    DataAction.DELETE,
+  );
+  if (!permission.success) {
+    await ctx.scheduler.runAfter(
+      IMMEDIATE_DELAY_MILLISECONDS,
+      internal.security_audit.log_security_event,
+      {
+        event_type: SecurityEventType.ACCESS_DENIED,
+        entity_type,
+        details: `Unauthorized ${attempted_operation} attempt`,
+      },
+    );
+    return permission;
+  }
+  return resolve_caller_scope(permission.data).kind === CallerScopeKind.NONE
+    ? log_convex_failure(ConvexErrorCode.ACCESS_DENIED, {
+        event: UNSCOPED_CLEAR_DENIED_EVENT,
+        user_id: permission.data._id,
+        entity_type,
+      })
+    : permission;
+}
 
 export const update_sync_metadata = mutation({
   args: {
@@ -22,8 +109,10 @@ export const update_sync_metadata = mutation({
     error_message: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const auth_result = await require_auth(ctx);
-    if (!auth_result.success) return { success: false, error: "Access denied" };
+    const table_validation = validate_table_name(args.table_name);
+    if (!table_validation.success) return table_validation;
+    const writer_authorization = await authorize_global_metadata_writer(ctx);
+    if (!writer_authorization.success) return writer_authorization;
     const data = {
       table_name: args.table_name,
       last_sync_at: new Date().toISOString(),
@@ -37,10 +126,10 @@ export const update_sync_metadata = mutation({
       .first();
     if (existing) {
       await ctx.db.patch(existing._id, data);
-      return { success: true, action: "updated" };
+      return { success: true, action: SyncMetadataAction.UPDATED };
     }
     await ctx.db.insert("sync_metadata", data);
-    return { success: true, action: "created" };
+    return { success: true, action: SyncMetadataAction.CREATED };
   },
 });
 
@@ -48,99 +137,39 @@ export const clear_table = mutation({
   args: { table_name: v.string() },
   handler: async (ctx, args) => {
     const table_validation = validate_table_name(args.table_name);
-    if (!table_validation.success)
-      return {
-        success: false,
-        error: table_validation.error,
-        deleted_count: 0,
-      };
-    const entity_type = get_entity_type_for_table(args.table_name);
-    const perm_result = await require_permission(ctx, entity_type, "delete");
-    if (!perm_result.success) {
-      await ctx.scheduler.runAfter(
-        0,
-        internal.security_audit.log_security_event,
-        {
-          event_type: SecurityEventType.ACCESS_DENIED,
-          entity_type,
-          details: `Unauthorized clear_table attempt on ${args.table_name}`,
-        },
-      );
-      return { success: false, error: perm_result.error, deleted_count: 0 };
-    }
-    const all_records = await ctx.db.query(args.table_name as any).collect();
-    const scope_filter = build_scope_filter(perm_result.data, entity_type);
-    const scope_keys = Object.keys(scope_filter);
-    const scoped_records =
-      scope_keys.length === 0
-        ? all_records
-        : all_records.filter((record: any) =>
-            scope_keys.every((key) => record[key] === scope_filter[key]),
-          );
-    for (const record of scoped_records) await ctx.db.delete(record._id);
-    await ctx.scheduler.runAfter(
-      0,
-      internal.security_audit.log_security_event,
-      {
-        event_type: SecurityEventType.SYNC_MUTATION,
-        entity_type,
-        user_email: perm_result.data.email,
-        organization_id: perm_result.data.organization_id,
-        details: `clear_table executed on ${args.table_name}: ${scoped_records.length} records deleted (scoped from ${all_records.length} total)`,
-      },
+    if (!table_validation.success) return build_clear_failure(table_validation);
+    const entity_type = get_entity_type_for_table(table_validation.data);
+    const requester = await authorize_clear_requester(
+      ctx,
+      entity_type,
+      ClearJobKind.CLEAR_TABLE,
     );
-    return { success: true, deleted_count: scoped_records.length };
+    if (!requester.success) return build_clear_failure(requester);
+    const summary = await start_clear_job(ctx, {
+      kind: ClearJobKind.CLEAR_TABLE,
+      caller: requester.data,
+      permission_entity_type: entity_type,
+      table_names: [table_validation.data],
+    });
+    return build_clear_success(summary);
   },
 });
 
 export const clear_all_demo_data = mutation({
   args: {},
   handler: async (ctx) => {
-    const perm_result = await require_permission(ctx, "organization", "delete");
-    if (!perm_result.success) {
-      await ctx.scheduler.runAfter(
-        0,
-        internal.security_audit.log_security_event,
-        {
-          event_type: SecurityEventType.ACCESS_DENIED,
-          entity_type: "organization",
-          details: "Unauthorized clear_all_demo_data attempt",
-        },
-      );
-      return { success: false, error: perm_result.error, deleted_count: 0 };
-    }
-    let total_deleted = 0;
-    for (const table_name of DEMO_DATA_TABLE_NAMES) {
-      try {
-        const records = await ctx.db.query(table_name as any).collect();
-        for (const record of records) {
-          await ctx.db.delete(record._id);
-          total_deleted++;
-        }
-      } catch (error) {
-        console.warn("[clear_all_demo_data] Skipping table", {
-          event: "demo_data_clear_table_skipped",
-          table_name,
-          error: String(error),
-        });
-      }
-    }
-    await ctx.scheduler.runAfter(
-      0,
-      internal.security_audit.log_security_event,
-      {
-        event_type: SecurityEventType.SYNC_MUTATION,
-        entity_type: "organization",
-        user_email: perm_result.data.email,
-        organization_id: perm_result.data.organization_id,
-        details: `clear_all_demo_data executed: ${total_deleted} records deleted`,
-      },
+    const requester = await authorize_clear_requester(
+      ctx,
+      ORGANIZATION_ENTITY_TYPE,
+      ClearJobKind.CLEAR_ALL_DEMO_DATA,
     );
-    console.log("[clear_all_demo_data] Done", {
-      event: "demo_data_cleared",
-      total_deleted,
-      user_email: perm_result.data.email,
+    if (!requester.success) return build_clear_failure(requester);
+    const summary = await start_clear_job(ctx, {
+      kind: ClearJobKind.CLEAR_ALL_DEMO_DATA,
+      caller: requester.data,
+      permission_entity_type: ORGANIZATION_ENTITY_TYPE,
+      table_names: DEMO_DATA_TABLE_NAMES,
     });
-    return { success: true, deleted_count: total_deleted };
+    return build_clear_success(summary);
   },
 });

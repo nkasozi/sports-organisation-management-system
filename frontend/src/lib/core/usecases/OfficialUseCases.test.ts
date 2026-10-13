@@ -1,72 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { CreateOfficialInput, Official } from "../entities/Official";
 import type { OfficialRepository } from "../interfaces/ports";
-import type { ScalarInput } from "../types/DomainScalars";
 import { create_official_use_cases } from "./OfficialUseCases";
-
-function create_mock_repository(): OfficialRepository {
-  return {
-    find_all: vi.fn(),
-    find_by_id: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete_by_id: vi.fn(),
-    delete_by_ids: vi.fn(),
-    find_by_organization: vi.fn(),
-    find_active_officials: vi.fn(),
-    find_available_for_date: vi.fn(),
-    find_by_ids: vi.fn(),
-    count: vi.fn(),
-  } as OfficialRepository;
-}
-
-function create_test_official(
-  overrides: Partial<ScalarInput<Official>> = {},
-): Official {
-  return {
-    id: "official-123",
-    first_name: "John",
-    last_name: "Referee",
-    gender_id: "gender_default_male",
-    email: "john@example.com",
-    phone: "+256700123456",
-    date_of_birth: "1985-05-15",
-    organization_id: "org-123",
-    years_of_experience: 5,
-    nationality: "Uganda",
-    profile_image_url: "",
-    emergency_contact_name: "Jane Doe",
-    emergency_contact_phone: "+256700000001",
-    notes: "",
-    status: "active",
-    created_at: "2024-01-01T00:00:00Z",
-    updated_at: "2024-01-01T00:00:00Z",
-    ...overrides,
-  } as unknown as Official;
-}
-
-function create_valid_input(
-  overrides: Partial<CreateOfficialInput> = {},
-): CreateOfficialInput {
-  return {
-    first_name: "John",
-    last_name: "Referee",
-    gender_id: "gender_default_male",
-    email: "john@example.com",
-    phone: "+256700123456",
-    date_of_birth: "1985-05-15",
-    organization_id: "org-123",
-    years_of_experience: 5,
-    nationality: "Uganda",
-    profile_image_url: "",
-    emergency_contact_name: "Jane Doe",
-    emergency_contact_phone: "+256700000001",
-    notes: "",
-    status: "active",
-    ...overrides,
-  } as CreateOfficialInput;
-}
+import {
+  create_mock_repository,
+  create_test_official,
+  create_valid_input,
+} from "./OfficialUseCases.test_support";
 
 describe("OfficialUseCases", () => {
   let mock_repository: OfficialRepository;
@@ -186,67 +126,6 @@ describe("OfficialUseCases", () => {
         "Years of experience must be zero or greater",
       );
       expect(result.error).toContain("Profile image URL is invalid");
-    });
-  });
-
-  describe("update", () => {
-    it("should update with valid input", async () => {
-      vi.mocked(mock_repository.update).mockResolvedValue({
-        success: true,
-        data: create_test_official({ first_name: "Updated" }),
-      });
-
-      const result = await use_cases.update("official-123", {
-        first_name: "Updated",
-      });
-
-      expect(result.success).toBe(true);
-    });
-
-    it("should fail for empty id", async () => {
-      const result = await use_cases.update("", { first_name: "Updated" });
-
-      expect(result.success).toBe(false);
-      if (result.success) return;
-      expect(result.error).toBe("Official ID is required");
-    });
-  });
-
-  describe("delete", () => {
-    it("should delete by id", async () => {
-      vi.mocked(mock_repository.delete_by_id).mockResolvedValue({
-        success: true,
-        data: true,
-      });
-
-      const result = await use_cases.delete("official-123");
-
-      expect(result.success).toBe(true);
-    });
-
-    it("should fail for empty id", async () => {
-      const result = await use_cases.delete("");
-
-      expect(result.success).toBe(false);
-    });
-  });
-
-  describe("delete_officials", () => {
-    it("should delete multiple", async () => {
-      vi.mocked(mock_repository.delete_by_ids).mockResolvedValue({
-        success: true,
-        data: 2,
-      });
-
-      const result = await use_cases.delete_officials(["1", "2"]);
-
-      expect(result.success).toBe(true);
-    });
-
-    it("should fail for empty array", async () => {
-      const result = await use_cases.delete_officials([]);
-
-      expect(result.success).toBe(false);
     });
   });
 });

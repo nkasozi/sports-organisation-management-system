@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { AuditLog } from "$lib/core/entities/AuditLog";
+    import { AUDIT_ACTION, type AuditLog } from "$lib/core/entities/AuditLog";
 
     import {
         compute_audit_log_total_pages,
@@ -7,6 +7,7 @@
         format_audit_log_timestamp,
         get_audit_log_action_badge_class,
     } from "../../logic/auditLogPageState";
+    import { AUDIT_LOG_MESSAGES } from "./auditLogMessages";
 
     export let audit_logs: AuditLog[] = [];
     export let is_loading: boolean;
@@ -24,7 +25,7 @@
                 class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary-500 border-t-transparent"
             ></div>
             <p class="mt-2 text-gray-600 dark:text-gray-400">
-                Loading audit logs...
+                {AUDIT_LOG_MESSAGES.LOADING}
             </p>
         </div>
     {:else if error_message}
@@ -47,10 +48,10 @@
                 />
             </svg>
             <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-                No audit logs found
+                {AUDIT_LOG_MESSAGES.EMPTY_TITLE}
             </h3>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Audit logs will appear here when changes are made to entities.
+                {AUDIT_LOG_MESSAGES.EMPTY_DESCRIPTION}
             </p>
         </div>
     {:else}
@@ -126,19 +127,19 @@
                                 class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-md truncate"
                                 title={format_audit_log_changes(log)}
                             >
-                                {#if log.action === "update" && log.changes && log.changes.length > 0}
+                                {#if log.action === AUDIT_ACTION.UPDATE && log.changes && log.changes.length > 0}
                                     {format_audit_log_changes(log)}
-                                {:else if log.action === "create"}
+                                {:else if log.action === AUDIT_ACTION.CREATE}
                                     <span
                                         class="text-green-600 dark:text-green-400"
-                                        >New record created</span
+                                        >{AUDIT_LOG_MESSAGES.RECORD_CREATED}</span
                                     >
-                                {:else if log.action === "delete"}
+                                {:else if log.action === AUDIT_ACTION.DELETE}
                                     <span class="text-red-600 dark:text-red-400"
-                                        >Record deleted</span
+                                        >{AUDIT_LOG_MESSAGES.RECORD_DELETED}</span
                                     >
                                 {:else}
-                                    -
+                                    {AUDIT_LOG_MESSAGES.NO_CHANGES}
                                 {/if}
                             </td>
                         </tr>
@@ -159,11 +160,11 @@
                 </div>
                 <div class="flex gap-2">
                     <button
-                        on:click={() => on_page_change(current_page - 1)}
+                        on:click={() => void on_page_change(current_page - 1)}
                         disabled={current_page === 1}
                         class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-[0.175rem] text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
                     >
-                        Previous
+                        {AUDIT_LOG_MESSAGES.PREVIOUS_PAGE}
                     </button>
                     <span
                         class="px-3 py-1 text-sm text-gray-700 dark:text-gray-300"
@@ -174,7 +175,7 @@
                         )}
                     </span>
                     <button
-                        on:click={() => on_page_change(current_page + 1)}
+                        on:click={() => void on_page_change(current_page + 1)}
                         disabled={current_page >=
                             compute_audit_log_total_pages(
                                 total_count,
@@ -182,7 +183,7 @@
                             )}
                         class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-[0.175rem] text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
                     >
-                        Next
+                        {AUDIT_LOG_MESSAGES.NEXT_PAGE}
                     </button>
                 </div>
             </div>

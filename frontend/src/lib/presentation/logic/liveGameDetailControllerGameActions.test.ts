@@ -1,15 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { create_live_game_detail_game_handlers } from "./liveGameDetailControllerGameActions";
-import type {
-  LiveGameDetailModalState,
-  LiveGameDetailPageState,
-  LiveGameDetailToastState,
-} from "./liveGameDetailPageState";
 import {
-  create_live_game_detail_modal_state,
-  create_live_game_detail_page_state,
-} from "./liveGameDetailPageStateFactories";
+  create_state_store,
+  type HandlerCommand,
+  type MockActionDependencies,
+} from "./liveGameDetailControllerGameActions.test_support";
 
 const { end_live_game_detail_action_mock, start_live_game_detail_action_mock } =
   vi.hoisted(() => ({
@@ -23,76 +19,9 @@ vi.mock("$lib/presentation/logic/liveGameDetailPageActions", () => ({
 }));
 
 describe("liveGameDetailControllerGameActions", () => {
-  type HandlerCommand = Parameters<
-    typeof create_live_game_detail_game_handlers
-  >[0];
-  type MockActionDependencies = {
-    [Key in keyof HandlerCommand["action_dependencies"]]?: Partial<
-      HandlerCommand["action_dependencies"][Key]
-    >;
-  };
-
-  function create_lineup_player(
-    id: string,
-  ): LiveGameDetailPageState["home_players"][number] {
-    return {
-      id,
-      first_name: "Ada",
-      last_name: "Stone",
-      jersey_number: 0,
-      position: "",
-      is_captain: false,
-      is_substitute: false,
-    } as LiveGameDetailPageState["home_players"][number];
-  }
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
-
-  function create_state_store() {
-    let page_state = {
-      ...create_live_game_detail_page_state(),
-      fixture: {
-        id: "fixture-1",
-        status: "scheduled",
-      } as LiveGameDetailPageState["fixture"],
-      competition: {
-        allow_auto_squad_submission: true,
-      } as LiveGameDetailPageState["competition"],
-      home_team: { name: "Lions" } as LiveGameDetailPageState["home_team"],
-      away_team: { name: "Tigers" } as LiveGameDetailPageState["away_team"],
-      home_players: [create_lineup_player("home-1")],
-      away_players: [create_lineup_player("away-1")],
-    } as LiveGameDetailPageState;
-    let modal_state = {
-      ...create_live_game_detail_modal_state(),
-      show_start_modal: true,
-      show_end_modal: true,
-    } as LiveGameDetailModalState;
-    let toast_state:
-      | { status: "hidden" }
-      | { status: "visible"; toast: LiveGameDetailToastState } = {
-      status: "hidden",
-    };
-    return {
-      get_modal_state: () => modal_state,
-      get_page_state: () => page_state,
-      read_modal_state: () => modal_state,
-      read_page_state: () => page_state,
-      read_toast_state: () =>
-        toast_state.status === "visible" ? toast_state.toast : void 0,
-      set_modal_state: (next_state: typeof modal_state) => {
-        modal_state = next_state;
-      },
-      set_page_state: (next_state: typeof page_state) => {
-        page_state = next_state;
-      },
-      set_toast_state: (next_state: LiveGameDetailToastState) => {
-        toast_state = { status: "visible", toast: next_state };
-      },
-    };
-  }
 
   it("starts the game, closes the modal, resets the clock, and shows a success toast", async () => {
     const state_store = create_state_store();

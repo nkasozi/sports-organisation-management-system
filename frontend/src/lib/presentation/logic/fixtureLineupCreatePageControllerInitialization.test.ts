@@ -6,7 +6,10 @@ import {
   create_present_auth_token_state,
 } from "$lib/presentation/stores/authTypes";
 
-import { initialize_fixture_lineup_create_page } from "./fixtureLineupCreatePageControllerInitialization";
+import {
+  FIXTURE_LINEUP_CREATE_ACCESS_CHECK_FAILED_MESSAGE,
+  initialize_fixture_lineup_create_page,
+} from "./fixtureLineupCreatePageControllerInitialization";
 
 const {
   auth_state,
@@ -125,6 +128,35 @@ describe("fixtureLineupCreatePageControllerInitialization", () => {
       expect.stringContaining("Access denied"),
     );
     expect(result).toEqual({ kind: "redirect", redirect_to: "/" });
+  });
+
+  it("returns a friendly failure when the create access check fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    auth_state.current_token = create_present_auth_token_state({
+      raw_token: "token-1",
+    } as never);
+    ensure_auth_profile_mock.mockResolvedValue({ success: true });
+    check_entity_authorized_mock.mockResolvedValue({
+      success: false,
+      error: "offline",
+    });
+
+    const result = await initialize_fixture_lineup_create_page({
+      is_browser: true,
+      current_auth_profile_state: { status: "missing" },
+      form_organization_id: "",
+      organization_is_restricted: false,
+      dependencies: {} as never,
+    });
+
+    expect(result).toEqual({
+      kind: "auth-failed",
+      error_message: FIXTURE_LINEUP_CREATE_ACCESS_CHECK_FAILED_MESSAGE,
+    });
+    expect(set_denial_mock).not.toHaveBeenCalled();
+    expect(
+      load_fixture_lineup_create_reference_data_mock,
+    ).not.toHaveBeenCalled();
   });
 
   it("loads reference data and advances the wizard when the organization is preselected", async () => {

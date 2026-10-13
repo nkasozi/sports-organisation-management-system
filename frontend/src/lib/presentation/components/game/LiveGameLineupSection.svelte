@@ -4,6 +4,7 @@
         LineupPlayer,
         PlayerTimeOnStatus,
     } from "$lib/core/entities/FixtureLineup";
+    import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
 
     import LiveGameLineupCard from "./LiveGameLineupCard.svelte";
 
@@ -57,7 +58,7 @@
     export let on_toggle_away_lineup: () => void;
     export let on_toggle_home_lineup: () => void;
 
-    $: expandable = fixture_status !== "scheduled";
+    $: expandable = fixture_status !== FIXTURE_STATUS.SCHEDULED;
     $: home_expanded = expandable ? home_lineup_expanded : true;
     $: away_expanded = expandable ? away_lineup_expanded : true;
     $: grid_class = expandable

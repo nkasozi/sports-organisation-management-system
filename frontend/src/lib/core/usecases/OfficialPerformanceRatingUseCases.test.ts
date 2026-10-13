@@ -1,75 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type {
-  CreateOfficialPerformanceRatingInput,
-  OfficialPerformanceRating,
-} from "../entities/OfficialPerformanceRating";
+import { type OfficialPerformanceRatingRepository } from "../interfaces/ports";
 import {
-  build_official_performance_rating_not_found_error,
-  type OfficialPerformanceRatingRepository,
-} from "../interfaces/ports";
-import { create_failure_result } from "../types/Result";
+  USE_CASE_ERROR_MESSAGES,
+  UseCaseErrorCode,
+} from "../types/UseCaseFailure";
 import { create_official_performance_rating_use_cases } from "./OfficialPerformanceRatingUseCases";
-
-function create_mock_repository(): OfficialPerformanceRatingRepository {
-  return {
-    find_all: vi.fn(),
-    find_by_id: vi.fn(),
-    find_by_ids: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete_by_id: vi.fn(),
-    delete_by_ids: vi.fn(),
-    count: vi.fn(),
-    find_by_official: vi.fn(),
-    find_by_fixture: vi.fn(),
-    find_by_official_and_fixture: vi.fn(),
-    find_existing_rating: vi.fn(),
-  } as OfficialPerformanceRatingRepository;
-}
-
-function create_test_rating(
-  overrides: Partial<OfficialPerformanceRating> = {},
-): OfficialPerformanceRating {
-  return {
-    id: "opr_001",
-    organization_id: "org_1",
-    official_id: "off_1",
-    fixture_id: "fix_1",
-    rater_user_id: "user_1",
-    rater_role: "officials_manager",
-    overall: 7,
-    decision_accuracy: 7,
-    game_control: 7,
-    communication: 7,
-    fitness: 7,
-    notes: "",
-    submitted_at: "2026-01-01T00:00:00Z",
-    created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z",
-    ...overrides,
-  } as OfficialPerformanceRating;
-}
-
-function create_valid_input(
-  overrides: Partial<CreateOfficialPerformanceRatingInput> = {},
-): CreateOfficialPerformanceRatingInput {
-  return {
-    organization_id: "org_1",
-    official_id: "off_1",
-    fixture_id: "fix_1",
-    rater_user_id: "user_1",
-    rater_role: "officials_manager",
-    overall: 7,
-    decision_accuracy: 7,
-    game_control: 7,
-    communication: 7,
-    fitness: 7,
-    notes: "",
-    submitted_at: "",
-    ...overrides,
-  } as CreateOfficialPerformanceRatingInput;
-}
+import {
+  create_mock_repository,
+  create_test_rating,
+  create_valid_input,
+} from "./OfficialPerformanceRatingUseCases.test_support";
 
 describe("OfficialPerformanceRatingUseCases", () => {
   let mock_repository: OfficialPerformanceRatingRepository;
@@ -192,157 +133,58 @@ describe("OfficialPerformanceRatingUseCases", () => {
     });
   });
 
-  describe("list", () => {
-    it("calls find_all with no filter when no filter given", async () => {
-      vi.mocked(mock_repository.find_all).mockResolvedValue({
-        success: true,
-        data: {
-          items: [],
-          total_count: 0,
-          page_number: 1,
-          page_size: 100,
-          total_pages: 0,
-        },
+  describe("failure logging", () => {
+    it("returns a user-safe message and logs the repository error", async () => {
+      const error_spy = vi.spyOn(console, "error").mockImplementation(() => {});
+      vi.mocked(mock_repository.delete_by_id).mockResolvedValue({
+        success: false,
+        error: "IndexedDB transaction aborted",
       });
-
-      await use_cases.list();
-
-      expect(mock_repository.find_all).toHaveBeenCalledWith(
-        {},
-        expect.objectContaining({ page_number: 1 }),
-      );
-    });
-
-    it("passes typed filter to find_all when filter given", async () => {
-      vi.mocked(mock_repository.find_all).mockResolvedValue({
-        success: true,
-        data: {
-          items: [],
-          total_count: 0,
-          page_number: 1,
-          page_size: 100,
-          total_pages: 0,
-        },
+      const result = await use_cases.delete("opr_001");
+      expect(result).toEqual({
+        success: false,
+        error: USE_CASE_ERROR_MESSAGES[UseCaseErrorCode.DEPENDENCY_FAILED],
       });
-
-      await use_cases.list({ official_id: "off_1" });
-
-      const call_arg = vi.mocked(mock_repository.find_all).mock.calls[0][0];
-      expect(call_arg).toMatchObject({ official_id: "off_1" });
-    });
-  });
-
-  describe("list_by_official", () => {
-    it("delegates to find_by_official", async () => {
-      vi.mocked(mock_repository.find_by_official).mockResolvedValue({
-        success: true,
-        data: {
-          items: [],
-          total_count: 0,
-          page_number: 1,
-          page_size: 200,
-          total_pages: 0,
+      expect(error_spy).toHaveBeenCalledWith(
+        "[OfficialPerformanceRatingUseCases]",
+        {
+          event: "official_rating_delete_failed",
+          error_code: UseCaseErrorCode.DEPENDENCY_FAILED,
+          technical_detail: "IndexedDB transaction aborted",
+          rating_id: "opr_001",
         },
+      );
+      error_spy.mockRestore();
+    });
+
+    it("keeps the specific message when the update target is missing", async () => {
+      const error_spy = vi.spyOn(console, "error").mockImplementation(() => {});
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
+        success: false,
+        error: "not found",
       });
-
-      await use_cases.list_by_official("off_1");
-
-      expect(mock_repository.find_by_official).toHaveBeenCalledWith(
-        "off_1",
-        expect.objectContaining({ page_number: 1 }),
-      );
-    });
-  });
-
-  describe("list_by_fixture", () => {
-    it("delegates to find_by_fixture", async () => {
-      vi.mocked(mock_repository.find_by_fixture).mockResolvedValue({
-        success: true,
-        data: {
-          items: [],
-          total_count: 0,
-          page_number: 1,
-          page_size: 200,
-          total_pages: 0,
-        },
-      });
-
-      await use_cases.list_by_fixture("fix_1");
-
-      expect(mock_repository.find_by_fixture).toHaveBeenCalledWith(
-        "fix_1",
-        expect.objectContaining({ page_number: 1 }),
-      );
-    });
-  });
-
-  describe("submit_or_update_rating", () => {
-    it("fails validation before touching repository", async () => {
-      const result = await use_cases.submit_or_update_rating(
-        create_valid_input({ official_id: "" }),
-      );
-
-      expect(result.success).toBe(false);
-      expect(mock_repository.find_existing_rating).not.toHaveBeenCalled();
+      const result = await use_cases.update("opr_missing", { overall: 9 });
+      expect(result).toEqual({ success: false, error: "Rating not found" });
+      error_spy.mockRestore();
     });
 
-    it("creates new rating when no existing one is found", async () => {
-      vi.mocked(mock_repository.find_existing_rating).mockResolvedValue(
-        create_failure_result(
-          build_official_performance_rating_not_found_error(
-            "off_1",
-            "fix_1",
-            "user_1",
-          ),
-        ),
-      );
+    it("uses the current user as rater when one is available", async () => {
       vi.mocked(mock_repository.create).mockResolvedValue({
         success: true,
         data: create_test_rating(),
       });
-
-      const result =
-        await use_cases.submit_or_update_rating(create_valid_input());
-
-      expect(result.success).toBe(true);
-      expect(mock_repository.create).toHaveBeenCalledOnce();
-      expect(mock_repository.update).not.toHaveBeenCalled();
-    });
-
-    it("updates existing rating when one already exists", async () => {
-      const existing = create_test_rating();
-      vi.mocked(mock_repository.find_existing_rating).mockResolvedValue({
-        success: true,
-        data: existing,
-      });
-      vi.mocked(mock_repository.update).mockResolvedValue({
-        success: true,
-        data: create_test_rating({ overall: 9 }),
-      });
-
-      const result = await use_cases.submit_or_update_rating(
-        create_valid_input({ overall: 9 }),
+      const rating_use_cases = create_official_performance_rating_use_cases(
+        mock_repository,
+        () => ({ status: "available", id: "user_9", role: "team_manager" }),
       );
-
+      const result = await rating_use_cases.create(create_valid_input());
       expect(result.success).toBe(true);
-      expect(mock_repository.update).toHaveBeenCalledWith(
-        existing.id,
-        expect.objectContaining({ overall: 9 }),
+      expect(mock_repository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          rater_user_id: "user_9",
+          rater_role: "team_manager",
+        }),
       );
-      expect(mock_repository.create).not.toHaveBeenCalled();
-    });
-
-    it("returns failure when lookup fails", async () => {
-      vi.mocked(mock_repository.find_existing_rating).mockResolvedValue({
-        success: false,
-        error: "database error",
-      });
-
-      const result =
-        await use_cases.submit_or_update_rating(create_valid_input());
-
-      expect(result.success).toBe(false);
-      expect(mock_repository.create).not.toHaveBeenCalled();
     });
   });
 });

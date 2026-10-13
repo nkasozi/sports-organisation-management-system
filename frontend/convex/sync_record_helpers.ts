@@ -11,6 +11,7 @@ export function has_meaningful_changes(
     "updated_at",
     "synced_at",
     "version",
+    "sync_sequence",
   ]);
   for (const key of Object.keys(local_data)) {
     if (excluded_fields.has(key)) continue;
@@ -57,12 +58,14 @@ function values_equal(a: unknown, b: unknown): boolean {
   return false;
 }
 
+const CONVEX_SYSTEM_FIELD_NAMES = new Set(["_id", "_creationTime"]);
+
 export function strip_convex_fields(
   record: Record<string, unknown>,
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(record)) {
-    if (key !== "_id" && key !== "_creationTime") result[key] = value;
+    if (!CONVEX_SYSTEM_FIELD_NAMES.has(key)) result[key] = value;
   }
   return result;
 }

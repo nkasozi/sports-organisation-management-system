@@ -4,79 +4,99 @@ import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type { ScalarInput } from "../../core/types/DomainScalars";
 import type { AsyncResult } from "../../core/types/Result";
 import {
-  create_failure_result,
-  create_success_result,
-} from "../../core/types/Result";
-import { format_repository_error } from "./InBrowserBaseRepositoryHelpers";
+  REPOSITORY_CONTEXT_KEY,
+  REPOSITORY_EVENT,
+  REPOSITORY_LOG_MESSAGE,
+  REPOSITORY_OPERATION,
+} from "./InBrowserRepositoryEvents";
+import {
+  create_error_failure_details,
+  create_warning_failure_details,
+  execute_repository_operation,
+  type RepositoryFailureDetails,
+  with_failure_context,
+} from "./InBrowserRepositoryQueryRunner";
 
-export async function count_entities<TEntity extends BaseEntity>(
+function with_table_context<TEntity extends BaseEntity>(
+  details: RepositoryFailureDetails,
   table: Table<TEntity, string>,
-): AsyncResult<number> {
-  try {
-    return create_success_result(await table.count());
-  } catch (error) {
-    console.warn("[Repository] Failed to count entities", {
-      event: "repository_count_entities_failed",
-      error: String(error),
-    });
-    return create_failure_result(
-      format_repository_error(error, "count entities"),
-    );
-  }
+  entity_prefix: string,
+): RepositoryFailureDetails {
+  return with_failure_context(details, {
+    [REPOSITORY_CONTEXT_KEY.TABLE]: table.name,
+    [REPOSITORY_CONTEXT_KEY.ENTITY_PREFIX]: entity_prefix,
+  });
 }
 
-export async function seed_entities<TEntity extends BaseEntity>(
+export function count_entities<TEntity extends BaseEntity>(
+  table: Table<TEntity, string>,
+  entity_prefix: string,
+): AsyncResult<number> {
+  const failure = create_warning_failure_details(
+    REPOSITORY_LOG_MESSAGE.COUNT_ENTITIES_FAILED,
+    REPOSITORY_EVENT.COUNT_ENTITIES_FAILED,
+    REPOSITORY_OPERATION.COUNT_ENTITIES,
+  );
+  return execute_repository_operation(
+    with_table_context(failure, table, entity_prefix),
+    () => table.count(),
+  );
+}
+
+export function seed_entities<TEntity extends BaseEntity>(
   table: Table<TEntity, string>,
   entities: ScalarInput<TEntity>[],
   entity_prefix: string,
 ): AsyncResult<number> {
-  try {
-    await table.bulkPut(entities as TEntity[]);
-    console.log("[Repository] Seeded records successfully", {
-      event: "repository_seed_success",
-      entity_prefix,
-      record_count: entities.length,
-    });
-    return create_success_result(entities.length);
-  } catch (error) {
-    console.error("[Repository] Failed to seed data", {
-      event: "repository_seed_failed",
-      entity_prefix,
-      error: String(error),
-    });
-    return create_failure_result(
-      format_repository_error(error, `seed ${entity_prefix}`),
-    );
-  }
+  const failure = create_error_failure_details(
+    REPOSITORY_LOG_MESSAGE.SEED_FAILED,
+    REPOSITORY_EVENT.SEED_FAILED,
+    REPOSITORY_OPERATION.SEED_ENTITIES,
+  );
+  return execute_repository_operation(
+    with_table_context(failure, table, entity_prefix),
+    async () => {
+      await table.bulkPut(entities as TEntity[]);
+      console.log(REPOSITORY_LOG_MESSAGE.SEED_SUCCEEDED, {
+        event: REPOSITORY_EVENT.SEED_SUCCEEDED,
+        table: table.name,
+        entity_prefix,
+        record_count: entities.length,
+      });
+      return entities.length;
+    },
+  );
 }
 
-export async function clear_entity_data<TEntity extends BaseEntity>(
+export function clear_entity_data<TEntity extends BaseEntity>(
   table: Table<TEntity, string>,
   entity_prefix: string,
-): Promise<void> {
-  try {
-    await table.clear();
-  } catch (error) {
-    console.error(`[${entity_prefix}] Failed to clear data`, {
-      event: "repository_clear_failed",
-      entity_prefix,
-      error: String(error),
-    });
-  }
+): AsyncResult<boolean> {
+  const failure = create_error_failure_details(
+    REPOSITORY_LOG_MESSAGE.CLEAR_FAILED,
+    REPOSITORY_EVENT.CLEAR_FAILED,
+    REPOSITORY_OPERATION.CLEAR_ENTITIES,
+  );
+  return execute_repository_operation(
+    with_table_context(failure, table, entity_prefix),
+    async () => {
+      await table.clear();
+      return true;
+    },
+  );
 }
 
-export async function table_has_data<TEntity extends BaseEntity>(
+export function table_has_data<TEntity extends BaseEntity>(
   table: Table<TEntity, string>,
   entity_prefix: string,
-): Promise<boolean> {
-  try {
-    return (await table.count()) > 0;
-  } catch (error) {
-    console.warn(`[${entity_prefix}] Failed to check data existence`, {
-      event: "repository_has_data_check_failed",
-      entity_prefix,
-      error: String(error),
-    });
-    return false;
-  }
+): AsyncResult<boolean> {
+  const failure = create_warning_failure_details(
+    REPOSITORY_LOG_MESSAGE.HAS_DATA_CHECK_FAILED,
+    REPOSITORY_EVENT.HAS_DATA_CHECK_FAILED,
+    REPOSITORY_OPERATION.CHECK_FOR_DATA,
+  );
+  return execute_repository_operation(
+    with_table_context(failure, table, entity_prefix),
+    async () => (await table.count()) > 0,
+  );
 }

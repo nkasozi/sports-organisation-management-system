@@ -1,9 +1,11 @@
 <script lang="ts">
     import { SignIn } from "svelte-clerk";
 
+    import SignInErrorNotice from "$lib/presentation/components/auth/SignInErrorNotice.svelte";
+    import type { SignInPageNotice } from "$lib/presentation/logic/signInPageState";
+
     export let current_year: number;
-    export let has_server_error: boolean;
-    export let has_sync_error: boolean;
+    export let notice: SignInPageNotice;
 </script>
 
 <div
@@ -41,58 +43,7 @@
         </div>
 
         <div class="mb-8 text-center">
-            {#if has_server_error}
-                <div
-                    class="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20"
-                >
-                    <div class="flex items-center justify-center gap-2 mb-2">
-                        <svg
-                            class="w-5 h-5 text-red-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
-                            />
-                        </svg>
-                        <span class="text-sm font-semibold text-red-300"
-                            >Connection Error</span
-                        >
-                    </div>
-                    <p class="text-xs text-red-300/80">
-                        Unable to connect to the server to load your data.
-                        Please check your internet connection and sign in to try
-                        again.
-                    </p>
-                </div>
-            {:else if has_sync_error}
-                <div class="banner-info mb-6 rounded-xl p-4">
-                    <div class="flex items-center justify-center gap-2 mb-2">
-                        <svg
-                            class="banner-info-icon w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                            />
-                        </svg>
-                        <span class="text-sm font-semibold">Sync Error</span>
-                    </div>
-                    <p class="text-xs text-blue-700/80 dark:text-blue-200/80">
-                        There was a problem syncing your data. Please sign in
-                        again to retry.
-                    </p>
-                </div>
-            {/if}
+            <SignInErrorNotice {notice} />
             <div class="flex items-center justify-center gap-2 mb-4">
                 <div class="h-px w-8 bg-blue-600/30"></div>
                 <svg

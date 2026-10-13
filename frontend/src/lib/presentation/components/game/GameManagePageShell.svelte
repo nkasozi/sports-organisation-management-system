@@ -14,7 +14,8 @@
     const fixture_use_cases = get_fixture_use_cases();
     const team_use_cases = get_team_use_cases();
     const player_use_cases = get_player_use_cases();
-    const player_team_membership_use_cases = get_player_team_membership_use_cases();
+    const player_team_membership_use_cases =
+        get_player_team_membership_use_cases();
     const player_position_use_cases = get_player_position_use_cases();
     const event_modal_component = GameManageEventModal;
     const load_bundle = (fixture_id: string) =>

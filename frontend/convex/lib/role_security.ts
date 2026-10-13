@@ -1,10 +1,10 @@
-import type { ConvexResult } from "./auth_middleware";
-
-const SUPER_ADMIN_ROLE = "super_admin";
+import type { SharedUserRole } from "../shared_permission_definitions";
+import { OptionStatus } from "./option";
+import { parse_user_role } from "./permission_checks";
 
 type RoleHierarchyLevel = number;
 
-const ROLE_HIERARCHY: Record<string, RoleHierarchyLevel> = {
+const ROLE_HIERARCHY: Record<SharedUserRole, RoleHierarchyLevel> = {
   super_admin: 100,
   org_admin: 80,
   officials_manager: 60,
@@ -14,53 +14,41 @@ const ROLE_HIERARCHY: Record<string, RoleHierarchyLevel> = {
   public_viewer: 10,
 };
 
+const RoleAssignmentRejection = {
+  UNKNOWN_CALLER_ROLE: "unknown_caller_role",
+  UNKNOWN_TARGET_ROLE: "unknown_target_role",
+  TARGET_NOT_BELOW_CALLER: "target_not_below_caller",
+} as const;
+
+type RoleAssignmentRejectionValue =
+  (typeof RoleAssignmentRejection)[keyof typeof RoleAssignmentRejection];
+
+type RoleAssignmentDecision =
+  | { success: true }
+  | { success: false; rejection: RoleAssignmentRejectionValue };
+
 export function can_caller_assign_role(
   caller_role: string,
   target_role: string,
-): ConvexResult<true> {
-  const caller_role_exists = Object.prototype.hasOwnProperty.call(
-    ROLE_HIERARCHY,
-    caller_role,
-  );
-  if (!caller_role_exists) {
-    return { success: false, error: "Unknown caller role" };
-  }
-
-  const target_role_exists = Object.prototype.hasOwnProperty.call(
-    ROLE_HIERARCHY,
-    target_role,
-  );
-  if (!target_role_exists) {
-    return { success: false, error: "Unknown target role" };
-  }
-
-  const caller_level = ROLE_HIERARCHY[caller_role];
-  const target_level = ROLE_HIERARCHY[target_role];
-
-  if (caller_level <= target_level) {
+): RoleAssignmentDecision {
+  const parsed_caller_role = parse_user_role(caller_role);
+  if (parsed_caller_role.status === OptionStatus.NONE)
     return {
       success: false,
-      error: "Cannot assign a role equal to or higher than own role",
+      rejection: RoleAssignmentRejection.UNKNOWN_CALLER_ROLE,
     };
-  }
-
-  return { success: true, data: true };
-}
-
-export function is_seed_super_admin_allowed(
-  caller_role: string,
-  existing_super_admin_count: number,
-): ConvexResult<true> {
-  if (existing_super_admin_count === 0) {
-    return { success: true, data: true };
-  }
-
-  if (caller_role !== SUPER_ADMIN_ROLE) {
+  const parsed_target_role = parse_user_role(target_role);
+  if (parsed_target_role.status === OptionStatus.NONE)
     return {
       success: false,
-      error: "Only existing super admins can seed new super admin accounts",
+      rejection: RoleAssignmentRejection.UNKNOWN_TARGET_ROLE,
     };
-  }
-
-  return { success: true, data: true };
+  const caller_level = ROLE_HIERARCHY[parsed_caller_role.value];
+  const target_level = ROLE_HIERARCHY[parsed_target_role.value];
+  return caller_level > target_level
+    ? { success: true }
+    : {
+        success: false,
+        rejection: RoleAssignmentRejection.TARGET_NOT_BELOW_CALLER,
+      };
 }

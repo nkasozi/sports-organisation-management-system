@@ -12,11 +12,12 @@ import type {
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
-import {
-  create_failure_result,
-  create_success_result,
-} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import {
+  create_warning_failure_details,
+  execute_repository_operation,
+  with_failure_context,
+} from "./InBrowserRepositoryQueryRunner";
 
 const ENTITY_PREFIX = "player_team_transfer_history";
 
@@ -112,43 +113,35 @@ export class InBrowserPlayerTeamTransferHistoryRepository
     return this.find_all({ player_id }, options);
   }
 
-  async find_by_team(
+  find_by_team(
     team_id: PlayerTeamTransferHistory["from_team_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<PlayerTeamTransferHistory> {
-    try {
-      let filtered_entities =
-        await this.database.player_team_transfer_histories.toArray();
-
-      filtered_entities = filtered_entities.filter(
-        (transfer) =>
-          transfer.from_team_id === team_id || transfer.to_team_id === team_id,
-      );
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      console.warn(
-        "[TransferHistoryRepository] Failed to find transfers by team",
-        {
-          event: "repository_find_transfers_by_team_failed",
-          error: String(error),
-        },
-      );
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to find transfers by team: ${error_message}`,
-      );
-    }
+    return execute_repository_operation(
+      with_failure_context(
+        create_warning_failure_details(
+          "[TransferHistoryRepository] Failed to find transfers by team",
+          "repository_find_transfers_by_team_failed",
+          "find transfers by team",
+        ),
+        { team_id },
+      ),
+      async () => {
+        const team_transfers = (
+          await this.database.player_team_transfer_histories.toArray()
+        ).filter(
+          (transfer) =>
+            transfer.from_team_id === team_id ||
+            transfer.to_team_id === team_id,
+        );
+        const sorted_entities = this.apply_sort(team_transfers, options);
+        return this.create_paginated_result(
+          this.apply_pagination(sorted_entities, options),
+          team_transfers.length,
+          options,
+        );
+      },
+    );
   }
 
   async find_pending_transfers(

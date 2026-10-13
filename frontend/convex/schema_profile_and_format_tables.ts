@@ -1,7 +1,12 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 
-import { sync_metadata_fields, timestamp_fields } from "./schema_validators";
+import {
+  ORGANIZATION_LOCAL_ID_INDEX_FIELDS,
+  ORGANIZATION_LOCAL_ID_INDEX_NAME,
+  sync_metadata_fields,
+  timestamp_fields,
+} from "./schema_validators";
 
 export const schema_profile_and_format_tables = {
   player_profiles: defineTable({
@@ -19,6 +24,7 @@ export const schema_profile_and_format_tables = {
     ...timestamp_fields,
   })
     .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"])
     .index("by_player", ["player_id"]),
   team_profiles: defineTable({
     ...sync_metadata_fields,
@@ -35,6 +41,7 @@ export const schema_profile_and_format_tables = {
     ...timestamp_fields,
   })
     .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"])
     .index("by_team", ["team_id"]),
   profile_links: defineTable({
     ...sync_metadata_fields,
@@ -48,6 +55,7 @@ export const schema_profile_and_format_tables = {
     ...timestamp_fields,
   })
     .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"])
     .index("by_profile", ["profile_id"]),
   calendar_tokens: defineTable({
     ...sync_metadata_fields,
@@ -66,6 +74,10 @@ export const schema_profile_and_format_tables = {
     ...timestamp_fields,
   })
     .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"])
+    .index(ORGANIZATION_LOCAL_ID_INDEX_NAME, [
+      ...ORGANIZATION_LOCAL_ID_INDEX_FIELDS,
+    ])
     .index("by_token", ["token"]),
   competition_formats: defineTable({
     ...sync_metadata_fields,
@@ -128,5 +140,6 @@ export const schema_profile_and_format_tables = {
     ...timestamp_fields,
   })
     .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"])
     .index("by_organization", ["organization_id"]),
 };

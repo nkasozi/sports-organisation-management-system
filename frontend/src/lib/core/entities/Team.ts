@@ -16,16 +16,26 @@ import {
   type YearValue,
 } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
+import {
+  check_condition,
+  check_minimum_text_length,
+  collect_validation_errors,
+  type FieldCheck,
+} from "./EntityValidation";
 
-type SportType =
-  | "Football"
-  | "Basketball"
-  | "Baseball"
-  | "Hockey"
-  | "Soccer"
-  | "Cricket"
-  | "Rugby"
-  | "Other";
+const MINIMUM_TEAM_NAME_LENGTH = 2;
+
+const TEAM_VALIDATION_MESSAGES = {
+  NAME_TOO_SHORT: "Team name must be at least 2 characters",
+  ORGANIZATION_REQUIRED: "Organization is required",
+  INVALID_DESCRIPTION: "Team description is invalid",
+  INVALID_MAX_SQUAD_SIZE: "Maximum squad size must be at least 1",
+  INVALID_PRIMARY_COLOR: "Primary color must be a valid hex color",
+  INVALID_SECONDARY_COLOR: "Secondary color must be a valid hex color",
+  INVALID_LOGO_URL: "Logo URL is invalid",
+  INVALID_WEBSITE: "Website URL is invalid",
+  INVALID_FOUNDED_YEAR: "Founded year is invalid",
+} as const;
 
 export const DEFAULT_TEAM_LOGO =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%233b82f6' stroke='%231d4ed8' stroke-width='2'/%3E%3Cpath d='M50 15L65 40H35L50 15Z' fill='white'/%3E%3Ccircle cx='50' cy='55' r='20' fill='white'/%3E%3Cpath d='M30 75L50 85L70 75' stroke='white' stroke-width='4' fill='none'/%3E%3C/svg%3E";
@@ -71,94 +81,50 @@ export type CreateTeamInput = Omit<
 >;
 export type UpdateTeamInput = Partial<CreateTeamInput>;
 
-function create_empty_team_input(
-  organization_id: CreateTeamInput["organization_id"] = "",
-): CreateTeamInput {
-  return {
-    name: "",
-    short_name: "",
-    description: "",
-    organization_id,
-    gender_id: "",
-    captain_player_id: "",
-    vice_captain_player_id: "",
-    max_squad_size: 25,
-    home_venue_id: "",
-    primary_color: "#3B82F6",
-    secondary_color: "#FFFFFF",
-    logo_url: "",
-    website: "",
-    founded_year: new Date().getFullYear(),
-    status: "active",
-  };
+export function validate_team_input(input: CreateTeamInput): string[] {
+  return collect_validation_errors([
+    check_minimum_text_length(
+      input.name,
+      MINIMUM_TEAM_NAME_LENGTH,
+      TEAM_VALIDATION_MESSAGES.NAME_TOO_SHORT,
+    ),
+    check_condition(
+      Boolean(input.organization_id),
+      TEAM_VALIDATION_MESSAGES.ORGANIZATION_REQUIRED,
+    ),
+    parse_description_text(
+      input.description,
+      TEAM_VALIDATION_MESSAGES.INVALID_DESCRIPTION,
+    ),
+    parse_positive_integer_value(
+      input.max_squad_size,
+      TEAM_VALIDATION_MESSAGES.INVALID_MAX_SQUAD_SIZE,
+    ),
+    ...collect_team_branding_checks(input),
+  ]);
 }
 
-export function validate_team_input(input: CreateTeamInput): string[] {
-  const validation_errors: string[] = [];
-
-  if (!input.name || input.name.trim().length < 2) {
-    validation_errors.push("Team name must be at least 2 characters");
-  }
-
-  if (!input.organization_id) {
-    validation_errors.push("Organization is required");
-  }
-
-  const description_result = parse_description_text(
-    input.description,
-    "Team description is invalid",
-  );
-  if (!description_result.success) {
-    validation_errors.push(description_result.error);
-  }
-
-  const max_squad_size_result = parse_positive_integer_value(
-    input.max_squad_size,
-    "Maximum squad size must be at least 1",
-  );
-  if (!max_squad_size_result.success) {
-    validation_errors.push(max_squad_size_result.error);
-  }
-
-  const primary_color_result = parse_hex_color_value(
-    input.primary_color,
-    "Primary color must be a valid hex color",
-  );
-  if (!primary_color_result.success) {
-    validation_errors.push(primary_color_result.error);
-  }
-
-  const secondary_color_result = parse_hex_color_value(
-    input.secondary_color,
-    "Secondary color must be a valid hex color",
-  );
-  if (!secondary_color_result.success) {
-    validation_errors.push(secondary_color_result.error);
-  }
-
-  const logo_url_result = parse_optional_media_url_value(
-    input.logo_url,
-    "Logo URL is invalid",
-  );
-  if (!logo_url_result.success) {
-    validation_errors.push(logo_url_result.error);
-  }
-
-  const website_result = parse_optional_http_url_value(
-    input.website,
-    "Website URL is invalid",
-  );
-  if (!website_result.success) {
-    validation_errors.push(website_result.error);
-  }
-
-  const founded_year_result = parse_year_value(
-    input.founded_year,
-    "Founded year is invalid",
-  );
-  if (!founded_year_result.success) {
-    validation_errors.push(founded_year_result.error);
-  }
-
-  return validation_errors;
+function collect_team_branding_checks(input: CreateTeamInput): FieldCheck[] {
+  return [
+    parse_hex_color_value(
+      input.primary_color,
+      TEAM_VALIDATION_MESSAGES.INVALID_PRIMARY_COLOR,
+    ),
+    parse_hex_color_value(
+      input.secondary_color,
+      TEAM_VALIDATION_MESSAGES.INVALID_SECONDARY_COLOR,
+    ),
+    parse_optional_media_url_value(
+      input.logo_url,
+      TEAM_VALIDATION_MESSAGES.INVALID_LOGO_URL,
+    ),
+    parse_optional_http_url_value(
+      input.website,
+      TEAM_VALIDATION_MESSAGES.INVALID_WEBSITE,
+    ),
+    parse_year_value(
+      input.founded_year,
+      TEAM_VALIDATION_MESSAGES.INVALID_FOUNDED_YEAR,
+    ),
+  ];
 }

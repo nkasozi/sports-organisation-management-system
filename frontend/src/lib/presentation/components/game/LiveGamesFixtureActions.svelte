@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Fixture } from "$lib/core/entities/Fixture";
+    import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
 
     export let fixture: Fixture;
     export let can_start_games: boolean;
@@ -7,7 +8,7 @@
     export let on_start_click: (fixture: Fixture) => void;
 </script>
 
-{#if fixture.status === "in_progress"}
+{#if fixture.status === FIXTURE_STATUS.IN_PROGRESS}
     <div class="pt-4 border-t border-accent-200 dark:border-accent-700">
         <div
             class="flex flex-col sm:flex-row sm:justify-between gap-2 sm:gap-4"

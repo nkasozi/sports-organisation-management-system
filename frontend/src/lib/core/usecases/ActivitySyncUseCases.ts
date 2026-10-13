@@ -1,8 +1,7 @@
 import type { Activity } from "../entities/Activity";
-import {
-  create_activity_from_competition,
-  create_activity_from_fixture,
-} from "../entities/Activity";
+import { ACTIVITY_CATEGORY_TYPE } from "../entities/ActivityCategory";
+import type { Fixture } from "../entities/Fixture";
+import { ACTIVITY_SOURCE_TYPE } from "../entities/StatusConstants";
 import type {
   ActivityCategoryRepository,
   ActivityRepository,
@@ -11,13 +10,24 @@ import type {
   FixtureRepository,
   TeamRepository,
 } from "../interfaces/ports";
-import { is_activity_not_found_by_source_error } from "../interfaces/ports/external/repositories/ActivityRepository";
-import { create_failure_result, create_success_result } from "../types/Result";
+import { create_success_result, type Result } from "../types/Result";
+import { fail_use_case, UseCaseErrorCode } from "../types/UseCaseFailure";
+import { sync_sources_to_activities } from "./ActivitySourceSync";
 import {
-  type ExistingSyncedActivityState,
-  find_activity_category_by_type,
-  upsert_synced_activity,
-} from "./ActivitySyncUseCasesHelpers";
+  build_competition_activity_draft,
+  build_fixture_activity_draft,
+} from "./ActivitySyncDrafts";
+import { find_activity_category_by_type } from "./ActivitySyncUseCasesHelpers";
+import {
+  ACTIVITY_SYNC_EVENT,
+  ACTIVITY_SYNC_LOG_SCOPE,
+  ACTIVITY_SYNC_MESSAGE,
+  FIXTURE_SYNC_PAGE_SIZE,
+} from "./ActivityUseCaseConstants";
+import {
+  create_log_target_builder,
+  relay_repository_failure,
+} from "./FailureRelay";
 
 type ActivitySyncMethods = Pick<
   ActivityUseCasesPort,
@@ -26,182 +36,160 @@ type ActivitySyncMethods = Pick<
   | "find_activity_by_source"
 >;
 
+interface ActivitySyncDependencies {
+  activity_repository: ActivityRepository;
+  activity_category_repository: ActivityCategoryRepository;
+  competition_repository: CompetitionRepository;
+  fixture_repository: FixtureRepository;
+  team_repository: TeamRepository;
+}
+
+type SyncCompetitions = ActivitySyncMethods["sync_competitions_to_activities"];
+type SyncFixtures = ActivitySyncMethods["sync_fixtures_to_activities"];
+type OrganizationId = Parameters<SyncCompetitions>[0];
+
+interface CategoryRequirement {
+  category_type: Activity["category_type"];
+  missing_event: string;
+  missing_message: string;
+}
+
+const log_target = create_log_target_builder(ACTIVITY_SYNC_LOG_SCOPE);
+
+const COMPETITION_CATEGORY: CategoryRequirement = {
+  category_type: ACTIVITY_CATEGORY_TYPE.COMPETITION,
+  missing_event: ACTIVITY_SYNC_EVENT.COMPETITION_CATEGORY_MISSING,
+  missing_message: ACTIVITY_SYNC_MESSAGE.COMPETITION_CATEGORY_MISSING,
+};
+
+const FIXTURE_CATEGORY: CategoryRequirement = {
+  category_type: ACTIVITY_CATEGORY_TYPE.FIXTURE,
+  missing_event: ACTIVITY_SYNC_EVENT.FIXTURE_CATEGORY_MISSING,
+  missing_message: ACTIVITY_SYNC_MESSAGE.FIXTURE_CATEGORY_MISSING,
+};
+
+async function require_category(
+  dependencies: ActivitySyncDependencies,
+  organization_id: OrganizationId,
+  requirement: CategoryRequirement,
+): Promise<Result<Activity["category_id"]>> {
+  const category_result = await find_activity_category_by_type(
+    dependencies.activity_category_repository,
+    organization_id,
+    requirement.category_type,
+  );
+  if (category_result.success) return category_result;
+  return fail_use_case({
+    code: UseCaseErrorCode.NOT_FOUND,
+    ...log_target(requirement.missing_event, { organization_id }),
+    user_message: requirement.missing_message,
+    technical_detail: category_result.error,
+  });
+}
+
+async function sync_competitions(
+  dependencies: ActivitySyncDependencies,
+  organization_id: OrganizationId,
+): ReturnType<SyncCompetitions> {
+  const category_result = await require_category(
+    dependencies,
+    organization_id,
+    COMPETITION_CATEGORY,
+  );
+  if (!category_result.success) return category_result;
+  const competitions_result =
+    await dependencies.competition_repository.find_by_organization(
+      organization_id,
+    );
+  if (!competitions_result.success)
+    return relay_repository_failure(
+      log_target(ACTIVITY_SYNC_EVENT.COMPETITIONS_FETCH_FAILED, {
+        organization_id,
+      }),
+      competitions_result.error,
+    );
+  const counts = await sync_sources_to_activities(
+    dependencies.activity_repository,
+    ACTIVITY_SOURCE_TYPE.COMPETITION,
+    competitions_result.data.items,
+    async (competition) =>
+      build_competition_activity_draft(
+        competition,
+        organization_id,
+        category_result.data,
+      ),
+  );
+  return create_success_result(counts);
+}
+
+async function load_fixtures_for_sync(
+  dependencies: ActivitySyncDependencies,
+  competition_id: Parameters<SyncFixtures>[1],
+): Promise<Result<Fixture[]>> {
+  const fixtures_result = competition_id
+    ? await dependencies.fixture_repository.find_by_competition(competition_id)
+    : await dependencies.fixture_repository.find_all(
+        {},
+        { page_size: FIXTURE_SYNC_PAGE_SIZE },
+      );
+  if (!fixtures_result.success)
+    return relay_repository_failure(
+      log_target(ACTIVITY_SYNC_EVENT.FIXTURES_FETCH_FAILED, { competition_id }),
+      fixtures_result.error,
+    );
+  console.log(ACTIVITY_SYNC_LOG_SCOPE, {
+    event: ACTIVITY_SYNC_EVENT.FIXTURES_LOADED,
+    competition_id,
+    count: fixtures_result.data.items.length,
+  });
+  return create_success_result(fixtures_result.data.items);
+}
+
+async function sync_fixtures(
+  dependencies: ActivitySyncDependencies,
+  organization_id: OrganizationId,
+  competition_id: Parameters<SyncFixtures>[1],
+): ReturnType<SyncFixtures> {
+  console.log(ACTIVITY_SYNC_LOG_SCOPE, {
+    event: ACTIVITY_SYNC_EVENT.FIXTURE_SYNC_STARTED,
+    organization_id,
+    competition_id,
+  });
+  const category_result = await require_category(
+    dependencies,
+    organization_id,
+    FIXTURE_CATEGORY,
+  );
+  if (!category_result.success) return category_result;
+  const fixtures_result = await load_fixtures_for_sync(
+    dependencies,
+    competition_id,
+  );
+  if (!fixtures_result.success) return fixtures_result;
+  const counts = await sync_sources_to_activities(
+    dependencies.activity_repository,
+    ACTIVITY_SOURCE_TYPE.FIXTURE,
+    fixtures_result.data,
+    (fixture) =>
+      build_fixture_activity_draft(
+        dependencies.team_repository,
+        fixture,
+        organization_id,
+        category_result.data,
+      ),
+  );
+  return create_success_result(counts);
+}
+
 export function create_activity_sync(
-  activity_repository: ActivityRepository,
-  activity_category_repository: ActivityCategoryRepository,
-  competition_repository: CompetitionRepository,
-  fixture_repository: FixtureRepository,
-  team_repository: TeamRepository,
+  dependencies: ActivitySyncDependencies,
 ): ActivitySyncMethods {
   return {
-    async sync_competitions_to_activities(organization_id) {
-      const category_result = await find_activity_category_by_type(
-        activity_category_repository,
-        organization_id,
-        "competition",
-      );
-      if (!category_result.success)
-        return create_failure_result(
-          "Competition category not found. Please ensure default categories are created.",
-        );
-      const competitions_result =
-        await competition_repository.find_by_organization(organization_id);
-      if (!competitions_result.success)
-        return create_failure_result(competitions_result.error);
-      const competitions = competitions_result.data?.items || [];
-      let created = 0;
-      let updated = 0;
-      for (const competition of competitions) {
-        const existing_result = await activity_repository.find_by_source(
-          "competition",
-          competition.id,
-        );
-        if (
-          !existing_result.success &&
-          !is_activity_not_found_by_source_error(
-            existing_result.error,
-            "competition",
-            competition.id,
-          )
-        ) {
-          continue;
-        }
-
-        const existing_activity_state: ExistingSyncedActivityState =
-          existing_result.success
-            ? { status: "existing", activity: existing_result.data }
-            : { status: "missing" };
-
-        const activity_input = create_activity_from_competition(
-          competition.id,
-          competition.name,
-          competition.start_date,
-          competition.end_date,
-          organization_id,
-          category_result.data,
-          competition.location,
-        );
-        const upsert_result = await upsert_synced_activity(
-          activity_repository,
-          existing_activity_state,
-          activity_input,
-          {
-            title: activity_input.title,
-            start_datetime: activity_input.start_datetime,
-            end_datetime: activity_input.end_datetime,
-            location: activity_input.location,
-          } as Partial<Activity>,
-        );
-        if (upsert_result.success) {
-          upsert_result.data ? updated++ : created++;
-        }
-      }
-      return create_success_result({ created, updated });
-    },
-
-    async sync_fixtures_to_activities(organization_id, competition_id) {
-      console.log("[ActivitySync] Starting fixture sync", {
-        event: "fixture_sync_started",
-        organization_id,
-        competition_id,
-      });
-      const category_result = await find_activity_category_by_type(
-        activity_category_repository,
-        organization_id,
-        "fixture",
-      );
-      if (!category_result.success) {
-        console.log("[ActivitySync] No fixture category found", {
-          event: "fixture_category_missing",
-          organization_id,
-        });
-        return create_failure_result(
-          "Fixture category not found. Please ensure default categories are created.",
-        );
-      }
-      const fixtures_result = competition_id
-        ? await fixture_repository.find_by_competition(competition_id)
-        : await fixture_repository.find_all({}, { page_size: 1000 });
-      if (!fixtures_result.success) {
-        console.log("[ActivitySync] Failed to fetch fixtures", {
-          event: "fixture_fetch_failed",
-          error: fixtures_result.error,
-        });
-        return create_failure_result(fixtures_result.error);
-      }
-      console.log("[ActivitySync] Fixtures found", {
-        event: "fixtures_loaded",
-        count: fixtures_result.data?.items?.length,
-      });
-      const fixtures = fixtures_result.data?.items || [];
-      let created = 0;
-      let updated = 0;
-      for (const fixture of fixtures) {
-        const existing_result = await activity_repository.find_by_source(
-          "fixture",
-          fixture.id,
-        );
-        if (
-          !existing_result.success &&
-          !is_activity_not_found_by_source_error(
-            existing_result.error,
-            "fixture",
-            fixture.id,
-          )
-        ) {
-          continue;
-        }
-
-        const existing_activity_state: ExistingSyncedActivityState =
-          existing_result.success
-            ? { status: "existing", activity: existing_result.data }
-            : { status: "missing" };
-
-        const home_result = await team_repository.find_by_id(
-          fixture.home_team_id,
-        );
-        const away_result = await team_repository.find_by_id(
-          fixture.away_team_id,
-        );
-        const home_name = home_result.success
-          ? home_result.data?.name || "TBD"
-          : "TBD";
-        const away_name = away_result.success
-          ? away_result.data?.name || "TBD"
-          : "TBD";
-        const fixture_datetime = `${fixture.scheduled_date}T${fixture.scheduled_time || "00:00"}`;
-        const activity_input = create_activity_from_fixture(
-          fixture.id,
-          `${home_name} vs ${away_name}`,
-          fixture_datetime,
-          fixture.competition_id,
-          fixture.home_team_id,
-          fixture.away_team_id,
-          organization_id,
-          category_result.data,
-          fixture.venue,
-        );
-        const upsert_result = await upsert_synced_activity(
-          activity_repository,
-          existing_activity_state,
-          activity_input,
-          {
-            title: activity_input.title,
-            start_datetime: activity_input.start_datetime,
-            end_datetime: activity_input.end_datetime,
-            location: activity_input.location,
-            team_ids: activity_input.team_ids,
-          } as Partial<Activity>,
-        );
-        if (upsert_result.success) {
-          upsert_result.data ? updated++ : created++;
-        }
-      }
-      return create_success_result({ created, updated });
-    },
-
-    async find_activity_by_source(source_type, source_id) {
-      return activity_repository.find_by_source(source_type, source_id);
-    },
+    sync_competitions_to_activities: (organization_id) =>
+      sync_competitions(dependencies, organization_id),
+    sync_fixtures_to_activities: (organization_id, competition_id) =>
+      sync_fixtures(dependencies, organization_id, competition_id),
+    find_activity_by_source: (source_type, source_id) =>
+      dependencies.activity_repository.find_by_source(source_type, source_id),
   };
 }

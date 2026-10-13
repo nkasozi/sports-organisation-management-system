@@ -1,185 +1,92 @@
-import { derived, get, writable } from "svelte/store";
+import { get, type Readable, writable } from "svelte/store";
 
 import { browser } from "$app/environment";
-import type { SystemUser, SystemUserRole } from "$lib/core/entities/SystemUser";
+import type { SystemUser } from "$lib/core/entities/SystemUser";
 import type { ScalarInput } from "$lib/core/types/DomainScalars";
-import { get_app_settings_storage } from "$lib/infrastructure/container";
 import {
   type EntityUpdatedPayload,
   EventBus,
 } from "$lib/infrastructure/events/EventBus";
+import { EVENT_TYPE } from "$lib/infrastructure/events/eventBusConstants";
+import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
-type CurrentUser = ScalarInput<{
-  id: SystemUser["id"];
-  email: SystemUser["email"];
-  first_name: SystemUser["first_name"];
-  last_name: SystemUser["last_name"];
-  role: SystemUserRole;
-  profile_picture_base64?: string;
-}>;
+import {
+  CURRENT_USER_ENTITY_TYPE,
+  CURRENT_USER_LOG_EVENTS,
+} from "./currentUserConstants";
+import {
+  clear_current_user,
+  type CurrentUserIdentifierState,
+  type CurrentUserState,
+  type CurrentUserStoreContext,
+  initialize_current_user,
+  read_current_user_id,
+  set_current_user,
+  update_current_user_from_entity_data,
+  update_current_user_profile_picture,
+} from "./currentUserStoreActions";
 
-type StoredCurrentUser = CurrentUser;
-type CurrentUserState =
-  | { status: "present"; user: CurrentUser }
-  | { status: "missing" };
-type CurrentUserIdentifierState =
-  | { status: "present"; user_id: CurrentUser["id"] }
-  | { status: "missing" };
-
-const storage_key = "sports-org-current-user";
-
-const REQUIRED_USER_FIELDS: ReadonlyArray<keyof StoredCurrentUser> = [
-  "id",
-  "email",
-  "first_name",
-  "last_name",
-  "role",
-];
-
-function validate_stored_user(parsed: unknown): parsed is StoredCurrentUser {
-  if (!parsed || typeof parsed !== "object") return false;
-  const record = parsed as Record<string, unknown>;
-  return REQUIRED_USER_FIELDS.every(
-    (field) => typeof record[field] === "string" && record[field] !== "",
-  );
+interface CurrentUserStore extends Readable<CurrentUserState> {
+  initialize: () => Promise<void>;
+  set_user: (user: ScalarInput<SystemUser>) => Promise<void>;
+  clear: () => Promise<void>;
+  update_profile_picture: (base64: string) => Promise<void>;
+  update_from_entity_data: (
+    entity_data: Record<string, unknown>,
+  ) => Promise<void>;
+  get_current_user_id: () => CurrentUserIdentifierState;
 }
 
-function create_current_user_store() {
+function create_current_user_store(): CurrentUserStore {
   const { subscribe, set } = writable<CurrentUserState>({
-    status: "missing",
+    status: PRESENCE_STATUS.MISSING,
   });
+  const context: CurrentUserStoreContext = {
+    read_state: (): CurrentUserState => get({ subscribe }),
+    set,
+  };
 
   return {
     subscribe,
-
-    initialize: async (): Promise<void> => {
-      if (!browser) return;
-      const stored = await get_app_settings_storage().get_setting(storage_key);
-      if (!stored) return;
-      try {
-        const parsed: unknown = JSON.parse(stored);
-        if (!validate_stored_user(parsed)) return;
-        set({ status: "present", user: parsed as CurrentUser });
-      } catch (error) {
-        console.warn("[CurrentUser] Failed to parse stored user data", {
-          event: "stored_user_parse_failed",
-          error: String(error),
-        });
-      }
-    },
-
-    set_user: async (user: ScalarInput<SystemUser>): Promise<void> => {
-      const current_user: CurrentUser = {
-        id: user.id,
-        email: user.email,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        role: user.role,
-        profile_picture_base64: user.profile_picture_base64,
-      };
-
-      if (browser) {
-        await get_app_settings_storage().set_setting(
-          storage_key,
-          JSON.stringify(current_user),
-        );
-      }
-
-      set({ status: "present", user: current_user });
-    },
-
-    clear: async (): Promise<void> => {
-      if (browser) {
-        await get_app_settings_storage().remove_setting(storage_key);
-      }
-      set({ status: "missing" });
-    },
-
-    update_profile_picture: async (base64: string): Promise<void> => {
-      const user_state = get({ subscribe });
-      if (user_state.status !== "present") return;
-      const updated = {
-        ...user_state.user,
-        profile_picture_base64: base64,
-      };
-      if (browser) {
-        await get_app_settings_storage().set_setting(
-          storage_key,
-          JSON.stringify(updated),
-        );
-      }
-      set({ status: "present", user: updated });
-    },
-
-    update_from_entity_data: async (
+    initialize: (): Promise<void> => initialize_current_user(context),
+    set_user: (user: ScalarInput<SystemUser>): Promise<void> =>
+      set_current_user(context, user),
+    clear: (): Promise<void> => clear_current_user(context),
+    update_profile_picture: (base64: string): Promise<void> =>
+      update_current_user_profile_picture(context, base64),
+    update_from_entity_data: (
       entity_data: Record<string, unknown>,
-    ): Promise<void> => {
-      const user_state = get({ subscribe });
-      if (user_state.status !== "present") return;
-      const user = user_state.user;
-      const updated: CurrentUser = {
-        id: user.id,
-        email: (entity_data.email as CurrentUser["email"]) ?? user.email,
-        first_name:
-          (entity_data.first_name as CurrentUser["first_name"]) ??
-          user.first_name,
-        last_name:
-          (entity_data.last_name as CurrentUser["last_name"]) ?? user.last_name,
-        role: (entity_data.role as SystemUserRole) ?? user.role,
-        profile_picture_base64:
-          (entity_data.profile_picture_base64 as string) ??
-          user.profile_picture_base64,
-      };
-      if (browser) {
-        await get_app_settings_storage().set_setting(
-          storage_key,
-          JSON.stringify(updated),
-        );
-      }
-      set({ status: "present", user: updated });
-    },
-
-    get_current_user_id: (): CurrentUserIdentifierState => {
-      const user_state = get({ subscribe });
-
-      if (user_state.status !== "present") {
-        return { status: "missing" };
-      }
-
-      return { status: "present", user_id: user_state.user.id };
-    },
+    ): Promise<void> =>
+      update_current_user_from_entity_data(context, entity_data),
+    get_current_user_id: (): CurrentUserIdentifierState =>
+      read_current_user_id(context),
   };
 }
 
 export const current_user_store = create_current_user_store();
 
-const current_user_display_name = derived(current_user_store, ($user) =>
-  $user.status === "present"
-    ? `${$user.user.first_name} ${$user.user.last_name}`
-    : "Guest",
-);
-
-const current_user_initials = derived(current_user_store, ($user) => {
-  if ($user.status !== "present") return "?";
-  const first_initial = $user.user.first_name?.charAt(0).toUpperCase() || "";
-  const last_initial = $user.user.last_name?.charAt(0).toUpperCase() || "";
-  return `${first_initial}${last_initial}` || "?";
-});
-
 function handle_system_user_updated(payload: EntityUpdatedPayload): void {
-  if (payload.entity_type !== "system_user") return;
+  if (payload.entity_type !== CURRENT_USER_ENTITY_TYPE) return;
 
   const current_user_id_state = current_user_store.get_current_user_id();
-  if (current_user_id_state.status !== "present") return;
+  if (current_user_id_state.status !== PRESENCE_STATUS.PRESENT) return;
 
   if (payload.entity_id !== current_user_id_state.user_id) return;
 
-  current_user_store.update_from_entity_data(payload.entity_data);
+  current_user_store
+    .update_from_entity_data(payload.entity_data)
+    .catch((error: unknown) => {
+      console.error("[CurrentUser] Failed to apply entity update", {
+        event: CURRENT_USER_LOG_EVENTS.ENTITY_UPDATE_SYNC_FAILED,
+        user_id: current_user_id_state.user_id,
+        error: String(error),
+      });
+    });
 }
 
 if (browser) {
   EventBus.subscribe<EntityUpdatedPayload>(
-    "entity_updated",
+    EVENT_TYPE.ENTITY_UPDATED,
     handle_system_user_updated,
   );
 }

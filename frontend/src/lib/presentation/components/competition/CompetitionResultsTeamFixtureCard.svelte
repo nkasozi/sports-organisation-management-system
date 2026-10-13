@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Fixture } from "$lib/core/entities/Fixture";
+    import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
     import TeamLogoThumbnail from "$lib/presentation/components/ui/TeamLogoThumbnail.svelte";
 
     export let fixture: Fixture;
@@ -16,21 +17,21 @@
     $: home_score = fixture.home_team_score ?? 0;
     $: away_score = fixture.away_team_score ?? 0;
     $: did_win =
-        fixture.status === "completed" &&
+        fixture.status === FIXTURE_STATUS.COMPLETED &&
         ((is_home && home_score > away_score) ||
             (!is_home && away_score > home_score));
     $: did_lose =
-        fixture.status === "completed" &&
+        fixture.status === FIXTURE_STATUS.COMPLETED &&
         ((is_home && home_score < away_score) ||
             (!is_home && away_score < home_score));
     $: status_classes =
-        fixture.status === "completed"
+        fixture.status === FIXTURE_STATUS.COMPLETED
             ? did_win
                 ? "border-green-200 bg-green-50 dark:border-green-800/50 dark:bg-green-900/10"
                 : did_lose
                   ? "border-red-200 bg-red-50 dark:border-red-800/50 dark:bg-red-900/10"
                   : "border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
-            : fixture.status === "in_progress"
+            : fixture.status === FIXTURE_STATUS.IN_PROGRESS
               ? "border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/20"
               : "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800";
 </script>
@@ -41,7 +42,7 @@
             {format_date(fixture.scheduled_date)}
         </div>
         <div class="flex items-center gap-2">
-            {#if fixture.status === "in_progress"}
+            {#if fixture.status === FIXTURE_STATUS.IN_PROGRESS}
                 <span class="flex items-center gap-1">
                     <span class="relative flex h-2 w-2">
                         <span
@@ -56,7 +57,7 @@
                         >LIVE</span
                     >
                 </span>
-            {:else if fixture.status === "completed"}
+            {:else if fixture.status === FIXTURE_STATUS.COMPLETED}
                 <span
                     class={`text-xs font-medium px-1.5 py-0.5 rounded ${did_win ? "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400" : did_lose ? "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400" : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"}`}
                     >{did_win ? "W" : did_lose ? "L" : "D"}</span
@@ -88,7 +89,7 @@
             />
         </div>
         <div class="flex-shrink-0 px-2 sm:px-4">
-            {#if fixture.status === "completed" || fixture.status === "in_progress"}
+            {#if fixture.status === FIXTURE_STATUS.COMPLETED || fixture.status === FIXTURE_STATUS.IN_PROGRESS}
                 <div class="flex items-center gap-1 text-lg font-bold">
                     <span
                         class={is_home && home_score > away_score

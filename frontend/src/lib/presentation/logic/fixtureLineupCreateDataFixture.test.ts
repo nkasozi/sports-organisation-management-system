@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { load_fixture_lineup_create_fixture_data } from "./fixtureLineupCreateDataFixture";
+import { create_fixture_lineup_dependencies } from "./fixtureLineupCreateDataFixture.test_support";
 import type { FixtureLineupCreateDependencies } from "./fixtureLineupCreateDataTypes";
 import type { FixtureLineupCreateAuthProfileState } from "./fixtureLineupCreatePageContracts";
 
@@ -13,24 +14,8 @@ vi.mock("$lib/adapters/persistence/sportService", () => ({
 }));
 
 describe("fixtureLineupCreateDataFixture", () => {
-  type MockDependencies = {
-    [Key in keyof FixtureLineupCreateDependencies]?: Partial<
-      FixtureLineupCreateDependencies[Key]
-    >;
-  };
-  function create_dependencies() {
-    return {
-      fixture_use_cases: { get_by_id: vi.fn() },
-      competition_use_cases: { get_by_id: vi.fn() },
-      organization_use_cases: { get_by_id: vi.fn() },
-      competition_team_use_cases: { list_teams_in_competition: vi.fn() },
-      team_use_cases: { get_by_id: vi.fn() },
-      lineup_use_cases: { list_lineups_by_fixture: vi.fn() },
-    } satisfies MockDependencies;
-  }
-
   it("fails fast when the selected fixture cannot be loaded", async () => {
-    const dependencies = create_dependencies();
+    const dependencies = create_fixture_lineup_dependencies();
     dependencies.fixture_use_cases.get_by_id.mockResolvedValue({
       success: false,
     });
@@ -45,11 +30,12 @@ describe("fixtureLineupCreateDataFixture", () => {
       success: false,
       error_message: expect.stringContaining("Failed to load fixture."),
       should_clear_fixture: true,
+      failure_reason: "fixture_unavailable",
     });
   });
 
   it("builds lineup constraints, labels, and auto-selection from the loaded fixture context", async () => {
-    const dependencies = create_dependencies();
+    const dependencies = create_fixture_lineup_dependencies();
     get_sport_by_id_mock.mockResolvedValue({
       success: true,
       data: {
@@ -144,7 +130,7 @@ describe("fixtureLineupCreateDataFixture", () => {
   });
 
   it("rejects a fixture when the authorized team has already submitted its lineup", async () => {
-    const dependencies = create_dependencies();
+    const dependencies = create_fixture_lineup_dependencies();
     get_sport_by_id_mock.mockResolvedValue({ success: false });
     dependencies.fixture_use_cases.get_by_id.mockResolvedValue({
       success: true,
@@ -205,6 +191,7 @@ describe("fixtureLineupCreateDataFixture", () => {
         "Your team has already submitted a lineup for this fixture.",
       ),
       should_clear_fixture: true,
+      failure_reason: "team_already_submitted",
     });
   });
 });

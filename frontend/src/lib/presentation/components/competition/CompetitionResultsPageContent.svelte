@@ -11,8 +11,10 @@
         CompetitionResultsCompetitionFormatState,
         CompetitionResultsSelectedCompetitionState,
     } from "$lib/presentation/logic/competitionResultsPageContracts";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
     import CompetitionResultsWorkspace from "./CompetitionResultsWorkspace.svelte";
+    import { COMPETITION_ROUTES } from "./competitionTabConstants";
 
     export let is_using_cached_data: boolean;
     export let loading_state: LoadingState;
@@ -21,12 +23,14 @@
     export let selected_organization_id: string;
     export let competitions: Competition[];
     export let selected_competition_id: string;
-    export let selected_competition_state: CompetitionResultsSelectedCompetitionState = {
-        status: "missing",
-    };
-    export let competition_format_state: CompetitionResultsCompetitionFormatState = {
-        status: "missing",
-    };
+    export let selected_competition_state: CompetitionResultsSelectedCompetitionState =
+        {
+            status: PRESENCE_STATUS.MISSING,
+        };
+    export let competition_format_state: CompetitionResultsCompetitionFormatState =
+        {
+            status: PRESENCE_STATUS.MISSING,
+        };
     export let competition_stages: CompetitionStage[];
     export let fixtures: Fixture[];
     export let teams: Team[];
@@ -92,7 +96,7 @@
                 <button
                     type="button"
                     class="btn btn-primary-action mt-4"
-                    on:click={() => goto("/organizations")}
+                    on:click={() => void goto(COMPETITION_ROUTES.ORGANIZATIONS)}
                     >Go to Organizations</button
                 >
             </div>
@@ -123,7 +127,7 @@
                 <button
                     type="button"
                     class="btn btn-primary-action mt-4"
-                    on:click={() => goto("/competitions/create")}
+                    on:click={() => void goto(COMPETITION_ROUTES.CREATE)}
                     >Create Competition</button
                 >
             </div>

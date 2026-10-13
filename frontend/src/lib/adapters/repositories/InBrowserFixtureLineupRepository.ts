@@ -15,13 +15,34 @@ import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../core/types/Result";
-import {
-  create_failure_result,
-  create_success_result,
-} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import {
+  apply_entity_filter_rules,
+  type EntityFilterRule,
+  equals_rule,
+} from "./InBrowserRepositoryFilterRules";
+import {
+  convert_page_pagination_to_query_options,
+  map_paginated_items,
+  type PagePagination,
+  select_first_paginated_item,
+} from "./InBrowserRepositoryPagedQueries";
+import { reset_repository_data } from "./InBrowserRepositoryReset";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
+import type { RepositoryWriteOrigin } from "./InBrowserRepositoryWriteOrigin";
 
 const ENTITY_PREFIX = "lineup";
+
+const LINEUP_FILTER_RULES: EntityFilterRule<
+  FixtureLineup,
+  FixtureLineupFilter
+>[] = [
+  equals_rule("organization_id"),
+  equals_rule("fixture_id"),
+  equals_rule("team_id"),
+  equals_rule("status"),
+  equals_rule("submitted_by"),
+];
 
 export class InBrowserFixtureLineupRepository
   extends InBrowserBaseRepository<
@@ -91,87 +112,46 @@ export class InBrowserFixtureLineupRepository
     entities: FixtureLineup[],
     filter: FixtureLineupFilter,
   ): FixtureLineup[] {
-    let filtered = entities;
-
-    if (filter.organization_id) {
-      filtered = filtered.filter(
-        (lineup) => lineup.organization_id === filter.organization_id,
-      );
-    }
-
-    if (filter.fixture_id) {
-      filtered = filtered.filter(
-        (lineup) => lineup.fixture_id === filter.fixture_id,
-      );
-    }
-
-    if (filter.team_id) {
-      filtered = filtered.filter((lineup) => lineup.team_id === filter.team_id);
-    }
-
-    if (filter.status) {
-      filtered = filtered.filter((lineup) => lineup.status === filter.status);
-    }
-
-    if (filter.submitted_by) {
-      filtered = filtered.filter(
-        (lineup) => lineup.submitted_by === filter.submitted_by,
-      );
-    }
-
-    return filtered;
-  }
-
-  private build_query_options(pagination?: {
-    page: number;
-    page_size: number;
-  }) {
-    return pagination
-      ? { page_number: pagination.page, page_size: pagination.page_size }
-      : void 0;
+    return apply_entity_filter_rules(entities, filter, LINEUP_FILTER_RULES);
   }
 
   async get_lineups_for_fixture(
     fixture_id: FixtureLineup["fixture_id"],
   ): AsyncResult<FixtureLineup[]> {
-    const result = await this.find_all({ fixture_id });
-    if (!result.success) {
-      return { success: false, error: result.error };
-    }
-    return { success: true, data: result.data.items };
+    return map_paginated_items(
+      await this.find_all({ fixture_id }),
+      (items) => items,
+    );
   }
 
   async get_lineup_for_team_in_fixture(
     fixture_id: FixtureLineup["fixture_id"],
     team_id: FixtureLineup["team_id"],
   ): AsyncResult<FixtureLineup> {
-    const result = await this.find_all({ fixture_id, team_id });
-    if (!result.success) {
-      return create_failure_result(result.error);
-    }
-    if (result.data.items.length === 0) {
-      return create_failure_result(
-        "No lineup found for this team in this fixture",
-      );
-    }
-    return create_success_result(result.data.items[0]);
+    return select_first_paginated_item(
+      await this.find_all({ fixture_id, team_id }),
+      "No lineup found for this team in this fixture",
+    );
   }
 
   async find_by_fixture(
     fixture_id: FixtureLineup["fixture_id"],
-    options?: { page: number; page_size: number },
+    options?: PagePagination,
   ): PaginatedAsyncResult<FixtureLineup> {
-    return this.find_all({ fixture_id }, this.build_query_options(options));
+    return this.find_all(
+      { fixture_id },
+      convert_page_pagination_to_query_options(options),
+    );
   }
 
   async find_by_fixture_and_team(
     fixture_id: FixtureLineup["fixture_id"],
     team_id: FixtureLineup["team_id"],
-    options?: { page: number; page_size: number },
+    options?: PagePagination,
   ): PaginatedAsyncResult<FixtureLineup> {
     return this.find_all(
       { fixture_id, team_id },
-      this.build_query_options(options),
+      convert_page_pagination_to_query_options(options),
     );
   }
 }
@@ -180,28 +160,14 @@ function create_default_fixture_lineups(): import("$lib/core/types/DomainScalars
   return [];
 }
 
-type FixtureLineupRepositoryState =
-  | { status: "uninitialized" }
-  | { status: "ready"; repository: InBrowserFixtureLineupRepository };
+export const get_fixture_lineup_repository: () => InBrowserFixtureLineupRepository =
+  create_lazy_repository_accessor(() => new InBrowserFixtureLineupRepository());
 
-let fixture_lineup_repository_state: FixtureLineupRepositoryState = {
-  status: "uninitialized",
-};
-
-export function get_fixture_lineup_repository(): InBrowserFixtureLineupRepository {
-  if (fixture_lineup_repository_state.status === "ready") {
-    return fixture_lineup_repository_state.repository;
-  }
-
-  const repository = new InBrowserFixtureLineupRepository();
-  fixture_lineup_repository_state = { status: "ready", repository };
-
-  return repository;
-}
-
-export async function reset_fixture_lineup_repository(): Promise<boolean> {
-  const repository = get_fixture_lineup_repository();
-  await repository.clear_all_data();
-  await repository.seed_with_data(create_default_fixture_lineups());
-  return true;
+export function reset_fixture_lineup_repository(
+  origin: RepositoryWriteOrigin,
+): AsyncResult<number> {
+  return reset_repository_data(
+    get_fixture_lineup_repository().with_write_origin(origin),
+    create_default_fixture_lineups(),
+  );
 }

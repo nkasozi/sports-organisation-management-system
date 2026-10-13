@@ -1,6 +1,11 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
 
+    import {
+        build_visible_page_entries,
+        PAGINATION_ENTRY_KIND,
+    } from "./paginationLogic";
+
     export let current_page: number;
     export let total_pages: number;
     export let total_items: number;
@@ -15,32 +20,10 @@
     $: display_start =
         total_items === 0 ? 0 : (current_page - 1) * items_per_page + 1;
     $: display_end = Math.min(current_page * items_per_page, total_items);
-    $: visible_page_numbers = build_visible_page_numbers(
+    $: visible_page_entries = build_visible_page_entries(
         current_page,
         total_pages,
     );
-
-    function build_visible_page_numbers(
-        page: number,
-        total: number,
-    ): (number | "...")[] {
-        if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-
-        const pages: (number | "...")[] = [1];
-
-        if (page > 3) pages.push("...");
-
-        const range_start = Math.max(2, page - 1);
-        const range_end = Math.min(total - 1, page + 1);
-        for (let p = range_start; p <= range_end; p++) {
-            pages.push(p);
-        }
-
-        if (page < total - 2) pages.push("...");
-
-        pages.push(total);
-        return pages;
-    }
 
     function handle_page_size_change(event: Event): void {
         const new_size = parseInt(
@@ -116,8 +99,8 @@
                 </svg>
             </button>
 
-            {#each visible_page_numbers as page_number}
-                {#if page_number === "..."}
+            {#each visible_page_entries as page_entry}
+                {#if page_entry.kind === PAGINATION_ENTRY_KIND.ELLIPSIS}
                     <span
                         class="px-1.5 py-1 text-sm text-gray-400 dark:text-gray-500 select-none"
                         >…</span
@@ -126,12 +109,12 @@
                     <button
                         type="button"
                         class="min-w-[2rem] h-8 px-2 rounded-[0.175rem] text-sm font-medium transition-colors
-              {page_number === current_page
+              {page_entry.page_number === current_page
                             ? 'bg-primary-600 text-white shadow-sm'
                             : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}"
-                        on:click={() => go_to_page(page_number as number)}
+                        on:click={() => go_to_page(page_entry.page_number)}
                     >
-                        {page_number}
+                        {page_entry.page_number}
                     </button>
                 {/if}
             {/each}

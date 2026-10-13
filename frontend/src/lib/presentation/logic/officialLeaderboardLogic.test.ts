@@ -1,72 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
-import type { Fixture } from "$lib/core/entities/Fixture";
-import type { OfficialPerformanceRating } from "$lib/core/entities/OfficialPerformanceRating";
-import type { ScalarInput } from "$lib/core/types/DomainScalars";
-
+import { build_leaderboard_entries } from "./officialLeaderboardLogic";
 import {
-  build_leaderboard_entries,
-  get_score_bar_width,
-  get_tier_badge_classes,
-} from "./officialLeaderboardLogic";
-
-function make_rating(
-  overrides: Partial<ScalarInput<OfficialPerformanceRating>> = {},
-): OfficialPerformanceRating {
-  return {
-    id: "opr_001",
-    organization_id: "org_1",
-    official_id: "off_1",
-    fixture_id: "fix_1",
-    rater_user_id: "user_1",
-    rater_role: "officials_manager",
-    overall: 7,
-    decision_accuracy: 7,
-    game_control: 7,
-    communication: 7,
-    fitness: 7,
-    notes: "",
-    submitted_at: "2026-01-01T00:00:00Z",
-    created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z",
-    ...overrides,
-  } as unknown as OfficialPerformanceRating;
-}
-
-function make_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture {
-  return {
-    id: "fix_1",
-    organization_id: "org_1",
-    competition_id: "comp_1",
-    stage_id: "stage_1",
-    home_team_id: "team_a",
-    away_team_id: "team_b",
-    scheduled_date: "2026-01-01",
-    scheduled_time: "15:00",
-    status: "completed",
-    match_day: 1,
-    created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z",
-    ...overrides,
-  } as unknown as Fixture;
-}
-
-function make_stage(
-  overrides: Partial<ScalarInput<CompetitionStage>> = {},
-): CompetitionStage {
-  return {
-    id: "stage_1",
-    organization_id: "org_1",
-    competition_id: "comp_1",
-    stage_name: "League Phase",
-    stage_type: "league_stage",
-    status: "active",
-    created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z",
-    ...overrides,
-  } as unknown as CompetitionStage;
-}
+  make_fixture,
+  make_rating,
+  make_stage,
+} from "./officialLeaderboardLogic.test_support";
 
 describe("build_leaderboard_entries", () => {
   it("returns empty array when there are no ratings", () => {
@@ -253,44 +192,5 @@ describe("build_leaderboard_entries", () => {
     expect(entries).toHaveLength(1);
     expect(entries[0].rating_count).toBe(2);
     expect(entries[0].composite_score).toBeCloseTo(7, 1);
-  });
-});
-
-describe("get_tier_badge_classes", () => {
-  it("returns a non-empty string for each tier", () => {
-    expect(get_tier_badge_classes("elite").length).toBeGreaterThan(0);
-    expect(get_tier_badge_classes("strong").length).toBeGreaterThan(0);
-    expect(get_tier_badge_classes("adequate").length).toBeGreaterThan(0);
-    expect(get_tier_badge_classes("needs_development").length).toBeGreaterThan(
-      0,
-    );
-  });
-
-  it("returns different classes for different tiers", () => {
-    const elite = get_tier_badge_classes("elite");
-    const needs = get_tier_badge_classes("needs_development");
-    expect(elite).not.toBe(needs);
-  });
-});
-
-describe("get_score_bar_width", () => {
-  it("returns 0% for score 0", () => {
-    expect(get_score_bar_width(0)).toBe("0%");
-  });
-
-  it("returns 100% for score 10", () => {
-    expect(get_score_bar_width(10)).toBe("100%");
-  });
-
-  it("returns 50% for score 5", () => {
-    expect(get_score_bar_width(5)).toBe("50%");
-  });
-
-  it("clamps to 0% for negative scores", () => {
-    expect(get_score_bar_width(-5)).toBe("0%");
-  });
-
-  it("clamps to 100% for scores above 10", () => {
-    expect(get_score_bar_width(15)).toBe("100%");
   });
 });

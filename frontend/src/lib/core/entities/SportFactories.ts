@@ -7,11 +7,7 @@ import {
   create_default_scoring_rules,
   create_default_substitution_rules,
 } from "./SportDefaults";
-import type {
-  CreateSportInput,
-  OfficialRequirement,
-  SportGamePeriod,
-} from "./SportTypes";
+import { type CreateSportInput, SPORT_STATUS } from "./SportTypes";
 
 export function create_empty_sport_input(): CreateSportInput {
   return {
@@ -33,7 +29,7 @@ export function create_empty_sport_input(): CreateSportInput {
     min_players_per_fixture: 11,
     max_players_per_fixture: 18,
     additional_rules: {},
-    status: "active",
+    status: SPORT_STATUS.ACTIVE,
   };
 }
 
@@ -61,7 +57,7 @@ export function create_football_sport_preset(): CreateSportInput {
       goal_line_technology_enabled: false,
       var_enabled: false,
     },
-    status: "active",
+    status: SPORT_STATUS.ACTIVE,
   };
 }
 
@@ -104,18 +100,4 @@ export function validate_sport_input(input: CreateSportInput): string[] {
   }
 
   return validation_errors;
-}
-
-function calculate_total_game_duration(periods: SportGamePeriod[]): number {
-  return periods
-    .filter((p) => !p.is_break)
-    .reduce((total, period) => total + period.duration_minutes, 0);
-}
-
-function get_mandatory_official_count(
-  requirements: OfficialRequirement[],
-): number {
-  return requirements
-    .filter((r) => r.is_mandatory)
-    .reduce((total, r) => total + r.minimum_count, 0);
 }

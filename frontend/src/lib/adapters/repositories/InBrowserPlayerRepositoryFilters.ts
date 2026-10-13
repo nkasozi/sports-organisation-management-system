@@ -66,3 +66,40 @@ export function get_membership_player_ids_by_jersey_number(
       .map((membership: PlayerMembershipLike) => membership.player_id),
   );
 }
+
+enum PLAYER_SELECTION_KIND {
+  ALL_PLAYERS = "all_players",
+  TEAM_MEMBERS = "team_members",
+}
+
+export type PlayerIdSelection =
+  | { kind: PLAYER_SELECTION_KIND.ALL_PLAYERS }
+  | {
+      kind: PLAYER_SELECTION_KIND.TEAM_MEMBERS;
+      player_ids: Set<ScalarValueInput<Player["id"]>>;
+    };
+
+export const ALL_PLAYERS_SELECTION: PlayerIdSelection = {
+  kind: PLAYER_SELECTION_KIND.ALL_PLAYERS,
+};
+
+export function select_team_members(
+  player_ids: Array<ScalarValueInput<Player["id"]>>,
+): PlayerIdSelection {
+  return {
+    kind: PLAYER_SELECTION_KIND.TEAM_MEMBERS,
+    player_ids: new Set(player_ids),
+  };
+}
+
+export function restrict_players(
+  players: Player[],
+  selection: PlayerIdSelection,
+): Player[] {
+  switch (selection.kind) {
+    case PLAYER_SELECTION_KIND.ALL_PLAYERS:
+      return players;
+    case PLAYER_SELECTION_KIND.TEAM_MEMBERS:
+      return filter_players_by_player_ids(players, selection.player_ids);
+  }
+}

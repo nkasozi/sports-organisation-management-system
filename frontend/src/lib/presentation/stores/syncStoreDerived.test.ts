@@ -21,7 +21,6 @@ const sync_store_mock = vi.hoisted(() => {
     last_sync_at: { status: "never" },
     last_sync_result: { status: "empty" },
     current_progress: { status: "idle" },
-    auto_sync_enabled: false,
     error_message: { status: "clear" },
     has_pending_conflicts: false,
   } as SyncState;
@@ -54,7 +53,6 @@ describe("syncStoreDerived", () => {
       last_sync_at: { status: "never" },
       last_sync_result: { status: "empty" },
       current_progress: { status: "idle" },
-      auto_sync_enabled: false,
       error_message: { status: "clear" },
       has_pending_conflicts: false,
     });
@@ -88,7 +86,6 @@ describe("syncStoreDerived", () => {
       last_sync_at: { status: "recorded", value: "2024-05-01T10:00:00.000Z" },
       last_sync_result: { status: "empty" },
       current_progress: { status: "active", progress },
-      auto_sync_enabled: true,
       error_message: { status: "present", message: "sync stalled" },
       has_pending_conflicts: true,
     });

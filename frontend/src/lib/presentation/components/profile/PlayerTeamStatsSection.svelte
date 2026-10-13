@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { MEMBERSHIP_STATUS } from "$lib/core/entities/StatusConstants";
     import type { PlayerPublicTeamStats } from "$lib/presentation/logic/playerPublicProfilePageState";
 
     export let team_stats: PlayerPublicTeamStats[];
@@ -33,7 +34,7 @@
                         </div>
                         <span
                             class="px-3 py-1 text-xs font-medium rounded-full {current_team_stat
-                                .membership.status === 'active'
+                                .membership.status === MEMBERSHIP_STATUS.ACTIVE
                                 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                                 : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}"
                         >

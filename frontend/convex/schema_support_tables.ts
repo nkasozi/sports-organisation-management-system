@@ -1,7 +1,12 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 
-import { sync_metadata_fields, timestamp_fields } from "./schema_validators";
+import {
+  ORGANIZATION_LOCAL_ID_INDEX_FIELDS,
+  ORGANIZATION_LOCAL_ID_INDEX_NAME,
+  sync_metadata_fields,
+  timestamp_fields,
+} from "./schema_validators";
 
 export const schema_support_tables = {
   activity_categories: defineTable({
@@ -15,7 +20,9 @@ export const schema_support_tables = {
     is_system_generated: v.optional(v.boolean()),
     status: v.optional(v.string()),
     ...timestamp_fields,
-  }).index("by_local_id", ["local_id"]),
+  })
+    .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"]),
   audit_logs: defineTable({
     ...sync_metadata_fields,
     action: v.string(),
@@ -65,7 +72,12 @@ export const schema_support_tables = {
     ...timestamp_fields,
   })
     .index("by_local_id", ["local_id"])
-    .index("by_email", ["email"]),
+    .index("by_sync_sequence", ["sync_sequence"])
+    .index(ORGANIZATION_LOCAL_ID_INDEX_NAME, [
+      ...ORGANIZATION_LOCAL_ID_INDEX_FIELDS,
+    ])
+    .index("by_email", ["email"])
+    .index("by_role", ["role"]),
   identification_types: defineTable({
     ...sync_metadata_fields,
     organization_id: v.string(),
@@ -75,7 +87,9 @@ export const schema_support_tables = {
     description: v.optional(v.string()),
     status: v.optional(v.string()),
     ...timestamp_fields,
-  }).index("by_local_id", ["local_id"]),
+  })
+    .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"]),
   identifications: defineTable({
     ...sync_metadata_fields,
     entity_type: v.optional(v.string()),
@@ -93,7 +107,9 @@ export const schema_support_tables = {
     is_verified: v.optional(v.boolean()),
     status: v.optional(v.string()),
     ...timestamp_fields,
-  }).index("by_local_id", ["local_id"]),
+  })
+    .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"]),
   qualifications: defineTable({
     ...sync_metadata_fields,
     holder_type: v.optional(v.string()),
@@ -114,7 +130,9 @@ export const schema_support_tables = {
     is_verified: v.optional(v.boolean()),
     status: v.optional(v.string()),
     ...timestamp_fields,
-  }).index("by_local_id", ["local_id"]),
+  })
+    .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"]),
   game_event_types: defineTable({
     ...sync_metadata_fields,
     organization_id: v.string(),
@@ -131,7 +149,9 @@ export const schema_support_tables = {
     score_value: v.optional(v.number()),
     status: v.optional(v.string()),
     ...timestamp_fields,
-  }).index("by_local_id", ["local_id"]),
+  })
+    .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"]),
   genders: defineTable({
     ...sync_metadata_fields,
     organization_id: v.string(),
@@ -139,5 +159,7 @@ export const schema_support_tables = {
     description: v.optional(v.string()),
     status: v.optional(v.string()),
     ...timestamp_fields,
-  }).index("by_local_id", ["local_id"]),
+  })
+    .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"]),
 };

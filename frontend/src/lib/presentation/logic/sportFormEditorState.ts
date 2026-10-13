@@ -32,17 +32,24 @@ export {
   SPORT_STATUS_OPTIONS,
 } from "$lib/presentation/logic/sportFormEditorConstants";
 
-export type SportPresetType = "football" | "basketball" | "field_hockey";
+export const SPORT_PRESET_TYPE = {
+  FOOTBALL: "football",
+  BASKETBALL: "basketball",
+  FIELD_HOCKEY: "field_hockey",
+} as const;
+
+export type SportPresetType =
+  (typeof SPORT_PRESET_TYPE)[keyof typeof SPORT_PRESET_TYPE];
 
 export function apply_sport_preset(
   preset_type: SportPresetType,
 ): CreateSportInput {
   switch (preset_type) {
-    case "football":
+    case SPORT_PRESET_TYPE.FOOTBALL:
       return create_football_sport_preset();
-    case "basketball":
+    case SPORT_PRESET_TYPE.BASKETBALL:
       return create_basketball_sport_preset();
-    case "field_hockey":
+    case SPORT_PRESET_TYPE.FIELD_HOCKEY:
       return create_field_hockey_sport_preset();
   }
 }
@@ -52,6 +59,20 @@ export function generate_sport_identifier(name: string): string {
     .toLowerCase()
     .replace(/\s+/g, "_")
     .replace(/[^a-z0-9_]/g, "");
+}
+
+function copy_sport_overtime_rules(
+  sport: Sport,
+): CreateSportInput["overtime_rules"] {
+  return {
+    ...sport.overtime_rules,
+    extra_time_periods: sport.overtime_rules.extra_time_periods.map(
+      (current_period: SportGamePeriod) => ({ ...current_period }),
+    ),
+    penalties_config: sport.overtime_rules.penalties_config
+      ? { ...sport.overtime_rules.penalties_config }
+      : create_default_penalties_config(),
+  };
 }
 
 export function create_sport_form_data_from_sport(
@@ -78,15 +99,7 @@ export function create_sport_form_data_from_sport(
         ...current_requirement,
       }),
     ),
-    overtime_rules: {
-      ...sport.overtime_rules,
-      extra_time_periods: sport.overtime_rules.extra_time_periods.map(
-        (current_period: SportGamePeriod) => ({ ...current_period }),
-      ),
-      penalties_config: sport.overtime_rules.penalties_config
-        ? { ...sport.overtime_rules.penalties_config }
-        : create_default_penalties_config(),
-    },
+    overtime_rules: copy_sport_overtime_rules(sport),
     scoring_rules: sport.scoring_rules.map((current_rule: ScoringRule) => ({
       ...current_rule,
     })),

@@ -13,45 +13,63 @@ import type {
   BulkImportNameResolutionError,
 } from "$lib/presentation/logic/bulkImportTypes";
 
+function find_named_entity_column(
+  foreign_key_fields: FieldMetadata[],
+  column_name: string,
+): BulkImportNameColumn[] {
+  const potential_entity_type =
+    extract_entity_type_from_name_column(column_name);
+  const matching_foreign_key_field = foreign_key_fields.find(
+    (field: FieldMetadata) =>
+      field.foreign_key_entity?.toLowerCase() ===
+      potential_entity_type.toLowerCase(),
+  );
+  if (!matching_foreign_key_field) return [];
+  return [
+    {
+      entity_type: potential_entity_type,
+      id_column: matching_foreign_key_field.field_name,
+      name_column: column_name,
+    },
+  ];
+}
+
+function find_id_column_holding_entity_name(
+  foreign_key_fields: FieldMetadata[],
+  record: Record<string, string>,
+  column_name: string,
+): BulkImportNameColumn[] {
+  if (
+    !is_id_column(column_name) ||
+    !looks_like_entity_name(record[column_name])
+  )
+    return [];
+  const matching_foreign_key_field = foreign_key_fields.find(
+    (field: FieldMetadata) => field.field_name === column_name,
+  );
+  if (!matching_foreign_key_field?.foreign_key_entity) return [];
+  return [
+    {
+      entity_type: matching_foreign_key_field.foreign_key_entity.toLowerCase(),
+      id_column: column_name,
+      name_column: column_name,
+    },
+  ];
+}
+
 export function find_bulk_import_name_columns(
   foreign_key_fields: FieldMetadata[],
   record: Record<string, string>,
 ): BulkImportNameColumn[] {
-  const name_columns: BulkImportNameColumn[] = [];
-  for (const column_name of Object.keys(record)) {
-    if (is_name_column(column_name)) {
-      const potential_entity_type =
-        extract_entity_type_from_name_column(column_name);
-      const matching_foreign_key_field = foreign_key_fields.find(
-        (field: FieldMetadata) =>
-          field.foreign_key_entity?.toLowerCase() ===
-          potential_entity_type.toLowerCase(),
-      );
-      if (matching_foreign_key_field) {
-        name_columns.push({
-          entity_type: potential_entity_type,
-          id_column: matching_foreign_key_field.field_name,
-          name_column: column_name,
-        });
-      }
-      continue;
-    }
-    if (
-      !is_id_column(column_name) ||
-      !looks_like_entity_name(record[column_name])
-    )
-      continue;
-    const matching_foreign_key_field = foreign_key_fields.find(
-      (field: FieldMetadata) => field.field_name === column_name,
-    );
-    if (!matching_foreign_key_field?.foreign_key_entity) continue;
-    name_columns.push({
-      entity_type: matching_foreign_key_field.foreign_key_entity.toLowerCase(),
-      id_column: column_name,
-      name_column: column_name,
-    });
-  }
-  return name_columns;
+  return Object.keys(record).flatMap((column_name: string) =>
+    is_name_column(column_name)
+      ? find_named_entity_column(foreign_key_fields, column_name)
+      : find_id_column_holding_entity_name(
+          foreign_key_fields,
+          record,
+          column_name,
+        ),
+  );
 }
 
 async function resolve_bulk_import_name_columns(

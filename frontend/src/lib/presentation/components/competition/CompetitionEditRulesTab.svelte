@@ -1,25 +1,25 @@
 <script lang="ts">
-    import type {
-        CompetitionRuleOverrides,
-        UpdateCompetitionInput,
-    } from "$lib/core/entities/Competition";
-    import type {
-        TieBreaker,
-    } from "$lib/core/entities/CompetitionFormat";
+    import type { UpdateCompetitionInput } from "$lib/core/entities/Competition";
+    import type { TieBreaker } from "$lib/core/entities/CompetitionFormat";
     import type {
         CompetitionEditSelectedFormatState,
         CompetitionEditSelectedSportState,
     } from "$lib/presentation/logic/competitionEditPageContracts";
+    import {
+        has_competition_rule_overrides,
+        with_default_competition_rule_overrides,
+    } from "$lib/presentation/logic/competitionEditRuleOverrides";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
     import CompetitionCreateRulesTab from "./CompetitionCreateRulesTab.svelte";
     import CompetitionScoringOverrides from "./CompetitionScoringOverrides.svelte";
 
     export let form_data: UpdateCompetitionInput;
     export let selected_format_state: CompetitionEditSelectedFormatState = {
-        status: "missing",
+        status: PRESENCE_STATUS.MISSING,
     };
     export let selected_sport_state: CompetitionEditSelectedSportState = {
-        status: "missing",
+        status: PRESENCE_STATUS.MISSING,
     };
     export let is_customizing_scoring: boolean;
     export let can_edit_competition: boolean;
@@ -36,11 +36,8 @@
     ) => void;
     export let on_reset_scoring: () => void;
 
-    let competition_rule_overrides: CompetitionRuleOverrides = {};
-
-    $: competition_rule_overrides =
-        form_data.rule_overrides ?? competition_rule_overrides;
-    $: form_data.rule_overrides = competition_rule_overrides;
+    $: if (!has_competition_rule_overrides(form_data))
+        form_data = with_default_competition_rule_overrides(form_data);
 </script>
 
 <form class="space-y-6" on:submit|preventDefault={() => void on_submit()}>
@@ -62,15 +59,14 @@
     />
     <CompetitionCreateRulesTab
         organization_id={form_data.organization_id ?? ""}
-        selected_sport_state={
-            selected_sport_state.status === "present"
-                ? {
-                      status: "present",
-                      sport: selected_sport_state.sport,
-                  }
-                : { status: "missing" }
-        }
-        bind:rule_overrides={competition_rule_overrides}
+        selected_sport_state={selected_sport_state.status ===
+        PRESENCE_STATUS.PRESENT
+            ? {
+                  status: PRESENCE_STATUS.PRESENT,
+                  sport: selected_sport_state.sport,
+              }
+            : { status: PRESENCE_STATUS.MISSING }}
+        bind:rule_overrides={form_data.rule_overrides}
     />
 
     <div

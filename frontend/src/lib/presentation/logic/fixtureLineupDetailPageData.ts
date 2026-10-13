@@ -1,5 +1,6 @@
 import { ANY_VALUE } from "$lib/core/interfaces/ports";
 import { load_fixture_lineup_detail_page_data } from "$lib/presentation/logic/fixtureLineupDetailPageLoad";
+import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
 import type {
   FixtureLineupDetailOrganizationScopeState,
@@ -38,7 +39,7 @@ function resolve_fixture_lineup_detail_organization_scope_state(
 export function build_fixture_lineup_detail_profile_state(
   current_profile_state: FixtureLineupDetailCurrentProfileState,
 ): FixtureLineupDetailProfileState {
-  if (current_profile_state.status !== "present") {
+  if (current_profile_state.status !== PRESENCE_STATUS.PRESENT) {
     return { status: "missing" };
   }
 
@@ -62,7 +63,7 @@ export async function load_fixture_lineup_detail_view_data(
   const result = await load_fixture_lineup_detail_page_data({
     lineup_id,
     organization_scope_state:
-      current_profile_state.status === "present"
+      current_profile_state.status === PRESENCE_STATUS.PRESENT
         ? current_profile_state.organization_scope_state
         : { status: "unscoped" },
     dependencies,

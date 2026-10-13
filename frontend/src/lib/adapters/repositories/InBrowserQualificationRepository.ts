@@ -7,15 +7,32 @@ import type {
   QualificationHolderType,
   UpdateQualificationInput,
 } from "../../core/entities/Qualification";
+import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 import type {
   QualificationFilter,
   QualificationRepository,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
-import type { PaginatedAsyncResult } from "../../core/types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import { reset_repository_data } from "./InBrowserRepositoryReset";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
+import type { RepositoryWriteOrigin } from "./InBrowserRepositoryWriteOrigin";
 
 const ENTITY_PREFIX = "qual";
+
+function matches_expiry_filter(
+  qualification: Qualification,
+  is_expired: boolean,
+  today: Date,
+): boolean {
+  if (!qualification.expiry_date) return !is_expired;
+  const expiry = new Date(qualification.expiry_date);
+  return is_expired ? expiry < today : expiry >= today;
+}
 
 class InBrowserQualificationRepository
   extends InBrowserBaseRepository<
@@ -94,11 +111,9 @@ class InBrowserQualificationRepository
 
     if ("is_expired" in filter) {
       const today = new Date();
-      filtered = filtered.filter((qual) => {
-        if (!qual.expiry_date) return !filter.is_expired;
-        const expiry = new Date(qual.expiry_date);
-        return filter.is_expired ? expiry < today : expiry >= today;
-      });
+      filtered = filtered.filter((qual) =>
+        matches_expiry_filter(qual, Boolean(filter.is_expired), today),
+      );
     }
 
     return filtered;
@@ -115,7 +130,10 @@ class InBrowserQualificationRepository
   async find_active_qualifications(
     options?: QueryOptions,
   ): PaginatedAsyncResult<Qualification> {
-    return this.find_all({ status: "active", is_expired: false }, options);
+    return this.find_all(
+      { status: ENTITY_STATUS.ACTIVE, is_expired: false },
+      options,
+    );
   }
 }
 
@@ -161,31 +179,18 @@ function create_default_qualifications(): import("$lib/core/types/DomainScalars"
   ];
 }
 
-type QualificationRepositoryState =
-  | { status: "uninitialized" }
-  | {
-      status: "ready";
-      repository: InBrowserQualificationRepository;
-    };
-
-let qualification_repository_state: QualificationRepositoryState = {
-  status: "uninitialized",
-};
+const get_concrete_repository: () => InBrowserQualificationRepository =
+  create_lazy_repository_accessor(() => new InBrowserQualificationRepository());
 
 export function get_qualification_repository(): QualificationRepository {
-  if (qualification_repository_state.status === "ready") {
-    return qualification_repository_state.repository;
-  }
-
-  const repository = new InBrowserQualificationRepository();
-  qualification_repository_state = { status: "ready", repository };
-
-  return repository;
+  return get_concrete_repository();
 }
 
-export async function reset_qualification_repository(): Promise<void> {
-  const repository =
-    get_qualification_repository() as InBrowserQualificationRepository;
-  await repository.clear_all_data();
-  await repository.seed_with_data(create_default_qualifications());
+export function reset_qualification_repository(
+  origin: RepositoryWriteOrigin,
+): AsyncResult<number> {
+  return reset_repository_data(
+    get_concrete_repository().with_write_origin(origin),
+    create_default_qualifications(),
+  );
 }

@@ -2,6 +2,11 @@
     import TeamLogoThumbnail from "$lib/presentation/components/ui/TeamLogoThumbnail.svelte";
     import type { TeamStanding } from "$lib/presentation/logic/competitionStageResults";
 
+    import {
+        get_standing_form_classes,
+        get_standing_form_label,
+    } from "./competitionResultsDisplayConstants";
+
     export let standing: TeamStanding;
     export let index: number;
     export let selected_team_id: string;
@@ -107,13 +112,9 @@
         <div class="flex items-center justify-center gap-1.5">
             {#each standing.form as form_result}
                 <span
-                    class="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold {form_result ===
-                    'W'
-                        ? 'bg-green-500 text-white'
-                        : form_result === 'D'
-                          ? 'bg-gray-400 text-white'
-                          : 'bg-red-500 text-white'}"
-                    >{form_result === "L" ? "✕" : form_result}</span
+                    class="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold {get_standing_form_classes(
+                        form_result,
+                    )}">{get_standing_form_label(form_result)}</span
                 >
             {/each}
         </div>

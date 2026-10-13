@@ -1,162 +1,180 @@
-import { get } from "svelte/store";
-
-import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
 import { get_database } from "$lib/adapters/repositories/database";
 import { ALLOWED_SYNC_INTERVALS_MS } from "$lib/core/entities/OrganizationSettings";
-import type {
-  LocalChangePublisherPort,
-  LocalSyncStatus,
-  RemoteChangeSubscriberPort,
-  SyncOrchestratorPort,
-  SyncRestorationHandlers,
-} from "$lib/core/interfaces/ports";
+import type { LocalSyncStatus } from "$lib/core/interfaces/ports";
 import type { AsyncResult, Result } from "$lib/core/types/Result";
 import {
   create_failure_result,
   create_success_result,
 } from "$lib/core/types/Result";
 
-import { install_dexie_hooks } from "./backgroundSyncDexieHooks";
+import { cancel_automatic_device_backup_write } from "../backup/storageBackupScheduler";
 import {
-  cancel_pending_debounce,
-  execute_push_sync,
-  run_network_restoration_sync,
-  start_offline_retry_timer,
-  start_scheduled_sync_timer,
-  stop_offline_retry_timer,
-  stop_scheduled_sync_timer,
-  trigger_debounced_sync,
-} from "./backgroundSyncExecution";
+  configure_orchestrator,
+  configure_remote_subscriber,
+  configure_restoration_handlers,
+} from "./backgroundSyncConfiguration";
+import { sync_engine_runtime } from "./backgroundSyncRuntimeInstance";
 import {
-  reset_sync_state,
-  sync_deps,
-  sync_state,
-} from "./backgroundSyncSharedState";
-import { get_pulling_from_remote, set_pulling_from_remote } from "./syncState";
+  SyncEngineEventType,
+  SyncEngineStatus,
+  SyncRunKind,
+} from "./syncEngineTypes";
+import {
+  count_unsynced_changes,
+  reset_sync_bookkeeping,
+} from "./syncOutboxRepository";
+import { enqueue_local_snapshot } from "./syncOutboxSnapshot";
+import { TABLE_NAMES } from "./syncTypes";
 
-export { set_pulling_from_remote };
+export {
+  pause_remote_change_subscriptions,
+  resume_remote_change_subscriptions,
+} from "./remoteSubscriptionPause";
+export {
+  configure_orchestrator,
+  configure_remote_subscriber,
+  configure_restoration_handlers,
+};
 
-export function configure_orchestrator(
-  sync_orchestrator: SyncOrchestratorPort,
-): Result<boolean> {
-  sync_deps.orchestrator = { status: "configured", value: sync_orchestrator };
-  console.log("[BackgroundSync] Orchestrator configured");
-  return create_success_result(true);
+const UNDEFINED_TYPE_NAME = "undefined";
+const ONLINE_EVENT_NAME = "online";
+const OFFLINE_EVENT_NAME = "offline";
+const FLUSH_FAILED_MESSAGE = "Flush failed — check logs for push sync errors";
+const UNSYNCED_AFTER_FLUSH_SUFFIX =
+  "local change(s) could not be synced (rejected by the server or in conflict)";
+
+function handle_online_event(): boolean {
+  sync_engine_runtime.dispatch({
+    type: SyncEngineEventType.WENT_ONLINE,
+    next_run_id: crypto.randomUUID(),
+  });
+  return true;
 }
 
-export function configure_restoration_handlers(
-  handlers: SyncRestorationHandlers,
-): Result<boolean> {
-  sync_deps.restoration_handlers = { status: "configured", value: handlers };
-  console.log("[BackgroundSync] Restoration handlers configured");
-  return create_success_result(true);
+function handle_offline_event(): boolean {
+  sync_engine_runtime.dispatch({ type: SyncEngineEventType.WENT_OFFLINE });
+  return true;
 }
 
-export function configure_remote_subscriber(
-  subscriber: RemoteChangeSubscriberPort,
-): Result<boolean> {
-  sync_deps.remote_subscriber = { status: "configured", value: subscriber };
-  console.log("[BackgroundSync] Remote subscriber configured");
-  return create_success_result(true);
+async function kick_pending_changes(): Promise<boolean> {
+  const summary = await sync_engine_runtime.refresh_outbox_summary();
+  if (!summary.success || summary.data.pending_count === 0) return false;
+  sync_engine_runtime.dispatch({
+    type: SyncEngineEventType.LOCAL_CHANGE_RECORDED,
+  });
+  return true;
 }
 
-function handle_online_event(): void {
-  sync_state.is_online = true;
-  console.log("[BackgroundSync] Device came online");
-  stop_offline_retry_timer();
-  run_network_restoration_sync("network_restoration");
+function is_engine_stopped(): boolean {
+  return (
+    sync_engine_runtime.get_machine().state.status === SyncEngineStatus.STOPPED
+  );
 }
 
-function handle_offline_event(): void {
-  sync_state.is_online = false;
-  console.log("[BackgroundSync] Device went offline");
-  cancel_pending_debounce();
-  start_offline_retry_timer();
-}
-
-function on_local_write(table_name: string): void {
-  if (get_pulling_from_remote()) return;
-  if (!get(is_signed_in)) return;
-  console.log(`[BackgroundSync] Dexie write detected on table: ${table_name}`);
-  sync_state.has_pending_changes = true;
-  trigger_debounced_sync();
+export function set_pulling_from_remote(
+  is_pulling_from_remote: boolean,
+): boolean {
+  sync_engine_runtime.dispatch({
+    type: is_pulling_from_remote
+      ? SyncEngineEventType.SUSPEND
+      : SyncEngineEventType.RESUME,
+  });
+  if (!is_pulling_from_remote) void kick_pending_changes();
+  return true;
 }
 
 export function start_background_sync(): boolean {
-  if (typeof window === "undefined") return false;
-  if (sync_state.is_running) return false;
-  if (!sync_state.hooks_installed) {
-    sync_state.hooks_installed = install_dexie_hooks(
-      get_database(),
-      on_local_write,
-    );
+  if (typeof window === UNDEFINED_TYPE_NAME) return false;
+  if (!is_engine_stopped()) {
+    void kick_pending_changes();
+    return false;
   }
-  window.addEventListener("online", handle_online_event);
-  window.addEventListener("offline", handle_offline_event);
-  sync_state.is_running = true;
-  sync_state.is_online = navigator.onLine;
-  start_scheduled_sync_timer();
-  console.log("[BackgroundSync] Started — listening for Dexie database writes");
-  if (!get(is_signed_in)) {
-    console.log(
-      "[BackgroundSync] Started without active session — sync deferred until sign-in",
-    );
-  }
+  window.addEventListener(ONLINE_EVENT_NAME, handle_online_event);
+  window.addEventListener(OFFLINE_EVENT_NAME, handle_offline_event);
+  sync_engine_runtime.dispatch({
+    type: SyncEngineEventType.START,
+    is_online: navigator.onLine,
+  });
+  void kick_pending_changes();
+  console.log("[BackgroundSync] Started", {
+    event: "background_sync_started",
+  });
   return true;
 }
 
 export function stop_background_sync(): boolean {
-  if (!sync_state.is_running) return false;
-  cancel_pending_debounce();
-  stop_offline_retry_timer();
-  stop_scheduled_sync_timer();
-  if (typeof window !== "undefined") {
-    window.removeEventListener("online", handle_online_event);
-    window.removeEventListener("offline", handle_offline_event);
+  if (is_engine_stopped()) return false;
+  cancel_automatic_device_backup_write();
+  sync_engine_runtime.dispatch({ type: SyncEngineEventType.STOP });
+  if (typeof window !== UNDEFINED_TYPE_NAME) {
+    window.removeEventListener(ONLINE_EVENT_NAME, handle_online_event);
+    window.removeEventListener(OFFLINE_EVENT_NAME, handle_offline_event);
   }
-  reset_sync_state();
-  console.log("[BackgroundSync] Stopped");
+  console.log("[BackgroundSync] Stopped — configuration retained", {
+    event: "background_sync_stopped",
+  });
   return true;
 }
 
-export function get_background_sync_status(): {
-  is_running: boolean;
-  has_pending_changes: boolean;
-  is_online: boolean;
-} {
+export function get_background_sync_status(): LocalSyncStatus {
   return {
-    is_running: sync_state.is_running,
-    has_pending_changes: sync_state.has_pending_changes,
-    is_online: sync_state.is_online,
+    is_running: !is_engine_stopped(),
+    has_pending_changes: has_pending_unsynced_changes(),
+    is_online: sync_engine_runtime.get_machine().is_online,
   };
 }
 
 export function has_pending_unsynced_changes(): boolean {
-  return sync_state.has_pending_changes;
+  return count_unsynced_changes(sync_engine_runtime.get_outbox_summary()) > 0;
+}
+
+export async function get_unsynced_local_change_count(): AsyncResult<number> {
+  const summary = await sync_engine_runtime.refresh_outbox_summary();
+  return summary.success
+    ? create_success_result(count_unsynced_changes(summary.data))
+    : summary;
 }
 
 export async function flush_pending_changes(): AsyncResult<{
   skipped_offline: boolean;
 }> {
-  if (!sync_state.has_pending_changes)
+  const live_pending_count = await get_unsynced_local_change_count();
+  if (!live_pending_count.success) return live_pending_count;
+  if (live_pending_count.data === 0)
     return create_success_result({ skipped_offline: false });
-  if (!sync_state.is_online) {
-    console.log("[BackgroundSync] Cannot flush changes while offline");
+  if (!sync_engine_runtime.get_machine().is_online)
     return create_success_result({ skipped_offline: true });
-  }
-  cancel_pending_debounce();
-  const sync_succeeded = await execute_push_sync();
-  return sync_succeeded
+  const run_succeeded = await sync_engine_runtime.request_run(SyncRunKind.PUSH);
+  if (!run_succeeded) return create_failure_result(FLUSH_FAILED_MESSAGE);
+  const remaining = await get_unsynced_local_change_count();
+  if (!remaining.success) return remaining;
+  return remaining.data === 0
     ? create_success_result({ skipped_offline: false })
-    : create_failure_result("Flush failed — check logs for push sync errors");
+    : create_failure_result(`${remaining.data} ${UNSYNCED_AFTER_FLUSH_SUFFIX}`);
 }
 
 export async function trigger_full_sync_on_page_reload(): Promise<void> {
   console.log("[BackgroundSync] Full sync triggered on page reload", {
     event: "page_reload_sync_triggered",
-    timestamp: new Date().toISOString(),
   });
-  await run_network_restoration_sync("page_reload");
+  const succeeded = await sync_engine_runtime.request_run(SyncRunKind.FULL);
+  console.log("[BackgroundSync] Page reload sync settled", {
+    event: "page_reload_sync_settled",
+    succeeded,
+  });
+}
+
+export async function enqueue_all_local_records_for_push(): Promise<number> {
+  return enqueue_local_snapshot({
+    database: get_database(),
+    table_names: TABLE_NAMES,
+    generate_change_token: () => crypto.randomUUID(),
+    now_iso: () => new Date().toISOString(),
+  });
+}
+
+export async function reset_local_sync_bookkeeping(): Promise<boolean> {
+  return reset_sync_bookkeeping(get_database());
 }
 
 export function configure_scheduled_interval(
@@ -167,48 +185,15 @@ export function configure_scheduled_interval(
     console.warn("[BackgroundSync] Rejected invalid sync interval", {
       event: "scheduled_interval_rejected",
       interval_ms,
-      allowed_values: allowed,
     });
     return create_failure_result(
       `Invalid interval_ms: ${interval_ms}. Must be one of ${allowed.join(", ")}`,
     );
   }
-  sync_state.active_interval_ms = interval_ms;
-  stop_scheduled_sync_timer();
-  start_scheduled_sync_timer();
+  sync_engine_runtime.set_scheduled_interval(interval_ms);
   console.log("[BackgroundSync] Scheduled sync interval reconfigured", {
     event: "scheduled_interval_configured",
     interval_ms,
   });
   return create_success_result(true);
-}
-
-function create_local_change_publisher(): LocalChangePublisherPort {
-  return {
-    start: () =>
-      start_background_sync()
-        ? create_success_result(true)
-        : create_failure_result(
-            "Background sync already running or not in browser",
-          ),
-    stop: () =>
-      stop_background_sync()
-        ? create_success_result(true)
-        : create_failure_result("Background sync was not running"),
-    get_status: (): LocalSyncStatus => ({
-      is_running: sync_state.is_running,
-      has_pending_changes: sync_state.has_pending_changes,
-      is_online: sync_state.is_online,
-    }),
-    set_remote_sync_in_progress: (value: boolean) => (
-      set_pulling_from_remote(value),
-      create_success_result(true)
-    ),
-    configure_orchestrator: (orch: SyncOrchestratorPort) =>
-      configure_orchestrator(orch),
-    configure_restoration_handlers: (handlers: SyncRestorationHandlers) =>
-      configure_restoration_handlers(handlers),
-    has_pending_changes: () => sync_state.has_pending_changes,
-    flush_pending_changes,
-  };
 }

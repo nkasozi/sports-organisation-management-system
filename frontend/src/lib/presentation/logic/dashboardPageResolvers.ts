@@ -6,6 +6,24 @@ import type { DashboardDependencies } from "./dashboardPageTypes";
 const UNKNOWN_SPORT_LABEL = "Unknown Sport";
 const UNKNOWN_COMPETITION_LABEL = "Unknown Competition";
 
+async function resolve_sport_name_for_organization(
+  organization_id: string,
+  dependencies: DashboardDependencies,
+): Promise<string> {
+  const organization_result =
+    await dependencies.organization_use_cases.get_by_id(organization_id);
+  if (!organization_result.success || !organization_result.data) {
+    return UNKNOWN_SPORT_LABEL;
+  }
+
+  const sport_result = await dependencies.sport_use_cases.get_by_id(
+    organization_result.data.sport_id,
+  );
+  return sport_result.success && sport_result.data
+    ? sport_result.data.name
+    : UNKNOWN_SPORT_LABEL;
+}
+
 export async function resolve_sport_names_for_competitions(
   competitions: Competition[],
   dependencies: DashboardDependencies,
@@ -14,23 +32,10 @@ export async function resolve_sport_names_for_competitions(
 
   for (const competition of competitions) {
     if (!competition.id) continue;
-
-    const organization_result =
-      await dependencies.organization_use_cases.get_by_id(
-        competition.organization_id,
-      );
-    if (!organization_result.success || !organization_result.data) {
-      resolved_names[competition.id] = UNKNOWN_SPORT_LABEL;
-      continue;
-    }
-
-    const sport_result = await dependencies.sport_use_cases.get_by_id(
-      organization_result.data.sport_id,
+    resolved_names[competition.id] = await resolve_sport_name_for_organization(
+      competition.organization_id,
+      dependencies,
     );
-    resolved_names[competition.id] =
-      sport_result.success && sport_result.data
-        ? sport_result.data.name
-        : UNKNOWN_SPORT_LABEL;
   }
 
   return resolved_names;
@@ -63,23 +68,11 @@ export async function resolve_fixture_display_names(
     }
 
     resolved_competition_names[competition_id] = competition_result.data.name;
-
-    const organization_result =
-      await dependencies.organization_use_cases.get_by_id(
-        competition_result.data.organization_id,
-      );
-    if (!organization_result.success || !organization_result.data) {
-      resolved_sport_names[competition_id] = UNKNOWN_SPORT_LABEL;
-      continue;
-    }
-
-    const sport_result = await dependencies.sport_use_cases.get_by_id(
-      organization_result.data.sport_id,
-    );
     resolved_sport_names[competition_id] =
-      sport_result.success && sport_result.data
-        ? sport_result.data.name
-        : UNKNOWN_SPORT_LABEL;
+      await resolve_sport_name_for_organization(
+        competition_result.data.organization_id,
+        dependencies,
+      );
   }
 
   return {

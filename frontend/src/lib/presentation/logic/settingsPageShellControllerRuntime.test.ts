@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { create_settings_page_shell_controller_runtime } from "./settingsPageShellControllerRuntime";
+import { create_command } from "./settingsPageShellControllerRuntime.test_support";
 
 const {
   apply_organization_settings_form_values_mock,
@@ -42,51 +43,6 @@ vi.mock("./settingsPageState", () => ({
 }));
 
 describe("settingsPageShellControllerRuntime", () => {
-  function create_command() {
-    const state = {
-      current_form_values: {
-        organization_name: "Org One",
-        organization_logo_url: "/logo.svg",
-        organization_tagline: "Tagline",
-        organization_email: "org@example.com",
-        organization_address: "Address",
-        social_media_links: [],
-        header_pattern: "dots",
-        footer_pattern: "waves",
-        background_pattern_url: "/pattern.svg",
-        show_panel_borders: true,
-      },
-      organizations: [{ id: "organization-1", name: "Org One" }],
-      selected_organization_id: "organization-1",
-    };
-
-    const command = {
-      apply_form_values: vi.fn((value: unknown) => {
-        state.current_form_values = value as never;
-      }),
-      get_branding_state: () => ({ brand: "default" }) as never,
-      get_current_form_values: () => state.current_form_values as never,
-      get_current_profile_organization_id: () => "organization-1",
-      get_pathname: () => "/settings",
-      get_selected_organization_id: () => state.selected_organization_id,
-      get_theme_state: () => ({ theme: "light" }) as never,
-      get_organizations: () => state.organizations as never,
-      is_browser: true,
-      set_error_message: vi.fn(),
-      set_is_loading: vi.fn(),
-      set_organizations: vi.fn((value: unknown[]) => {
-        state.organizations = value as never;
-      }),
-      set_selected_organization_id: vi.fn((value: string) => {
-        state.selected_organization_id = value;
-      }),
-      show_toast: vi.fn(),
-      update_logo_url: vi.fn(),
-    };
-
-    return { command, state };
-  }
-
   beforeEach(() => {
     apply_organization_settings_form_values_mock.mockReset();
     branding_store_set_mock.mockReset();
@@ -174,69 +130,5 @@ describe("settingsPageShellControllerRuntime", () => {
     );
     expect(command.apply_form_values).toHaveBeenCalledWith({ form: "merged" });
     expect(command.set_is_loading).toHaveBeenCalledWith(false);
-  });
-
-  it("switches organizations through the selected organization handler and updates the logo URL", async () => {
-    const { command } = create_command();
-    get_use_cases_container_mock.mockReturnValue({
-      organization_settings_use_cases: {
-        get_by_organization_id: vi
-          .fn()
-          .mockResolvedValueOnce({ success: false }),
-      },
-      organization_use_cases: { list: vi.fn() },
-    });
-    apply_organization_settings_form_values_mock.mockReturnValueOnce({
-      form: "switched",
-    });
-    const runtime = create_settings_page_shell_controller_runtime(
-      command as never,
-    );
-
-    await runtime.handle_selected_organization_switch();
-    runtime.handle_logo_change({ detail: { url: "/new-logo.svg" } } as never);
-
-    expect(apply_organization_settings_form_values_mock).toHaveBeenCalledWith(
-      expect.objectContaining({ organization_name: "Org One" }),
-      {
-        status: "present",
-        organization: { id: "organization-1", name: "Org One" },
-      },
-      { status: "missing" },
-    );
-    expect(command.apply_form_values).toHaveBeenCalledWith({
-      form: "switched",
-    });
-    expect(command.update_logo_url).toHaveBeenCalledWith("/new-logo.svg");
-  });
-
-  it("saves organization branding values and shows a success toast", async () => {
-    const { command } = create_command();
-    get_use_cases_container_mock.mockReturnValue({
-      organization_settings_use_cases: { get_by_organization_id: vi.fn() },
-      organization_use_cases: { list: vi.fn() },
-    });
-
-    await create_settings_page_shell_controller_runtime(
-      command as never,
-    ).handle_save_organization_settings();
-
-    expect(branding_store_set_mock).toHaveBeenCalledWith({
-      organization_name: "Org One",
-      organization_logo_url: "/logo.svg",
-      organization_tagline: "Tagline",
-      organization_email: "org@example.com",
-      organization_address: "Address",
-      social_media_links: [],
-      header_footer_style: "pattern",
-      header_pattern: "dots",
-      footer_pattern: "waves",
-      background_pattern_url: "/pattern.svg",
-      show_panel_borders: true,
-    });
-    expect(command.show_toast).toHaveBeenCalledWith(
-      "Organization settings saved",
-      "success",
-    );
   });
 });

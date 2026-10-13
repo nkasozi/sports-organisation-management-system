@@ -1,13 +1,24 @@
 import type { Fixture } from "../entities/Fixture";
 import type { FixtureLineup } from "../entities/FixtureLineup";
-import { LINEUP_STATUS } from "../entities/StatusConstants";
 import type { Result } from "../types/Result";
-import { create_failure_result, create_success_result } from "../types/Result";
+import { create_success_result } from "../types/Result";
+import { fail_use_case, UseCaseErrorCode } from "../types/UseCaseFailure";
 import type { FixtureDetailsSetupUseCases } from "../usecases/FixtureDetailsSetupUseCases";
 import type { FixtureLineupUseCases } from "../usecases/FixtureLineupUseCases";
+import {
+  build_lineup_check,
+  build_officials_check,
+} from "./fixtureStartCheckBuilders";
+import {
+  CHECK_STATUS,
+  FIXTURE_START_CHECK_NAME,
+  FIXTURE_START_CHECKS_EVENT,
+  FIXTURE_START_CHECKS_LOG_SCOPE,
+  FIXTURE_START_CHECKS_MESSAGES,
+} from "./FixtureStartChecksConstants";
 
 export { auto_generate_lineups_if_possible } from "./fixtureLineupGeneration";
-export type CheckStatus = "pending" | "checking" | "passed" | "failed";
+export type CheckStatus = (typeof CHECK_STATUS)[keyof typeof CHECK_STATUS];
 
 export interface PreFlightCheck {
   check_name: string;
@@ -23,99 +34,120 @@ interface FixtureCanStartResult {
   away_lineup_check: PreFlightCheck;
 }
 
+interface StartCheckInputs {
+  officials_count: number;
+  lineups: FixtureLineup[];
+}
+
+function fail_start_check(
+  code: UseCaseErrorCode,
+  event: string,
+  context: Record<string, unknown>,
+  details: { user_message: string; technical_detail?: string },
+): Result<never, string> {
+  return fail_use_case({
+    code,
+    event,
+    log_scope: FIXTURE_START_CHECKS_LOG_SCOPE,
+    context,
+    ...details,
+  });
+}
+
 export async function check_fixture_can_start(
   fixture: Fixture,
   official_use_cases: FixtureDetailsSetupUseCases,
   lineup_use_cases: FixtureLineupUseCases,
 ): Promise<Result<FixtureCanStartResult>> {
-  if (!fixture.id) return create_failure_result("Fixture must have an ID");
-
-  console.log("[fixtureStartChecks] Checking fixture:", {
-    event: "fixture_start_check",
+  if (!fixture.id) {
+    return fail_start_check(
+      UseCaseErrorCode.MISSING_IDENTIFIER,
+      FIXTURE_START_CHECKS_EVENT.MISSING_FIXTURE_ID,
+      {},
+      { user_message: FIXTURE_START_CHECKS_MESSAGES.MISSING_FIXTURE_ID },
+    );
+  }
+  console.debug(FIXTURE_START_CHECKS_LOG_SCOPE, {
+    event: FIXTURE_START_CHECKS_EVENT.STARTED,
     fixture_id: fixture.id,
   });
-  const officials_result = await official_use_cases.list_by_fixture(fixture.id);
-  const officials =
-    officials_result.success && officials_result.data
-      ? officials_result.data.items
-      : [];
-  console.log("[fixtureStartChecks] Officials fetched:", {
-    event: "officials_fetched",
-    count: officials.length,
-  });
+  const inputs_result = await load_start_check_inputs(
+    fixture.id,
+    official_use_cases,
+    lineup_use_cases,
+  );
+  if (!inputs_result.success) return inputs_result;
+  return create_success_result(
+    build_fixture_can_start_result(
+      fixture,
+      inputs_result.data.officials_count,
+      inputs_result.data.lineups,
+    ),
+  );
+}
 
-  const officials_check = build_officials_check(officials);
-  const lineups_result = await lineup_use_cases.list({
-    fixture_id: fixture.id,
-  });
-  const lineups = lineups_result.success ? lineups_result.data.items : [];
-
-  const home_lineup = lineups.find(
-    (l: FixtureLineup) => l.team_id === fixture.home_team_id,
-  );
-  const away_lineup = lineups.find(
-    (l: FixtureLineup) => l.team_id === fixture.away_team_id,
-  );
-  const home_lineup_check = build_lineup_check(
-    "home_lineup",
-    "Home",
-    home_lineup,
-  );
-  const away_lineup_check = build_lineup_check(
-    "away_lineup",
-    "Away",
-    away_lineup,
-  );
-
+async function load_start_check_inputs(
+  fixture_id: Fixture["id"],
+  official_use_cases: FixtureDetailsSetupUseCases,
+  lineup_use_cases: FixtureLineupUseCases,
+): Promise<Result<StartCheckInputs>> {
+  const officials_result = await official_use_cases.list_by_fixture(fixture_id);
+  if (!officials_result.success) {
+    return fail_start_check(
+      UseCaseErrorCode.DEPENDENCY_FAILED,
+      FIXTURE_START_CHECKS_EVENT.OFFICIALS_LOOKUP_FAILED,
+      { fixture_id },
+      {
+        user_message: FIXTURE_START_CHECKS_MESSAGES.OFFICIALS_LOOKUP_FAILED,
+        technical_detail: officials_result.error,
+      },
+    );
+  }
+  const lineups_result = await lineup_use_cases.list({ fixture_id });
+  if (!lineups_result.success) {
+    return fail_start_check(
+      UseCaseErrorCode.DEPENDENCY_FAILED,
+      FIXTURE_START_CHECKS_EVENT.LINEUPS_LOOKUP_FAILED,
+      { fixture_id },
+      {
+        user_message: FIXTURE_START_CHECKS_MESSAGES.LINEUPS_LOOKUP_FAILED,
+        technical_detail: lineups_result.error,
+      },
+    );
+  }
   return create_success_result({
-    can_start:
-      officials_check.status === "passed" &&
-      home_lineup_check.status === "passed" &&
-      away_lineup_check.status === "passed",
+    officials_count: officials_result.data.items.length,
+    lineups: lineups_result.data.items,
+  });
+}
+
+function build_fixture_can_start_result(
+  fixture: Fixture,
+  officials_count: number,
+  lineups: FixtureLineup[],
+): FixtureCanStartResult {
+  const messages = FIXTURE_START_CHECKS_MESSAGES;
+  const officials_check = build_officials_check(officials_count);
+  const home_lineup_check = build_lineup_check(lineups, {
+    check_name: FIXTURE_START_CHECK_NAME.HOME_LINEUP,
+    team_label: messages.HOME_TEAM_LABEL,
+    team_id: fixture.home_team_id,
+  });
+  const away_lineup_check = build_lineup_check(lineups, {
+    check_name: FIXTURE_START_CHECK_NAME.AWAY_LINEUP,
+    team_label: messages.AWAY_TEAM_LABEL,
+    team_id: fixture.away_team_id,
+  });
+  const can_start = [
     officials_check,
     home_lineup_check,
     away_lineup_check,
+  ].every((check) => check.status === CHECK_STATUS.PASSED);
+  console.debug(FIXTURE_START_CHECKS_LOG_SCOPE, {
+    event: FIXTURE_START_CHECKS_EVENT.COMPLETED,
+    fixture_id: fixture.id,
+    officials_count,
+    can_start,
   });
-}
-
-function build_officials_check(officials: unknown[]): PreFlightCheck {
-  const has_officials = officials.length > 0;
-  return {
-    check_name: "officials",
-    status: has_officials ? "passed" : "failed",
-    message: has_officials
-      ? `${officials.length} official(s) assigned`
-      : "No officials assigned to this fixture",
-    fix_suggestion: has_officials
-      ? ""
-      : "Go to the Fixture Details Setup page and assign officials, team jerseys and official jerseys for this fixture",
-  };
-}
-
-function build_lineup_check(
-  check_name: string,
-  team_label: string,
-  lineup: FixtureLineup | undefined,
-): PreFlightCheck {
-  const is_submitted =
-    lineup &&
-    (lineup.status === LINEUP_STATUS.SUBMITTED ||
-      lineup.status === LINEUP_STATUS.LOCKED);
-  if (is_submitted) {
-    return {
-      check_name,
-      status: "passed",
-      message: `${team_label} team lineup submitted with ${lineup.selected_players.length} players`,
-      fix_suggestion: "",
-    };
-  }
-  const message = lineup
-    ? `${team_label} team lineup exists but not submitted (status: ${lineup.status})`
-    : `No ${team_label.toLowerCase()} team lineup found`;
-  return {
-    check_name,
-    status: "failed",
-    message,
-    fix_suggestion: "Submit the lineup in Team Fixture Lineups page",
-  };
+  return { can_start, officials_check, home_lineup_check, away_lineup_check };
 }

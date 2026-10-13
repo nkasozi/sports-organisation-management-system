@@ -20,10 +20,13 @@ export function create_layout_login_sync_dependencies(command: {
   set_pulling_from_remote: LayoutLoginSyncDependencies["set_pulling_from_remote"];
   write_convex_user_to_local_dexie: LayoutLoginSyncDependencies["write_convex_user_to_local_dexie"];
   pull_user_scoped_record_from_convex: LayoutLoginSyncDependencies["pull_user_scoped_record_from_convex"];
-  clear_session_sync_flag: LayoutLoginSyncDependencies["clear_session_sync_flag"];
   sign_out: LayoutLoginSyncDependencies["sign_out"];
+  sign_out_and_tear_down_device: LayoutLoginSyncDependencies["sign_out_and_tear_down_device"];
+  show_session_notice: LayoutLoginSyncDependencies["show_session_notice"];
   goto: LayoutLoginSyncDependencies["goto"];
   delay: LayoutLoginSyncDependencies["delay"];
+  get_unsynced_local_change_count: LayoutLoginSyncDependencies["get_unsynced_local_change_count"];
+  confirm_discard_unsynced_local_changes: LayoutLoginSyncDependencies["confirm_discard_unsynced_local_changes"];
 }): LayoutLoginSyncDependencies {
   return {
     ...command,

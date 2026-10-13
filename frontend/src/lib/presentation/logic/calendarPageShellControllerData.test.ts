@@ -40,7 +40,13 @@ vi.mock("./calendarPageShellControllerTypes", () => ({
 }));
 
 describe("calendarPageShellControllerData", () => {
-  function create_command() {
+  function create_command(): {
+    filter_category_id: string;
+    filter_competition_id: string;
+    filter_team_id: string;
+    selected_organization_id: string;
+    use_cases: Record<string, { marker: string }>;
+  } {
     return {
       filter_category_id: "",
       filter_competition_id: "",
@@ -54,12 +60,7 @@ describe("calendarPageShellControllerData", () => {
   }
 
   beforeEach(() => {
-    build_calendar_shell_load_command_mock.mockReset();
-    create_calendar_category_action_mock.mockReset();
-    delete_calendar_activity_action_mock.mockReset();
-    load_calendar_organization_bundle_mock.mockReset();
-    save_calendar_activity_action_mock.mockReset();
-    sync_and_load_calendar_events_mock.mockReset();
+    vi.resetAllMocks();
   });
 
   it("delegates bundle and event loading to the underlying calendar data helpers", async () => {

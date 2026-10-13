@@ -86,3 +86,32 @@ describe("game manage period flow", () => {
     expect(get_next_period("extra_time_first")).toBe("extra_time_second");
   });
 });
+
+describe("game manage lookup fallbacks", () => {
+  it("treats custom sport periods as starting at zero with regulation length", () => {
+    expect(get_period_start_seconds("quarter_3")).toBe(0);
+    expect(build_game_clock_state(60, "quarter_3")).toMatchObject({
+      current_period_duration: PERIOD_DURATION_SECONDS,
+    });
+  });
+
+  it("returns extra time duration and start offsets", () => {
+    expect(get_period_start_seconds("extra_time_second")).toBe(
+      PERIOD_DURATION_SECONDS * 2 + 15 * 60,
+    );
+    expect(build_game_clock_state(0, "extra_time_first")).toMatchObject({
+      current_period_duration: 15 * 60,
+    });
+  });
+
+  it("finishes the game after an unknown period", () => {
+    expect(get_next_period("quarter_3")).toBe("finished");
+    expect(get_next_period("second_half")).toBe("finished");
+  });
+
+  it("uses neutral styling for non-highlighted events", () => {
+    expect(
+      get_event_bg_class(create_test_game_event({ event_type: "corner" })),
+    ).toBe("border-l-gray-300 bg-gray-50 dark:bg-accent-800");
+  });
+});

@@ -9,10 +9,9 @@ import {
   type PerformanceTier,
   type WeightedOfficialSummary,
 } from "$lib/core/entities/OfficialPerformanceRating";
-import {
-  compute_importance_weight,
-  type ImportanceWeightInput,
-} from "$lib/core/services/compute_importance_weight";
+
+import { build_fixture_weight_map } from "./officialLeaderboardFixtureWeights";
+import { PRESENCE_STATUS } from "./presenceStatus";
 
 export interface OfficialLeaderboardEntry {
   official_id: string;
@@ -25,32 +24,6 @@ export interface OfficialLeaderboardEntry {
   game_control: number;
   communication: number;
   fitness: number;
-}
-
-function build_fixture_weight_map(
-  fixtures: Fixture[],
-  stages: CompetitionStage[],
-): Map<string, number> {
-  const stage_by_id = new Map(stages.map((s) => [s.id, s]));
-  const weight_map = new Map<string, number>();
-
-  for (const fixture of fixtures) {
-    const stage = fixture.stage_id ? stage_by_id.get(fixture.stage_id) : void 0;
-
-    const weight_input: ImportanceWeightInput = {
-      stage_type: stage?.stage_type ?? "custom",
-      match_day: fixture.match_day ?? 1,
-      total_match_days: 0,
-      manual_override:
-        typeof fixture.manual_importance_override === "number"
-          ? { status: "manual", value: fixture.manual_importance_override }
-          : { status: "automatic" },
-    };
-
-    weight_map.set(fixture.id, compute_importance_weight(weight_input));
-  }
-
-  return weight_map;
 }
 
 function group_ratings_by_official(
@@ -90,7 +63,7 @@ export function build_leaderboard_entries(
 
   for (const [official_id, weighted_ratings] of grouped) {
     const aggregation_result = aggregate_weighted_ratings(weighted_ratings);
-    if (aggregation_result.status !== "present") continue;
+    if (aggregation_result.status !== PRESENCE_STATUS.PRESENT) continue;
 
     const summary: WeightedOfficialSummary = aggregation_result.summary;
 

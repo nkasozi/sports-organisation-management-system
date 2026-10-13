@@ -1,140 +1,91 @@
 import type {
   CompetitionTeam,
   CreateCompetitionTeamInput,
-  UpdateCompetitionTeamInput,
 } from "../entities/CompetitionTeam";
 import { validate_competition_team_input } from "../entities/CompetitionTeam";
-import type {
-  CompetitionTeamFilter,
-  CompetitionTeamRepository,
-} from "../interfaces/ports";
-import type { QueryOptions } from "../interfaces/ports";
+import type { CompetitionTeamRepository } from "../interfaces/ports";
 import type { CompetitionTeamUseCasesPort } from "../interfaces/ports";
-import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
-import { create_failure_result } from "../types/Result";
+import type { AsyncResult } from "../types/Result";
+import { fail_use_case, UseCaseErrorCode } from "../types/UseCaseFailure";
+import {
+  COMPETITION_TEAM_EVENT,
+  COMPETITION_TEAM_LOG_SCOPE,
+  COMPETITION_TEAM_MESSAGE,
+} from "./CompetitionTeamConstants";
+import { create_competition_team_queries } from "./CompetitionTeamQueries";
+import {
+  create_log_target_builder,
+  fail_missing_identifier,
+  fail_validation,
+  is_blank_identifier,
+  relay_repository_result,
+} from "./FailureRelay";
 
 export type CompetitionTeamUseCases = CompetitionTeamUseCasesPort;
+
+const log_target = create_log_target_builder(COMPETITION_TEAM_LOG_SCOPE);
+
+function fail_missing_membership_id(): ReturnType<
+  typeof fail_missing_identifier
+> {
+  return fail_missing_identifier(
+    log_target(COMPETITION_TEAM_EVENT.ID_MISSING),
+    COMPETITION_TEAM_MESSAGE.ID_REQUIRED,
+  );
+}
+
+async function register_team_in_competition(
+  repository: CompetitionTeamRepository,
+  input: CreateCompetitionTeamInput,
+): AsyncResult<CompetitionTeam> {
+  const validation_errors = validate_competition_team_input(input);
+  if (validation_errors.length > 0)
+    return fail_validation(
+      log_target(COMPETITION_TEAM_EVENT.VALIDATION_FAILED),
+      validation_errors.join(", "),
+    );
+  const ids = { competition_id: input.competition_id, team_id: input.team_id };
+  const existing_result = await repository.find_team_in_competition(
+    input.competition_id,
+    input.team_id,
+  );
+  if (existing_result.success)
+    return fail_use_case({
+      code: UseCaseErrorCode.CONFLICT,
+      ...log_target(COMPETITION_TEAM_EVENT.ALREADY_REGISTERED, ids),
+      user_message: COMPETITION_TEAM_MESSAGE.ALREADY_REGISTERED,
+    });
+  return relay_repository_result(
+    repository.create(input),
+    log_target(COMPETITION_TEAM_EVENT.CREATE_FAILED, ids),
+  );
+}
 
 export function create_competition_team_use_cases(
   repository: CompetitionTeamRepository,
 ): CompetitionTeamUseCases {
   return {
-    async list(
-      filter?: CompetitionTeamFilter,
-      options?: QueryOptions,
-    ): PaginatedAsyncResult<CompetitionTeam> {
-      return repository.find_all(filter ?? {}, options ?? {});
-    },
-
-    async get_by_id(id: CompetitionTeam["id"]): AsyncResult<CompetitionTeam> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("Competition team ID is required");
-      }
-      return repository.find_by_id(id);
-    },
-
-    async create(
-      input: CreateCompetitionTeamInput,
-    ): AsyncResult<CompetitionTeam> {
-      const validation_errors = validate_competition_team_input(input);
-      if (validation_errors.length > 0) {
-        return create_failure_result(validation_errors.join(", "));
-      }
-
-      const existing = await repository.find_team_in_competition(
-        input.competition_id,
-        input.team_id,
-      );
-      if (existing.success) {
-        return create_failure_result(
-          "Team is already registered in this competition",
-        );
-      }
-
-      return repository.create(input);
-    },
-
-    async update(
-      id: CompetitionTeam["id"],
-      input: UpdateCompetitionTeamInput,
-    ): AsyncResult<CompetitionTeam> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("Competition team ID is required");
-      }
-      return repository.update(id, input);
-    },
-
-    async delete(id: CompetitionTeam["id"]): AsyncResult<boolean> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("Competition team ID is required");
-      }
-      return repository.delete_by_id(id);
-    },
-
-    async add_team_to_competition(
-      input: CreateCompetitionTeamInput,
-    ): AsyncResult<CompetitionTeam> {
-      const validation_errors = validate_competition_team_input(input);
-      if (validation_errors.length > 0) {
-        return create_failure_result(validation_errors.join(", "));
-      }
-
-      const existing = await repository.find_team_in_competition(
-        input.competition_id,
-        input.team_id,
-      );
-      if (existing.success) {
-        return create_failure_result(
-          "Team is already registered in this competition",
-        );
-      }
-
-      return repository.create(input);
-    },
-
-    async remove_team_from_competition(
-      competition_id: CompetitionTeam["competition_id"],
-      team_id: CompetitionTeam["team_id"],
-    ): AsyncResult<boolean> {
-      if (!competition_id || competition_id.trim().length === 0) {
-        return create_failure_result("Competition ID is required");
-      }
-      if (!team_id || team_id.trim().length === 0) {
-        return create_failure_result("Team ID is required");
-      }
-      return repository.remove_team_from_competition(competition_id, team_id);
-    },
-
-    async list_teams_in_competition(
-      competition_id: CompetitionTeam["competition_id"],
-      options?: QueryOptions,
-    ): PaginatedAsyncResult<CompetitionTeam> {
-      if (!competition_id || competition_id.trim().length === 0) {
-        return create_failure_result("Competition ID is required");
-      }
-      return repository.find_by_competition(competition_id, options);
-    },
-
-    async list_competitions_for_team(
-      team_id: CompetitionTeam["team_id"],
-      options?: QueryOptions,
-    ): PaginatedAsyncResult<CompetitionTeam> {
-      if (!team_id || team_id.trim().length === 0) {
-        return create_failure_result("Team ID is required");
-      }
-      return repository.find_by_team(team_id, options);
-    },
-
-    async is_team_in_competition(
-      competition_id: CompetitionTeam["competition_id"],
-      team_id: CompetitionTeam["team_id"],
-    ): AsyncResult<CompetitionTeam> {
-      if (!competition_id || !team_id) {
-        return create_failure_result(
-          "Both competition ID and team ID are required",
-        );
-      }
-      return repository.find_team_in_competition(competition_id, team_id);
-    },
+    ...create_competition_team_queries(repository),
+    create: (input) => register_team_in_competition(repository, input),
+    add_team_to_competition: (input) =>
+      register_team_in_competition(repository, input),
+    update: async (id, input) =>
+      is_blank_identifier(id)
+        ? fail_missing_membership_id()
+        : relay_repository_result(
+            repository.update(id, input),
+            log_target(COMPETITION_TEAM_EVENT.UPDATE_FAILED, {
+              competition_team_id: id,
+            }),
+          ),
+    delete: async (id) =>
+      is_blank_identifier(id)
+        ? fail_missing_membership_id()
+        : relay_repository_result(
+            repository.delete_by_id(id),
+            log_target(COMPETITION_TEAM_EVENT.DELETE_FAILED, {
+              competition_team_id: id,
+            }),
+          ),
   };
 }

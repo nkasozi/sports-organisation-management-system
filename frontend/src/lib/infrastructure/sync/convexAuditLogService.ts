@@ -29,54 +29,75 @@ function is_convex_available(): boolean {
   return manager.is_configured();
 }
 
-export async function search_audit_logs_from_convex(
+const DEFAULT_AUDIT_LOG_PAGE_NUMBER = 1;
+const SEARCH_AUDIT_LOGS_QUERY_NAME = "audit_logs:search_audit_logs";
+const CONVEX_CLIENT_NOT_CONFIGURED_MESSAGE = "Convex client not configured";
+
+const AUDIT_LOG_FILTER_QUERY_KEYS = [
+  "entity_type",
+  "entity_id",
+  "user_id",
+  "action",
+  "organization_id",
+  "from_date",
+  "to_date",
+] as const satisfies ReadonlyArray<keyof AuditLogFilter>;
+
+interface ConvexAuditLogSearchResponse {
+  success: boolean;
+  data: AuditLog[];
+  total_count: number;
+  page_number: number;
+  page_size: number;
+  total_pages: number;
+}
+
+function build_unconfigured_search_result(): AuditLogSearchResult {
+  return {
+    success: false,
+    data: [],
+    total_count: 0,
+    page_number: DEFAULT_AUDIT_LOG_PAGE_NUMBER,
+    page_size: AUDIT_LOG_PAGE_SIZE,
+    total_pages: 0,
+    error_message: CONVEX_CLIENT_NOT_CONFIGURED_MESSAGE,
+  };
+}
+
+function build_audit_log_query_args(
   filter: AuditLogFilter,
-  options: AuditLogSearchOptions = {},
-): Promise<AuditLogSearchResult> {
-  const manager = get_sync_manager();
-  const client_result = manager.get_convex_client();
-
-  if (!client_result.success) {
-    return {
-      success: false,
-      data: [],
-      total_count: 0,
-      page_number: 1,
-      page_size: AUDIT_LOG_PAGE_SIZE,
-      total_pages: 0,
-      error_message: "Convex client not configured",
-    };
-  }
-
-  const client = client_result.data;
-
-  const { page_number = 1, page_size = AUDIT_LOG_PAGE_SIZE } = options;
-
+  options: AuditLogSearchOptions,
+): Record<string, unknown> {
+  const {
+    page_number = DEFAULT_AUDIT_LOG_PAGE_NUMBER,
+    page_size = AUDIT_LOG_PAGE_SIZE,
+  } = options;
   const query_args: Record<string, unknown> = {
     page_number,
     page_size: Math.min(page_size, AUDIT_LOG_PAGE_SIZE),
   };
 
-  if (filter.entity_type) query_args.entity_type = filter.entity_type;
-  if (filter.entity_id) query_args.entity_id = filter.entity_id;
-  if (filter.user_id) query_args.user_id = filter.user_id;
-  if (filter.action) query_args.action = filter.action;
-  if (filter.organization_id)
-    query_args.organization_id = filter.organization_id;
-  if (filter.from_date) query_args.from_date = filter.from_date;
-  if (filter.to_date) query_args.to_date = filter.to_date;
+  for (const filter_key of AUDIT_LOG_FILTER_QUERY_KEYS) {
+    if (filter[filter_key]) query_args[filter_key] = filter[filter_key];
+  }
 
-  const result = (await client.query(
-    "audit_logs:search_audit_logs" as never,
-    query_args,
-  )) as {
-    success: boolean;
-    data: AuditLog[];
-    total_count: number;
-    page_number: number;
-    page_size: number;
-    total_pages: number;
-  };
+  return query_args;
+}
+
+export async function search_audit_logs_from_convex(
+  filter: AuditLogFilter,
+  options: AuditLogSearchOptions = {},
+): Promise<AuditLogSearchResult> {
+  const client_result = get_sync_manager().get_convex_client();
+
+  if (!client_result.success) {
+    return build_unconfigured_search_result();
+  }
+
+  const result = (await client_result.data.query(
+    SEARCH_AUDIT_LOGS_QUERY_NAME as never,
+    build_audit_log_query_args(filter, options),
+  )) as ConvexAuditLogSearchResponse;
 
   return {
     success: result.success,

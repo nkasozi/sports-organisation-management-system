@@ -2,25 +2,17 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   create_table_sync_progress,
-  load_remote_table_state,
   log_sync_summary,
   update_table_sync_progress,
   verify_push_sync_auth_or_fail,
 } from "./syncOrchestratorHelpers";
 
-const { get_remote_state_for_table_mock, verify_sync_auth_mock } = vi.hoisted(
-  () => ({
-    get_remote_state_for_table_mock: vi.fn(),
-    verify_sync_auth_mock: vi.fn(),
-  }),
-);
+const { verify_sync_auth_mock } = vi.hoisted(() => ({
+  verify_sync_auth_mock: vi.fn(),
+}));
 
 vi.mock("./syncAuthUtils", () => ({
   verify_sync_auth: verify_sync_auth_mock,
-}));
-
-vi.mock("./syncDataAccess", () => ({
-  get_remote_state_for_table: get_remote_state_for_table_mock,
 }));
 
 describe("syncOrchestratorHelpers", () => {
@@ -88,19 +80,9 @@ describe("syncOrchestratorHelpers", () => {
     });
   });
 
-  it("loads remote table state and logs summaries", async () => {
+  it("logs sync summaries", async () => {
     const console_log = vi.spyOn(console, "log").mockImplementation(() => {});
     const console_warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    get_remote_state_for_table_mock.mockResolvedValueOnce({ version: 3 });
-
-    await expect(
-      load_remote_table_state({} as never, "teams"),
-    ).resolves.toEqual({ success: true, data: { version: 3 } });
-
-    get_remote_state_for_table_mock.mockRejectedValueOnce(new Error("network"));
-    await expect(
-      load_remote_table_state({} as never, "teams"),
-    ).resolves.toEqual({ success: false, error: "network" });
 
     log_sync_summary({
       sync_succeeded: false,

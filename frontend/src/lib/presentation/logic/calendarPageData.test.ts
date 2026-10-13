@@ -47,6 +47,7 @@ function create_auth_profile(organization_id: string): UserScopeProfile {
 describe("calendarPageData", () => {
   beforeEach(() => {
     get_current_year_date_range_mock.mockReset();
+    vi.spyOn(console, "warn").mockImplementation(() => {});
   });
 
   it("loads organizations within the caller scope and returns an empty list on failure", async () => {
@@ -110,8 +111,10 @@ describe("calendarPageData", () => {
         .mockResolvedValueOnce({ success: true, data: [{ id: "event-1" }] }),
       sync_competitions_to_activities: vi
         .fn()
-        .mockImplementation(async () => {}),
-      sync_fixtures_to_activities: vi.fn().mockImplementation(async () => {}),
+        .mockResolvedValue({ success: true, data: 0 }),
+      sync_fixtures_to_activities: vi
+        .fn()
+        .mockResolvedValue({ success: true, data: 0 }),
     };
 
     await expect(
@@ -143,7 +146,7 @@ describe("calendarPageData", () => {
       activity_category_use_cases: {
         ensure_default_categories_exist: vi
           .fn()
-          .mockImplementation(async () => {}),
+          .mockResolvedValue({ success: false, error: "categories offline" }),
         list_by_organization: vi.fn().mockResolvedValueOnce({
           success: true,
           data: { items: [{ id: "category-1" }] },
@@ -153,8 +156,10 @@ describe("calendarPageData", () => {
         get_calendar_events: vi.fn().mockResolvedValueOnce({ success: false }),
         sync_competitions_to_activities: vi
           .fn()
-          .mockImplementation(async () => {}),
-        sync_fixtures_to_activities: vi.fn().mockImplementation(async () => {}),
+          .mockResolvedValue({ success: true, data: 0 }),
+        sync_fixtures_to_activities: vi
+          .fn()
+          .mockResolvedValue({ success: true, data: 0 }),
       },
       competition_use_cases: {
         list: vi.fn().mockResolvedValueOnce({
@@ -181,5 +186,9 @@ describe("calendarPageData", () => {
       categories: [{ id: "category-1" }],
       calendar_events: [],
     });
+    expect(console.warn).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ event: "calendar_default_categories_failed" }),
+    );
   });
 });

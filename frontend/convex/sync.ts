@@ -9,7 +9,14 @@ export {
   force_resolve_conflict,
   upsert_record,
 } from "./sync_basic_mutations";
+export { batch_delete } from "./sync_batch_delete_mutation";
 export { batch_upsert } from "./sync_batch_mutation";
+export { get_table_change_marker } from "./sync_change_marker_queries";
+export { get_changes_page } from "./sync_change_queries";
+export {
+  continue_sync_clear_job,
+  get_clear_job_status,
+} from "./sync_clear_jobs";
 export {
   check_auth,
   get_latest_modified_at,
@@ -21,3 +28,5 @@ export {
   get_changes_since,
   get_record_by_local_id,
 } from "./sync_read_queries";
+export { backfill_sync_sequences_batch } from "./sync_sequence_backfill";
+export { prune_expired_tombstones_batch } from "./sync_tombstone_pruning";

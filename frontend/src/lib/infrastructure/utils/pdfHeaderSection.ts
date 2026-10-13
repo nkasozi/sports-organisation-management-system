@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
+import autoTable, { type UserOptions } from "jspdf-autotable";
 
 import type { MatchReportData } from "$lib/core/types/MatchReportTypes";
 
@@ -14,51 +14,39 @@ import {
   PAGE_WIDTH,
   truncate_text,
 } from "./pdfConstantsAndHelpers";
+import {
+  HEADER_LOG_EVENT,
+  HEADER_LOGO_FORMAT,
+  HEADER_LOGO_SIZE,
+  HEADER_TABLE_COLUMN_WIDTHS,
+  HEADER_TABLE_HEADINGS,
+  HEADER_TITLE_SUFFIX,
+} from "./pdfHeaderConstants";
 
-export function draw_header_section(
-  doc: jsPDF,
+interface HeaderTitles {
+  line_1: string;
+  line_2: string;
+  line_3: string;
+}
+
+const BLACK: [number, number, number] = [0, 0, 0];
+const WHITE: [number, number, number] = [255, 255, 255];
+
+function build_header_titles(data: MatchReportData): HeaderTitles {
+  return {
+    line_1: `${data.league_name} ${data.fixture_year} ${HEADER_TITLE_SUFFIX}`,
+    line_2: data.competition_name,
+    line_3: data.report_title,
+  };
+}
+
+function build_header_table_options(
   data: MatchReportData,
-  y_start: number,
-): number {
-  let y = y_start;
-
-  const title_line_1 = `${data.league_name} ${data.fixture_year} TECHNICAL REPORT`;
-  const title_line_2 = data.competition_name;
-  const title_line_3 = data.report_title;
-
-  if (data.organization_logo_url && data.organization_logo_url.length > 0) {
-    y = draw_header_with_logo(
-      doc,
-      data,
-      title_line_1,
-      title_line_2,
-      title_line_3,
-      y,
-    );
-  } else {
-    y = draw_header_without_logo(
-      doc,
-      title_line_1,
-      title_line_2,
-      title_line_3,
-      y,
-    );
-  }
-
-  y += 3;
-
-  autoTable(doc, {
+  y: number,
+): UserOptions {
+  return {
     startY: y,
-    head: [
-      [
-        "DATE",
-        "GAME WK",
-        "POOL",
-        "MATCH No.",
-        "SCHEDULED PUSH BACK",
-        "PUSH BACK TIME",
-      ],
-    ],
+    head: [[...HEADER_TABLE_HEADINGS]],
     body: [
       [
         data.date,
@@ -74,91 +62,89 @@ export function draw_header_section(
       fontSize: FONT_SIZE_SMALL,
       cellPadding: 2,
       halign: "center",
-      lineColor: [0, 0, 0],
+      lineColor: BLACK,
       lineWidth: 0.3,
       overflow: "ellipsize",
     },
-    headStyles: {
-      fillColor: [255, 255, 255],
-      textColor: [0, 0, 0],
-      fontStyle: "bold",
-    },
-    bodyStyles: {
-      fillColor: [255, 255, 255],
-      textColor: [0, 0, 0],
-    },
-    columnStyles: {
-      0: { cellWidth: 28 },
-      1: { cellWidth: 22 },
-      2: { cellWidth: 30 },
-      3: { cellWidth: 22 },
-      4: { cellWidth: 42 },
-      5: { cellWidth: 42 },
-    },
+    headStyles: { fillColor: WHITE, textColor: BLACK, fontStyle: "bold" },
+    bodyStyles: { fillColor: WHITE, textColor: BLACK },
+    columnStyles: Object.fromEntries(
+      HEADER_TABLE_COLUMN_WIDTHS.map((cellWidth, index) => [
+        index,
+        { cellWidth },
+      ]),
+    ),
     margin: { left: MARGIN_LEFT, right: MARGIN_RIGHT },
-  });
+  };
+}
 
-  return (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? y + 20;
+export function draw_header_section(
+  doc: jsPDF,
+  data: MatchReportData,
+  y_start: number,
+): number {
+  const titles = build_header_titles(data);
+  const has_logo = Boolean(data.organization_logo_url);
+  const title_end_y = has_logo
+    ? draw_header_with_logo(doc, data, titles, y_start)
+    : draw_header_without_logo(doc, titles, y_start);
+  const table_y = title_end_y + 3;
+
+  autoTable(doc, build_header_table_options(data, table_y));
+
+  return (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? table_y + 20;
+}
+
+function draw_logo_titles(doc: jsPDF, titles: HeaderTitles, y: number): number {
+  const text_x = MARGIN_LEFT + HEADER_LOGO_SIZE + 5;
+  doc.setFontSize(FONT_SIZE_TITLE);
+  doc.setFont("helvetica", "bold");
+  doc.text(titles.line_1, text_x, y + 2);
+  doc.setFontSize(FONT_SIZE_HEADER);
+  doc.text(titles.line_2, text_x, y + 7);
+  doc.text(titles.line_3, text_x, y + 12);
+  return y + 18;
 }
 
 function draw_header_with_logo(
   doc: jsPDF,
   data: MatchReportData,
-  title_line_1: string,
-  title_line_2: string,
-  title_line_3: string,
+  titles: HeaderTitles,
   y: number,
 ): number {
   try {
-    const logo_size = 15;
     doc.addImage(
       data.organization_logo_url,
-      "PNG",
+      HEADER_LOGO_FORMAT,
       MARGIN_LEFT,
       y - 5,
-      logo_size,
-      logo_size,
+      HEADER_LOGO_SIZE,
+      HEADER_LOGO_SIZE,
     );
-    doc.setFontSize(FONT_SIZE_TITLE);
-    doc.setFont("helvetica", "bold");
-    doc.text(title_line_1, MARGIN_LEFT + logo_size + 5, y + 2);
-    doc.setFontSize(FONT_SIZE_HEADER);
-    doc.text(title_line_2, MARGIN_LEFT + logo_size + 5, y + 7);
-    doc.text(title_line_3, MARGIN_LEFT + logo_size + 5, y + 12);
-    return y + 18;
   } catch (error) {
-    console.warn(
-      "[PDF] Failed to draw header with logo, using text-only header",
-      {
-        event: "pdf_logo_draw_failed",
-        error: String(error),
-      },
-    );
-    return draw_header_without_logo(
-      doc,
-      title_line_1,
-      title_line_2,
-      title_line_3,
-      y,
-    );
+    console.warn("[PDF] Logo could not be drawn, header rendered without it", {
+      event: HEADER_LOG_EVENT.LOGO_DRAW_FAILED,
+      report_title: data.report_title,
+      error: String(error),
+    });
+    return draw_header_without_logo(doc, titles, y);
   }
+  return draw_logo_titles(doc, titles, y);
 }
 
 function draw_header_without_logo(
   doc: jsPDF,
-  title_line_1: string,
-  title_line_2: string,
-  title_line_3: string,
-  y: number,
+  titles: HeaderTitles,
+  y_start: number,
 ): number {
+  const center_x = PAGE_WIDTH / 2;
   doc.setFontSize(FONT_SIZE_TITLE);
   doc.setFont("helvetica", "bold");
-  doc.text(title_line_1, PAGE_WIDTH / 2, y, { align: "center" });
-  y += LINE_HEIGHT;
+  doc.text(titles.line_1, center_x, y_start, { align: "center" });
   doc.setFontSize(FONT_SIZE_HEADER);
-  doc.text(title_line_2, PAGE_WIDTH / 2, y, { align: "center" });
-  y += LINE_HEIGHT;
-  doc.text(title_line_3, PAGE_WIDTH / 2, y, { align: "center" });
-  y += LINE_HEIGHT;
-  return y;
+  doc.text(titles.line_2, center_x, y_start + LINE_HEIGHT, { align: "center" });
+  doc.text(titles.line_3, center_x, y_start + LINE_HEIGHT * 2, {
+    align: "center",
+  });
+  return y_start + LINE_HEIGHT * 3;
 }

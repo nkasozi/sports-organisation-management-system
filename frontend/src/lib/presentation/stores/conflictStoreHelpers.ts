@@ -1,8 +1,9 @@
 import type { ScalarInput } from "$lib/core/types/DomainScalars";
-import type {
-  ConflictRecord,
-  ConflictResolution,
-  ConflictResolutionAction,
+import {
+  type ConflictRecord,
+  type ConflictResolution,
+  type ConflictResolutionAction,
+  ConflictResolutionActionKind,
 } from "$lib/infrastructure/sync/conflictTypes";
 
 export interface ConflictStoreState {
@@ -13,9 +14,17 @@ export interface ConflictStoreState {
   show_merge_screen: boolean;
 }
 
+export const CurrentConflictStatus = {
+  ABSENT: "absent",
+  PRESENT: "present",
+} as const;
+
 export type CurrentConflictState =
-  | { status: "absent" }
-  | { status: "present"; conflict: ScalarInput<ConflictRecord> };
+  | { status: typeof CurrentConflictStatus.ABSENT }
+  | {
+      status: typeof CurrentConflictStatus.PRESENT;
+      conflict: ScalarInput<ConflictRecord>;
+    };
 
 export function create_current_conflict_state(
   pending_conflicts: ScalarInput<ConflictRecord>[],
@@ -24,8 +33,8 @@ export function create_current_conflict_state(
   const current_conflict = pending_conflicts[current_conflict_index];
 
   return current_conflict
-    ? { status: "present", conflict: current_conflict }
-    : { status: "absent" };
+    ? { status: CurrentConflictStatus.PRESENT, conflict: current_conflict }
+    : { status: CurrentConflictStatus.ABSENT };
 }
 
 export function get_resolved_data_for_action(
@@ -34,13 +43,11 @@ export function get_resolved_data_for_action(
   merged_data?: Record<string, unknown>,
 ): Record<string, unknown> {
   switch (action) {
-    case "keep_local":
+    case ConflictResolutionActionKind.KEEP_LOCAL:
       return { ...conflict.local_data, updated_at: new Date().toISOString() };
-    case "keep_remote":
+    case ConflictResolutionActionKind.KEEP_REMOTE:
       return conflict.remote_data;
-    case "merge":
+    case ConflictResolutionActionKind.MERGE:
       return merged_data || conflict.local_data;
-    default:
-      return conflict.local_data;
   }
 }

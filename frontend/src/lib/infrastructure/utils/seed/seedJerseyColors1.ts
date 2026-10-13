@@ -6,153 +6,158 @@ import {
   SEED_TEAM_IDS,
 } from "./seedIds";
 
+type SeedRow = Omit<
+  import("$lib/core/types/DomainScalars").ScalarInput<JerseyColor>,
+  "created_at" | "updated_at"
+>;
+
+const WEATHERHEAD_HOME_ROW: SeedRow = {
+  id: SEED_JERSEY_COLOR_IDS.WEATHERHEAD_HOME,
+  holder_type: "team",
+  holder_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
+  nickname: "Home Kit",
+  main_color: "#1E3A8A",
+  secondary_color: "#FFFFFF",
+  tertiary_color: "#F59E0B",
+  status: "active",
+};
+
+const WEATHERHEAD_AWAY_ROW: SeedRow = {
+  id: SEED_JERSEY_COLOR_IDS.WEATHERHEAD_AWAY,
+  holder_type: "team",
+  holder_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
+  nickname: "Away Kit",
+  main_color: "#FFFFFF",
+  secondary_color: "#1E3A8A",
+  tertiary_color: "#F59E0B",
+  status: "active",
+};
+
+const KAMPALA_HC_HOME_ROW: SeedRow = {
+  id: SEED_JERSEY_COLOR_IDS.KAMPALA_HC_HOME,
+  holder_type: "team",
+  holder_id: SEED_TEAM_IDS.KAMPALA_HC,
+  nickname: "Home Kit",
+  main_color: "#DC2626",
+  secondary_color: "#FBBF24",
+  tertiary_color: "#FFFFFF",
+  status: "active",
+};
+
+const KAMPALA_HC_AWAY_ROW: SeedRow = {
+  id: SEED_JERSEY_COLOR_IDS.KAMPALA_HC_AWAY,
+  holder_type: "team",
+  holder_id: SEED_TEAM_IDS.KAMPALA_HC,
+  nickname: "Away Kit",
+  main_color: "#FBBF24",
+  secondary_color: "#DC2626",
+  tertiary_color: "#FFFFFF",
+  status: "active",
+};
+
+const ROCKETS_HOME_ROW: SeedRow = {
+  id: SEED_JERSEY_COLOR_IDS.ROCKETS_HOME,
+  holder_type: "team",
+  holder_id: SEED_TEAM_IDS.ROCKETS_HC,
+  nickname: "Home Kit",
+  main_color: "#F59E0B",
+  secondary_color: "#1F2937",
+  tertiary_color: "#FFFFFF",
+  status: "active",
+};
+
+const ROCKETS_AWAY_ROW: SeedRow = {
+  id: SEED_JERSEY_COLOR_IDS.ROCKETS_AWAY,
+  holder_type: "team",
+  holder_id: SEED_TEAM_IDS.ROCKETS_HC,
+  nickname: "Away Kit",
+  main_color: "#1F2937",
+  secondary_color: "#F59E0B",
+  tertiary_color: "#FFFFFF",
+  status: "active",
+};
+
+const EASTER_CUP_OFFICIAL_BLACK_ROW: SeedRow = {
+  id: SEED_JERSEY_COLOR_IDS.EASTER_CUP_OFFICIAL_BLACK,
+  holder_type: "competition_official",
+  holder_id: SEED_COMPETITION_IDS.EASTER_CUP_2026,
+  nickname: "Standard Black",
+  main_color: "#1F2937",
+  secondary_color: "#FBBF24",
+  tertiary_color: "#FFFFFF",
+  status: "active",
+};
+
+const EASTER_CUP_OFFICIAL_YELLOW_ROW: SeedRow = {
+  id: SEED_JERSEY_COLOR_IDS.EASTER_CUP_OFFICIAL_YELLOW,
+  holder_type: "competition_official",
+  holder_id: SEED_COMPETITION_IDS.EASTER_CUP_2026,
+  nickname: "Alternate Yellow",
+  main_color: "#FBBF24",
+  secondary_color: "#1F2937",
+  tertiary_color: "#FFFFFF",
+  status: "active",
+};
+
+const UGANDA_CUP_OFFICIAL_BLACK_ROW: SeedRow = {
+  id: SEED_JERSEY_COLOR_IDS.UGANDA_CUP_OFFICIAL_BLACK,
+  holder_type: "competition_official",
+  holder_id: SEED_COMPETITION_IDS.UGANDA_CUP_2026,
+  nickname: "Standard Black",
+  main_color: "#1F2937",
+  secondary_color: "#FFFFFF",
+  tertiary_color: "#F59E0B",
+  status: "active",
+};
+
+const UGANDA_CUP_OFFICIAL_GREEN_ROW: SeedRow = {
+  id: SEED_JERSEY_COLOR_IDS.UGANDA_CUP_OFFICIAL_GREEN,
+  holder_type: "competition_official",
+  holder_id: SEED_COMPETITION_IDS.UGANDA_CUP_2026,
+  nickname: "Alternate Green",
+  main_color: "#16A34A",
+  secondary_color: "#1F2937",
+  tertiary_color: "#FFFFFF",
+  status: "active",
+};
+
+const NHL_OFFICIAL_GRAY_ROW: SeedRow = {
+  id: SEED_JERSEY_COLOR_IDS.NHL_OFFICIAL_GRAY,
+  holder_type: "competition_official",
+  holder_id: SEED_COMPETITION_IDS.NATIONAL_HOCKEY_LEAGUE_2026,
+  nickname: "Standard Gray",
+  main_color: "#6B7280",
+  secondary_color: "#1F2937",
+  tertiary_color: "#FFFFFF",
+  status: "active",
+};
+
+const NHL_OFFICIAL_NAVY_ROW: SeedRow = {
+  id: SEED_JERSEY_COLOR_IDS.NHL_OFFICIAL_NAVY,
+  holder_type: "competition_official",
+  holder_id: SEED_COMPETITION_IDS.NATIONAL_HOCKEY_LEAGUE_2026,
+  nickname: "Alternate Navy",
+  main_color: "#1E3A8A",
+  secondary_color: "#FFFFFF",
+  tertiary_color: "#6B7280",
+  status: "active",
+};
+
 export function create_seed_jersey_colors_part1(): import("$lib/core/types/DomainScalars").ScalarInput<JerseyColor>[] {
   const now = generate_current_timestamp();
 
   return [
-    {
-      id: SEED_JERSEY_COLOR_IDS.WEATHERHEAD_HOME,
-      holder_type: "team",
-      holder_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
-      nickname: "Home Kit",
-      main_color: "#1E3A8A",
-      secondary_color: "#FFFFFF",
-      tertiary_color: "#F59E0B",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: SEED_JERSEY_COLOR_IDS.WEATHERHEAD_AWAY,
-      holder_type: "team",
-      holder_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
-      nickname: "Away Kit",
-      main_color: "#FFFFFF",
-      secondary_color: "#1E3A8A",
-      tertiary_color: "#F59E0B",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: SEED_JERSEY_COLOR_IDS.KAMPALA_HC_HOME,
-      holder_type: "team",
-      holder_id: SEED_TEAM_IDS.KAMPALA_HC,
-      nickname: "Home Kit",
-      main_color: "#DC2626",
-      secondary_color: "#FBBF24",
-      tertiary_color: "#FFFFFF",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: SEED_JERSEY_COLOR_IDS.KAMPALA_HC_AWAY,
-      holder_type: "team",
-      holder_id: SEED_TEAM_IDS.KAMPALA_HC,
-      nickname: "Away Kit",
-      main_color: "#FBBF24",
-      secondary_color: "#DC2626",
-      tertiary_color: "#FFFFFF",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: SEED_JERSEY_COLOR_IDS.ROCKETS_HOME,
-      holder_type: "team",
-      holder_id: SEED_TEAM_IDS.ROCKETS_HC,
-      nickname: "Home Kit",
-      main_color: "#F59E0B",
-      secondary_color: "#1F2937",
-      tertiary_color: "#FFFFFF",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: SEED_JERSEY_COLOR_IDS.ROCKETS_AWAY,
-      holder_type: "team",
-      holder_id: SEED_TEAM_IDS.ROCKETS_HC,
-      nickname: "Away Kit",
-      main_color: "#1F2937",
-      secondary_color: "#F59E0B",
-      tertiary_color: "#FFFFFF",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: SEED_JERSEY_COLOR_IDS.EASTER_CUP_OFFICIAL_BLACK,
-      holder_type: "competition_official",
-      holder_id: SEED_COMPETITION_IDS.EASTER_CUP_2026,
-      nickname: "Standard Black",
-      main_color: "#1F2937",
-      secondary_color: "#FBBF24",
-      tertiary_color: "#FFFFFF",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: SEED_JERSEY_COLOR_IDS.EASTER_CUP_OFFICIAL_YELLOW,
-      holder_type: "competition_official",
-      holder_id: SEED_COMPETITION_IDS.EASTER_CUP_2026,
-      nickname: "Alternate Yellow",
-      main_color: "#FBBF24",
-      secondary_color: "#1F2937",
-      tertiary_color: "#FFFFFF",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: SEED_JERSEY_COLOR_IDS.UGANDA_CUP_OFFICIAL_BLACK,
-      holder_type: "competition_official",
-      holder_id: SEED_COMPETITION_IDS.UGANDA_CUP_2026,
-      nickname: "Standard Black",
-      main_color: "#1F2937",
-      secondary_color: "#FFFFFF",
-      tertiary_color: "#F59E0B",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: SEED_JERSEY_COLOR_IDS.UGANDA_CUP_OFFICIAL_GREEN,
-      holder_type: "competition_official",
-      holder_id: SEED_COMPETITION_IDS.UGANDA_CUP_2026,
-      nickname: "Alternate Green",
-      main_color: "#16A34A",
-      secondary_color: "#1F2937",
-      tertiary_color: "#FFFFFF",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: SEED_JERSEY_COLOR_IDS.NHL_OFFICIAL_GRAY,
-      holder_type: "competition_official",
-      holder_id: SEED_COMPETITION_IDS.NATIONAL_HOCKEY_LEAGUE_2026,
-      nickname: "Standard Gray",
-      main_color: "#6B7280",
-      secondary_color: "#1F2937",
-      tertiary_color: "#FFFFFF",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: SEED_JERSEY_COLOR_IDS.NHL_OFFICIAL_NAVY,
-      holder_type: "competition_official",
-      holder_id: SEED_COMPETITION_IDS.NATIONAL_HOCKEY_LEAGUE_2026,
-      nickname: "Alternate Navy",
-      main_color: "#1E3A8A",
-      secondary_color: "#FFFFFF",
-      tertiary_color: "#6B7280",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-  ];
+    { ...WEATHERHEAD_HOME_ROW },
+    { ...WEATHERHEAD_AWAY_ROW },
+    { ...KAMPALA_HC_HOME_ROW },
+    { ...KAMPALA_HC_AWAY_ROW },
+    { ...ROCKETS_HOME_ROW },
+    { ...ROCKETS_AWAY_ROW },
+    { ...EASTER_CUP_OFFICIAL_BLACK_ROW },
+    { ...EASTER_CUP_OFFICIAL_YELLOW_ROW },
+    { ...UGANDA_CUP_OFFICIAL_BLACK_ROW },
+    { ...UGANDA_CUP_OFFICIAL_GREEN_ROW },
+    { ...NHL_OFFICIAL_GRAY_ROW },
+    { ...NHL_OFFICIAL_NAVY_ROW },
+  ].map((row) => ({ ...row, created_at: now, updated_at: now }));
 }

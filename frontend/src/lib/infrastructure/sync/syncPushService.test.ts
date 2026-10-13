@@ -1,134 +1,109 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { create_known_conflict_field_value } from "./conflictTypes";
-import { push_table_to_convex } from "./syncPushService";
-import type { ConvexClient, TableName } from "./syncTypes";
+import { push_table_outbox_to_convex } from "./syncPushService";
+import {
+  build_entry,
+  create_command,
+  upsert_response,
+} from "./syncPushService.test_support";
 
-function create_mock_convex_client(mutation_result: unknown): ConvexClient {
-  return {
-    query: vi.fn(),
-    mutation: vi.fn().mockResolvedValue(mutation_result),
-  };
-}
-
-function create_record(command: {
-  id: string;
-  updated_at: string;
-  created_at?: string;
-}): {
-  id: string;
-  updated_at: string;
-  created_at: string;
-} {
-  return {
-    id: command.id,
-    updated_at: command.updated_at,
-    created_at: command.created_at ?? "2024-01-01T00:00:00.000Z",
-  };
-}
-
-describe("syncPushService", () => {
-  it("returns success with zero pushed records when nothing is newer than the server", async () => {
-    const result = await push_table_to_convex(
-      create_mock_convex_client({
-        success: true,
-        results: [],
-        has_conflicts: false,
-        conflicts: [],
-      }),
-      "players" as TableName,
-      [
-        create_record({
-          id: "player-1",
-          updated_at: "2024-01-01T00:00:00.000Z",
-        }),
-      ],
-      "2024-02-01T00:00:00.000Z",
-    );
-
-    expect(result).toEqual({
-      success: true,
-      data: { records_pushed: 0, conflicts: [] },
-    });
-  });
-
-  it("returns failure when the server rejects the push batch", async () => {
-    const result = await push_table_to_convex(
-      create_mock_convex_client({
-        success: false,
-        error: "Access denied",
-        message: "unauthorized",
-        results: [],
-        has_conflicts: false,
-        conflicts: [],
-      }),
-      "players" as TableName,
-      [
-        create_record({
-          id: "player-1",
-          updated_at: "2024-03-01T00:00:00.000Z",
-        }),
-      ],
-      "2024-02-01T00:00:00.000Z",
-    );
-
-    expect(result).toEqual({
-      success: false,
-      error: "Access denied: unauthorized",
-    });
-  });
-
-  it("returns pushed counts and conflicts when the batch succeeds", async () => {
-    const result = await push_table_to_convex(
-      create_mock_convex_client({
-        success: true,
-        results: [
-          { local_id: "player-1", success: true, action: "updated" },
-          { local_id: "player-2", success: true, action: "conflict_detected" },
-        ],
-        has_conflicts: true,
-        conflicts: [
-          {
-            local_id: "player-2",
-            local_data: {},
-            local_version: 1,
-            remote_data: {},
-            remote_version: 2,
-            remote_updated_at: "2024-03-01T00:00:00.000Z",
-            remote_updated_by: "user-1",
-          },
-        ],
-      }),
-      "players" as TableName,
-      [
-        create_record({
-          id: "player-1",
-          updated_at: "2024-03-01T00:00:00.000Z",
-        }),
-        create_record({
-          id: "player-2",
-          updated_at: "2024-03-02T00:00:00.000Z",
-        }),
-      ],
-      "2024-02-01T00:00:00.000Z",
-    );
-
+describe("push_table_outbox_to_convex upserts", () => {
+  it("does nothing when the table has no pending outbox entries", async () => {
+    const { mutation, command } = create_command([]);
+    const result = await push_table_outbox_to_convex(command);
     expect(result).toEqual({
       success: true,
       data: {
-        records_pushed: 1,
-        conflicts: [
+        records_pushed: 0,
+        conflicts: [],
+        rejected: [],
+        deleted_remotely: [],
+      },
+    });
+    expect(mutation).not.toHaveBeenCalled();
+  });
+
+  it("pushes the current record with its base version and confirms only on success", async () => {
+    const { fake, mutation, command } = create_command([
+      upsert_response("updated"),
+    ]);
+    fake.seed("teams", [{ id: "team_a", name: "Lions" }]);
+    fake.seed("sync_outbox", [build_entry()]);
+    const result = await push_table_outbox_to_convex(command);
+    expect(mutation).toHaveBeenCalledWith("sync:batch_upsert", {
+      table_name: "teams",
+      records: [
+        {
+          local_id: "team_a",
+          data: { id: "team_a", name: "Lions" },
+          version: 4,
+          base_version: { kind: "known", version: 4 },
+        },
+      ],
+      detect_conflicts: true,
+    });
+    expect(result.success && result.data.records_pushed).toBe(1);
+    expect(fake.rows("sync_outbox")).toEqual([]);
+    expect(fake.rows("sync_record_versions")).toEqual([
+      { table_name: "teams", local_id: "team_a", server_version: 5 },
+    ]);
+  });
+
+  it("keeps rejected changes in a rejected state and never counts them as pushed", async () => {
+    const { fake, command } = create_command([
+      upsert_response("rejected_wrong_organization", false, 0),
+    ]);
+    fake.seed("teams", [{ id: "team_a" }]);
+    fake.seed("sync_outbox", [build_entry()]);
+    const result = await push_table_outbox_to_convex(command);
+    expect(result).toEqual({
+      success: true,
+      data: {
+        records_pushed: 0,
+        conflicts: [],
+        deleted_remotely: [],
+        rejected: [
           {
-            local_id: "player-2",
-            local_data: {},
-            local_version: 1,
-            remote_data: {},
-            remote_version: 2,
-            remote_updated_at: "2024-03-01T00:00:00.000Z",
-            remote_updated_by: create_known_conflict_field_value("user-1"),
+            table_name: "teams",
+            local_id: "team_a",
+            rejection_code: "rejected_wrong_organization",
+            rejection_message:
+              "Record organization does not match caller organization",
           },
         ],
       },
     });
+    expect(fake.rows("sync_outbox")[0]).toMatchObject({
+      status: "rejected",
+      rejection_code: "rejected_wrong_organization",
+    });
+  });
+
+  it("parks conflicting changes and surfaces the server copy", async () => {
+    const { fake, command } = create_command([
+      upsert_response("conflict_detected", true, 7),
+    ]);
+    fake.seed("teams", [{ id: "team_a" }]);
+    fake.seed("sync_outbox", [build_entry()]);
+    const result = await push_table_outbox_to_convex(command);
+    expect(result.success && result.data.conflicts[0].remote_version).toBe(7);
+    expect(fake.rows("sync_outbox")[0]).toMatchObject({
+      status: "conflicted",
+      remote_version: 7,
+    });
+  });
+
+  it("leaves entries pending when the server rejects the whole batch", async () => {
+    const { fake, command } = create_command([
+      { success: false, error: "authentication_required", message: "x" },
+    ]);
+    fake.seed("teams", [{ id: "team_a" }]);
+    fake.seed("sync_outbox", [build_entry()]);
+    const result = await push_table_outbox_to_convex(command);
+    expect(result).toEqual({
+      success: false,
+      error: "authentication_required: x",
+    });
+    expect(fake.rows("sync_outbox")[0].status).toBe("pending");
   });
 });

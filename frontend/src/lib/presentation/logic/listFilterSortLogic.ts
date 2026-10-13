@@ -4,6 +4,12 @@ import type {
   FieldMetadata,
 } from "../../core/entities/BaseEntity";
 import type { SubEntityFilter } from "../../core/types/SubEntityFilter";
+import {
+  LIST_FOREIGN_KEY_FIELD_TYPE,
+  LIST_SORT_DIRECTION,
+  LIST_SORT_LOCALE,
+  type ListSortDirection,
+} from "./listConstants";
 import { get_display_value_for_entity_field } from "./listDisplayValueLogic";
 
 export function build_filter_from_sub_entity_config(
@@ -36,12 +42,10 @@ export function apply_filters_to_entities(
       const field_meta = entity_metadata?.fields.find(
         (f: FieldMetadata) => f.field_name === field,
       );
-      if (
-        field_meta &&
-        field_meta.field_type === "foreign_key" &&
-        field_meta.foreign_key_entity
-      ) {
-        if (!filter_value) return true;
+      const is_foreign_key_filter =
+        field_meta?.field_type === LIST_FOREIGN_KEY_FIELD_TYPE &&
+        Boolean(field_meta.foreign_key_entity);
+      if (is_foreign_key_filter) {
         const raw_value = (entity as unknown as Record<string, unknown>)[field];
         return String(raw_value ?? "") === filter_value;
       }
@@ -58,7 +62,7 @@ export function apply_filters_to_entities(
 export function sort_entities(
   entity_list: BaseEntity[],
   sort_column: string,
-  sort_direction: "asc" | "desc",
+  sort_direction: ListSortDirection,
   foreign_key_options: Record<string, BaseEntity[]>,
 ): BaseEntity[] {
   if (!entity_list || entity_list.length === 0) return [];
@@ -75,10 +79,12 @@ export function sort_entities(
       sort_column,
       foreign_key_options,
     );
-    const comparison = a_value.localeCompare(b_value, "en", {
+    const comparison = a_value.localeCompare(b_value, LIST_SORT_LOCALE, {
       numeric: true,
     });
-    return sort_direction === "asc" ? comparison : -comparison;
+    return sort_direction === LIST_SORT_DIRECTION.ASCENDING
+      ? comparison
+      : -comparison;
   });
   return sorted;
 }
@@ -87,7 +93,7 @@ export function apply_filters_and_sorting(
   entity_list: BaseEntity[],
   filters: Record<string, string>,
   sort_column: string,
-  sort_direction: "asc" | "desc",
+  sort_direction: ListSortDirection,
   entity_metadata: EntityMetadata | undefined,
   foreign_key_options: Record<string, BaseEntity[]>,
 ): BaseEntity[] {
@@ -108,7 +114,11 @@ export function apply_filters_and_sorting(
 export function clear_filter_state(): {
   filter_values: Record<string, string>;
   sort_column: string;
-  sort_direction: "asc" | "desc";
+  sort_direction: ListSortDirection;
 } {
-  return { filter_values: {}, sort_column: "", sort_direction: "asc" };
+  return {
+    filter_values: {},
+    sort_column: "",
+    sort_direction: LIST_SORT_DIRECTION.ASCENDING,
+  };
 }

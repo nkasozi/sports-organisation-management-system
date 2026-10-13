@@ -122,11 +122,14 @@ The application follows **Hexagonal Architecture** (Ports and Adapters) with a C
 
 ### Sync and Offline
 
-- Bidirectional sync between IndexedDB and Convex (35 tables)
-- Real-time subscriptions for instant multi-client updates
-- Background sync with debounced push and conflict detection
+- Bidirectional sync between IndexedDB and Convex (37 tables)
+- Durable local outbox: every local create/update/delete is recorded (whether or not background sync is running) with the server version it was based on and removed only after the server confirms it; rejected and conflicting changes stay visible until resolved. Only remote applies, backup restores, data resets and demo seeding are excluded, via transaction-scoped markers
+- Optimistic concurrency: the server assigns record versions and refuses writes based on a stale version, returning the server copy as a conflict. A push for a record that was deleted remotely is answered with `deleted_remotely` (never silently resurrected) unless the client sends an explicit `recreate` base; deletes without a known base conflict when the server copy carries a version
+- Server change feed: paginated pulls from a per-table change sequence cursor, with tombstones so deletes reach every device. Tombstones are kept for 90 days (daily prune job); a device whose cursor predates the prune horizon gets `cursor_expired` and runs a full table resync that drops records missing on the server (never ones with unsynced local changes). Tombstones keep the organization scope resolved at delete time, and a record that moves to another organization or team leaves a scope-exit tombstone for the devices that can no longer see it. Until the self-scheduling sequence backfill has completed for a table, the feed answers `backfill_in_progress` so devices retry later instead of resyncing
+- Real-time subscriptions to a tenant-scoped per-table change marker (per organization, shared marker only for shared reference tables) for instant multi-client updates
+- Background sync driven by an explicit state machine (stopped, idle, debouncing, syncing, offline waiting, failed with backoff, suspended)
 - Offline-first PWA with service worker caching
-- Demo data reset with full Convex sync
+- Demo data reset with full Convex sync: server clears write tombstones and run as resumable scheduled jobs for large tables, clearing child tables before their parents (order derived from the parent reference specs); organization admins scan only their organization through an index
 
 ## Getting Started
 

@@ -1,157 +1,108 @@
 import type {
   CompetitionStage,
   CreateCompetitionStageInput,
-  UpdateCompetitionStageInput,
 } from "../entities/CompetitionStage";
 import { validate_competition_stage_input } from "../entities/CompetitionStage";
 import type {
-  CompetitionStageFilter,
   CompetitionStageRepository,
-  QueryOptions,
+  FixtureRepository,
 } from "../interfaces/ports";
-import type { FixtureRepository } from "../interfaces/ports";
 import type { CompetitionStageUseCasesPort } from "../interfaces/ports";
 import type { ScalarValueInput } from "../types/DomainScalars";
-import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
-import { create_failure_result, create_success_result } from "../types/Result";
+import type { AsyncResult } from "../types/Result";
+import {
+  COMPETITION_STAGE_EVENT,
+  COMPETITION_STAGE_LOG_SCOPE,
+  COMPETITION_STAGE_MESSAGE,
+} from "./CompetitionStageConstants";
+import {
+  check_stage_has_no_linked_fixtures,
+  list_stages_by_competition,
+  reorder_stages,
+} from "./CompetitionStageOrdering";
+import {
+  create_log_target_builder,
+  fail_missing_identifier,
+  fail_validation,
+  is_blank_identifier,
+  relay_repository_result,
+} from "./FailureRelay";
 
 export type CompetitionStageUseCases = CompetitionStageUseCasesPort;
+
+const log_target = create_log_target_builder(COMPETITION_STAGE_LOG_SCOPE);
+
+function fail_missing_stage_id(): ReturnType<typeof fail_missing_identifier> {
+  return fail_missing_identifier(
+    log_target(COMPETITION_STAGE_EVENT.ID_MISSING),
+    COMPETITION_STAGE_MESSAGE.STAGE_ID_REQUIRED,
+  );
+}
+
+async function create_stage(
+  repository: CompetitionStageRepository,
+  input: CreateCompetitionStageInput,
+): AsyncResult<CompetitionStage> {
+  const validation_errors = validate_competition_stage_input(input);
+  if (validation_errors.length > 0)
+    return fail_validation(
+      log_target(COMPETITION_STAGE_EVENT.VALIDATION_FAILED),
+      validation_errors.join(", "),
+    );
+  return relay_repository_result(
+    repository.create(input),
+    log_target(COMPETITION_STAGE_EVENT.CREATE_FAILED, {
+      competition_id: input.competition_id,
+    }),
+  );
+}
+
+async function delete_stage(
+  repository: CompetitionStageRepository,
+  fixture_repository: FixtureRepository,
+  id: ScalarValueInput<CompetitionStage["id"]>,
+): AsyncResult<boolean> {
+  if (is_blank_identifier(id)) return fail_missing_stage_id();
+  const linked_fixtures_check = await check_stage_has_no_linked_fixtures(
+    fixture_repository,
+    id,
+  );
+  if (!linked_fixtures_check.success) return linked_fixtures_check;
+  return relay_repository_result(
+    repository.delete_by_id(id),
+    log_target(COMPETITION_STAGE_EVENT.DELETE_FAILED, { stage_id: id }),
+  );
+}
 
 export function create_competition_stage_use_cases(
   repository: CompetitionStageRepository,
   fixture_repository: FixtureRepository,
 ): CompetitionStageUseCases {
   return {
-    async create(
-      input: CreateCompetitionStageInput,
-    ): AsyncResult<CompetitionStage> {
-      const validation_errors = validate_competition_stage_input(input);
-      if (validation_errors.length > 0) {
-        return create_failure_result(validation_errors.join(", "));
-      }
-      const result = await repository.create(input);
-      if (!result.success) {
-        return create_failure_result(result.error);
-      }
-      return create_success_result(result.data);
-    },
-
-    async get_by_id(id: CompetitionStage["id"]): AsyncResult<CompetitionStage> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("Stage ID is required");
-      }
-      const result = await repository.find_by_id(id);
-      if (!result.success) {
-        return create_failure_result(result.error);
-      }
-      return create_success_result(result.data);
-    },
-
-    async list(
-      filter?: CompetitionStageFilter,
-      options?: QueryOptions,
-    ): PaginatedAsyncResult<CompetitionStage> {
-      return repository.find_all(filter ?? {}, options ?? {});
-    },
-
-    async update(
-      id: CompetitionStage["id"],
-      input: UpdateCompetitionStageInput,
-    ): AsyncResult<CompetitionStage> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("Stage ID is required");
-      }
-      const result = await repository.update(id, input);
-      if (!result.success) {
-        return create_failure_result(result.error);
-      }
-      return create_success_result(result.data);
-    },
-
-    async delete(id: CompetitionStage["id"]): AsyncResult<boolean> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("Stage ID is required");
-      }
-      const linked_fixtures_check = await check_for_linked_fixtures(
-        id,
-        fixture_repository,
-      );
-      if (!linked_fixtures_check.success) {
-        return linked_fixtures_check;
-      }
-      const result = await repository.delete_by_id(id);
-      if (!result.success) {
-        return create_failure_result(result.error);
-      }
-      return create_success_result(result.data);
-    },
-
-    async list_stages_by_competition(
-      competition_id: ScalarValueInput<CompetitionStage["competition_id"]>,
-      options?: QueryOptions,
-    ): PaginatedAsyncResult<CompetitionStage> {
-      if (!competition_id || competition_id.trim().length === 0) {
-        return { success: false, error: "Competition ID is required" };
-      }
-      const result = await repository.find_by_competition(
-        competition_id,
-        options,
-      );
-      if (!result.success) {
-        return result;
-      }
-      const sorted_stages = [...(result.data?.items || [])].sort(
-        (a, b) => a.stage_order - b.stage_order,
-      );
-      return {
-        success: true,
-        data: { ...result.data, items: sorted_stages },
-      };
-    },
-
-    async reorder_stages(
-      competition_id: ScalarValueInput<CompetitionStage["competition_id"]>,
-      ordered_stage_ids: Array<ScalarValueInput<CompetitionStage["id"]>>,
-    ): AsyncResult<boolean> {
-      if (!competition_id || competition_id.trim().length === 0) {
-        return create_failure_result("Competition ID is required");
-      }
-      if (!ordered_stage_ids || ordered_stage_ids.length === 0) {
-        return create_failure_result(
-          "At least one stage ID is required for reordering",
-        );
-      }
-      for (let i = 0; i < ordered_stage_ids.length; i++) {
-        const update_result = await repository.update(ordered_stage_ids[i], {
-          stage_order: i + 1,
-        });
-        if (!update_result.success) {
-          return create_failure_result(
-            `Failed to update stage order for stage ${ordered_stage_ids[i]}: ${update_result.error}`,
-          );
-        }
-      }
-      return create_success_result(true);
-    },
+    create: (input) => create_stage(repository, input),
+    get_by_id: async (id) =>
+      is_blank_identifier(id)
+        ? fail_missing_stage_id()
+        : relay_repository_result(
+            repository.find_by_id(id),
+            log_target(COMPETITION_STAGE_EVENT.LOOKUP_FAILED, { stage_id: id }),
+          ),
+    list: async (filter, options) =>
+      relay_repository_result(
+        repository.find_all(filter ?? {}, options ?? {}),
+        log_target(COMPETITION_STAGE_EVENT.LIST_FAILED),
+      ),
+    update: async (id, input) =>
+      is_blank_identifier(id)
+        ? fail_missing_stage_id()
+        : relay_repository_result(
+            repository.update(id, input),
+            log_target(COMPETITION_STAGE_EVENT.UPDATE_FAILED, { stage_id: id }),
+          ),
+    delete: (id) => delete_stage(repository, fixture_repository, id),
+    list_stages_by_competition: (competition_id, options) =>
+      list_stages_by_competition(repository, competition_id, options),
+    reorder_stages: (competition_id, ordered_stage_ids) =>
+      reorder_stages(repository, competition_id, ordered_stage_ids),
   };
-}
-
-async function check_for_linked_fixtures(
-  stage_id: CompetitionStage["id"],
-  fixture_repository: FixtureRepository,
-): AsyncResult<boolean> {
-  const fixtures_result = await fixture_repository.find_all(
-    { stage_id } as Parameters<typeof fixture_repository.find_all>[0],
-    { page_size: 1 },
-  );
-  if (!fixtures_result.success) {
-    return create_success_result(true);
-  }
-  const fixture_count = fixtures_result.data?.total_count ?? 0;
-  if (fixture_count > 0) {
-    return create_failure_result(
-      `Cannot delete stage: it has ${fixture_count} linked fixtures. Remove or reassign them first.`,
-    );
-  }
-  return create_success_result(true);
 }

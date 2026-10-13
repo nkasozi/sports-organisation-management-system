@@ -10,6 +10,7 @@ import type { OfficialUseCasesPort } from "$lib/core/interfaces/ports/internal/u
 import type { OrganizationUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/OrganizationUseCasesPort";
 import type { TeamStaffUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/TeamStaffUseCasesPort";
 import type { MatchStaffEntry } from "$lib/core/types/MatchReportTypes";
+import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
 import type { CompetitionResultsSelectedCompetitionState } from "./competitionResultsPageContracts";
 
@@ -55,7 +56,7 @@ export async function resolve_match_report_organization_name(
   selected_competition_state: MatchReportCompetitionState,
   dependencies: CompetitionResultsMatchReportDependencies,
 ): Promise<string> {
-  if (selected_competition_state.status === "missing") {
+  if (selected_competition_state.status === PRESENCE_STATUS.MISSING) {
     return COMPETITION_RESULTS_MATCH_REPORT_TEXT.default_organization_name;
   }
 

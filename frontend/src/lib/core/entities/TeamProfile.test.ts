@@ -104,7 +104,9 @@ describe("TeamProfile", () => {
     it("validates visibility values", () => {
       const input = {
         ...create_empty_team_profile_input("team_123"),
-        visibility: "invalid" as any,
+        visibility: "invalid" as ReturnType<
+          typeof create_empty_team_profile_input
+        >["visibility"],
       };
       const result = validate_team_profile_input(input);
 

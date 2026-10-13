@@ -10,7 +10,6 @@ describe("syncStoreTypes", () => {
       last_sync_at: { status: "never" },
       last_sync_result: { status: "empty" },
       current_progress: { status: "idle" },
-      auto_sync_enabled: false,
       error_message: { status: "clear" },
       has_pending_conflicts: false,
     });

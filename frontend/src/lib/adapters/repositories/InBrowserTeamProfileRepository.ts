@@ -15,13 +15,35 @@ import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../core/types/Result";
-import {
-  create_failure_result,
-  create_success_result,
-} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import {
+  apply_entity_filter_rules,
+  type EntityFilterRule,
+  equals_rule,
+} from "./InBrowserRepositoryFilterRules";
+import { find_first_row_by_index } from "./InBrowserRepositoryIndexLookup";
+import {
+  create_warning_failure_details,
+  type RepositoryFailureDetails,
+} from "./InBrowserRepositoryQueryRunner";
+import { reset_repository_data } from "./InBrowserRepositoryReset";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
+import type { RepositoryWriteOrigin } from "./InBrowserRepositoryWriteOrigin";
 
 const ENTITY_PREFIX = "teamprofile";
+
+const PROFILE_FILTER_RULES: EntityFilterRule<TeamProfile, TeamProfileFilter>[] =
+  [equals_rule("team_id"), equals_rule("visibility"), equals_rule("status")];
+
+function describe_profile_failure(
+  lookup_field: string,
+): RepositoryFailureDetails {
+  return create_warning_failure_details(
+    `[TeamProfileRepository] Failed to find profile by ${lookup_field}`,
+    `repository_find_profile_by_${lookup_field}_failed`,
+    `find profile by ${lookup_field}`,
+  );
+}
 
 export class InBrowserTeamProfileRepository
   extends InBrowserBaseRepository<
@@ -71,80 +93,29 @@ export class InBrowserTeamProfileRepository
     entities: TeamProfile[],
     filter: TeamProfileFilter,
   ): TeamProfile[] {
-    let filtered = entities;
-
-    if (filter.team_id) {
-      filtered = filtered.filter(
-        (profile) => profile.team_id === filter.team_id,
-      );
-    }
-
-    if (filter.visibility) {
-      filtered = filtered.filter(
-        (profile) => profile.visibility === filter.visibility,
-      );
-    }
-
-    if (filter.status) {
-      filtered = filtered.filter((profile) => profile.status === filter.status);
-    }
-
-    return filtered;
+    return apply_entity_filter_rules(entities, filter, PROFILE_FILTER_RULES);
   }
 
   async find_by_team_id(
     team_id: TeamProfile["team_id"],
   ): AsyncResult<TeamProfile> {
-    try {
-      const profiles = await this.database.team_profiles
-        .where("team_id")
-        .equals(team_id)
-        .toArray();
-
-      if (profiles.length === 0) {
-        return create_failure_result(`No profile found for team: ${team_id}`);
-      }
-
-      return create_success_result(profiles[0]);
-    } catch (error) {
-      console.warn(
-        "[TeamProfileRepository] Failed to find profile by team_id",
-        {
-          event: "repository_find_profile_by_team_id_failed",
-          error: String(error),
-        },
-      );
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to find profile by team_id: ${error_message}`,
-      );
-    }
+    return find_first_row_by_index({
+      table: this.database.team_profiles,
+      index_name: "team_id",
+      value: team_id,
+      not_found_message: `No profile found for team: ${team_id}`,
+      failure: describe_profile_failure("team_id"),
+    });
   }
 
   async find_by_slug(slug: string): AsyncResult<TeamProfile> {
-    try {
-      const profiles = await this.database.team_profiles
-        .where("profile_slug")
-        .equals(slug)
-        .toArray();
-
-      if (profiles.length === 0) {
-        return create_failure_result(`No profile found with slug: ${slug}`);
-      }
-
-      return create_success_result(profiles[0]);
-    } catch (error) {
-      console.warn("[TeamProfileRepository] Failed to find profile by slug", {
-        event: "repository_find_profile_by_slug_failed",
-        error: String(error),
-      });
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to find profile by slug: ${error_message}`,
-      );
-    }
+    return find_first_row_by_index({
+      table: this.database.team_profiles,
+      index_name: "profile_slug",
+      value: slug,
+      not_found_message: `No profile found with slug: ${slug}`,
+      failure: describe_profile_failure("slug"),
+    });
   }
 
   async find_public_profiles(
@@ -185,28 +156,16 @@ function create_default_team_profiles(): import("$lib/core/types/DomainScalars")
   ];
 }
 
-type TeamProfileRepositoryState =
-  | { status: "uninitialized" }
-  | { status: "ready"; repository: InBrowserTeamProfileRepository };
+export const get_team_profile_repository: () => TeamProfileRepository =
+  create_lazy_repository_accessor(() => new InBrowserTeamProfileRepository());
 
-let team_profile_repository_state: TeamProfileRepositoryState = {
-  status: "uninitialized",
-};
-
-export function get_team_profile_repository(): TeamProfileRepository {
-  if (team_profile_repository_state.status === "ready") {
-    return team_profile_repository_state.repository;
-  }
-
-  const repository = new InBrowserTeamProfileRepository();
-  team_profile_repository_state = { status: "ready", repository };
-
-  return repository;
-}
-
-export async function reset_team_profile_repository(): Promise<void> {
-  const repository =
-    get_team_profile_repository() as InBrowserTeamProfileRepository;
-  await repository.clear_all_data();
-  await repository.seed_with_data(create_default_team_profiles());
+export function reset_team_profile_repository(
+  origin: RepositoryWriteOrigin,
+): AsyncResult<number> {
+  return reset_repository_data(
+    (
+      get_team_profile_repository() as InBrowserTeamProfileRepository
+    ).with_write_origin(origin),
+    create_default_team_profiles(),
+  );
 }

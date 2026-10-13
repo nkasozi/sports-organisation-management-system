@@ -103,4 +103,54 @@ describe("officialRatingPanelState", () => {
       },
     ]);
   });
+
+  it("returns no states when officials cannot be listed", async () => {
+    expect(
+      await load_official_rating_states(
+        "fixture-1",
+        "organization-1",
+        ["official-1"],
+        "rater-1",
+        {
+          official_use_cases: { list: async () => ({ success: false }) },
+          rating_use_cases: {
+            list_by_fixture: async () => ({
+              success: true,
+              data: { items: [] },
+            }),
+          },
+        } as never,
+      ),
+    ).toEqual([]);
+  });
+
+  it("uses default ratings when existing ratings cannot be loaded", async () => {
+    expect(
+      await load_official_rating_states(
+        "fixture-1",
+        "organization-1",
+        ["official-1"],
+        "rater-1",
+        {
+          official_use_cases: {
+            list: async () => ({
+              success: true,
+              data: { items: [{ id: "official-1", name: "Ref One" }] },
+            }),
+          },
+          rating_use_cases: {
+            list_by_fixture: async () => ({ success: false }),
+          },
+        } as never,
+      ),
+    ).toEqual([
+      {
+        official: { id: "official-1", name: "Ref One" },
+        rating: build_default_official_rating_dimensions(),
+        existing_id: "",
+        is_saving: false,
+        validation_errors: [],
+      },
+    ]);
+  });
 });

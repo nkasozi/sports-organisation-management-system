@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Fixture } from "$lib/core/entities/Fixture";
+    import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
     import type { PreFlightCheck } from "$lib/core/services/fixtureStartChecks";
     import TeamLogoThumbnail from "$lib/presentation/components/ui/TeamLogoThumbnail.svelte";
     import {
@@ -45,7 +46,7 @@
                             team_name={home_team_name}
                             size="sm"
                         />
-                        {#if fixture.status === "in_progress"}
+                        {#if fixture.status === FIXTURE_STATUS.IN_PROGRESS}
                             <span
                                 class="text-lg sm:text-xl font-bold text-accent-900 dark:text-white tabular-nums"
                             >

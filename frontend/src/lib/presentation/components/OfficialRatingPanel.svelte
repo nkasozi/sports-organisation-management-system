@@ -2,10 +2,7 @@
     import { onMount } from "svelte";
 
     import { get_official_full_name } from "$lib/core/entities/Official";
-    import type {
-        CreateOfficialPerformanceRatingInput,
-        RatingDimensions,
-    } from "$lib/core/entities/OfficialPerformanceRating";
+    import type { RatingDimensions } from "$lib/core/entities/OfficialPerformanceRating";
     import { validate_rating_input } from "$lib/core/entities/OfficialPerformanceRating";
     import {
         get_official_performance_rating_use_cases,
@@ -13,11 +10,20 @@
     } from "$lib/infrastructure/registry/useCaseFactories";
     import StarRatingInput from "$lib/presentation/components/ui/StarRatingInput.svelte";
     import Toast from "$lib/presentation/components/ui/Toast.svelte";
+    import { resolve_official_rating_submit_feedback } from "$lib/presentation/logic/officialRatingPanelFeedback";
     import {
-        load_official_rating_states,
+        load_official_rating_panel,
         OFFICIAL_RATING_DIMENSIONS,
         type OfficialRatingState,
     } from "$lib/presentation/logic/officialRatingPanelState";
+    import type { ToastType } from "$lib/presentation/logic/toastConfig";
+
+    import {
+        build_official_rating_submit_input,
+        OFFICIAL_RATING_PANEL_STATUS,
+        type OfficialRatingPanelViewState,
+    } from "./official/officialRatingPanelViewState";
+    import { TOAST_TYPE } from "./ui/toastTypes";
 
     function get_rating_dim(
         rating: RatingDimensions & { notes: string },
@@ -45,38 +51,42 @@
     const official_use_cases = get_official_use_cases();
 
     let official_states: OfficialRatingState[] = [];
-    let is_loading = true;
+    let panel_state: OfficialRatingPanelViewState = {
+        status: OFFICIAL_RATING_PANEL_STATUS.LOADING,
+    };
     let toast_message = "";
-    let toast_type: "success" | "error" = "success";
+    let toast_type: ToastType = TOAST_TYPE.SUCCESS;
     let toast_visible = false;
 
     async function load_officials_and_existing_ratings(): Promise<void> {
-        is_loading = true;
-        official_states = await load_official_rating_states(
-            fixture_id,
-            organization_id,
-            assigned_official_ids,
-            rater_user_id,
+        panel_state = { status: OFFICIAL_RATING_PANEL_STATUS.LOADING };
+        const panel_result = await load_official_rating_panel(
+            {
+                fixture_id,
+                organization_id,
+                assigned_official_ids,
+                rater_user_id,
+            },
             { official_use_cases, rating_use_cases },
         );
-        is_loading = false;
+        if (!panel_result.success) {
+            panel_state = {
+                status: OFFICIAL_RATING_PANEL_STATUS.FAILED,
+                message: panel_result.error,
+            };
+            return;
+        }
+        official_states = panel_result.data;
+        panel_state = { status: OFFICIAL_RATING_PANEL_STATUS.READY };
     }
 
     async function submit_rating(state: OfficialRatingState): Promise<void> {
-        const input: CreateOfficialPerformanceRatingInput = {
+        const input = build_official_rating_submit_input(state, {
             organization_id,
-            official_id: state.official.id,
             fixture_id,
             rater_user_id,
             rater_role,
-            overall: state.rating.overall,
-            decision_accuracy: state.rating.decision_accuracy,
-            game_control: state.rating.game_control,
-            communication: state.rating.communication,
-            fitness: state.rating.fitness,
-            notes: state.rating.notes,
-            submitted_at: new Date().toISOString(),
-        };
+        });
 
         const errors = validate_rating_input(input);
         state.validation_errors = errors;
@@ -90,16 +100,14 @@
         const result = await rating_use_cases.submit_or_update_rating(input);
 
         state.is_saving = false;
-        if (result.success && result.data) {
-            state.existing_id = result.data.id;
-            toast_message = `Rating submitted for ${get_official_full_name(state.official)}`;
-            toast_type = "success";
-        } else {
-            toast_message = !result.success
-                ? result.error
-                : "Failed to submit rating";
-            toast_type = "error";
-        }
+        if (result.success) state.existing_id = result.data.id;
+        const feedback = resolve_official_rating_submit_feedback(result, {
+            fixture_id,
+            official_id: state.official.id,
+            official_name: get_official_full_name(state.official),
+        });
+        toast_message = feedback.toast_message;
+        toast_type = feedback.toast_type;
         toast_visible = true;
         official_states = official_states;
     }
@@ -113,8 +121,12 @@
     bind:is_visible={toast_visible}
 />
 
-{#if is_loading}
+{#if panel_state.status === OFFICIAL_RATING_PANEL_STATUS.LOADING}
     <p class="text-center text-sm text-gray-500 py-4">Loading officials...</p>
+{:else if panel_state.status === OFFICIAL_RATING_PANEL_STATUS.FAILED}
+    <p class="text-center text-sm text-red-600 py-4" role="alert">
+        {panel_state.message}
+    </p>
 {:else if official_states.length === 0}
     <p class="text-center text-sm text-gray-400 py-4">
         No officials assigned to this fixture.

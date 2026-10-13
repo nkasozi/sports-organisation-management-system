@@ -18,6 +18,13 @@ export const TEAM_PUBLIC_PROFILE_MESSAGE = {
   unavailable: "Team information not available",
 } as const;
 
+export const TEAM_PUBLIC_PROFILE_EVENT = {
+  PROFILE_NOT_FOUND: "team_public_profile_not_found",
+  PROFILE_RESTRICTED: "team_public_profile_restricted",
+  TEAM_UNAVAILABLE: "team_public_profile_team_unavailable",
+  LINKS_UNAVAILABLE: "team_public_profile_links_unavailable",
+} as const;
+
 export const TEAM_PUBLIC_PROFILE_LOAD_ERROR_KIND = {
   not_found: "not_found",
   restricted: "restricted",

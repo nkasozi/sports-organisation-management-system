@@ -19,8 +19,15 @@ import {
   search_audit_logs_from_convex,
 } from "../../infrastructure/sync/convexAuditLogService";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
 
 const ENTITY_PREFIX = "aud";
+
+enum AUDIT_LOG_EVENT {
+  CONVEX_QUERY_SUCCEEDED = "audit_log_convex_query_succeeded",
+  CONVEX_QUERY_FALLBACK = "audit_log_convex_query_fallback_to_local",
+  LOCAL_QUERY_STARTED = "audit_log_local_query_started",
+}
 
 class InBrowserAuditLogRepository
   extends InBrowserBaseRepository<
@@ -125,34 +132,41 @@ class InBrowserAuditLogRepository
     filter?: AuditLogFilter,
     options?: QueryOptions,
   ): PaginatedAsyncResult<AuditLog> {
-    if (is_convex_available()) {
-      const convex_result = await search_audit_logs_from_convex(filter || {}, {
-        page_number: options?.page_number || 1,
-        page_size: options?.page_size || AUDIT_LOG_PAGE_SIZE,
+    if (!is_convex_available()) return this.find_all_locally(filter, options);
+    const convex_result = await search_audit_logs_from_convex(filter || {}, {
+      page_number: options?.page_number || 1,
+      page_size: options?.page_size || AUDIT_LOG_PAGE_SIZE,
+    });
+    if (!convex_result.success) {
+      console.warn("[AuditLog] Convex query failed, falling back to local", {
+        event: AUDIT_LOG_EVENT.CONVEX_QUERY_FALLBACK,
+        organization_id: filter?.organization_id,
+        error: convex_result.error_message,
       });
-
-      if (convex_result.success) {
-        console.log(
-          `[AuditLog] Fetched ${convex_result.data.length} logs from Convex`,
-        );
-        const page_size = convex_result.page_size;
-        const total_count = convex_result.total_count;
-        return create_success_result({
-          items: convex_result.data,
-          total_count: total_count,
-          page_number: convex_result.page_number,
-          page_size: page_size,
-          total_pages: Math.ceil(total_count / page_size),
-        });
-      }
-
-      console.warn(
-        "[AuditLog] Convex query failed, falling back to local:",
-        convex_result.error_message,
-      );
+      return this.find_all_locally(filter, options);
     }
+    console.log("[AuditLog] Fetched logs from Convex", {
+      event: AUDIT_LOG_EVENT.CONVEX_QUERY_SUCCEEDED,
+      log_count: convex_result.data.length,
+    });
+    return create_success_result({
+      items: convex_result.data,
+      total_count: convex_result.total_count,
+      page_number: convex_result.page_number,
+      page_size: convex_result.page_size,
+      total_pages: Math.ceil(
+        convex_result.total_count / convex_result.page_size,
+      ),
+    });
+  }
 
-    console.log("[AuditLog] Querying local database");
+  private find_all_locally(
+    filter?: AuditLogFilter,
+    options?: QueryOptions,
+  ): PaginatedAsyncResult<AuditLog> {
+    console.log("[AuditLog] Querying local database", {
+      event: AUDIT_LOG_EVENT.LOCAL_QUERY_STARTED,
+    });
     return super.find_all(filter, options);
   }
 
@@ -165,24 +179,9 @@ class InBrowserAuditLogRepository
   }
 }
 
-type AuditLogRepositoryState =
-  | { status: "uninitialized" }
-  | {
-      status: "ready";
-      repository: InBrowserAuditLogRepository;
-    };
-
-let audit_log_repository_state: AuditLogRepositoryState = {
-  status: "uninitialized",
-};
+const get_concrete_repository: () => InBrowserAuditLogRepository =
+  create_lazy_repository_accessor(() => new InBrowserAuditLogRepository());
 
 export function get_audit_log_repository(): InBrowserAuditLogRepository {
-  if (audit_log_repository_state.status === "ready") {
-    return audit_log_repository_state.repository;
-  }
-
-  const repository = new InBrowserAuditLogRepository();
-  audit_log_repository_state = { status: "ready", repository };
-
-  return repository;
+  return get_concrete_repository();
 }

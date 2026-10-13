@@ -4,6 +4,12 @@ import type {
   ScalarInput,
 } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
+import {
+  check_condition,
+  collect_validation_errors,
+  type FieldCheck,
+  is_blank_text,
+} from "./EntityValidation";
 
 export interface OfficialAssociatedTeam extends BaseEntity {
   official_id: EntityId;
@@ -15,20 +21,46 @@ export interface OfficialAssociatedTeam extends BaseEntity {
   status: EntityStatus;
 }
 
-export type OfficialTeamAssociationType =
-  | "current_member"
-  | "former_member"
-  | "family_connection"
-  | "financial_interest"
-  | "other";
+export const OFFICIAL_TEAM_ASSOCIATION_TYPE = {
+  CURRENT_MEMBER: "current_member",
+  FORMER_MEMBER: "former_member",
+  FAMILY_CONNECTION: "family_connection",
+  FINANCIAL_INTEREST: "financial_interest",
+  OTHER: "other",
+} as const;
 
-export const OFFICIAL_TEAM_ASSOCIATION_TYPE_OPTIONS = [
-  { value: "current_member", label: "Current Member" },
-  { value: "former_member", label: "Former Member" },
-  { value: "family_connection", label: "Family Connection" },
-  { value: "financial_interest", label: "Financial Interest" },
-  { value: "other", label: "Other" },
-];
+export type OfficialTeamAssociationType =
+  (typeof OFFICIAL_TEAM_ASSOCIATION_TYPE)[keyof typeof OFFICIAL_TEAM_ASSOCIATION_TYPE];
+
+const OFFICIAL_TEAM_ASSOCIATION_TYPE_LABELS: Readonly<
+  Record<OfficialTeamAssociationType, string>
+> = {
+  current_member: "Current Member",
+  former_member: "Former Member",
+  family_connection: "Family Connection",
+  financial_interest: "Financial Interest",
+  other: "Other",
+};
+
+const VALID_ASSOCIATION_TYPES: ReadonlySet<string> = new Set(
+  Object.values(OFFICIAL_TEAM_ASSOCIATION_TYPE),
+);
+
+const OFFICIAL_ASSOCIATED_TEAM_MESSAGES = {
+  OFFICIAL_REQUIRED: "Official is required",
+  TEAM_REQUIRED: "Team is required",
+  ASSOCIATION_TYPE_REQUIRED: "Association type is required",
+  ASSOCIATION_TYPE_INVALID: "Invalid association type",
+  END_BEFORE_START: "End date cannot be before start date",
+} as const;
+
+export const OFFICIAL_TEAM_ASSOCIATION_TYPE_OPTIONS: {
+  value: OfficialTeamAssociationType;
+  label: string;
+}[] = Object.values(OFFICIAL_TEAM_ASSOCIATION_TYPE).map((value) => ({
+  value,
+  label: OFFICIAL_TEAM_ASSOCIATION_TYPE_LABELS[value],
+}));
 
 export type CreateOfficialAssociatedTeamInput = Omit<
   ScalarInput<OfficialAssociatedTeam>,
@@ -38,65 +70,36 @@ export type CreateOfficialAssociatedTeamInput = Omit<
 export type UpdateOfficialAssociatedTeamInput =
   Partial<CreateOfficialAssociatedTeamInput>;
 
-function create_empty_official_associated_team_input(
-  official_id: CreateOfficialAssociatedTeamInput["official_id"] = "",
-): CreateOfficialAssociatedTeamInput {
-  return {
-    official_id,
-    team_id: "",
-    association_type: "current_member",
-    start_date: "",
-    end_date: "",
-    notes: "",
-    status: "active",
-  };
-}
-
 export function validate_official_associated_team_input(
   input: CreateOfficialAssociatedTeamInput,
 ): string[] {
-  const validation_errors: string[] = [];
-
-  if (!input.official_id?.trim()) {
-    validation_errors.push("Official is required");
-  }
-
-  if (!input.team_id?.trim()) {
-    validation_errors.push("Team is required");
-  }
-
-  if (!input.association_type) {
-    validation_errors.push("Association type is required");
-  }
-
-  const valid_association_types: OfficialTeamAssociationType[] = [
-    "current_member",
-    "former_member",
-    "family_connection",
-    "financial_interest",
-    "other",
-  ];
-
-  if (!valid_association_types.includes(input.association_type)) {
-    validation_errors.push("Invalid association type");
-  }
-
-  if (input.start_date && input.end_date) {
-    const start = new Date(input.start_date);
-    const end = new Date(input.end_date);
-    if (end < start) {
-      validation_errors.push("End date cannot be before start date");
-    }
-  }
-
-  return validation_errors;
+  return collect_validation_errors([
+    check_condition(
+      !is_blank_text(input.official_id),
+      OFFICIAL_ASSOCIATED_TEAM_MESSAGES.OFFICIAL_REQUIRED,
+    ),
+    check_condition(
+      !is_blank_text(input.team_id),
+      OFFICIAL_ASSOCIATED_TEAM_MESSAGES.TEAM_REQUIRED,
+    ),
+    check_condition(
+      Boolean(input.association_type),
+      OFFICIAL_ASSOCIATED_TEAM_MESSAGES.ASSOCIATION_TYPE_REQUIRED,
+    ),
+    check_condition(
+      VALID_ASSOCIATION_TYPES.has(input.association_type),
+      OFFICIAL_ASSOCIATED_TEAM_MESSAGES.ASSOCIATION_TYPE_INVALID,
+    ),
+    check_association_date_order(input),
+  ]);
 }
 
-function get_association_type_label(
-  association_type: OfficialTeamAssociationType,
-): string {
-  const option = OFFICIAL_TEAM_ASSOCIATION_TYPE_OPTIONS.find(
-    (opt) => opt.value === association_type,
+function check_association_date_order(
+  input: CreateOfficialAssociatedTeamInput,
+): FieldCheck {
+  const has_both_dates = Boolean(input.start_date) && Boolean(input.end_date);
+  return check_condition(
+    !has_both_dates || new Date(input.end_date) >= new Date(input.start_date),
+    OFFICIAL_ASSOCIATED_TEAM_MESSAGES.END_BEFORE_START,
   );
-  return option?.label || association_type;
 }

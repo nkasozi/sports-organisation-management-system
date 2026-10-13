@@ -5,8 +5,20 @@ import type {
   ScalarValueInput,
 } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
+import { is_blank_text } from "./EntityValidation";
+import {
+  build_profile_slug,
+  INVALID_PROFILE_VISIBILITY_MESSAGE,
+  is_invalid_profile_visibility,
+  PROFILE_VISIBILITY,
+  PROFILE_VISIBILITY_SELECT_OPTIONS,
+  type ProfileVisibility,
+} from "./ProfileVisibility";
+import { ENTITY_STATUS } from "./StatusConstants";
 
-export type ProfileVisibility = "public" | "private";
+const PLAYER_REQUIRED_MESSAGE = "Player is required";
+
+export type { ProfileVisibility } from "./ProfileVisibility";
 
 export interface PlayerProfile extends BaseEntity {
   player_id: EntityId;
@@ -29,10 +41,7 @@ export type UpdatePlayerProfileInput = Partial<
   >
 >;
 
-export const PROFILE_VISIBILITY_OPTIONS = [
-  { value: "public", label: "Public - Anyone with the link can view" },
-  { value: "private", label: "Private - Only you can view" },
-];
+export const PROFILE_VISIBILITY_OPTIONS = PROFILE_VISIBILITY_SELECT_OPTIONS;
 
 export function create_empty_player_profile_input(
   player_id: CreatePlayerProfileInput["player_id"] = "",
@@ -40,10 +49,10 @@ export function create_empty_player_profile_input(
   return {
     player_id,
     profile_summary: "",
-    visibility: "private",
+    visibility: PROFILE_VISIBILITY.PRIVATE,
     profile_slug: "",
     featured_image_url: "",
-    status: "active",
+    status: ENTITY_STATUS.ACTIVE,
   };
 }
 
@@ -52,33 +61,18 @@ export function generate_profile_slug(
   last_name: ScalarValueInput<Name>,
   player_id: ScalarValueInput<PlayerProfile["player_id"]>,
 ): string {
-  const name_part = `${first_name}-${last_name}`
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-  const id_suffix = player_id.slice(-6);
-  return `${name_part}-${id_suffix}`;
+  return build_profile_slug(`${first_name}-${last_name}`, player_id);
 }
 
 export function validate_player_profile_input(
   input: CreatePlayerProfileInput | UpdatePlayerProfileInput,
 ): { is_valid: boolean; errors: Record<string, string> } {
   const errors: Record<string, string> = {};
-
-  if (
-    "player_id" in input &&
-    (!input.player_id || input.player_id.trim() === "")
-  ) {
-    errors.player_id = "Player is required";
+  if ("player_id" in input && is_blank_text(input.player_id)) {
+    errors.player_id = PLAYER_REQUIRED_MESSAGE;
   }
-
-  if (input.visibility && !["public", "private"].includes(input.visibility)) {
-    errors.visibility = "Visibility must be public or private";
+  if (is_invalid_profile_visibility(input.visibility)) {
+    errors.visibility = INVALID_PROFILE_VISIBILITY_MESSAGE;
   }
-
-  return {
-    is_valid: Object.keys(errors).length === 0,
-    errors,
-  };
+  return { is_valid: Object.keys(errors).length === 0, errors };
 }

@@ -3,9 +3,7 @@
         Competition,
         UpdateCompetitionInput,
     } from "$lib/core/entities/Competition";
-    import type {
-        TieBreaker,
-    } from "$lib/core/entities/CompetitionFormat";
+    import type { TieBreaker } from "$lib/core/entities/CompetitionFormat";
     import type { Team } from "$lib/core/entities/Team";
     import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
     import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
@@ -14,6 +12,8 @@
         CompetitionEditSelectedFormatState,
         CompetitionEditSelectedSportState,
     } from "$lib/presentation/logic/competitionEditPageContracts";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
+    import type { ToastType } from "$lib/presentation/logic/toastConfig";
 
     import CompetitionEditShell from "./CompetitionEditShell.svelte";
 
@@ -22,10 +22,10 @@
     export let organization_options: SelectOption[];
     export let competition_format_options: SelectOption[];
     export let selected_format_state: CompetitionEditSelectedFormatState = {
-        status: "missing",
+        status: PRESENCE_STATUS.MISSING,
     };
     export let selected_sport_state: CompetitionEditSelectedSportState = {
-        status: "missing",
+        status: PRESENCE_STATUS.MISSING,
     };
     export let teams_in_competition: Team[];
     export let available_teams: Team[];
@@ -39,7 +39,7 @@
     export let status_label: string;
     export let toast_visible: boolean;
     export let toast_message: string;
-    export let toast_type: "success" | "error" | "info";
+    export let toast_type: ToastType;
     export let on_cancel: () => void;
     export let on_submit: () => Promise<void>;
     export let on_done: () => void;

@@ -28,20 +28,20 @@ export function draw_goals_section(
   const goal_headers = [["TEAM", "Minute", "No.", "Action", "Score"]];
   const col_widths = [15, 12, 10, 12, 15];
 
-  const left_table_final_y = draw_left_goals_table(
+  const left_table_final_y = draw_goals_table(
     doc,
     left_goals,
     goal_headers,
     col_widths,
-    y,
+    { y, margin_left: MARGIN_LEFT },
   );
 
-  const right_table_final_y = draw_right_goals_table(
+  const right_table_final_y = draw_goals_table(
     doc,
     right_goals,
     goal_headers,
     col_widths,
-    y,
+    { y, margin_left: PAGE_WIDTH / 2 + 5 },
   );
 
   return Math.max(left_table_final_y, right_table_final_y) + 3;
@@ -57,92 +57,41 @@ function build_goal_row_data(goals: MatchGoalEntry[]): string[][] {
   ]);
 }
 
-function draw_left_goals_table(
+const GOAL_TABLE_BLACK: [number, number, number] = [0, 0, 0];
+const GOAL_TABLE_WHITE: [number, number, number] = [255, 255, 255];
+
+function draw_goals_table(
   doc: jsPDF,
-  left_goals: MatchGoalEntry[],
+  goals: MatchGoalEntry[],
   goal_headers: string[][],
   col_widths: number[],
-  y: number,
+  table_position: { y: number; margin_left: number },
 ): number {
-  if (left_goals.length === 0) return y;
-
-  const left_data = build_goal_row_data(left_goals);
+  const y = table_position.y;
+  if (goals.length === 0) return y;
 
   autoTable(doc, {
     startY: y,
     head: goal_headers,
-    body: left_data,
+    body: build_goal_row_data(goals),
     theme: "grid",
     styles: {
       fontSize: FONT_SIZE_SMALL,
       cellPadding: 1,
       halign: "center",
-      lineColor: [0, 0, 0],
+      lineColor: GOAL_TABLE_BLACK,
       lineWidth: 0.3,
     },
     headStyles: {
-      fillColor: [255, 255, 255],
-      textColor: [0, 0, 0],
+      fillColor: GOAL_TABLE_WHITE,
+      textColor: GOAL_TABLE_BLACK,
       fontStyle: "bold",
     },
-    bodyStyles: {
-      fillColor: [255, 255, 255],
-      textColor: [0, 0, 0],
-    },
-    columnStyles: {
-      0: { cellWidth: col_widths[0] },
-      1: { cellWidth: col_widths[1] },
-      2: { cellWidth: col_widths[2] },
-      3: { cellWidth: col_widths[3] },
-      4: { cellWidth: col_widths[4] },
-    },
-    margin: { left: MARGIN_LEFT },
-    tableWidth: HALF_WIDTH - 10,
-  });
-
-  return (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? y;
-}
-
-function draw_right_goals_table(
-  doc: jsPDF,
-  right_goals: MatchGoalEntry[],
-  goal_headers: string[][],
-  col_widths: number[],
-  y: number,
-): number {
-  if (right_goals.length === 0) return y;
-
-  const right_data = build_goal_row_data(right_goals);
-
-  autoTable(doc, {
-    startY: y,
-    head: goal_headers,
-    body: right_data,
-    theme: "grid",
-    styles: {
-      fontSize: FONT_SIZE_SMALL,
-      cellPadding: 1,
-      halign: "center",
-      lineColor: [0, 0, 0],
-      lineWidth: 0.3,
-    },
-    headStyles: {
-      fillColor: [255, 255, 255],
-      textColor: [0, 0, 0],
-      fontStyle: "bold",
-    },
-    bodyStyles: {
-      fillColor: [255, 255, 255],
-      textColor: [0, 0, 0],
-    },
-    columnStyles: {
-      0: { cellWidth: col_widths[0] },
-      1: { cellWidth: col_widths[1] },
-      2: { cellWidth: col_widths[2] },
-      3: { cellWidth: col_widths[3] },
-      4: { cellWidth: col_widths[4] },
-    },
-    margin: { left: PAGE_WIDTH / 2 + 5 },
+    bodyStyles: { fillColor: GOAL_TABLE_WHITE, textColor: GOAL_TABLE_BLACK },
+    columnStyles: Object.fromEntries(
+      col_widths.slice(0, 5).map((cellWidth, index) => [index, { cellWidth }]),
+    ),
+    margin: { left: table_position.margin_left },
     tableWidth: HALF_WIDTH - 10,
   });
 

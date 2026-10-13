@@ -7,6 +7,8 @@ import type {
   Name,
 } from "$lib/core/types/DomainScalars";
 
+import type { EVENT_TYPE } from "./eventBusConstants";
+
 export type EventHandler<T = unknown> = (payload: T) => unknown;
 
 export interface EventSubscription {
@@ -48,12 +50,7 @@ export interface PageViewedPayload {
   user_context?: UserContext;
 }
 
-export type EventType =
-  | "entity_created"
-  | "entity_updated"
-  | "entity_deleted"
-  | "access_denied"
-  | "page_viewed";
+export type EventType = (typeof EVENT_TYPE)[keyof typeof EVENT_TYPE];
 
 export interface UserContext {
   user_id: EntityId;

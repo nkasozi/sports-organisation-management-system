@@ -1,10 +1,17 @@
 <script lang="ts">
     import type { QuickEventButton } from "$lib/core/entities/Fixture";
+    import { type Option, OptionStatus } from "$lib/core/types/Option";
     import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
 
+    import type { GameTeamSide } from "./gameDisplayConstants";
+    import {
+        get_selected_team_side_class,
+        get_selected_team_side_label,
+    } from "./gameDisplayConstants";
+
     export let is_visible: boolean;
-    export let selected_event_type: QuickEventButton | undefined;
-    export let selected_team_side: "home" | "away";
+    export let selected_event_type_option: Option<QuickEventButton>;
+    export let selected_team_side: GameTeamSide;
     export let home_team_name: string;
     export let away_team_name: string;
     export let event_minute: number;
@@ -27,7 +34,9 @@
     export let on_event_description_change: (description: string) => void;
 </script>
 
-{#if is_visible && selected_event_type}<div
+{#if is_visible && selected_event_type_option.status === OptionStatus.SOME}{@const selected_event_type =
+        selected_event_type_option.value}
+    <div
         class="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
     >
         <div
@@ -43,10 +52,12 @@
                             {selected_event_type.label}
                         </h3>
                         <span
-                            class={`text-xs ${selected_team_side === "home" ? "text-blue-600" : "text-red-600"}`}
-                            >{selected_team_side === "home"
-                                ? `🏠 ${home_team_name}`
-                                : `✈️ ${away_team_name}`}</span
+                            class={`text-xs ${get_selected_team_side_class(selected_team_side)}`}
+                            >{get_selected_team_side_label(
+                                selected_team_side,
+                                home_team_name,
+                                away_team_name,
+                            )}</span
                         >
                     </div>
                 </div>

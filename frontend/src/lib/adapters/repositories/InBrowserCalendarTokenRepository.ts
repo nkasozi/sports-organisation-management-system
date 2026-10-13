@@ -26,7 +26,43 @@ import {
   create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import {
+  apply_entity_filter_rules,
+  type EntityFilterRule,
+  equals_rule,
+  FILTER_RULE_ACTIVATION,
+} from "./InBrowserRepositoryFilterRules";
+import {
+  create_warning_failure_details,
+  type RepositoryFailureDetails,
+  run_repository_query,
+} from "./InBrowserRepositoryQueryRunner";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
 const ENTITY_PREFIX = "cal_token";
+const TOKEN_NOT_FOUND_ERROR = "Token not found";
+
+const TOKEN_FILTER_RULES: EntityFilterRule<
+  CalendarToken,
+  CalendarTokenFilter
+>[] = [
+  equals_rule("user_id"),
+  equals_rule("organization_id"),
+  equals_rule("feed_type"),
+  equals_rule("entity_id"),
+  equals_rule("is_active", FILTER_RULE_ACTIVATION.WHEN_KEY_PRESENT),
+];
+
+function describe_token_failure(
+  summary: string,
+  event_name: string,
+): RepositoryFailureDetails {
+  return create_warning_failure_details(
+    `[CalendarTokenRepository] ${summary}`,
+    `repository_${event_name}_failed`,
+    summary.replace("Failed to ", ""),
+  );
+}
+
 class InBrowserCalendarTokenRepository
   extends InBrowserBaseRepository<
     CalendarToken,
@@ -72,55 +108,21 @@ class InBrowserCalendarTokenRepository
     entities: CalendarToken[],
     filter: CalendarTokenFilter,
   ): CalendarToken[] {
-    let filtered = entities;
-    if (filter.user_id) {
-      filtered = filtered.filter((token) => token.user_id === filter.user_id);
-    }
-    if (filter.organization_id) {
-      filtered = filtered.filter(
-        (token) => token.organization_id === filter.organization_id,
-      );
-    }
-    if (filter.feed_type) {
-      filtered = filtered.filter(
-        (token) => token.feed_type === filter.feed_type,
-      );
-    }
-    if (filter.entity_id) {
-      filtered = filtered.filter(
-        (token) => token.entity_id === filter.entity_id,
-      );
-    }
-    if ("is_active" in filter) {
-      filtered = filtered.filter(
-        (token) => token.is_active === filter.is_active,
-      );
-    }
-
-    return filtered;
+    return apply_entity_filter_rules(entities, filter, TOKEN_FILTER_RULES);
   }
 
   async find_by_token(token: CalendarTokenValue): AsyncResult<CalendarToken> {
-    try {
-      const all_tokens = await this.database.calendar_tokens.toArray();
-      const found_token = all_tokens.find(
-        (t) => t.token === token && t.is_active,
-      );
-      if (!found_token) {
-        return create_failure_result(
-          build_calendar_token_not_found_error(token),
-        );
-      }
-      return create_success_result(found_token);
-    } catch (error) {
-      console.warn("[CalendarTokenRepository] Failed to find token", {
-        event: "repository_find_token_failed",
-        error: String(error),
-      });
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(`Failed to find token: ${error_message}`);
-    }
+    return run_repository_query(
+      describe_token_failure("Failed to find token", "find_token"),
+      async () => {
+        const found_token = (
+          await this.database.calendar_tokens.toArray()
+        ).find((t) => t.token === token && t.is_active);
+        return found_token
+          ? create_success_result(found_token)
+          : create_failure_result(build_calendar_token_not_found_error(token));
+      },
+    );
   }
 
   async find_by_user(
@@ -138,83 +140,47 @@ class InBrowserCalendarTokenRepository
   }
 
   async record_access(token: CalendarTokenValue): AsyncResult<CalendarToken> {
-    try {
-      const all_tokens = await this.database.calendar_tokens.toArray();
-      const found_token = all_tokens.find((t) => t.token === token);
-
-      if (!found_token) {
-        return create_failure_result("Token not found");
-      }
-
-      const updated_token: CalendarToken = {
+    return this.update_token_by_value(
+      token,
+      describe_token_failure("Failed to record access", "record_access"),
+      (found_token) => ({
         ...found_token,
         last_accessed_at:
           new Date().toISOString() as CalendarToken["last_accessed_at"],
         access_count: found_token.access_count + 1,
-        updated_at: new Date().toISOString() as CalendarToken["updated_at"],
-      };
-
-      await this.database.calendar_tokens.put(updated_token);
-      return create_success_result(updated_token);
-    } catch (error) {
-      console.warn("[CalendarTokenRepository] Failed to record access", {
-        event: "repository_record_access_failed",
-        error: String(error),
-      });
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(`Failed to record access: ${error_message}`);
-    }
+      }),
+    );
   }
 
   async deactivate_token(
     token: CalendarTokenValue,
   ): AsyncResult<CalendarToken> {
-    try {
-      const all_tokens = await this.database.calendar_tokens.toArray();
-      const found_token = all_tokens.find((t) => t.token === token);
+    return this.update_token_by_value(
+      token,
+      describe_token_failure("Failed to deactivate token", "deactivate_token"),
+      (found_token) => ({ ...found_token, is_active: false }),
+    );
+  }
 
-      if (!found_token) {
-        return create_failure_result("Token not found");
-      }
-
+  private update_token_by_value(
+    token: CalendarTokenValue,
+    failure: RepositoryFailureDetails,
+    change: (found_token: CalendarToken) => CalendarToken,
+  ): AsyncResult<CalendarToken> {
+    return run_repository_query(failure, async () => {
+      const found_token = (await this.database.calendar_tokens.toArray()).find(
+        (t) => t.token === token,
+      );
+      if (!found_token) return create_failure_result(TOKEN_NOT_FOUND_ERROR);
       const updated_token: CalendarToken = {
-        ...found_token,
-        is_active: false,
+        ...change(found_token),
         updated_at: new Date().toISOString() as CalendarToken["updated_at"],
       };
-
       await this.database.calendar_tokens.put(updated_token);
       return create_success_result(updated_token);
-    } catch (error) {
-      console.warn("[CalendarTokenRepository] Failed to deactivate token", {
-        event: "repository_deactivate_token_failed",
-        error: String(error),
-      });
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to deactivate token: ${error_message}`,
-      );
-    }
+    });
   }
 }
 
-type CalendarTokenRepositoryState =
-  | { status: "uninitialized" }
-  | { status: "ready"; repository: InBrowserCalendarTokenRepository };
-
-let calendar_token_repository_state: CalendarTokenRepositoryState = {
-  status: "uninitialized",
-};
-
-export function get_calendar_token_repository(): CalendarTokenRepository {
-  if (calendar_token_repository_state.status === "ready") {
-    return calendar_token_repository_state.repository;
-  }
-
-  const repository = new InBrowserCalendarTokenRepository();
-  calendar_token_repository_state = { status: "ready", repository };
-
-  return repository;
-}
+export const get_calendar_token_repository: () => CalendarTokenRepository =
+  create_lazy_repository_accessor(() => new InBrowserCalendarTokenRepository());

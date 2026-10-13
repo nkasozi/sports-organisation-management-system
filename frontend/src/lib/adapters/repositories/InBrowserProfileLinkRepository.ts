@@ -6,18 +6,23 @@ import type {
   ProfileLink,
   UpdateProfileLinkInput,
 } from "../../core/entities/ProfileLink";
+import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 import type {
   ProfileLinkFilter,
   ProfileLinkRepository,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
-import type { PaginatedAsyncResult } from "../../core/types/Result";
-import {
-  create_failure_result,
-  create_success_result,
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
-import { format_repository_error } from "./InBrowserBaseRepositoryHelpers";
+import { create_default_profile_links } from "./InBrowserProfileLinkRepositoryDefaults";
+import { find_all_entities_in_custom_order } from "./InBrowserRepositoryPagedQueries";
+import { create_warning_failure_details } from "./InBrowserRepositoryQueryRunner";
+import { reset_repository_data } from "./InBrowserRepositoryReset";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
+import type { RepositoryWriteOrigin } from "./InBrowserRepositoryWriteOrigin";
 
 const ENTITY_PREFIX = "profilelink";
 
@@ -85,113 +90,48 @@ export class InBrowserProfileLinkRepository
     return filtered;
   }
 
-  async find_by_filter(
+  find_by_filter(
     filter: ProfileLinkFilter,
     options?: QueryOptions,
   ): PaginatedAsyncResult<ProfileLink> {
-    try {
-      let filtered_entities = await this.database.profile_links.toArray();
-      filtered_entities = this.apply_entity_filter(filtered_entities, filter);
-      filtered_entities.sort((a, b) => a.display_order - b.display_order);
-      const total_count = filtered_entities.length;
-      const paginated_entities = this.apply_pagination(
-        filtered_entities,
-        options,
-      );
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      console.warn("[ProfileLinkRepository] Failed to filter profile links", {
-        event: "repository_filter_profile_links_failed",
-        error: String(error),
-      });
-      return create_failure_result(
-        format_repository_error(error, "filter profile links"),
-      );
-    }
+    return find_all_entities_in_custom_order({
+      table: this.database.profile_links,
+      filter,
+      apply_filter: this.apply_entity_filter.bind(this),
+      order: (links) =>
+        [...links].sort((a, b) => a.display_order - b.display_order),
+      options: options ?? {},
+      failure: create_warning_failure_details(
+        "[ProfileLinkRepository] Failed to filter profile links",
+        "repository_filter_profile_links_failed",
+        "filter profile links",
+      ),
+    });
   }
 
   async find_by_profile_id(
     profile_id: ProfileLink["profile_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<ProfileLink> {
-    return this.find_by_filter({ profile_id, status: "active" }, options);
+    return this.find_by_filter(
+      { profile_id, status: ENTITY_STATUS.ACTIVE },
+      options,
+    );
   }
 }
 
-function create_default_profile_links(): import("$lib/core/types/DomainScalars").ScalarInput<ProfileLink>[] {
-  const now = new Date().toISOString();
-  return [
-    {
-      id: "profilelink_default_1",
-      profile_id: "player_profile_default_1",
-      platform: "twitter",
-      title: "Official Twitter",
-      url: "https://twitter.com/ugandahockey",
-      display_order: 1,
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "profilelink_default_2",
-      profile_id: "player_profile_default_1",
-      platform: "instagram",
-      title: "Instagram",
-      url: "https://instagram.com/ugandahockey",
-      display_order: 2,
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "profilelink_default_3",
-      profile_id: "team_profile_default_1",
-      platform: "facebook",
-      title: "Team Facebook Page",
-      url: "https://facebook.com/weatherheadfc",
-      display_order: 1,
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "profilelink_default_4",
-      profile_id: "team_profile_default_1",
-      platform: "website",
-      title: "Official Website",
-      url: "https://weatherheadfc.ug",
-      display_order: 2,
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-  ];
-}
-
-type ProfileLinkRepositoryState =
-  | { status: "uninitialized" }
-  | { status: "ready"; repository: InBrowserProfileLinkRepository };
-
-let profile_link_repository_state: ProfileLinkRepositoryState = {
-  status: "uninitialized",
-};
+const get_concrete_repository: () => InBrowserProfileLinkRepository =
+  create_lazy_repository_accessor(() => new InBrowserProfileLinkRepository());
 
 export function get_profile_link_repository(): ProfileLinkRepository {
-  if (profile_link_repository_state.status === "ready") {
-    return profile_link_repository_state.repository;
-  }
-
-  const repository = new InBrowserProfileLinkRepository();
-  profile_link_repository_state = { status: "ready", repository };
-
-  return repository;
+  return get_concrete_repository();
 }
 
-export async function reset_profile_link_repository(): Promise<void> {
-  const repository =
-    get_profile_link_repository() as InBrowserProfileLinkRepository;
-  await repository.clear_all_data();
-  await repository.seed_with_data(create_default_profile_links());
+export function reset_profile_link_repository(
+  origin: RepositoryWriteOrigin,
+): AsyncResult<number> {
+  return reset_repository_data(
+    get_concrete_repository().with_write_origin(origin),
+    create_default_profile_links(),
+  );
 }

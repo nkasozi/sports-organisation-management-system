@@ -92,6 +92,32 @@ function has_valid_auth_token_timestamp(value: number): boolean {
   return Number.isFinite(value);
 }
 
+function parse_auth_token_scopes(
+  input: CreateAuthTokenPayloadCoreInput,
+): Result<Pick<AuthTokenPayloadCore, "organization_id" | "team_id">> {
+  const organization_scope_result = parse_entity_scope(
+    input.organization_id,
+    INVALID_ORGANIZATION_SCOPE_ERROR,
+  );
+  const team_scope_result = parse_entity_scope(
+    input.team_id,
+    INVALID_TEAM_SCOPE_ERROR,
+  );
+
+  if (!organization_scope_result.success) {
+    return organization_scope_result;
+  }
+
+  if (!team_scope_result.success) {
+    return team_scope_result;
+  }
+
+  return create_success_result({
+    organization_id: organization_scope_result.data,
+    team_id: team_scope_result.data,
+  });
+}
+
 export function create_auth_token_payload_core(
   input: CreateAuthTokenPayloadCoreInput,
 ): Result<AuthTokenPayloadCore> {
@@ -100,14 +126,6 @@ export function create_auth_token_payload_core(
   const display_name_result = parse_name(
     input.display_name,
     INVALID_DISPLAY_NAME_ERROR,
-  );
-  const organization_scope_result = parse_entity_scope(
-    input.organization_id,
-    INVALID_ORGANIZATION_SCOPE_ERROR,
-  );
-  const team_scope_result = parse_entity_scope(
-    input.team_id,
-    INVALID_TEAM_SCOPE_ERROR,
   );
 
   if (!user_id_result.success) {
@@ -122,12 +140,10 @@ export function create_auth_token_payload_core(
     return display_name_result;
   }
 
-  if (!organization_scope_result.success) {
-    return organization_scope_result;
-  }
+  const scopes_result = parse_auth_token_scopes(input);
 
-  if (!team_scope_result.success) {
-    return team_scope_result;
+  if (!scopes_result.success) {
+    return scopes_result;
   }
 
   return create_success_result({
@@ -135,8 +151,7 @@ export function create_auth_token_payload_core(
     email: email_result.data,
     display_name: display_name_result.data,
     role: input.role,
-    organization_id: organization_scope_result.data,
-    team_id: team_scope_result.data,
+    ...scopes_result.data,
   });
 }
 

@@ -57,7 +57,7 @@ describe("syncStoreResolveConflict", () => {
       query: vi.fn(),
     };
 
-    await execute_conflict_resolution(
+    const resolution = await execute_conflict_resolution(
       { success: true, data: convex_client },
       {
         id: "conflict-1",
@@ -75,6 +75,7 @@ describe("syncStoreResolveConflict", () => {
       },
       "keep_local",
     );
+    expect(resolution.success).toBe(true);
 
     expect(
       sync_conflict_resolution_mocks.resolve_conflict,
@@ -113,11 +114,12 @@ describe("syncStoreResolveConflict", () => {
       detected_at: "2024-01-03T00:00:00.000Z",
     };
 
-    await execute_conflict_resolution(
+    const resolution = await execute_conflict_resolution(
       { success: true, data: convex_client },
       conflict,
       "keep_remote",
     );
+    expect(resolution.success).toBe(true);
     expect(
       sync_conflict_resolution_mocks.resolve_conflict,
     ).toHaveBeenNthCalledWith(1, convex_client, {
@@ -127,7 +129,7 @@ describe("syncStoreResolveConflict", () => {
       resolution_action: "keep_remote",
     });
 
-    await execute_conflict_resolution(
+    const merge_resolution = await execute_conflict_resolution(
       { success: true, data: convex_client },
       conflict,
       "merge",
@@ -136,6 +138,7 @@ describe("syncStoreResolveConflict", () => {
         captain: "A. Example",
       },
     );
+    expect(merge_resolution.success).toBe(true);
     expect(
       sync_conflict_resolution_mocks.resolve_conflict,
     ).toHaveBeenNthCalledWith(2, convex_client, {

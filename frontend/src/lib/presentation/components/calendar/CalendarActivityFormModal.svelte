@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { Activity } from "$lib/core/entities/Activity";
     import type { ActivityCategory } from "$lib/core/entities/ActivityCategory";
+    import { ACTIVITY_SOURCE_TYPE } from "$lib/core/entities/StatusConstants";
     import type { ActivityFormValues } from "$lib/presentation/logic/calendarPageState";
 
     import CalendarActivityFormFields from "./CalendarActivityFormFields.svelte";
@@ -106,7 +107,7 @@
                 <div
                     class="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700"
                 >
-                    {#if editing_activity && editing_activity.source_type === "manual"}
+                    {#if editing_activity && editing_activity.source_type === ACTIVITY_SOURCE_TYPE.MANUAL}
                         <button
                             type="button"
                             class="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400"

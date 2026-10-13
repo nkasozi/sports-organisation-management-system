@@ -43,16 +43,18 @@ describe("liveGameDetailActions", () => {
       label: "Goal",
     } as SelectedEventType;
 
-    await record_live_game_detail_event(
-      "fixture-1",
-      selected_event_type,
-      18,
-      "home",
-      "Ada Stone",
-      "",
-      "",
-      fixture_use_cases as FixtureUseCases,
-    );
+    const record_live_game_detail_event_result =
+      await record_live_game_detail_event(
+        "fixture-1",
+        selected_event_type,
+        18,
+        "home",
+        "Ada Stone",
+        "",
+        "",
+        fixture_use_cases as FixtureUseCases,
+      );
+    expect(record_live_game_detail_event_result.success).toBe(true);
 
     expect(fixture_use_cases.record_game_event).toHaveBeenCalledWith(
       "fixture-1",

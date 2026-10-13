@@ -1,3 +1,4 @@
+import type { Mock } from "vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -15,7 +16,21 @@ vi.mock("$lib/core/services/fixtureStartChecks", () => ({
 }));
 
 describe("liveGamesStartFlowShared", () => {
-  function create_dependencies() {
+  function create_dependencies(): {
+    team_use_cases: { get_by_id: Mock };
+    update_checks: Mock;
+    set_is_starting: Mock;
+    delay: Mock;
+    check_delay_ms: number;
+    membership_use_cases: never;
+    player_use_cases: never;
+    player_position_use_cases: never;
+    fixture_lineup_use_cases: never;
+    fixture_use_cases: never;
+    competition_use_cases: never;
+    organization_use_cases: never;
+    sport_use_cases: never;
+  } {
     return {
       team_use_cases: { get_by_id: vi.fn() },
       update_checks: vi.fn(),
@@ -91,20 +106,22 @@ describe("liveGamesStartFlowShared", () => {
 
     await expect(
       process_lineup_check(
-        { id: "fixture-1" } as never,
-        checks as never,
         {
-          check_name: "home_lineup",
-          status: "passed",
-          message: "Ready",
-          fix_suggestion: "",
-        } as never,
-        "team-1",
-        "Checking lineup",
-        "auto_generate_home",
-        "home_lineup",
-        "Lions",
-        "Lineup missing",
+          fixture: { id: "fixture-1" } as never,
+          checks: checks as never,
+          lineup_check: {
+            check_name: "home_lineup",
+            status: "passed",
+            message: "Ready",
+            fix_suggestion: "",
+          } as never,
+          team_id: "team-1",
+          checking_message: "Checking lineup",
+          auto_generate_check_name: "auto_generate_home",
+          failed_check_name: "home_lineup",
+          fallback_team_name: "Lions",
+          fallback_failure_message: "Lineup missing",
+        },
         dependencies as never,
       ),
     ).resolves.toBe(true);
@@ -126,20 +143,22 @@ describe("liveGamesStartFlowShared", () => {
 
     await expect(
       process_lineup_check(
-        { id: "fixture-1" } as never,
-        checks as never,
         {
-          check_name: "home_lineup",
-          status: "failed",
-          message: "Missing",
-          fix_suggestion: "",
-        } as never,
-        "team-1",
-        "Checking lineup",
-        "auto_generate_home",
-        "home_lineup",
-        "Lions",
-        "Lineup missing",
+          fixture: { id: "fixture-1" } as never,
+          checks: checks as never,
+          lineup_check: {
+            check_name: "home_lineup",
+            status: "failed",
+            message: "Missing",
+            fix_suggestion: "",
+          } as never,
+          team_id: "team-1",
+          checking_message: "Checking lineup",
+          auto_generate_check_name: "auto_generate_home",
+          failed_check_name: "home_lineup",
+          fallback_team_name: "Lions",
+          fallback_failure_message: "Lineup missing",
+        },
         dependencies as never,
       ),
     ).resolves.toBe(false);

@@ -1,75 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type {
-  CreatePlayerProfileInput,
-  PlayerProfile,
-} from "../entities/PlayerProfile";
-import type { PlayerProfileRepository } from "../interfaces/ports";
-import type { QueryOptions } from "../interfaces/ports";
-import type { ScalarInput } from "../types/DomainScalars";
-import type { PaginatedResult, Result } from "../types/Result";
+  PlayerProfileRepository,
+  QueryOptions,
+} from "../interfaces/ports";
 import { create_failure_result, create_success_result } from "../types/Result";
+import {
+  USE_CASE_ERROR_MESSAGES,
+  UseCaseErrorCode,
+} from "../types/UseCaseFailure";
 import { create_player_profile_use_cases } from "./PlayerProfileUseCases";
-
-function create_mock_player_profile(
-  overrides: Partial<ScalarInput<PlayerProfile>> = {},
-): PlayerProfile {
-  return {
-    id: "profile_1",
-    created_at: "2024-01-01T00:00:00Z",
-    updated_at: "2024-01-01T00:00:00Z",
-    player_id: "player_1",
-    profile_summary: "Test player profile",
-    visibility: "private",
-    profile_slug: "test-player-1",
-    featured_image_url: "",
-    status: "active",
-    ...overrides,
-  } as unknown as PlayerProfile;
-}
-
-function create_valid_player_profile_input(
-  overrides: Partial<CreatePlayerProfileInput> = {},
-): CreatePlayerProfileInput {
-  return {
-    player_id: "player_1",
-    profile_summary: "Test player profile",
-    visibility: "private",
-    profile_slug: "test-player-1",
-    featured_image_url: "",
-    status: "active",
-    ...overrides,
-  } as CreatePlayerProfileInput;
-}
-
-function create_paginated_result<T>(
-  items: T[],
-  total_count?: number,
-): Result<PaginatedResult<T>, string> {
-  return create_success_result({
-    items,
-    total_count: total_count ?? items.length,
-    page_number: 1,
-    page_size: 10,
-    total_pages: Math.ceil((total_count ?? items.length) / 10),
-  });
-}
-
-function create_mock_repository(): PlayerProfileRepository {
-  return {
-    find_all: vi.fn(),
-    find_by_id: vi.fn(),
-    find_by_ids: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete_by_id: vi.fn(),
-    delete_by_ids: vi.fn(),
-    count: vi.fn(),
-    find_by_player_id: vi.fn(),
-    find_by_slug: vi.fn(),
-    find_public_profiles: vi.fn(),
-  } as PlayerProfileRepository;
-}
+import {
+  create_mock_player_profile,
+  create_mock_repository,
+  create_paginated_result,
+  expect_success,
+} from "./PlayerProfileUseCases.test_support";
 
 describe("PlayerProfileUseCases", () => {
   let mock_repository: PlayerProfileRepository;
@@ -143,7 +89,8 @@ describe("PlayerProfileUseCases", () => {
       );
 
       const options = { page_number: 2, page_size: 20 } as QueryOptions;
-      await use_cases.list({}, options);
+      const call_result = await use_cases.list({}, options);
+      expect(call_result.success).toBe(true);
 
       expect(mock_repository.find_all).toHaveBeenCalledWith({}, options);
     });
@@ -157,7 +104,9 @@ describe("PlayerProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (result.success) return;
-      expect(result.error).toBe("Database error");
+      expect(result.error).toBe(
+        USE_CASE_ERROR_MESSAGES[UseCaseErrorCode.DEPENDENCY_FAILED],
+      );
     });
   });
 
@@ -171,9 +120,7 @@ describe("PlayerProfileUseCases", () => {
       const result = await use_cases.get_by_id("p_123");
 
       expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data!.id).toBe("p_123");
-      }
+      expect(expect_success(result).id).toBe("p_123");
       expect(mock_repository.find_by_id).toHaveBeenCalledWith("p_123");
     });
 
@@ -196,276 +143,10 @@ describe("PlayerProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBe("Profile not found");
+        expect(result.error).toBe(
+          USE_CASE_ERROR_MESSAGES[UseCaseErrorCode.NOT_FOUND],
+        );
       }
-    });
-  });
-
-  describe("get_by_player_id", () => {
-    it("returns player profile by player_id", async () => {
-      const mock_profile = create_mock_player_profile({
-        player_id: "player_abc",
-      });
-      vi.mocked(mock_repository.find_by_player_id).mockResolvedValue(
-        create_success_result(mock_profile),
-      );
-
-      const result = await use_cases.get_by_player_id("player_abc");
-
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data!.player_id).toBe("player_abc");
-      }
-      expect(mock_repository.find_by_player_id).toHaveBeenCalledWith(
-        "player_abc",
-      );
-    });
-
-    it("returns failure when player_id is empty", async () => {
-      const result = await use_cases.get_by_player_id("");
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe("Player ID is required");
-      }
-      expect(mock_repository.find_by_player_id).not.toHaveBeenCalled();
-    });
-
-    it("handles repository failure", async () => {
-      vi.mocked(mock_repository.find_by_player_id).mockResolvedValue(
-        create_failure_result("No profile found for player"),
-      );
-
-      const result = await use_cases.get_by_player_id("player_abc");
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe("No profile found for player");
-      }
-    });
-  });
-
-  describe("get_by_slug", () => {
-    it("returns player profile by slug", async () => {
-      const mock_profile = create_mock_player_profile({
-        profile_slug: "unique-slug",
-      });
-      vi.mocked(mock_repository.find_by_slug).mockResolvedValue(
-        create_success_result(mock_profile),
-      );
-
-      const result = await use_cases.get_by_slug("unique-slug");
-
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data!.profile_slug).toBe("unique-slug");
-      }
-      expect(mock_repository.find_by_slug).toHaveBeenCalledWith("unique-slug");
-    });
-
-    it("returns failure when slug is empty", async () => {
-      const result = await use_cases.get_by_slug("");
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe("Profile slug is required");
-      }
-      expect(mock_repository.find_by_slug).not.toHaveBeenCalled();
-    });
-
-    it("handles repository failure", async () => {
-      vi.mocked(mock_repository.find_by_slug).mockResolvedValue(
-        create_failure_result("No profile found with slug"),
-      );
-
-      const result = await use_cases.get_by_slug("nonexistent");
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe("No profile found with slug");
-      }
-    });
-  });
-
-  describe("create", () => {
-    it("creates player profile successfully", async () => {
-      const input = create_valid_player_profile_input();
-      const mock_profile = create_mock_player_profile(input);
-      vi.mocked(mock_repository.find_by_player_id).mockResolvedValue(
-        create_failure_result("No profile found"),
-      );
-      vi.mocked(mock_repository.create).mockResolvedValue(
-        create_success_result(mock_profile),
-      );
-
-      const result = await use_cases.create(input);
-
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data!.player_id).toBe("player_1");
-      }
-      expect(mock_repository.create).toHaveBeenCalledWith(input);
-    });
-
-    it("validates player_id is required", async () => {
-      const input = create_valid_player_profile_input({ player_id: "" });
-
-      const result = await use_cases.create(input);
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toContain("Player is required");
-      }
-      expect(mock_repository.create).not.toHaveBeenCalled();
-    });
-
-    it("validates visibility values", async () => {
-      const input = {
-        ...create_valid_player_profile_input(),
-        visibility: "invalid" as any,
-      };
-
-      const result = await use_cases.create(input);
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toContain("Visibility must be");
-      }
-      expect(mock_repository.create).not.toHaveBeenCalled();
-    });
-
-    it("handles repository failure", async () => {
-      const input = create_valid_player_profile_input();
-      vi.mocked(mock_repository.find_by_player_id).mockResolvedValue(
-        create_failure_result("No profile found"),
-      );
-      vi.mocked(mock_repository.create).mockResolvedValue(
-        create_failure_result("Database error"),
-      );
-
-      const result = await use_cases.create(input);
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe("Database error");
-      }
-    });
-  });
-
-  describe("update", () => {
-    it("updates player profile successfully", async () => {
-      const updates = { profile_summary: "Updated summary" };
-      const mock_profile = create_mock_player_profile(updates);
-      vi.mocked(mock_repository.update).mockResolvedValue(
-        create_success_result(mock_profile),
-      );
-
-      const result = await use_cases.update("p_123", updates);
-
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data!.profile_summary).toBe("Updated summary");
-      }
-      expect(mock_repository.update).toHaveBeenCalledWith("p_123", updates);
-    });
-
-    it("validates visibility on update", async () => {
-      const updates = { visibility: "invalid" as any };
-
-      const result = await use_cases.update("p_123", updates);
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toContain("Visibility must be");
-      }
-      expect(mock_repository.update).not.toHaveBeenCalled();
-    });
-
-    it("handles repository failure", async () => {
-      vi.mocked(mock_repository.update).mockResolvedValue(
-        create_failure_result("Profile not found"),
-      );
-
-      const result = await use_cases.update("p_123", {
-        profile_summary: "New",
-      });
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe("Profile not found");
-      }
-    });
-  });
-
-  describe("delete", () => {
-    it("deletes player profile successfully", async () => {
-      vi.mocked(mock_repository.delete_by_id).mockResolvedValue(
-        create_success_result(true),
-      );
-
-      const result = await use_cases.delete("p_123");
-
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data).toBe(true);
-      }
-      expect(mock_repository.delete_by_id).toHaveBeenCalledWith("p_123");
-    });
-
-    it("handles repository failure", async () => {
-      vi.mocked(mock_repository.delete_by_id).mockResolvedValue(
-        create_failure_result("Profile not found"),
-      );
-
-      const result = await use_cases.delete("p_123");
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe("Profile not found");
-      }
-    });
-  });
-
-  describe("list_public_profiles", () => {
-    it("returns only public profiles", async () => {
-      const mock_profiles = [
-        create_mock_player_profile({ visibility: "public" }),
-      ];
-      vi.mocked(mock_repository.find_public_profiles).mockResolvedValue(
-        create_paginated_result(mock_profiles),
-      );
-
-      const result = await use_cases.list_public_profiles();
-
-      expect(result.success).toBe(true);
-      if (!result.success) return;
-      expect(result.data.items).toHaveLength(1);
-      expect(mock_repository.find_public_profiles).toHaveBeenCalledOnce();
-    });
-
-    it("passes query options to repository", async () => {
-      vi.mocked(mock_repository.find_public_profiles).mockResolvedValue(
-        create_paginated_result([]),
-      );
-
-      const options = { page_number: 2, page_size: 20 } as QueryOptions;
-      await use_cases.list_public_profiles(options);
-
-      expect(mock_repository.find_public_profiles).toHaveBeenCalledWith(
-        options,
-      );
-    });
-
-    it("handles repository failure", async () => {
-      vi.mocked(mock_repository.find_public_profiles).mockResolvedValue(
-        create_failure_result("Database error"),
-      );
-
-      const result = await use_cases.list_public_profiles();
-
-      expect(result.success).toBe(false);
-      if (result.success) return;
-      expect(result.error).toBe("Database error");
     });
   });
 });

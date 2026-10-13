@@ -1,7 +1,13 @@
 import type { EntityId, Name, ScalarInput } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
-export type JerseyColorHolderType = "team" | "competition_official";
+export const JERSEY_COLOR_HOLDER_TYPE = {
+  TEAM: "team",
+  COMPETITION_OFFICIAL: "competition_official",
+} as const;
+
+export type JerseyColorHolderType =
+  (typeof JERSEY_COLOR_HOLDER_TYPE)[keyof typeof JERSEY_COLOR_HOLDER_TYPE];
 
 export interface JerseyColor extends BaseEntity {
   holder_type: JerseyColorHolderType;
@@ -19,26 +25,6 @@ export type CreateJerseyColorInput = Omit<
 >;
 
 export type UpdateJerseyColorInput = Partial<CreateJerseyColorInput>;
-
-const JERSEY_COLOR_HOLDER_TYPE_OPTIONS = [
-  { value: "team", label: "Team" },
-  { value: "competition_official", label: "Competition Officials" },
-];
-
-function create_empty_jersey_color_input(
-  holder_type?: JerseyColorHolderType,
-  holder_id?: string,
-): CreateJerseyColorInput {
-  return {
-    holder_type: holder_type || "team",
-    holder_id: holder_id || "",
-    nickname: "",
-    main_color: "#000000",
-    secondary_color: "",
-    tertiary_color: "",
-    status: "active",
-  };
-}
 
 export function validate_jersey_color_input(
   input: CreateJerseyColorInput,
@@ -68,18 +54,4 @@ export function validate_jersey_color_input(
   }
 
   return validation_errors;
-}
-
-function is_color_match(color1: string, color2: string): boolean {
-  if (!color1 || !color2) return false;
-  const normalized_color1 = color1.toLowerCase().trim();
-  const normalized_color2 = color2.toLowerCase().trim();
-  return normalized_color1 === normalized_color2;
-}
-
-function check_main_color_clash(
-  jersey1: JerseyColor,
-  jersey2: JerseyColor,
-): boolean {
-  return is_color_match(jersey1.main_color, jersey2.main_color);
 }

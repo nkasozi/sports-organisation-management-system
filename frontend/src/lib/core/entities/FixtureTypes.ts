@@ -7,50 +7,21 @@ import type {
   ScalarInput,
 } from "../types/DomainScalars";
 import type { BaseEntity } from "./BaseEntity";
+import type { GameEventLogType, TeamSide } from "./GameEventLogTypes";
+import type { FixtureStatusValue, GamePeriodValue } from "./StatusConstants";
 
-export type FixtureStatus =
-  | "scheduled"
-  | "in_progress"
-  | "completed"
-  | "postponed"
-  | "cancelled";
+export type FixtureStatus = FixtureStatusValue;
 
-export type GamePeriod =
-  | "pre_game"
-  | "first_half"
-  | "half_time"
-  | "second_half"
-  | "extra_time_first"
-  | "extra_time_second"
-  | "penalty_shootout"
-  | "finished"
-  | (string & {});
+export type GamePeriod = GamePeriodValue | (string & {});
 
-export type GameEventType =
-  | "goal"
-  | "own_goal"
-  | "penalty_scored"
-  | "penalty_missed"
-  | "yellow_card"
-  | "green_card"
-  | "red_card"
-  | "second_yellow"
-  | "substitution"
-  | "foul"
-  | "offside"
-  | "corner"
-  | "free_kick"
-  | "injury"
-  | "var_review"
-  | "period_start"
-  | "period_end";
+export type GameEventType = GameEventLogType;
 
 export interface GameEvent {
   id: EntityId;
   event_type: GameEventType;
   minute: GameMinute;
   stoppage_time_minute: GameMinute;
-  team_side: "home" | "away" | "match";
+  team_side: TeamSide;
   player_name: Name;
   secondary_player_name: Name;
   description: string;

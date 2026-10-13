@@ -9,10 +9,27 @@ import type {
 } from "../types/DomainScalars";
 import {
   parse_description_text,
-  parse_email_address,
   parse_optional_media_url_value,
 } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
+import {
+  check_condition,
+  check_minimum_text_length,
+  check_optional_email_address,
+  collect_validation_errors,
+} from "./EntityValidation";
+
+const MINIMUM_NAME_LENGTH = 2;
+
+const TEAM_STAFF_VALIDATION_MESSAGES = {
+  FIRST_NAME_TOO_SHORT: "First name must be at least 2 characters",
+  LAST_NAME_TOO_SHORT: "Last name must be at least 2 characters",
+  TEAM_REQUIRED: "Team is required",
+  ROLE_REQUIRED: "Role is required",
+  INVALID_EMAIL: "Invalid email format",
+  INVALID_PROFILE_IMAGE: "Profile image URL is invalid",
+  INVALID_NOTES: "Notes are invalid",
+} as const;
 
 export const DEFAULT_STAFF_AVATAR =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%2310b981'/%3E%3Ccircle cx='50' cy='35' r='18' fill='white'/%3E%3Cpath d='M50 55c-22 0-35 12-35 30h70c0-18-13-30-35-30z' fill='white'/%3E%3C/svg%3E";
@@ -42,94 +59,43 @@ export type CreateTeamStaffInput = Omit<
 >;
 export type UpdateTeamStaffInput = Partial<CreateTeamStaffInput>;
 
-function get_team_staff_avatar(staff: TeamStaff): string {
-  return staff.profile_image_url && staff.profile_image_url.trim() !== ""
-    ? staff.profile_image_url
-    : DEFAULT_STAFF_AVATAR;
-}
-
 export function get_team_staff_full_name(staff: TeamStaff): string {
   return `${staff.first_name} ${staff.last_name}`.trim();
-}
-
-function get_team_staff_initials(staff: TeamStaff): string {
-  const first_initial = staff.first_name
-    ? staff.first_name.charAt(0).toUpperCase()
-    : "";
-  const last_initial = staff.last_name
-    ? staff.last_name.charAt(0).toUpperCase()
-    : "";
-  return `${first_initial}${last_initial}` || "??";
-}
-
-function create_empty_team_staff_input(
-  organization_id: CreateTeamStaffInput["organization_id"] = "",
-  team_id: CreateTeamStaffInput["team_id"] = "",
-  role_id: CreateTeamStaffInput["role_id"] = "",
-): CreateTeamStaffInput {
-  return {
-    first_name: "",
-    last_name: "",
-    email: "",
-    phone: "",
-    date_of_birth: "",
-    organization_id,
-    team_id,
-    role_id,
-    nationality: "",
-    profile_image_url: "",
-    employment_start_date: new Date().toISOString().split("T")[0],
-    employment_end_date: "",
-    emergency_contact_name: "",
-    emergency_contact_phone: "",
-    notes: "",
-    status: "active",
-  };
 }
 
 export function validate_team_staff_input(
   input: CreateTeamStaffInput,
 ): string[] {
-  const validation_errors: string[] = [];
-
-  if (!input.first_name || input.first_name.trim().length < 2) {
-    validation_errors.push("First name must be at least 2 characters");
-  }
-
-  if (!input.last_name || input.last_name.trim().length < 2) {
-    validation_errors.push("Last name must be at least 2 characters");
-  }
-
-  if (!input.team_id) {
-    validation_errors.push("Team is required");
-  }
-
-  if (!input.role_id) {
-    validation_errors.push("Role is required");
-  }
-
-  if (input.email.length > 0) {
-    const email_result = parse_email_address(
+  return collect_validation_errors([
+    check_minimum_text_length(
+      input.first_name,
+      MINIMUM_NAME_LENGTH,
+      TEAM_STAFF_VALIDATION_MESSAGES.FIRST_NAME_TOO_SHORT,
+    ),
+    check_minimum_text_length(
+      input.last_name,
+      MINIMUM_NAME_LENGTH,
+      TEAM_STAFF_VALIDATION_MESSAGES.LAST_NAME_TOO_SHORT,
+    ),
+    check_condition(
+      Boolean(input.team_id),
+      TEAM_STAFF_VALIDATION_MESSAGES.TEAM_REQUIRED,
+    ),
+    check_condition(
+      Boolean(input.role_id),
+      TEAM_STAFF_VALIDATION_MESSAGES.ROLE_REQUIRED,
+    ),
+    check_optional_email_address(
       input.email,
-      "Invalid email format",
-    );
-    if (!email_result.success) {
-      validation_errors.push(email_result.error);
-    }
-  }
-
-  const profile_image_result = parse_optional_media_url_value(
-    input.profile_image_url,
-    "Profile image URL is invalid",
-  );
-  if (!profile_image_result.success) {
-    validation_errors.push(profile_image_result.error);
-  }
-
-  const notes_result = parse_description_text(input.notes, "Notes are invalid");
-  if (!notes_result.success) {
-    validation_errors.push(notes_result.error);
-  }
-
-  return validation_errors;
+      TEAM_STAFF_VALIDATION_MESSAGES.INVALID_EMAIL,
+    ),
+    parse_optional_media_url_value(
+      input.profile_image_url,
+      TEAM_STAFF_VALIDATION_MESSAGES.INVALID_PROFILE_IMAGE,
+    ),
+    parse_description_text(
+      input.notes,
+      TEAM_STAFF_VALIDATION_MESSAGES.INVALID_NOTES,
+    ),
+  ]);
 }

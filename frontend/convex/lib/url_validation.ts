@@ -1,4 +1,10 @@
+import { is_string } from "./value_guards";
+
 const ALLOWED_URL_PROTOCOLS = ["https:", "http:"];
+const EMPTY_URL_VALUE = "";
+const IMAGE_DATA_URL_PREFIX = "data:image/";
+const RELATIVE_ASSET_PREFIX = "/";
+const URL_PARSE_FAILED_EVENT = "url_parse_failed";
 
 const IMAGE_DATA_URL_FIELD_PATTERN =
   /(logo|image|avatar|photo|picture|document)_url$/;
@@ -21,7 +27,7 @@ interface UrlValidationResult {
 }
 
 function create_valid_url_validation_result(): UrlValidationResult {
-  return { is_valid: true, error: "" };
+  return { is_valid: true, error: EMPTY_URL_VALUE };
 }
 
 function create_invalid_url_validation_result(
@@ -31,15 +37,7 @@ function create_invalid_url_validation_result(
 }
 
 function is_empty_url_field_value(value: unknown): boolean {
-  if (typeof value === "string") {
-    return value === "";
-  }
-
-  if (typeof value === "object") {
-    return !value;
-  }
-
-  return value === void 0;
+  return value === EMPTY_URL_VALUE || value === void 0 || value === null;
 }
 
 function is_image_data_url_field_name(field_name: string): boolean {
@@ -49,7 +47,7 @@ function is_image_data_url_field_name(field_name: string): boolean {
 function is_allowed_image_data_url(field_name: string, value: string): boolean {
   return (
     is_image_data_url_field_name(field_name) &&
-    value.toLowerCase().startsWith("data:image/")
+    value.toLowerCase().startsWith(IMAGE_DATA_URL_PREFIX)
   );
 }
 
@@ -59,7 +57,7 @@ function is_allowed_relative_asset_url(
 ): boolean {
   return (
     RELATIVE_ASSET_FIELD_EXACT_NAMES.includes(field_name.toLowerCase()) &&
-    value.startsWith("/")
+    value.startsWith(RELATIVE_ASSET_PREFIX)
   );
 }
 
@@ -71,7 +69,7 @@ export function validate_url_field_value(
     return create_valid_url_validation_result();
   }
 
-  if (typeof value !== "string") {
+  if (!is_string(value)) {
     return create_invalid_url_validation_result(
       `URL field "${field_name}" must be a string`,
     );
@@ -85,12 +83,19 @@ export function validate_url_field_value(
     return create_valid_url_validation_result();
   }
 
+  return validate_parsed_url_protocol(field_name, value);
+}
+
+function validate_parsed_url_protocol(
+  field_name: string,
+  value: string,
+): UrlValidationResult {
   let parsed_url: URL;
   try {
     parsed_url = new URL(value);
   } catch (error) {
     console.warn("[UrlValidation] Failed to parse URL", {
-      event: "url_parse_failed",
+      event: URL_PARSE_FAILED_EVENT,
       field_name,
       error: String(error),
     });
@@ -98,17 +103,11 @@ export function validate_url_field_value(
       `URL field "${field_name}" contains an invalid URL`,
     );
   }
-
-  const is_allowed_protocol = ALLOWED_URL_PROTOCOLS.includes(
-    parsed_url.protocol,
-  );
-  if (!is_allowed_protocol) {
-    return create_invalid_url_validation_result(
-      `URL field "${field_name}" uses disallowed protocol "${parsed_url.protocol}"`,
-    );
-  }
-
-  return create_valid_url_validation_result();
+  return ALLOWED_URL_PROTOCOLS.includes(parsed_url.protocol)
+    ? create_valid_url_validation_result()
+    : create_invalid_url_validation_result(
+        `URL field "${field_name}" uses disallowed protocol "${parsed_url.protocol}"`,
+      );
 }
 
 export function validate_record_url_fields(

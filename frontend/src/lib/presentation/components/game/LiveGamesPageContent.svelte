@@ -5,6 +5,10 @@
     import type { LiveGamesPendingStartFixtureState } from "$lib/presentation/logic/liveGamesPageState";
 
     import LiveGamesBody from "./LiveGamesBody.svelte";
+    import {
+        build_live_games_body_state,
+        LIVE_GAMES_PENDING_START_STATUS,
+    } from "./liveGamesConstants";
     import LiveGamesHeader from "./LiveGamesHeader.svelte";
     import LiveGamesPermissionNotice from "./LiveGamesPermissionNotice.svelte";
     import LiveGameStartConfirmationDialog from "./LiveGameStartConfirmationDialog.svelte";
@@ -26,9 +30,10 @@
     export let current_checks: Record<string, PreFlightCheck[]> = {};
     export let is_starting: Record<string, boolean> = {};
     export let on_start_click: (fixture: Fixture) => Promise<void>;
-    export let pending_start_fixture_state: LiveGamesPendingStartFixtureState = {
-        status: "idle",
-    };
+    export let pending_start_fixture_state: LiveGamesPendingStartFixtureState =
+        {
+            status: LIVE_GAMES_PENDING_START_STATUS.IDLE,
+        };
     export let on_cancel_start: () => void;
     export let on_confirm_start: () => void;
 </script>
@@ -43,10 +48,13 @@
     />
     <LiveGamesPermissionNotice message={permission_info_message} />
     <LiveGamesBody
-        {is_loading}
-        {error_message}
-        has_organizations={organizations.length > 0}
-        {is_loading_fixtures}
+        body_state={build_live_games_body_state({
+            is_loading,
+            error_message,
+            has_organizations: organizations.length > 0,
+            is_loading_fixtures,
+            fixture_count: incomplete_fixtures.length,
+        })}
         {incomplete_fixtures}
         {can_start_games}
         {team_names}

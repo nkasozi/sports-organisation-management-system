@@ -1,24 +1,38 @@
-import type {
-  SharedCrudPermissions,
-  SharedEntityType,
-} from "$convex/shared_permission_definitions";
+import type { SharedEntityType } from "$convex/shared_permission_definitions";
+import { SHARED_ENTITY_CATEGORY_MAP } from "$convex/shared_permission_definitions";
 import {
-  SHARED_ENTITY_CATEGORY_MAP,
-  SHARED_ROLE_PERMISSIONS,
-} from "$convex/shared_permission_definitions";
-import type {
-  AuthorizableAction,
-  CategoryPermissions,
-  DataAction,
-  DataCategory,
-  UserRole,
+  type AuthorizableAction,
+  type CategoryPermissions,
+  type DataAction,
+  type DataCategory,
+  get_role_permissions,
+  type UserRole,
 } from "$lib/core/interfaces/ports";
-import type { Result } from "$lib/core/types/Result";
+import {
+  create_none_option,
+  create_some_option,
+  type Option,
+  OptionStatus,
+} from "$lib/core/types/Option";
+import { create_success_result, type Result } from "$lib/core/types/Result";
 
-export function get_entity_data_category(
+import {
+  AUTH_PERMISSION_LOG_EVENTS,
+  AUTHORIZABLE_ACTION,
+  DATA_ACTION,
+} from "./authPermissionConstants";
+
+const UNKNOWN_ENTITY_DENIED_MESSAGE = "[AuthStore] Unknown entity type denied";
+
+export function find_entity_data_category(
   entity_type: SharedEntityType,
-): DataCategory {
-  return SHARED_ENTITY_CATEGORY_MAP[entity_type] || "organisation_level";
+): Option<DataCategory> {
+  return Object.prototype.hasOwnProperty.call(
+    SHARED_ENTITY_CATEGORY_MAP,
+    entity_type,
+  )
+    ? create_some_option(SHARED_ENTITY_CATEGORY_MAP[entity_type])
+    : create_none_option();
 }
 
 export function check_entity_permission(
@@ -27,64 +41,47 @@ export function check_entity_permission(
   action: DataAction,
   permissions: Record<DataCategory, CategoryPermissions>,
 ): boolean {
-  const category = get_entity_data_category(entity_type);
-  return permissions[category][action];
-}
-
-function adapt_shared_permissions(
-  shared: SharedCrudPermissions,
-): CategoryPermissions {
-  return {
-    create: shared.can_create,
-    read: shared.can_read,
-    update: shared.can_update,
-    delete: shared.can_delete,
-  };
+  const category_option = find_entity_data_category(entity_type);
+  switch (category_option.status) {
+    case OptionStatus.SOME:
+      return permissions[category_option.value][action];
+    case OptionStatus.NONE:
+      console.warn(UNKNOWN_ENTITY_DENIED_MESSAGE, {
+        event: AUTH_PERMISSION_LOG_EVENTS.UNKNOWN_ENTITY_DENIED,
+        entity_type,
+        role,
+        action,
+      });
+      return false;
+  }
 }
 
 export function get_role_permissions_sync(
   role: UserRole,
 ): Result<Record<DataCategory, CategoryPermissions>> {
-  const shared_permissions = SHARED_ROLE_PERMISSIONS[role];
-  if (!shared_permissions) {
-    console.error(
-      `[AuthStore] Unknown role: "${role}" — this should never happen`,
-    );
-    return { success: false, error: `Unknown role: "${role}"` };
-  }
-  return {
-    success: true,
-    data: {
-      root_level: adapt_shared_permissions(shared_permissions.root_level),
-      org_administrator_level: adapt_shared_permissions(
-        shared_permissions.org_administrator_level,
-      ),
-      organisation_level: adapt_shared_permissions(
-        shared_permissions.organisation_level,
-      ),
-      team_level: adapt_shared_permissions(shared_permissions.team_level),
-      player_level: adapt_shared_permissions(shared_permissions.player_level),
-      public_level: adapt_shared_permissions(shared_permissions.public_level),
-    },
-  };
+  return create_success_result(get_role_permissions(role));
 }
 
 export function map_authorizable_action_to_data_action(
   action: AuthorizableAction,
 ): DataAction {
   switch (action) {
-    case "create":
-      return "create";
-    case "edit":
-      return "update";
-    case "delete":
-      return "delete";
-    case "list":
-    case "view":
-      return "read";
+    case AUTHORIZABLE_ACTION.CREATE:
+      return DATA_ACTION.CREATE;
+    case AUTHORIZABLE_ACTION.EDIT:
+      return DATA_ACTION.UPDATE;
+    case AUTHORIZABLE_ACTION.DELETE:
+      return DATA_ACTION.DELETE;
+    case AUTHORIZABLE_ACTION.LIST:
+    case AUTHORIZABLE_ACTION.VIEW:
+      return DATA_ACTION.READ;
   }
+}
 
-  const exhaustive_action: never = action;
-
-  return exhaustive_action;
+export function log_role_permissions_unavailable(error: string): boolean {
+  console.error("[AuthStore] Role permissions unavailable", {
+    event: AUTH_PERMISSION_LOG_EVENTS.ROLE_PERMISSIONS_UNAVAILABLE,
+    error,
+  });
+  return true;
 }

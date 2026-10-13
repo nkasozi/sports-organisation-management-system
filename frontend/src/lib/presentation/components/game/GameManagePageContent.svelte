@@ -9,6 +9,8 @@
     import GameManageHeader from "$lib/presentation/components/game/GameManageHeader.svelte";
     import GameManageTimeline from "$lib/presentation/components/game/GameManageTimeline.svelte";
 
+    import type { GameTeamSide } from "./gameDisplayConstants";
+
     export let fixture: Fixture;
     export let home_team_name: string;
     export let away_team_name: string;
@@ -29,7 +31,7 @@
     export let on_change_period: (period: GamePeriod) => Promise<void>;
     export let on_open_event_modal: (
         event_button: QuickEventButton,
-        team_side: "home" | "away",
+        team_side: GameTeamSide,
     ) => void;
 </script>
 

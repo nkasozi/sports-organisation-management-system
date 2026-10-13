@@ -1,12 +1,17 @@
-import type { SharedEntityType } from "$convex/shared_permission_definitions";
-import type { SyncDirection, UserRole } from "$lib/core/interfaces/ports";
-import { check_entity_permission } from "$lib/core/interfaces/ports";
+import type { SyncDirection } from "$lib/core/interfaces/ports";
 import type {
   EntityId,
   IsoDateTimeString,
   ScalarInput,
 } from "$lib/core/types/DomainScalars";
 import { parse_entity_id } from "$lib/core/types/DomainScalars";
+import {
+  create_none_option,
+  create_some_option,
+  type Option,
+  OptionStatus,
+} from "$lib/core/types/Option";
+import { is_string_value } from "$lib/infrastructure/utils/runtimeTypeGuards";
 
 import {
   type ConflictFieldValue,
@@ -14,6 +19,13 @@ import {
   create_known_conflict_field_value,
   create_unknown_conflict_field_value,
 } from "./conflictTypes";
+
+export {
+  get_push_excluded_tables,
+  get_push_excluded_tables_for_unsigned_user,
+  TABLE_NAMES,
+  type TableName,
+} from "./syncTableNames";
 
 export type { SyncDirection };
 export type SyncStatus = "idle" | "syncing" | "success" | "error" | "conflict";
@@ -57,6 +69,19 @@ export interface SyncResult {
   errors: Array<{ table_name: string; error: string }>;
   duration_ms: number;
   conflicts: Array<{ table_name: string; conflicts: ConflictFromServer[] }>;
+  rejected_records: Array<{
+    table_name: string;
+    local_id: string;
+    rejection_code: string;
+    rejection_message: string;
+  }>;
+  deleted_remotely: Array<{
+    table_name: string;
+    local_id: string;
+    local_data: Record<string, unknown>;
+    tombstone_version: number;
+    deleted_at: string;
+  }>;
 }
 
 export interface SyncConfig {
@@ -66,22 +91,9 @@ export interface SyncConfig {
   direction: SyncDirection;
 }
 
-export interface ConvexRecord {
-  _id: string;
-  local_id: EntityId;
-  synced_at: IsoDateTimeString;
-  version: number;
-  [key: string]: unknown;
-}
-
 export interface ConvexClient {
   mutation: (name: string, args: Record<string, unknown>) => Promise<unknown>;
   query: (name: string, args: Record<string, unknown>) => Promise<unknown>;
-}
-
-export interface RemoteTableState {
-  record_count: number;
-  latest_modified_at: ConvexRecord["synced_at"];
 }
 
 export interface ConflictResolutionRequest {
@@ -92,125 +104,43 @@ export interface ConflictResolutionRequest {
   resolved_by?: EntityId;
 }
 
-export const TABLE_NAMES = [
-  "organizations",
-  "competitions",
-  "teams",
-  "players",
-  "officials",
-  "fixtures",
-  "sports",
-  "team_staff",
-  "team_staff_roles",
-  "game_official_roles",
-  "venues",
-  "jersey_colors",
-  "player_positions",
-  "player_profiles",
-  "team_profiles",
-  "profile_links",
-  "calendar_tokens",
-  "competition_formats",
-  "competition_stages",
-  "competition_teams",
-  "player_team_memberships",
-  "fixture_details_setups",
-  "fixture_lineups",
-  "activities",
-  "activity_categories",
-  "system_users",
-  "identification_types",
-  "identifications",
-  "qualifications",
-  "game_event_types",
-  "genders",
-  "live_game_logs",
-  "game_event_logs",
-  "player_team_transfer_histories",
-  "official_associated_teams",
-  "official_performance_ratings",
-  "organization_settings",
-] as const;
-
-export type TableName = (typeof TABLE_NAMES)[number];
-
-const TABLE_NAME_TO_ENTITY_TYPE: Partial<Record<TableName, SharedEntityType>> =
-  {
-    organizations: "organization",
-    organization_settings: "organizationsettings",
-    sports: "sport",
-    competitions: "competition",
-    teams: "team",
-    players: "player",
-    officials: "official",
-    fixtures: "fixture",
-    team_staff: "teamstaff",
-    team_staff_roles: "teamstaffrole",
-    game_official_roles: "gameofficialrole",
-    venues: "venue",
-    jersey_colors: "jerseycolor",
-    player_positions: "playerposition",
-    player_profiles: "playerprofile",
-    team_profiles: "teamprofile",
-    profile_links: "profilelink",
-    competition_formats: "competitionformat",
-    competition_teams: "competitionteam",
-    player_team_memberships: "playerteammembership",
-    fixture_details_setups: "fixturedetailssetup",
-    fixture_lineups: "fixturelineup",
-    activity_categories: "activitycategory",
-    system_users: "systemuser",
-    identification_types: "identificationtype",
-    identifications: "identification",
-    qualifications: "qualification",
-    game_event_types: "gameeventtype",
-    genders: "gender",
-    live_game_logs: "livegamelog",
-    game_event_logs: "gameeventlog",
-    player_team_transfer_histories: "playerteamtransferhistory",
-    official_performance_ratings: "officialperformancerating",
-  };
-
 export const EPOCH_TIMESTAMP = "1970-01-01T00:00:00.000Z" as IsoDateTimeString;
 const INVALID_CONFLICT_ACTOR_ID_ERROR = "Conflict actor id is invalid";
+
+const RemoteAuthorKind = {
+  KNOWN: "known",
+  UNKNOWN: "unknown",
+} as const;
+
+function read_remote_author_id(remote_updated_by: unknown): Option<string> {
+  if (!(remote_updated_by instanceof Object)) return create_none_option();
+  const author = remote_updated_by as { kind?: unknown; updated_by?: unknown };
+  return author.kind === RemoteAuthorKind.KNOWN &&
+    is_string_value(author.updated_by)
+    ? create_some_option(author.updated_by)
+    : create_none_option();
+}
+
+function normalize_remote_author(
+  remote_updated_by: unknown,
+): ConflictFieldValue<EntityId> {
+  const author_id = read_remote_author_id(remote_updated_by);
+  if (author_id.status === OptionStatus.NONE)
+    return create_unknown_conflict_field_value<EntityId>();
+  const parsed = parse_entity_id(
+    author_id.value,
+    INVALID_CONFLICT_ACTOR_ID_ERROR,
+  );
+  return parsed.success
+    ? create_known_conflict_field_value(parsed.data)
+    : create_unknown_conflict_field_value<EntityId>();
+}
 
 export function normalize_conflict_from_server(
   raw_conflict: RawConflictFromServer,
 ): ConflictFromServer {
-  const remote_updated_by =
-    typeof raw_conflict.remote_updated_by === "string"
-      ? (() => {
-          const remote_updated_by_result = parse_entity_id(
-            raw_conflict.remote_updated_by,
-            INVALID_CONFLICT_ACTOR_ID_ERROR,
-          );
-          return remote_updated_by_result.success
-            ? create_known_conflict_field_value(remote_updated_by_result.data)
-            : create_unknown_conflict_field_value<EntityId>();
-        })()
-      : create_unknown_conflict_field_value<EntityId>();
-
   return {
     ...raw_conflict,
-    remote_updated_by,
+    remote_updated_by: normalize_remote_author(raw_conflict.remote_updated_by),
   };
-}
-
-function role_can_push_table(role: UserRole, table_name: TableName): boolean {
-  const entity_type = TABLE_NAME_TO_ENTITY_TYPE[table_name];
-  if (!entity_type) return true;
-  return (
-    check_entity_permission(role, entity_type, "create") ||
-    check_entity_permission(role, entity_type, "update")
-  );
-}
-
-export function get_push_excluded_tables(role: UserRole): Set<string> {
-  return new Set(
-    TABLE_NAMES.filter((table_name) => !role_can_push_table(role, table_name)),
-  );
-}
-
-export function get_push_excluded_tables_for_unsigned_user(): Set<string> {
-  return new Set(TABLE_NAMES);
 }

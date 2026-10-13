@@ -1,6 +1,13 @@
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
 import type { TeamPlayer } from "$lib/core/services/teamPlayers";
 
+const LINEUP_WIZARD_STEP_INDEX = {
+  ORGANIZATION: 0,
+  FIXTURE: 1,
+  TEAM: 2,
+  PLAYERS: 3,
+} as const;
+
 interface WizardAutoSkipInput {
   organization_is_restricted: boolean;
   organization_id: string;
@@ -15,9 +22,9 @@ export function determine_initial_wizard_step(
     input.organization_id &&
     input.has_selected_organization
   ) {
-    return 1;
+    return LINEUP_WIZARD_STEP_INDEX.FIXTURE;
   }
-  return 0;
+  return LINEUP_WIZARD_STEP_INDEX.ORGANIZATION;
 }
 
 interface TeamAutoSelectResult {
@@ -29,9 +36,9 @@ export function determine_step_after_team_auto_selected(
   result: TeamAutoSelectResult,
 ): number {
   if (result.has_selected_team && result.team_players_count > 0) {
-    return 3;
+    return LINEUP_WIZARD_STEP_INDEX.PLAYERS;
   }
-  return 2;
+  return LINEUP_WIZARD_STEP_INDEX.TEAM;
 }
 
 export function build_error_message(
@@ -90,6 +97,13 @@ export function convert_team_players_to_lineup_players(
     .map((player) => convert_team_player_to_lineup_player(player));
 }
 
+type SortableLineupPlayer = {
+  jersey_number: number;
+  first_name: string;
+  last_name: string;
+  position?: string;
+};
+
 function compare_jersey_numbers(a: number, b: number): number {
   const a_value = a > 0 ? a : Number.POSITIVE_INFINITY;
   const b_value = b > 0 ? b : Number.POSITIVE_INFINITY;
@@ -100,6 +114,21 @@ function compare_strings_case_insensitive(a: string, b: string): number {
   return a.localeCompare(b, [], { sensitivity: "base" });
 }
 
+function compare_by_jersey_then_name(
+  a: SortableLineupPlayer,
+  b: SortableLineupPlayer,
+): number {
+  const jersey_comparison = compare_jersey_numbers(
+    a.jersey_number,
+    b.jersey_number,
+  );
+  if (jersey_comparison !== 0) return jersey_comparison;
+  return compare_strings_case_insensitive(
+    `${a.first_name} ${a.last_name}`.trim(),
+    `${b.first_name} ${b.last_name}`.trim(),
+  );
+}
+
 export function summarize_selected_team_players(
   team_players: TeamPlayer[],
   selected_player_ids: string[],
@@ -108,38 +137,11 @@ export function summarize_selected_team_players(
 
   return team_players
     .filter((player) => selected_set.has(player.id))
-    .sort((a, b) => {
-      const jersey_comparison = compare_jersey_numbers(
-        a.jersey_number,
-        b.jersey_number,
-      );
-      if (jersey_comparison !== 0) return jersey_comparison;
-
-      const name_a = `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim();
-      const name_b = `${b.first_name ?? ""} ${b.last_name ?? ""}`.trim();
-      return compare_strings_case_insensitive(name_a, name_b);
-    });
+    .sort(compare_by_jersey_then_name);
 }
-
-type SortableLineupPlayer = {
-  jersey_number: number;
-  first_name: string;
-  last_name: string;
-  position?: string;
-};
 
 export function sort_lineup_players<TPlayer extends SortableLineupPlayer>(
   players: TPlayer[],
 ): TPlayer[] {
-  return [...players].sort((a, b) => {
-    const jersey_comparison = compare_jersey_numbers(
-      a.jersey_number,
-      b.jersey_number,
-    );
-    if (jersey_comparison !== 0) return jersey_comparison;
-
-    const name_a = `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim();
-    const name_b = `${b.first_name ?? ""} ${b.last_name ?? ""}`.trim();
-    return compare_strings_case_insensitive(name_a, name_b);
-  });
+  return [...players].sort(compare_by_jersey_then_name);
 }

@@ -2,6 +2,7 @@ import type { SystemUser } from "$lib/core/entities/SystemUser";
 import type { AuthToken, UserRole } from "$lib/core/interfaces/ports";
 import type { SidebarMenuGroup } from "$lib/core/interfaces/ports";
 import type { ScalarValueInput } from "$lib/core/types/DomainScalars";
+import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
 export interface ConvexUserProfile {
   local_id?: string;
@@ -38,41 +39,48 @@ export interface UserProfile {
 }
 
 export type AuthTokenState =
-  | { status: "missing" }
-  | { status: "present"; token: AuthToken };
+  | { status: typeof PRESENCE_STATUS.MISSING }
+  | { status: typeof PRESENCE_STATUS.PRESENT; token: AuthToken };
 
 export type AuthProfileState =
-  | { status: "missing" }
-  | { status: "present"; profile: UserProfile };
+  | { status: typeof PRESENCE_STATUS.MISSING }
+  | { status: typeof PRESENCE_STATUS.PRESENT; profile: UserProfile };
 
 export function create_missing_auth_token_state(): AuthTokenState {
-  return { status: "missing" };
+  return { status: PRESENCE_STATUS.MISSING };
 }
 
 export function create_present_auth_token_state(
   token: AuthToken,
 ): AuthTokenState {
-  return { status: "present", token };
+  return { status: PRESENCE_STATUS.PRESENT, token };
 }
 
 export function create_missing_auth_profile_state(): AuthProfileState {
-  return { status: "missing" };
+  return { status: PRESENCE_STATUS.MISSING };
 }
 
 export function create_present_auth_profile_state(
   profile: UserProfile,
 ): AuthProfileState {
-  return { status: "present", profile };
+  return { status: PRESENCE_STATUS.PRESENT, profile };
+}
+
+const OBJECT_TYPE_NAME = "object";
+const STATUS_FIELD_NAME = "status";
+
+function is_object_value(value: unknown): value is object {
+  return Boolean(value) && typeof value === OBJECT_TYPE_NAME;
 }
 
 export function normalize_auth_profile_state(
   current_profile: unknown,
 ): AuthProfileState {
-  if (!current_profile || typeof current_profile !== "object") {
+  if (!is_object_value(current_profile)) {
     return create_missing_auth_profile_state();
   }
 
-  if ("status" in current_profile) {
+  if (STATUS_FIELD_NAME in current_profile) {
     return current_profile as AuthProfileState;
   }
 

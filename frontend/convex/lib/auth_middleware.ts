@@ -1,19 +1,36 @@
 import type { Id } from "../_generated/dataModel";
+import type { QueryCtx } from "../_generated/server";
 import type {
   SharedDataCategory,
   SharedUserRole,
 } from "../shared_permission_definitions";
 import {
-  SHARED_ENTITY_CATEGORY_MAP,
-  SHARED_ROLE_PERMISSIONS,
-} from "../shared_permission_definitions";
+  ConvexErrorCode,
+  type ConvexFailure,
+  log_convex_failure,
+} from "./convex_errors";
+import {
+  check_permission,
+  type DataAction,
+  get_entity_data_category,
+} from "./permission_checks";
+import { load_active_system_user_by_email } from "./system_user_lookup";
+import { build_user_scope_filter } from "./user_scope_filter";
+import { is_object_record, is_string } from "./value_guards";
 
-export type DataAction = "create" | "read" | "update" | "delete";
+export { AUTH_DENIED_MESSAGE } from "./convex_errors";
+export {
+  check_permission,
+  DataAction,
+  get_entity_data_category,
+} from "./permission_checks";
+
 export type UserRole = SharedUserRole;
 export type DataCategory = SharedDataCategory;
 
 export interface SystemUserRecord {
   _id: Id<"system_users">;
+  local_id?: string;
   email: string;
   name?: string;
   first_name?: string;
@@ -31,128 +48,40 @@ interface ConvexIdentityRecord {
   email?: string;
 }
 
-interface ConvexContext {
-  db: {
-    query(table: string): {
-      withIndex(
-        name: string,
-        predicate?: (q: any) => any,
-      ): { first(): Promise<any>; collect(): Promise<any[]> };
-    };
-  };
-  auth: {
-    getUserIdentity(): Promise<unknown>;
-  };
-}
+export type ConvexContext = Pick<QueryCtx, "db" | "auth">;
 
-export type ConvexResult<TData, TError = string> =
+export type ConvexResult<TData> =
   | { success: true; data: TData }
-  | { success: false; error: TError };
+  | ConvexFailure;
 
-export const AUTH_DENIED_MESSAGE = "Access denied";
-const EMPTY_SCOPE_VALUE = "";
-const GLOBAL_ORGANIZATION_ID = "*";
+const AuthFailureReason = {
+  NO_IDENTITY: "no_identity",
+  NO_EMAIL_CLAIM: "no_email_claim",
+} as const;
 
-function is_record_value(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
+const AUTH_FAILED_EVENT = "auth_failed";
+const PERMISSION_DENIED_EVENT = "permission_denied";
 
 function is_identity_record(value: unknown): value is ConvexIdentityRecord {
-  return is_record_value(value) && typeof value.subject === "string";
-}
-
-function is_system_user_record(value: unknown): value is SystemUserRecord {
-  return (
-    is_record_value(value) &&
-    typeof value.email === "string" &&
-    typeof value.role === "string" &&
-    "_id" in value
-  );
-}
-
-function get_scope_filter_value(value: unknown): string {
-  return typeof value === "string" ? value : EMPTY_SCOPE_VALUE;
+  return is_object_record(value) && is_string(value.subject);
 }
 
 export async function require_auth(
   ctx: ConvexContext,
 ): Promise<ConvexResult<SystemUserRecord>> {
   const identity_result = await ctx.auth.getUserIdentity();
-  if (!is_identity_record(identity_result)) {
-    console.warn("[Auth] Authentication failed", {
-      event: "auth_failed",
-      reason: "no_identity",
+  if (!is_identity_record(identity_result))
+    return log_convex_failure(ConvexErrorCode.ACCESS_DENIED, {
+      event: AUTH_FAILED_EVENT,
+      reason: AuthFailureReason.NO_IDENTITY,
     });
-    return { success: false, error: AUTH_DENIED_MESSAGE };
-  }
-
   const email = identity_result.email;
-  if (!email) {
-    console.warn("[Auth] Authentication failed", {
-      event: "auth_failed",
-      reason: "no_email_claim",
+  if (!email)
+    return log_convex_failure(ConvexErrorCode.ACCESS_DENIED, {
+      event: AUTH_FAILED_EVENT,
+      reason: AuthFailureReason.NO_EMAIL_CLAIM,
     });
-    return { success: false, error: AUTH_DENIED_MESSAGE };
-  }
-
-  const system_user_result = await ctx.db
-    .query("system_users")
-    .withIndex("by_email", (q: any) => q.eq("email", email.toLowerCase()))
-    .first();
-
-  if (!is_system_user_record(system_user_result)) {
-    console.warn("[Auth] Authentication failed", {
-      event: "auth_failed",
-      reason: "user_not_found",
-    });
-    return { success: false, error: AUTH_DENIED_MESSAGE };
-  }
-
-  const system_user = system_user_result;
-
-  if (system_user.status === "inactive") {
-    console.warn("[Auth] Authentication failed", {
-      event: "auth_failed",
-      reason: "account_inactive",
-      user_id: system_user._id,
-    });
-    return { success: false, error: AUTH_DENIED_MESSAGE };
-  }
-
-  return { success: true, data: system_user };
-}
-
-export function get_entity_data_category(entity_type: string): DataCategory {
-  const normalized = entity_type.toLowerCase().replace(/[\s_-]/g, "");
-  return (
-    (SHARED_ENTITY_CATEGORY_MAP as Record<string, DataCategory>)[normalized] ||
-    "organisation_level"
-  );
-}
-
-export function check_permission(
-  role: UserRole,
-  data_category: DataCategory,
-  action: DataAction,
-): boolean {
-  const role_permissions = SHARED_ROLE_PERMISSIONS[role];
-  if (!role_permissions) return false;
-
-  const category_permissions = role_permissions[data_category];
-  if (!category_permissions) return false;
-
-  switch (action) {
-    case "create":
-      return category_permissions.can_create;
-    case "read":
-      return category_permissions.can_read;
-    case "update":
-      return category_permissions.can_update;
-    case "delete":
-      return category_permissions.can_delete;
-    default:
-      return false;
-  }
+  return load_active_system_user_by_email(ctx, email);
 }
 
 export async function require_permission(
@@ -162,64 +91,22 @@ export async function require_permission(
 ): Promise<ConvexResult<SystemUserRecord>> {
   const auth_result = await require_auth(ctx);
   if (!auth_result.success) return auth_result;
-
   const user = auth_result.data;
   const data_category = get_entity_data_category(entity_type);
-  const is_authorized = check_permission(
-    user.role as UserRole,
-    data_category,
+  if (check_permission(user.role, data_category, action)) return auth_result;
+  return log_convex_failure(ConvexErrorCode.ACCESS_DENIED, {
+    event: PERMISSION_DENIED_EVENT,
+    user_id: user._id,
+    role: user.role,
     action,
-  );
-
-  if (!is_authorized) {
-    return {
-      success: false,
-      error: `Role "${user.role}" does not have "${action}" permission for "${entity_type}" (${data_category})`,
-    };
-  }
-
-  return { success: true, data: user };
+    entity_type,
+    data_category,
+  });
 }
 
 export function build_scope_filter(
   user: SystemUserRecord,
   entity_type: string,
 ): Record<string, string> {
-  const role = user.role as UserRole;
-  const normalized_entity = entity_type.toLowerCase().replace(/[\s_-]/g, "");
-
-  if (user.organization_id === GLOBAL_ORGANIZATION_ID) return {};
-
-  if (role === "org_admin" || role === "officials_manager") {
-    return { organization_id: get_scope_filter_value(user.organization_id) };
-  }
-
-  if (role === "team_manager") {
-    return {
-      organization_id: get_scope_filter_value(user.organization_id),
-      team_id: get_scope_filter_value(user.team_id),
-    };
-  }
-
-  if (role === "official") {
-    if (
-      normalized_entity === "official" ||
-      normalized_entity === "officialprofile"
-    ) {
-      return { id: get_scope_filter_value(user.official_id) };
-    }
-    return { organization_id: get_scope_filter_value(user.organization_id) };
-  }
-
-  if (role === "player") {
-    if (
-      normalized_entity === "player" ||
-      normalized_entity === "playerprofile"
-    ) {
-      return { id: get_scope_filter_value(user.player_id) };
-    }
-    return { organization_id: get_scope_filter_value(user.organization_id) };
-  }
-
-  return { organization_id: get_scope_filter_value(user.organization_id) };
+  return build_user_scope_filter(user, entity_type);
 }

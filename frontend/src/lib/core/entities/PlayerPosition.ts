@@ -5,13 +5,22 @@ import type {
   ScalarValueInput,
 } from "../types/DomainScalars";
 import type { BaseEntity } from "./BaseEntity";
+import type { ENTITY_STATUS } from "./StatusConstants";
+
+const POSITION_CATEGORY = {
+  GOALKEEPER: "goalkeeper",
+  DEFENDER: "defender",
+  MIDFIELDER: "midfielder",
+  FORWARD: "forward",
+  OTHER: "other",
+} as const;
 
 export type PositionCategory =
-  | "goalkeeper"
-  | "defender"
-  | "midfielder"
-  | "forward"
-  | "other";
+  (typeof POSITION_CATEGORY)[keyof typeof POSITION_CATEGORY];
+
+export type PlayerPositionStatus =
+  | typeof ENTITY_STATUS.ACTIVE
+  | typeof ENTITY_STATUS.INACTIVE;
 
 export interface PlayerPosition extends BaseEntity {
   name: Name;
@@ -21,7 +30,7 @@ export interface PlayerPosition extends BaseEntity {
   sport_type: string;
   display_order: number;
   is_available: boolean;
-  status: "active" | "inactive";
+  status: PlayerPositionStatus;
   organization_id: EntityId;
 }
 
@@ -37,7 +46,7 @@ export interface PlayerPositionFilter {
   category?: PositionCategory;
   sport_type?: string;
   is_available?: boolean;
-  status?: "active" | "inactive";
+  status?: PlayerPositionStatus;
   organization_id?: ScalarValueInput<PlayerPosition["organization_id"]>;
 }
 
@@ -66,102 +75,4 @@ export function validate_player_position_input(
     is_valid: errors.length === 0,
     errors,
   };
-}
-
-function get_default_player_positions(): Omit<
-  CreatePlayerPositionInput,
-  "organization_id"
->[] {
-  return [
-    {
-      name: "Goalkeeper",
-      code: "GK",
-      category: "goalkeeper",
-      description: "Protects the goal",
-      sport_type: "Football",
-      display_order: 1,
-      is_available: true,
-      status: "active",
-    },
-    {
-      name: "Center Back",
-      code: "CB",
-      category: "defender",
-      description: "Central defensive position",
-      sport_type: "Football",
-      display_order: 2,
-      is_available: true,
-      status: "active",
-    },
-    {
-      name: "Left Back",
-      code: "LB",
-      category: "defender",
-      description: "Left side defensive position",
-      sport_type: "Football",
-      display_order: 3,
-      is_available: true,
-      status: "active",
-    },
-    {
-      name: "Right Back",
-      code: "RB",
-      category: "defender",
-      description: "Right side defensive position",
-      sport_type: "Football",
-      display_order: 4,
-      is_available: true,
-      status: "active",
-    },
-    {
-      name: "Midfielder",
-      code: "CM",
-      category: "midfielder",
-      description: "Central midfield position",
-      sport_type: "Football",
-      display_order: 5,
-      is_available: true,
-      status: "active",
-    },
-    {
-      name: "Left Midfielder",
-      code: "LM",
-      category: "midfielder",
-      description: "Left midfield position",
-      sport_type: "Football",
-      display_order: 6,
-      is_available: true,
-      status: "active",
-    },
-    {
-      name: "Right Midfielder",
-      code: "RM",
-      category: "midfielder",
-      description: "Right midfield position",
-      sport_type: "Football",
-      display_order: 7,
-      is_available: true,
-      status: "active",
-    },
-    {
-      name: "Forward",
-      code: "FW",
-      category: "forward",
-      description: "Attacking forward position",
-      sport_type: "Football",
-      display_order: 8,
-      is_available: true,
-      status: "active",
-    },
-    {
-      name: "Striker",
-      code: "ST",
-      category: "forward",
-      description: "Main striker position",
-      sport_type: "Football",
-      display_order: 9,
-      is_available: true,
-      status: "active",
-    },
-  ];
 }

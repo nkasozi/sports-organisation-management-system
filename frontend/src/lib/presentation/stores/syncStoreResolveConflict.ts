@@ -7,6 +7,8 @@ import type {
 import type { ConflictResolutionRequest } from "$lib/infrastructure/sync/convexSyncService";
 import { resolve_conflict } from "$lib/infrastructure/sync/convexSyncService";
 
+import { get_resolved_data_for_action } from "./conflictStoreHelpers";
+
 type ConvexClient = {
   mutation: (name: string, args: Record<string, unknown>) => Promise<unknown>;
   query: (name: string, args: Record<string, unknown>) => Promise<unknown>;
@@ -16,23 +18,6 @@ type EditableConflictRecord = ScalarInput<ConflictRecord>;
 type ConflictResolutionExecutionResult =
   | { success: true }
   | { success: false; error: string };
-
-function build_resolved_data(
-  conflict: EditableConflictRecord,
-  action: ConflictResolutionAction,
-  merged_data?: Record<string, unknown>,
-): Record<string, unknown> {
-  switch (action) {
-    case "keep_local":
-      return { ...conflict.local_data, updated_at: new Date().toISOString() };
-    case "keep_remote":
-      return conflict.remote_data;
-    case "merge":
-      return merged_data || conflict.local_data;
-    default:
-      return conflict.local_data;
-  }
-}
 
 export async function execute_conflict_resolution(
   convex_client_result: Result<ConvexClient>,
@@ -44,7 +29,11 @@ export async function execute_conflict_resolution(
     return { success: false, error: convex_client_result.error };
   }
 
-  const resolved_data = build_resolved_data(conflict, action, merged_data);
+  const resolved_data = get_resolved_data_for_action(
+    conflict,
+    action,
+    merged_data,
+  );
 
   const request: ConflictResolutionRequest = {
     table_name: conflict.table_name,

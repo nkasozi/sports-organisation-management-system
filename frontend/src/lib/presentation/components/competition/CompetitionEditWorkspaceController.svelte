@@ -23,8 +23,10 @@
         create_competition_workspace_options,
         derive_competition_workspace_status,
     } from "$lib/presentation/logic/competitionEditWorkspaceControllerState";
+    import type { ToastType } from "$lib/presentation/logic/toastConfig";
 
     import CompetitionEditWorkspaceView from "./CompetitionEditWorkspaceView.svelte";
+    import { COMPETITION_ROUTES } from "./competitionTabConstants";
 
     export let competition_id: string,
         competition: Competition,
@@ -44,7 +46,7 @@
         is_saving = false,
         toast_visible = false,
         toast_message = "",
-        toast_type: "success" | "error" | "info" = "info",
+        toast_type: ToastType = "info",
         organization_options: SelectOption[] = [],
         competition_format_options: SelectOption[] = [];
 
@@ -73,26 +75,23 @@
         available_teams = next_collections.available_teams;
     }
 
-    function show_toast(
-        message: string,
-        type: "success" | "error" | "info",
-    ): void {
+    function show_toast(message: string, type: ToastType): void {
         toast_message = message;
         toast_type = type;
         toast_visible = true;
     }
 
     const runtime = create_competition_edit_workspace_controller_runtime({
-        can_edit_competition,
-        competition_id,
-        competition_formats,
-        competition_team_entries,
+        get_can_edit_competition: () => can_edit_competition,
+        get_competition_id: () => competition_id,
+        get_competition_formats: () => competition_formats,
+        get_competition_team_entries: () => competition_team_entries,
         get_available_teams: () => available_teams,
         get_form_data: () => form_data,
         get_selected_format_state: () => selected_format_state,
         get_teams_in_competition: () => teams_in_competition,
         goto,
-        organizations,
+        get_organizations: () => organizations,
         set_available_teams: (value: Team[]) => (available_teams = value),
         set_competition_team_entries: (value: CompetitionTeam[]) =>
             (competition_team_entries = value),
@@ -100,8 +99,9 @@
         set_is_customizing_scoring: (value: boolean) =>
             (is_customizing_scoring = value),
         set_is_saving: (value: boolean) => (is_saving = value),
-        set_selected_format_state: (value: CompetitionEditSelectedFormatState) =>
-            (selected_format_state = value),
+        set_selected_format_state: (
+            value: CompetitionEditSelectedFormatState,
+        ) => (selected_format_state = value),
         set_selected_sport_state: (value: CompetitionEditSelectedSportState) =>
             (selected_sport_state = value),
         set_teams_in_competition: (value: Team[]) =>
@@ -130,9 +130,9 @@
     {toast_visible}
     {toast_message}
     {toast_type}
-    on_cancel={() => goto("/competitions")}
+    on_cancel={() => void goto(COMPETITION_ROUTES.LIST)}
     on_submit={runtime.handle_submit}
-    on_done={() => goto("/competitions")}
+    on_done={() => void goto(COMPETITION_ROUTES.LIST)}
     on_organization_change={runtime.handle_organization_change}
     on_format_change={runtime.handle_format_change}
     on_add_team={runtime.handle_add_team_to_competition}

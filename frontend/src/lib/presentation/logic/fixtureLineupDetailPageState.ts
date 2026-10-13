@@ -1,6 +1,8 @@
 import type { FixtureLineup } from "$lib/core/entities/FixtureLineup";
+import { LINEUP_STATUS } from "$lib/core/entities/StatusConstants";
 import { convert_team_player_to_lineup_player } from "$lib/core/services/fixtureLineupWizard";
 import type { TeamPlayer } from "$lib/core/services/teamPlayers";
+import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
 import type {
   FixtureLineupDetailFixtureState,
@@ -24,7 +26,7 @@ const FIXTURE_LINEUP_FALLBACK_TEXT = {
 export function build_fixture_lineup_selected_player_ids(
   lineup_state: FixtureLineupDetailLineupState,
 ): Set<string> {
-  if (lineup_state.status === "missing") {
+  if (lineup_state.status === PRESENCE_STATUS.MISSING) {
     return new Set();
   }
 
@@ -38,7 +40,7 @@ export function toggle_fixture_lineup_player_selection(
   team_players: TeamPlayer[],
   player_id: string,
 ): FixtureLineup {
-  if (lineup.status === "locked") {
+  if (lineup.status === LINEUP_STATUS.LOCKED) {
     return lineup;
   }
 
@@ -73,16 +75,16 @@ export function get_fixture_lineup_name(
   home_team_state: FixtureLineupDetailTeamState,
   away_team_state: FixtureLineupDetailTeamState,
 ): string {
-  if (fixture_state.status === "missing") {
+  if (fixture_state.status === PRESENCE_STATUS.MISSING) {
     return FIXTURE_LINEUP_FALLBACK_TEXT.UNKNOWN_FIXTURE;
   }
 
   const home_team_name =
-    home_team_state.status === "present"
+    home_team_state.status === PRESENCE_STATUS.PRESENT
       ? home_team_state.team.name
       : FIXTURE_LINEUP_FALLBACK_TEXT.UNKNOWN_TEAM;
   const away_team_name =
-    away_team_state.status === "present"
+    away_team_state.status === PRESENCE_STATUS.PRESENT
       ? away_team_state.team.name
       : FIXTURE_LINEUP_FALLBACK_TEXT.UNKNOWN_TEAM;
   return `${home_team_name} vs ${away_team_name}`;

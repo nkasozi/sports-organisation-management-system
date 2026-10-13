@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 import {
   build_bulk_player_assignment_auth_filter,
@@ -38,7 +38,12 @@ vi.mock("$lib/presentation/logic/bulkPlayerAssignmentPageState", () => ({
 }));
 
 describe("bulkPlayerAssignmentPageData", () => {
-  function create_dependencies() {
+  function create_dependencies(): {
+    gender_use_cases: { list: Mock };
+    membership_use_cases: { create: Mock; list: Mock };
+    player_use_cases: { list: Mock };
+    team_use_cases: { list: Mock };
+  } {
     return {
       gender_use_cases: { list: vi.fn() },
       membership_use_cases: { create: vi.fn(), list: vi.fn() },

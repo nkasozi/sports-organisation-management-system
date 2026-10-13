@@ -1,14 +1,22 @@
 import type { EntityId, Name, ScalarInput } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 import type { FormatType, LeagueConfig } from "./CompetitionFormat";
-import { FORMAT_TYPE } from "./StatusConstants";
+import {
+  COMPETITION_STAGE_MESSAGES,
+  DEFAULT_STAGE_BLUEPRINTS,
+  LEAGUE_ROUND_NAME_PREFIX,
+  STAGE_TYPE_LABELS,
+} from "./CompetitionStageConstants";
+import {
+  check_condition,
+  check_required_entity_id,
+  check_required_name,
+  collect_validation_errors,
+} from "./EntityValidation";
+import type { StageTypeValue } from "./StatusConstants";
+import { ENTITY_STATUS, FORMAT_TYPE, STAGE_TYPE } from "./StatusConstants";
 
-export type StageType =
-  | "group_stage"
-  | "knockout_stage"
-  | "league_stage"
-  | "one_off_stage"
-  | "custom";
+export type StageType = StageTypeValue;
 
 export interface CompetitionStage extends BaseEntity {
   competition_id: EntityId;
@@ -25,17 +33,14 @@ export type CreateCompetitionStageInput = Omit<
 
 export type UpdateCompetitionStageInput = Partial<CreateCompetitionStageInput>;
 
-export const STAGE_TYPE_OPTIONS: { value: StageType; label: string }[] = [
-  { value: "group_stage", label: "Group Stage" },
-  { value: "knockout_stage", label: "Knockout Stage" },
-  { value: "league_stage", label: "League Stage" },
-  { value: "one_off_stage", label: "One-Off Stage" },
-  { value: "custom", label: "Custom" },
-];
+export const STAGE_TYPE_OPTIONS: { value: StageType; label: string }[] =
+  Object.values(STAGE_TYPE).map((value) => ({
+    value,
+    label: STAGE_TYPE_LABELS[value],
+  }));
 
 export function get_stage_type_label(stage_type: StageType): string {
-  const found = STAGE_TYPE_OPTIONS.find((opt) => opt.value === stage_type);
-  return found?.label ?? stage_type;
+  return STAGE_TYPE_LABELS[stage_type];
 }
 
 export function create_empty_competition_stage_input(
@@ -44,76 +49,38 @@ export function create_empty_competition_stage_input(
   return {
     competition_id,
     name: "",
-    stage_type: "league_stage",
+    stage_type: STAGE_TYPE.LEAGUE_STAGE,
     stage_order: 1,
-    status: "active",
+    status: ENTITY_STATUS.ACTIVE,
   };
 }
 
 export function validate_competition_stage_input(
   input: CreateCompetitionStageInput,
 ): string[] {
-  const errors: string[] = [];
-
-  if (!input.competition_id || input.competition_id.trim().length === 0) {
-    errors.push("Competition ID is required");
-  }
-
-  if (!input.name || input.name.trim().length === 0) {
-    errors.push("Stage name is required");
-  }
-
-  if (input.stage_order < 1) {
-    errors.push("Stage order must be at least 1");
-  }
-
-  return errors;
+  return collect_validation_errors([
+    check_required_entity_id(
+      input.competition_id,
+      COMPETITION_STAGE_MESSAGES.COMPETITION_ID_REQUIRED,
+    ),
+    check_required_name(input.name, COMPETITION_STAGE_MESSAGES.NAME_REQUIRED),
+    check_condition(
+      input.stage_order >= 1,
+      COMPETITION_STAGE_MESSAGES.STAGE_ORDER_INVALID,
+    ),
+  ]);
 }
 
 export function create_default_stage_templates(
   format_type: FormatType,
   league_config?: LeagueConfig,
-): import("$lib/core/types/DomainScalars").ScalarInput<CreateCompetitionStageInput>[] {
-  switch (format_type) {
-    case FORMAT_TYPE.LEAGUE:
-      return build_league_templates(league_config);
-    case FORMAT_TYPE.ROUND_ROBIN:
-      return [build_template("Round Robin", "league_stage", 1)];
-    case FORMAT_TYPE.GROUPS_KNOCKOUT:
-      return [
-        build_template("Pool Stage", "group_stage", 1),
-        build_template("Semi Finals", "knockout_stage", 2),
-        build_template("Final", "one_off_stage", 3),
-      ];
-    case FORMAT_TYPE.STRAIGHT_KNOCKOUT:
-      return [
-        build_template("Round of 16", "knockout_stage", 1),
-        build_template("Quarter Finals", "knockout_stage", 2),
-        build_template("Semi Finals", "knockout_stage", 3),
-        build_template("Final", "one_off_stage", 4),
-      ];
-    case FORMAT_TYPE.GROUPS_PLAYOFFS:
-      return [
-        build_template("Pool Stage", "group_stage", 1),
-        build_template("Playoffs", "knockout_stage", 2),
-        build_template("Final", "one_off_stage", 3),
-      ];
-    case FORMAT_TYPE.DOUBLE_ELIMINATION:
-      return [
-        build_template("Winners Bracket", "knockout_stage", 1),
-        build_template("Losers Bracket", "knockout_stage", 2),
-        build_template("Grand Final", "one_off_stage", 3),
-      ];
-    case FORMAT_TYPE.SWISS:
-      return [
-        build_template("Swiss Rounds", "league_stage", 1),
-        build_template("Final", "one_off_stage", 2),
-      ];
-    case FORMAT_TYPE.CUSTOM:
-      return [build_template("Stage 1", "custom", 1)];
-    default:
-      return [build_template("Stage 1", "custom", 1)];
+): CreateCompetitionStageInput[] {
+  if (format_type === FORMAT_TYPE.LEAGUE) {
+    return build_league_templates(league_config);
   }
+  return DEFAULT_STAGE_BLUEPRINTS[format_type].map((blueprint, index) =>
+    build_template(blueprint.name, blueprint.stage_type, index + 1),
+  );
 }
 
 function build_league_templates(
@@ -121,7 +88,11 @@ function build_league_templates(
 ): CreateCompetitionStageInput[] {
   const number_of_rounds = league_config?.number_of_rounds ?? 1;
   return Array.from({ length: number_of_rounds }, (_, index) =>
-    build_template(`Round ${index + 1}`, "league_stage", index + 1),
+    build_template(
+      `${LEAGUE_ROUND_NAME_PREFIX}${index + 1}`,
+      STAGE_TYPE.LEAGUE_STAGE,
+      index + 1,
+    ),
   );
 }
 
@@ -135,6 +106,6 @@ function build_template(
     name,
     stage_type,
     stage_order,
-    status: "active",
+    status: ENTITY_STATUS.ACTIVE,
   };
 }

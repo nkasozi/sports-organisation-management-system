@@ -3,11 +3,15 @@ import { derived, type Readable } from "svelte/store";
 import type { SyncStatus } from "$lib/infrastructure/sync/convexSyncService";
 
 import { sync_store } from "./syncStore";
-import type {
-  LastSyncTimeState,
-  SyncErrorState,
-  SyncProgressState,
+import {
+  type LastSyncTimeState,
+  type SyncErrorState,
+  type SyncProgressState,
+  SyncProgressStatus,
 } from "./syncStoreTypes";
+
+const SYNCING_STATUS: SyncStatus = "syncing";
+const IDLE_STATUS: SyncStatus = "idle";
 
 export const is_syncing: Readable<boolean> = derived(
   sync_store,
@@ -20,13 +24,13 @@ export const sync_progress: Readable<SyncProgressState> = derived(
 );
 
 export const sync_percentage: Readable<number> = derived(sync_store, ($s) =>
-  $s.current_progress.status === "active"
+  $s.current_progress.status === SyncProgressStatus.ACTIVE
     ? $s.current_progress.progress.percentage
     : 0,
 );
 
 export const sync_status: Readable<SyncStatus> = derived(sync_store, ($s) =>
-  $s.is_syncing ? "syncing" : "idle",
+  $s.is_syncing ? SYNCING_STATUS : IDLE_STATUS,
 );
 
 export const last_sync_time: Readable<LastSyncTimeState> = derived(

@@ -7,26 +7,28 @@ import type { Team } from "$lib/core/entities/Team";
 import type { Venue } from "$lib/core/entities/Venue";
 import type { AsyncResult } from "$lib/core/types/Result";
 
+import type { PRESENCE_STATUS } from "./presenceStatus";
+
 export interface MatchReportAssignedOfficialData {
   official: Official;
   role_name: string;
 }
 
 export type MatchReportTeamState =
-  | { status: "missing" }
-  | { status: "present"; team: Team };
+  | { status: typeof PRESENCE_STATUS.MISSING }
+  | { status: typeof PRESENCE_STATUS.PRESENT; team: Team };
 
 export type MatchReportCompetitionState =
-  | { status: "missing" }
-  | { status: "present"; competition: Competition };
+  | { status: typeof PRESENCE_STATUS.MISSING }
+  | { status: typeof PRESENCE_STATUS.PRESENT; competition: Competition };
 
 export type MatchReportSportState =
-  | { status: "missing" }
-  | { status: "present"; sport: Sport };
+  | { status: typeof PRESENCE_STATUS.MISSING }
+  | { status: typeof PRESENCE_STATUS.PRESENT; sport: Sport };
 
 export type MatchReportVenueState =
-  | { status: "missing" }
-  | { status: "present"; venue: Venue };
+  | { status: typeof PRESENCE_STATUS.MISSING }
+  | { status: typeof PRESENCE_STATUS.PRESENT; venue: Venue };
 
 export interface MatchReportPageData {
   fixture: Fixture;
@@ -42,8 +44,8 @@ export interface MatchReportPageData {
 }
 
 export type MatchReportPageDataState =
-  | { status: "missing" }
-  | { status: "present"; page_data: MatchReportPageData };
+  | { status: typeof PRESENCE_STATUS.MISSING }
+  | { status: typeof PRESENCE_STATUS.PRESENT; page_data: MatchReportPageData };
 
 export interface MatchReportRefreshData {
   fixture: Fixture;

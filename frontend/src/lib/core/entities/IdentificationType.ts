@@ -17,16 +17,6 @@ export type CreateIdentificationTypeInput = Omit<
 export type UpdateIdentificationTypeInput =
   Partial<CreateIdentificationTypeInput>;
 
-function create_empty_identification_type_input(): CreateIdentificationTypeInput {
-  return {
-    name: "",
-    identifier_field_label: "",
-    description: "",
-    status: "active",
-    organization_id: "",
-  };
-}
-
 export function validate_identification_type_input(
   input: CreateIdentificationTypeInput,
 ): string[] {
@@ -46,10 +36,4 @@ export function validate_identification_type_input(
   }
 
   return validation_errors;
-}
-
-function get_identification_type_display_name(
-  identification_type: IdentificationType,
-): string {
-  return identification_type.name;
 }

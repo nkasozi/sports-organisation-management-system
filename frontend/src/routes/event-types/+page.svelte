@@ -1,9 +1,9 @@
 <script lang="ts">
-  import EntityCrudWrapper from "$lib/presentation/components/EntityCrudWrapper.svelte";
+    import EntityCrudWrapper from "$lib/presentation/components/EntityCrudWrapper.svelte";
 </script>
 
 <svelte:head>
-  <title>Event Types - Sports Management</title>
+    <title>Event Types - Sports Management</title>
 </svelte:head>
 
 <EntityCrudWrapper entity_type="GameEventType" />

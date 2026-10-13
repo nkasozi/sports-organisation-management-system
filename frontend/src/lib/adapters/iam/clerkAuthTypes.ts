@@ -1,3 +1,8 @@
+export const CLERK_PRESENCE_STATUS = {
+  PRESENT: "present",
+  MISSING: "missing",
+} as const;
+
 export interface ClerkUser {
   id: string;
   email_address: string;
@@ -8,12 +13,12 @@ export interface ClerkUser {
 }
 
 export type ClerkUserState =
-  | { status: "present"; user: ClerkUser }
-  | { status: "missing" };
+  | { status: typeof CLERK_PRESENCE_STATUS.PRESENT; user: ClerkUser }
+  | { status: typeof CLERK_PRESENCE_STATUS.MISSING };
 
 export type ClerkSessionIdentifierState =
-  | { status: "present"; session_id: string }
-  | { status: "missing" };
+  | { status: typeof CLERK_PRESENCE_STATUS.PRESENT; session_id: string }
+  | { status: typeof CLERK_PRESENCE_STATUS.MISSING };
 
 export interface ClerkSessionState {
   is_loaded: boolean;
@@ -25,6 +30,11 @@ export interface ClerkSessionState {
 export const INITIAL_CLERK_STATE: ClerkSessionState = {
   is_loaded: false,
   is_signed_in: false,
-  user_state: { status: "missing" },
-  session_id_state: { status: "missing" },
+  user_state: { status: CLERK_PRESENCE_STATUS.MISSING },
+  session_id_state: { status: CLERK_PRESENCE_STATUS.MISSING },
+};
+
+export const LOADED_SIGNED_OUT_CLERK_STATE: ClerkSessionState = {
+  ...INITIAL_CLERK_STATE,
+  is_loaded: true,
 };

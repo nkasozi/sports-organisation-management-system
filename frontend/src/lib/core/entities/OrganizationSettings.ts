@@ -17,7 +17,13 @@ export interface SocialMediaLink {
   url: HttpUrlValue;
 }
 
-export type HeaderFooterPattern = "solid_color" | "pattern";
+const HEADER_FOOTER_PATTERN = {
+  SOLID_COLOR: "solid_color",
+  PATTERN: "pattern",
+} as const;
+
+export type HeaderFooterPattern =
+  (typeof HEADER_FOOTER_PATTERN)[keyof typeof HEADER_FOOTER_PATTERN];
 
 export const DEFAULT_SYNC_INTERVAL_MS = 3_600_000;
 

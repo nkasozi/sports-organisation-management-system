@@ -1,9 +1,14 @@
 <script lang="ts">
     import type { Team } from "$lib/core/entities/Team";
 
+    import {
+        COMPETITION_TEAM_CARD_ACTION,
+        type CompetitionTeamCardAction,
+    } from "./competitionTabConstants";
+
     export let team: Team;
     export let action_label: string;
-    export let action_icon: "add" | "remove";
+    export let action_icon: CompetitionTeamCardAction;
     export let action_button_classes: string;
     export let container_classes: string;
     export let disabled: boolean = false;
@@ -35,7 +40,7 @@
             viewBox="0 0 24 24"
             stroke="currentColor"
         >
-            {#if action_icon === "add"}
+            {#if action_icon === COMPETITION_TEAM_CARD_ACTION.ADD}
                 <path
                     stroke-linecap="round"
                     stroke-linejoin="round"

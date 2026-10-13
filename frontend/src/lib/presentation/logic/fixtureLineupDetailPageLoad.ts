@@ -5,16 +5,13 @@ import type { PlayerPosition } from "$lib/core/entities/PlayerPosition";
 import type { PlayerTeamMembership } from "$lib/core/entities/PlayerTeamMembership";
 import type { Team } from "$lib/core/entities/Team";
 import {
-  build_position_name_by_id,
-  build_team_players,
-} from "$lib/core/services/teamPlayers";
-import {
   type AsyncResult,
   create_failure_result,
   create_success_result,
   type PaginatedAsyncResult,
   type Result,
 } from "$lib/core/types/Result";
+import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
 import type {
   FixtureLineupDetailFixtureState,
@@ -22,12 +19,9 @@ import type {
   FixtureLineupDetailPageViewData,
   FixtureLineupDetailTeamState,
 } from "./fixtureLineupDetailPageContracts";
+import { load_fixture_lineup_detail_team_players } from "./fixtureLineupDetailPageRoster";
 
 const FIXTURE_LINEUP_DETAIL_PAGE_LOAD_SETTINGS = {
-  FIRST_PAGE_NUMBER: 1,
-  PLAYERS_PAGE_SIZE: 500,
-  MEMBERSHIPS_PAGE_SIZE: 5000,
-  POSITIONS_PAGE_SIZE: 500,
   LINEUP_NOT_FOUND: "Lineup not found",
 } as const;
 
@@ -51,16 +45,6 @@ export interface FixtureLineupDetailPageDependencies {
       | undefined,
     options: { page_number: number; page_size: number },
   ): PaginatedAsyncResult<PlayerPosition>;
-}
-
-function build_position_filter(
-  organization_scope_state: FixtureLineupDetailOrganizationScopeState,
-): { organization_id: string } | undefined {
-  if (organization_scope_state.status === "unscoped") {
-    return;
-  }
-
-  return { organization_id: organization_scope_state.organization_id };
 }
 
 function build_missing_team_state(): FixtureLineupDetailTeamState {
@@ -94,7 +78,7 @@ async function load_fixture_teams(
   home_team_state: FixtureLineupDetailTeamState;
   away_team_state: FixtureLineupDetailTeamState;
 }> {
-  if (fixture_state.status === "missing") {
+  if (fixture_state.status === PRESENCE_STATUS.MISSING) {
     return {
       home_team_state: build_missing_team_state(),
       away_team_state: build_missing_team_state(),
@@ -128,42 +112,15 @@ export async function load_fixture_lineup_detail_page_data(input: {
   }
 
   const lineup = lineup_result.data;
-  const [
-    fixture_result,
-    team_result,
-    players_result,
-    memberships_result,
-    positions_result,
-  ] = await Promise.all([
+  const [fixture_result, team_result, team_players] = await Promise.all([
     input.dependencies.get_fixture_by_id(lineup.fixture_id),
     input.dependencies.get_team_by_id(lineup.team_id),
-    input.dependencies.list_players_by_team(lineup.team_id, {
-      page_number: FIXTURE_LINEUP_DETAIL_PAGE_LOAD_SETTINGS.FIRST_PAGE_NUMBER,
-      page_size: FIXTURE_LINEUP_DETAIL_PAGE_LOAD_SETTINGS.PLAYERS_PAGE_SIZE,
-    }),
-    input.dependencies.list_memberships_by_team(lineup.team_id, {
-      page_number: FIXTURE_LINEUP_DETAIL_PAGE_LOAD_SETTINGS.FIRST_PAGE_NUMBER,
-      page_size: FIXTURE_LINEUP_DETAIL_PAGE_LOAD_SETTINGS.MEMBERSHIPS_PAGE_SIZE,
-    }),
-    input.dependencies.list_positions(
-      build_position_filter(input.organization_scope_state),
-      {
-        page_number: FIXTURE_LINEUP_DETAIL_PAGE_LOAD_SETTINGS.FIRST_PAGE_NUMBER,
-        page_size: FIXTURE_LINEUP_DETAIL_PAGE_LOAD_SETTINGS.POSITIONS_PAGE_SIZE,
-      },
+    load_fixture_lineup_detail_team_players(
+      lineup,
+      input.organization_scope_state,
+      input.dependencies,
     ),
   ]);
-  const players = players_result.success ? players_result.data.items : [];
-  const memberships = memberships_result.success
-    ? memberships_result.data.items
-    : [];
-  const positions = positions_result.success ? positions_result.data.items : [];
-  const position_name_by_id = build_position_name_by_id(positions);
-  const team_players = build_team_players(
-    players,
-    memberships,
-    position_name_by_id,
-  );
   const fixture_state =
     build_fixture_lineup_detail_fixture_state(fixture_result);
   const team_state = build_fixture_lineup_detail_team_state(team_result);

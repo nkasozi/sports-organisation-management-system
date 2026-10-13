@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { PROFILE_MANAGEMENT_PAGE_EVENT } from "./profileManagementPageConstants";
 import { load_profile_management_page_data } from "./profileManagementPageData";
 
 describe("profileManagementPageData", () => {
@@ -51,7 +52,8 @@ describe("profileManagementPageData", () => {
     });
   });
 
-  it("returns the profile load error or fallback message when profile loading fails", async () => {
+  it("returns the friendly fallback message and logs the raw error when profile loading fails", async () => {
+    const error_spy = vi.spyOn(console, "error").mockImplementation(() => {});
     const profile_use_cases = {
       list: vi.fn().mockResolvedValue({
         success: false,
@@ -71,8 +73,16 @@ describe("profileManagementPageData", () => {
       ),
     ).toEqual({
       success: false,
-      error_message: "profile list failed",
+      error_message: "Failed to load profiles",
     });
+    expect(error_spy).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        event: PROFILE_MANAGEMENT_PAGE_EVENT.PROFILES_LOAD_FAILED,
+        error: "profile list failed",
+      }),
+    );
+    error_spy.mockRestore();
   });
 
   it("keeps profiles when related entity loading fails and omits related options", async () => {

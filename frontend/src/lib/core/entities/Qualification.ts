@@ -5,18 +5,47 @@ import type {
   ScalarInput,
   ScalarValueInput,
 } from "../types/DomainScalars";
+import {
+  create_none_option,
+  create_some_option,
+  type Option,
+} from "../types/Option";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
+import {
+  check_condition,
+  collect_validation_errors,
+  is_blank_text,
+} from "./EntityValidation";
+import { ENTITY_STATUS } from "./StatusConstants";
 
-export type QualificationHolderType = "official" | "team_staff";
+const QUALIFICATION_VALIDATION_MESSAGES = {
+  HOLDER_TYPE_REQUIRED: "Holder type is required",
+  HOLDER_ID_REQUIRED: "Holder ID is required",
+  CERTIFICATION_NAME_REQUIRED: "Certification name is required",
+  CERTIFICATION_LEVEL_REQUIRED: "Certification level is required",
+  EXPIRY_NOT_AFTER_ISSUE: "Expiry date must be after issue date",
+} as const;
+
+export const QUALIFICATION_HOLDER_TYPE = {
+  OFFICIAL: "official",
+  TEAM_STAFF: "team_staff",
+} as const;
+
+export type QualificationHolderType =
+  (typeof QUALIFICATION_HOLDER_TYPE)[keyof typeof QUALIFICATION_HOLDER_TYPE];
+
+const CERTIFICATION_LEVEL = {
+  TRAINEE: "trainee",
+  LOCAL: "local",
+  REGIONAL: "regional",
+  NATIONAL: "national",
+  INTERNATIONAL: "international",
+  FIFA: "fifa",
+  OTHER: "other",
+} as const;
 
 export type CertificationLevel =
-  | "trainee"
-  | "local"
-  | "regional"
-  | "national"
-  | "international"
-  | "fifa"
-  | "other";
+  (typeof CERTIFICATION_LEVEL)[keyof typeof CERTIFICATION_LEVEL];
 
 export interface Qualification extends BaseEntity {
   holder_type: QualificationHolderType;
@@ -39,24 +68,12 @@ export type CreateQualificationInput = Omit<
 
 export type UpdateQualificationInput = Partial<CreateQualificationInput>;
 
-type QualificationExpiryDayCount =
-  | { status: "missing" }
-  | { status: "present"; day_count: number };
+const ISO_DATE_TIME_SEPARATOR = "T";
+const MILLISECONDS_PER_DAY = 1000 * 60 * 60 * 24;
 
-const CERTIFICATION_LEVEL_OPTIONS = [
-  { value: "trainee", label: "Trainee" },
-  { value: "local", label: "Local" },
-  { value: "regional", label: "Regional" },
-  { value: "national", label: "National" },
-  { value: "international", label: "International" },
-  { value: "fifa", label: "FIFA" },
-  { value: "other", label: "Other" },
-];
-
-const HOLDER_TYPE_OPTIONS = [
-  { value: "official", label: "Official" },
-  { value: "team_staff", label: "Team Staff" },
-];
+function to_iso_date(date: Date): string {
+  return date.toISOString().split(ISO_DATE_TIME_SEPARATOR)[0];
+}
 
 export function create_empty_qualification_input(
   holder_type: QualificationHolderType,
@@ -69,47 +86,45 @@ export function create_empty_qualification_input(
     holder_type,
     holder_id,
     certification_name: "",
-    certification_level: "local",
+    certification_level: CERTIFICATION_LEVEL.LOCAL,
     certification_number: "",
     issuing_authority: "",
-    issue_date: new Date().toISOString().split("T")[0],
-    expiry_date: one_year_from_now.toISOString().split("T")[0],
+    issue_date: to_iso_date(new Date()),
+    expiry_date: to_iso_date(one_year_from_now),
     specializations: [],
     notes: "",
-    status: "active",
+    status: ENTITY_STATUS.ACTIVE,
   };
 }
 
 export function validate_qualification_input(
   input: CreateQualificationInput,
 ): string[] {
-  const validation_errors: string[] = [];
-
-  if (!input.holder_type) {
-    validation_errors.push("Holder type is required");
-  }
-
-  if (!input.holder_id) {
-    validation_errors.push("Holder ID is required");
-  }
-
-  if (!input.certification_name || input.certification_name.trim().length < 1) {
-    validation_errors.push("Certification name is required");
-  }
-
-  if (!input.certification_level) {
-    validation_errors.push("Certification level is required");
-  }
-
-  if (input.issue_date && input.expiry_date) {
-    const issue = new Date(input.issue_date);
-    const expiry = new Date(input.expiry_date);
-    if (expiry <= issue) {
-      validation_errors.push("Expiry date must be after issue date");
-    }
-  }
-
-  return validation_errors;
+  const has_both_dates =
+    Boolean(input.issue_date) && Boolean(input.expiry_date);
+  return collect_validation_errors([
+    check_condition(
+      Boolean(input.holder_type),
+      QUALIFICATION_VALIDATION_MESSAGES.HOLDER_TYPE_REQUIRED,
+    ),
+    check_condition(
+      Boolean(input.holder_id),
+      QUALIFICATION_VALIDATION_MESSAGES.HOLDER_ID_REQUIRED,
+    ),
+    check_condition(
+      !is_blank_text(input.certification_name),
+      QUALIFICATION_VALIDATION_MESSAGES.CERTIFICATION_NAME_REQUIRED,
+    ),
+    check_condition(
+      Boolean(input.certification_level),
+      QUALIFICATION_VALIDATION_MESSAGES.CERTIFICATION_LEVEL_REQUIRED,
+    ),
+    check_condition(
+      !has_both_dates ||
+        new Date(input.expiry_date) > new Date(input.issue_date),
+      QUALIFICATION_VALIDATION_MESSAGES.EXPIRY_NOT_AFTER_ISSUE,
+    ),
+  ]);
 }
 
 export function is_qualification_expired(
@@ -124,9 +139,9 @@ export function is_qualification_expired(
 
 export function get_days_until_expiry(
   expiry_date: ScalarValueInput<Qualification["expiry_date"]>,
-): QualificationExpiryDayCount {
+): Option<number> {
   if (!expiry_date) {
-    return { status: "missing" };
+    return create_none_option();
   }
   const expiry = new Date(expiry_date);
   const today = new Date();
@@ -134,22 +149,5 @@ export function get_days_until_expiry(
   expiry.setHours(0, 0, 0, 0);
 
   const diff_time = expiry.getTime() - today.getTime();
-  const diff_days = Math.ceil(diff_time / (1000 * 60 * 60 * 24));
-  return { status: "present", day_count: diff_days };
-}
-
-function get_qualification_display_name(qualification: Qualification): string {
-  return `${qualification.certification_name} (${qualification.certification_level})`;
-}
-
-function get_expiry_status_color(
-  expiry_date: Qualification["expiry_date"],
-): string {
-  const expiry_day_count = get_days_until_expiry(expiry_date);
-
-  if (expiry_day_count.status !== "present") return "gray";
-  if (expiry_day_count.day_count < 0) return "red";
-  if (expiry_day_count.day_count <= 30) return "blue";
-  if (expiry_day_count.day_count <= 90) return "yellow";
-  return "green";
+  return create_some_option(Math.ceil(diff_time / MILLISECONDS_PER_DAY));
 }

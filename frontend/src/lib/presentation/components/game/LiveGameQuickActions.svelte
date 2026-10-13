@@ -1,13 +1,18 @@
 <script lang="ts">
     import type { QuickEventButton } from "$lib/core/entities/Fixture";
 
+    import {
+        GAME_EVENT_TEAM_SIDE,
+        type GameTeamSide,
+    } from "./gameDisplayConstants";
+
     export let home_team_name: string;
     export let away_team_name: string;
     export let all_event_buttons: QuickEventButton[];
     export let is_clock_running: boolean;
     export let on_open_event_modal: (
         event_button: QuickEventButton,
-        team_side: "home" | "away",
+        team_side: GameTeamSide,
     ) => void;
 </script>
 
@@ -26,7 +31,10 @@
                     {#each all_event_buttons as event_button}<button
                             class={`flex flex-col items-center justify-center p-2 rounded-[0.175rem] text-white transition-all active:scale-95 ${event_button.color}`}
                             on:click={() =>
-                                on_open_event_modal(event_button, "home")}
+                                on_open_event_modal(
+                                    event_button,
+                                    GAME_EVENT_TEAM_SIDE.HOME,
+                                )}
                             disabled={!is_clock_running}
                             ><span class="text-lg">{event_button.icon}</span
                             ><span
@@ -52,7 +60,10 @@
                     {#each all_event_buttons as event_button}<button
                             class={`flex flex-col items-center justify-center p-2 rounded-[0.175rem] text-white transition-all active:scale-95 ${event_button.color}`}
                             on:click={() =>
-                                on_open_event_modal(event_button, "away")}
+                                on_open_event_modal(
+                                    event_button,
+                                    GAME_EVENT_TEAM_SIDE.AWAY,
+                                )}
                             disabled={!is_clock_running}
                             ><span class="text-lg">{event_button.icon}</span
                             ><span

@@ -12,10 +12,32 @@ import type {
   OfficialRepository,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
-import type { PaginatedAsyncResult } from "../../core/types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import { create_default_officials } from "./InBrowserOfficialRepositoryDefaults";
+import {
+  apply_entity_filter_rules,
+  type EntityFilterRule,
+  equals_rule,
+  text_contains_rule,
+} from "./InBrowserRepositoryFilterRules";
+import { reset_repository_data } from "./InBrowserRepositoryReset";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
+import type { RepositoryWriteOrigin } from "./InBrowserRepositoryWriteOrigin";
 
 const ENTITY_PREFIX = "official";
+
+const OFFICIAL_FILTER_RULES: EntityFilterRule<Official, OfficialFilter>[] = [
+  text_contains_rule(
+    "name_contains",
+    (official) => `${official.first_name} ${official.last_name}`,
+  ),
+  equals_rule("organization_id"),
+  equals_rule("status"),
+];
 export class InBrowserOfficialRepository
   extends InBrowserBaseRepository<
     Official,
@@ -71,27 +93,7 @@ export class InBrowserOfficialRepository
     entities: Official[],
     filter: OfficialFilter,
   ): Official[] {
-    let filtered_entities = entities;
-    if (filter.name_contains) {
-      const search_term = filter.name_contains.toLowerCase();
-      filtered_entities = filtered_entities.filter((official) =>
-        `${official.first_name} ${official.last_name}`
-          .toLowerCase()
-          .includes(search_term),
-      );
-    }
-    if (filter.organization_id) {
-      filtered_entities = filtered_entities.filter(
-        (official) => official.organization_id === filter.organization_id,
-      );
-    }
-    if (filter.status) {
-      filtered_entities = filtered_entities.filter(
-        (official) => official.status === filter.status,
-      );
-    }
-
-    return filtered_entities;
+    return apply_entity_filter_rules(entities, filter, OFFICIAL_FILTER_RULES);
   }
 
   async find_by_organization(
@@ -120,90 +122,16 @@ export class InBrowserOfficialRepository
   }
 }
 
-function create_default_officials(): import("$lib/core/types/DomainScalars").ScalarInput<Official>[] {
-  const now = new Date().toISOString();
-  const avatar = DEFAULT_OFFICIAL_AVATAR;
-  return [
-    {
-      id: "official_default_1",
-      first_name: "James",
-      last_name: "Mukasa",
-      gender_id: "gender_default_male",
-      email: "james.mukasa@ugandahockey.org",
-      phone: "+256-700-111-222",
-      date_of_birth: "1985-03-15",
-      organization_id: "org_default_1",
-      years_of_experience: 12,
-      nationality: "Ugandan",
-      profile_image_url: avatar,
-      emergency_contact_name: "Mary Mukasa",
-      emergency_contact_phone: "+256-700-111-333",
-      notes: "Senior referee with international certification",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "official_default_2",
-      first_name: "Sarah",
-      last_name: "Nakato",
-      gender_id: "gender_default_female",
-      email: "sarah.nakato@ugandahockey.org",
-      phone: "+256-700-222-333",
-      date_of_birth: "1990-07-22",
-      organization_id: "org_default_1",
-      years_of_experience: 8,
-      nationality: "Ugandan",
-      profile_image_url: avatar,
-      emergency_contact_name: "Peter Nakato",
-      emergency_contact_phone: "+256-700-222-444",
-      notes: "Technical official specializing in timekeeping",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "official_default_3",
-      first_name: "David",
-      last_name: "Ochieng",
-      gender_id: "gender_default_male",
-      email: "david.ochieng@ugandahockey.org",
-      phone: "+256-700-333-444",
-      date_of_birth: "1988-11-08",
-      organization_id: "org_default_1",
-      years_of_experience: 10,
-      nationality: "Ugandan",
-      profile_image_url: avatar,
-      emergency_contact_name: "Grace Ochieng",
-      emergency_contact_phone: "+256-700-333-555",
-      notes: "Umpire with East African certification",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-  ];
-}
+export const get_official_repository: () => OfficialRepository =
+  create_lazy_repository_accessor(() => new InBrowserOfficialRepository());
 
-type OfficialRepositoryState =
-  | { status: "uninitialized" }
-  | { status: "ready"; repository: InBrowserOfficialRepository };
-
-let official_repository_state: OfficialRepositoryState = {
-  status: "uninitialized",
-};
-
-export function get_official_repository(): OfficialRepository {
-  if (official_repository_state.status === "ready") {
-    return official_repository_state.repository;
-  }
-
-  const repository = new InBrowserOfficialRepository();
-  official_repository_state = { status: "ready", repository };
-
-  return repository;
-}
-export async function reset_official_repository(): Promise<void> {
-  const repository = get_official_repository() as InBrowserOfficialRepository;
-  await repository.clear_all_data();
-  await repository.seed_with_data(create_default_officials());
+export function reset_official_repository(
+  origin: RepositoryWriteOrigin,
+): AsyncResult<number> {
+  return reset_repository_data(
+    (
+      get_official_repository() as InBrowserOfficialRepository
+    ).with_write_origin(origin),
+    create_default_officials(),
+  );
 }

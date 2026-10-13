@@ -52,13 +52,15 @@ describe("liveGameDetailEventActions", () => {
         .mockResolvedValue({ success: true, data: { id: "fixture-1" } }),
     } as Pick<FixtureUseCases, "record_game_event">;
 
-    await record_live_game_extra_time_event(
-      "fixture-1",
-      90,
-      5,
-      "First Half",
-      fixture_use_cases as FixtureUseCases,
-    );
+    const record_live_game_extra_time_event_result =
+      await record_live_game_extra_time_event(
+        "fixture-1",
+        90,
+        5,
+        "First Half",
+        fixture_use_cases as FixtureUseCases,
+      );
+    expect(record_live_game_extra_time_event_result.success).toBe(true);
 
     expect(fixture_use_cases.record_game_event).toHaveBeenCalledWith(
       "fixture-1",

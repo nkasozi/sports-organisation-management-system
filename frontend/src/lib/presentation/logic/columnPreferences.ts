@@ -1,8 +1,15 @@
 import type { AppSettingsPort } from "$lib/core/interfaces/ports";
 import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
 import { get_app_settings_storage } from "$lib/infrastructure/container";
+import { is_string_value } from "$lib/presentation/logic/runtimeTypeGuards";
 
 const COLUMN_PREFERENCES_PREFIX = "col_prefs_";
+
+const COLUMN_PREFERENCES_EVENTS = {
+  SAVED: "column_preferences_saved",
+  RESTORED: "column_preferences_restored",
+  INVALID_CACHE: "column_preferences_invalid_cache",
+} as const;
 
 interface ColumnPreferenceResult {
   restored: boolean;
@@ -56,9 +63,12 @@ export async function save_column_preferences(
 
   await storage.set_setting(cache_key, JSON.stringify(column_names));
 
-  console.log(
-    `[ColumnPrefs] Saved ${column_names.length} column preferences for ${command.entity_type} (key: ${cache_key})`,
-  );
+  console.log("[ColumnPrefs] Saved column preferences", {
+    event: COLUMN_PREFERENCES_EVENTS.SAVED,
+    entity_type: command.entity_type,
+    cache_key,
+    column_count: column_names.length,
+  });
 
   return true;
 }
@@ -81,21 +91,27 @@ export async function load_column_preferences(
     const available_set = new Set(command.available_field_names);
     const valid_columns = parsed_columns.filter(
       (column_name: unknown): column_name is string =>
-        typeof column_name === "string" && available_set.has(column_name),
+        is_string_value(column_name) && available_set.has(column_name),
     );
 
     if (valid_columns.length === 0)
       return { restored: false, columns: new Set() };
 
-    console.log(
-      `[ColumnPrefs] Restored ${valid_columns.length} cached columns for ${command.entity_type} (key: ${cache_key})`,
-    );
+    console.log("[ColumnPrefs] Restored cached column preferences", {
+      event: COLUMN_PREFERENCES_EVENTS.RESTORED,
+      entity_type: command.entity_type,
+      cache_key,
+      column_count: valid_columns.length,
+    });
 
     return { restored: true, columns: new Set(valid_columns) };
-  } catch {
-    console.warn(
-      `[ColumnPrefs] Invalid cached column data for ${command.entity_type}, ignoring (key: ${cache_key})`,
-    );
+  } catch (error) {
+    console.warn("[ColumnPrefs] Ignoring invalid cached column data", {
+      event: COLUMN_PREFERENCES_EVENTS.INVALID_CACHE,
+      entity_type: command.entity_type,
+      cache_key,
+      error: String(error),
+    });
     return { restored: false, columns: new Set() };
   }
 }

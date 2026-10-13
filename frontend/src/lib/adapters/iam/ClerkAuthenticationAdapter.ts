@@ -1,13 +1,9 @@
-import { get } from "svelte/store";
-
 import type {
   AuthenticationPort,
   AuthToken,
-  AuthTokenPayload,
   AuthTokenPayloadCore,
   AuthVerificationResult,
 } from "$lib/core/interfaces/ports";
-import { create_auth_token_payload } from "$lib/core/interfaces/ports";
 import type { Result } from "$lib/core/types/Result";
 import {
   create_failure_result,
@@ -17,82 +13,22 @@ import {
   type AuthCache,
   create_auth_cache,
 } from "$lib/infrastructure/cache/AuthCache";
+import { CACHE_LOOKUP_STATUS } from "$lib/infrastructure/cache/authCacheConstants";
 
-import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
 import {
-  clerk_session,
-  type ClerkUser as ClerkServiceUser,
-  get_session_token,
-} from "./clerkAuthService";
+  build_auth_token_payload,
+  build_invalid_verification_result,
+  build_valid_verification_result,
+  type ClerkSessionProvider,
+  create_clerk_session_provider,
+} from "./clerkAuthenticationHelpers";
+import { IAM_LOG_EVENT, IAM_MESSAGE, SINGLETON_STATUS } from "./iamConstants";
+
+export type { ClerkSessionProvider } from "./clerkAuthenticationHelpers";
 
 const CLERK_VERIFICATION_CACHE_MAX_ENTRIES = 50;
 const CLERK_VERIFICATION_CACHE_TTL_MS = 30 * 60 * 1000;
-const TOKEN_EXPIRY_SECONDS = 60 * 60;
-
-export interface ClerkUserInfo {
-  id: string;
-  email_address: string;
-  full_name: string;
-  first_name: string;
-  last_name: string;
-  image_url?: string;
-}
-
-export interface ClerkSessionProvider {
-  get_session_token(): Promise<Result<string>>;
-  get_current_user(): Result<ClerkUserInfo>;
-  is_signed_in(): boolean;
-}
-
-function build_auth_token_payload(
-  input: AuthTokenPayloadCore,
-): AuthTokenPayload {
-  const now_in_seconds = Math.floor(Date.now() / 1000);
-  return {
-    ...input,
-    issued_at: now_in_seconds,
-    expires_at: now_in_seconds + TOKEN_EXPIRY_SECONDS,
-  };
-}
-
-function build_verification_payload_from_clerk_user(
-  clerk_user: ClerkUserInfo,
-): Result<AuthTokenPayload> {
-  const now_in_seconds = Math.floor(Date.now() / 1000);
-  return create_auth_token_payload({
-    user_id: clerk_user.id,
-    email: clerk_user.email_address,
-    display_name:
-      clerk_user.full_name ||
-      `${clerk_user.first_name} ${clerk_user.last_name}`.trim(),
-    role: "public_viewer",
-    organization_id: WILDCARD_SCOPE,
-    team_id: "*",
-    issued_at: now_in_seconds,
-    expires_at: now_in_seconds + TOKEN_EXPIRY_SECONDS,
-  });
-}
-
-function build_invalid_verification_result(
-  error_message: string,
-): AuthVerificationResult {
-  return { is_valid: false, error_message };
-}
-
-function build_valid_verification_result(
-  clerk_user: ClerkUserInfo,
-): AuthVerificationResult {
-  const payload_result = build_verification_payload_from_clerk_user(clerk_user);
-
-  if (!payload_result.success) {
-    return build_invalid_verification_result(payload_result.error);
-  }
-
-  return {
-    is_valid: true,
-    payload: payload_result.data,
-  };
-}
+const CLERK_MANAGED_SIGNATURE = "clerk-managed";
 
 export class ClerkAuthenticationAdapter implements AuthenticationPort {
   private session_provider: ClerkSessionProvider;
@@ -125,13 +61,13 @@ export class ClerkAuthenticationAdapter implements AuthenticationPort {
     }
     const payload = build_auth_token_payload(payload_input);
     console.log("[ClerkAuthenticationAdapter] Generated token", {
-      event: "clerk_token_generated",
+      event: IAM_LOG_EVENT.CLERK_TOKEN_GENERATED,
       user_id: payload.user_id,
       role: payload.role,
     });
     return create_success_result({
       payload,
-      signature: "clerk-managed",
+      signature: CLERK_MANAGED_SIGNATURE,
       raw_token: session_token_result.data,
     });
   }
@@ -139,11 +75,11 @@ export class ClerkAuthenticationAdapter implements AuthenticationPort {
   async verify_token(
     raw_token: string,
   ): Promise<Result<AuthVerificationResult>> {
-    const cached = this.verification_cache.get_or_miss(raw_token);
-    if (cached.is_hit && cached.value) {
-      console.log(
-        "[ClerkAuthenticationAdapter] Cache HIT for token verification",
-      );
+    const cached = this.verification_cache.lookup(raw_token);
+    if (cached.status === CACHE_LOOKUP_STATUS.HIT) {
+      console.log("[ClerkAuthenticationAdapter] Verification cache hit", {
+        event: IAM_LOG_EVENT.CLERK_TOKEN_CACHE_HIT,
+      });
       return create_success_result(cached.value);
     }
     const result = this.verify_token_via_clerk_session();
@@ -155,82 +91,54 @@ export class ClerkAuthenticationAdapter implements AuthenticationPort {
 
   private verify_token_via_clerk_session(): AuthVerificationResult {
     if (!this.session_provider.is_signed_in()) {
-      console.log(
-        "[ClerkAuthenticationAdapter] No active Clerk session for verification",
-      );
+      console.log("[ClerkAuthenticationAdapter] No active session", {
+        event: IAM_LOG_EVENT.CLERK_NO_ACTIVE_SESSION,
+      });
       return build_invalid_verification_result(
-        "No active Clerk session - user is not signed in",
+        IAM_MESSAGE.NO_ACTIVE_CLERK_SESSION,
       );
     }
     const clerk_user_result = this.session_provider.get_current_user();
     if (!clerk_user_result.success) {
-      console.log(
-        "[ClerkAuthenticationAdapter] Clerk session active but no user data available",
-      );
+      console.warn("[ClerkAuthenticationAdapter] Session has no user", {
+        event: IAM_LOG_EVENT.CLERK_USER_UNAVAILABLE,
+      });
       return build_invalid_verification_result(
-        "Clerk session exists but user data is unavailable",
+        IAM_MESSAGE.CLERK_USER_UNAVAILABLE,
       );
     }
     const clerk_user = clerk_user_result.data;
     console.log("[ClerkAuthenticationAdapter] Verified token", {
-      event: "clerk_token_verified",
+      event: IAM_LOG_EVENT.CLERK_TOKEN_VERIFIED,
       user_id: clerk_user.id,
     });
     return build_valid_verification_result(clerk_user);
   }
 }
 
-function map_clerk_service_user_to_clerk_user_info(
-  clerk_user: ClerkServiceUser,
-): ClerkUserInfo {
-  return {
-    id: clerk_user.id,
-    email_address: clerk_user.email_address,
-    full_name: clerk_user.full_name,
-    first_name: clerk_user.first_name,
-    last_name: clerk_user.last_name,
-    image_url: clerk_user.image_url,
-  };
-}
-
-function create_clerk_session_provider(): ClerkSessionProvider {
-  return {
-    get_session_token,
-    get_current_user(): Result<ClerkUserInfo> {
-      const session_state = get(clerk_session);
-      if (session_state.user_state.status !== "present") {
-        return create_failure_result("Clerk user is unavailable");
-      }
-
-      return create_success_result(
-        map_clerk_service_user_to_clerk_user_info(
-          session_state.user_state.user,
-        ),
-      );
-    },
-    is_signed_in(): boolean {
-      return get(clerk_session).is_signed_in;
-    },
-  };
-}
-
 type ClerkAuthenticationAdapterState =
-  | { status: "uninitialized" }
-  | { status: "ready"; adapter: ClerkAuthenticationAdapter };
+  | { status: typeof SINGLETON_STATUS.UNINITIALIZED }
+  | {
+      status: typeof SINGLETON_STATUS.READY;
+      adapter: ClerkAuthenticationAdapter;
+    };
 
 let clerk_authentication_adapter_state: ClerkAuthenticationAdapterState = {
-  status: "uninitialized",
+  status: SINGLETON_STATUS.UNINITIALIZED,
 };
 
 export function get_clerk_authentication_adapter(): ClerkAuthenticationAdapter {
-  if (clerk_authentication_adapter_state.status === "ready") {
+  if (clerk_authentication_adapter_state.status === SINGLETON_STATUS.READY) {
     return clerk_authentication_adapter_state.adapter;
   }
 
   const adapter = new ClerkAuthenticationAdapter(
     create_clerk_session_provider(),
   );
-  clerk_authentication_adapter_state = { status: "ready", adapter };
+  clerk_authentication_adapter_state = {
+    status: SINGLETON_STATUS.READY,
+    adapter,
+  };
 
   return adapter;
 }

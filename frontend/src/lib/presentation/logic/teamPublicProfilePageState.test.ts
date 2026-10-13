@@ -117,6 +117,37 @@ describe("teamPublicProfilePageState", () => {
     expect(result.red_cards).toBe(1);
   });
 
+  it("applies away losses, draws and ignores incomplete fixtures", () => {
+    const empty_stats = create_empty_team_public_profile_stats();
+    const away_result = apply_fixture_to_team_public_profile_stats(
+      empty_stats,
+      create_fixture(),
+      "team_2",
+    );
+    const draw_result = apply_fixture_to_team_public_profile_stats(
+      empty_stats,
+      create_fixture({ home_team_score: 1, away_team_score: 1 }),
+      "team_1",
+    );
+    const scheduled_fixture = create_fixture({ status: "scheduled" });
+
+    expect(away_result).toEqual({
+      ...empty_stats,
+      total_matches: 1,
+      losses: 1,
+      goals_for: 1,
+      goals_against: 2,
+    });
+    expect(draw_result.draws).toBe(1);
+    expect(
+      apply_fixture_to_team_public_profile_stats(
+        empty_stats,
+        scheduled_fixture,
+        "team_1",
+      ),
+    ).toBe(empty_stats);
+  });
+
   it("formats fixture dates and fixture labels", () => {
     expect(format_team_public_profile_date("2026-03-04")).toBe("Mar 4, 2026");
     expect(

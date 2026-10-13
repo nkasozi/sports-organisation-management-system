@@ -2,6 +2,7 @@ import type { Competition } from "$lib/core/entities/Competition";
 import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Organization } from "$lib/core/entities/Organization";
+import { WILDCARD_SCOPE } from "$lib/core/entities/StatusConstants";
 import type { Team } from "$lib/core/entities/Team";
 import { check_data_permission } from "$lib/core/interfaces/ports";
 import type { CompetitionFormatUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/CompetitionFormatUseCasesPort";
@@ -15,6 +16,7 @@ import {
   load_competitions_by_organization,
   load_selected_competition_bundle,
 } from "$lib/presentation/logic/competitionResultsPageData";
+import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
 import type {
   CompetitionResultsCompetitionFormatState,
@@ -58,12 +60,12 @@ export function derive_competition_results_can_change_organizations(
   url_organization_id: string,
 ): boolean {
   const organization_id =
-    profile_state.status === "present"
+    profile_state.status === PRESENCE_STATUS.PRESENT
       ? profile_state.profile.organization_id || ""
       : "";
-  if (organization_id === "*") return true;
+  if (organization_id === WILDCARD_SCOPE) return true;
   const role =
-    profile_state.status === "present"
+    profile_state.status === PRESENCE_STATUS.PRESENT
       ? profile_state.profile.role || "player"
       : "player";
   return (
@@ -147,14 +149,15 @@ export function select_preferred_results_organization(
   organizations: Organization[],
   saved_organization_id: string,
 ): CompetitionResultsOrganizationState {
-  if (saved_organization_id.length > 0) {
-    const matching_organization = find_competition_results_organization(
-      organizations,
-      saved_organization_id,
-    );
-    if (matching_organization.status === "present") {
-      return matching_organization;
-    }
+  const matching_organization = find_competition_results_organization(
+    organizations,
+    saved_organization_id,
+  );
+  if (
+    saved_organization_id.length > 0 &&
+    matching_organization.status === PRESENCE_STATUS.PRESENT
+  ) {
+    return matching_organization;
   }
 
   if (organizations.length === 0) {

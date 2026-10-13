@@ -6,174 +6,179 @@ import {
 } from "./seedIds";
 import { SEED_PLAYER_IDS } from "./seedPlayerIds";
 
+type SeedRow = Omit<
+  import("$lib/core/types/DomainScalars").ScalarInput<PlayerTeamMembership>,
+  "created_at" | "updated_at"
+>;
+
+const ROW_1: SeedRow = {
+  id: "player_team_membership_default_61",
+  organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+  player_id: SEED_PLAYER_IDS.MAKERERE_P8,
+  team_id: SEED_TEAM_IDS.MAKERERE_UNIVERSITY_HC,
+  start_date: "2024-01-01",
+  jersey_number: 9,
+  status: "active",
+};
+
+const ROW_2: SeedRow = {
+  id: "player_team_membership_default_62",
+  organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+  player_id: SEED_PLAYER_IDS.MAKERERE_P9,
+  team_id: SEED_TEAM_IDS.WANANCHI_HC_WOMEN,
+  start_date: "2024-01-01",
+  jersey_number: 2,
+  status: "active",
+};
+
+const ROW_3: SeedRow = {
+  id: "player_team_membership_default_63",
+  organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+  player_id: SEED_PLAYER_IDS.MAKERERE_P10,
+  team_id: SEED_TEAM_IDS.MAKERERE_UNIVERSITY_HC,
+  start_date: "2024-01-01",
+  jersey_number: 12,
+  status: "active",
+};
+
+const ROW_4: SeedRow = {
+  id: "player_team_membership_default_64",
+  organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+  player_id: SEED_PLAYER_IDS.MAKERERE_P11,
+  team_id: SEED_TEAM_IDS.WANANCHI_HC_WOMEN,
+  start_date: "2024-01-01",
+  jersey_number: 3,
+  status: "active",
+};
+
+const ROW_5: SeedRow = {
+  id: "player_team_membership_default_65",
+  organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+  player_id: SEED_PLAYER_IDS.KYAMBOGO_P4,
+  team_id: SEED_TEAM_IDS.KYAMBOGO_UNIVERSITY_HC,
+  start_date: "2024-01-01",
+  jersey_number: 1,
+  status: "active",
+};
+
+const ROW_6: SeedRow = {
+  id: "player_team_membership_default_66",
+  organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+  player_id: SEED_PLAYER_IDS.KYAMBOGO_P5,
+  team_id: SEED_TEAM_IDS.WANANCHI_HC_WOMEN,
+  start_date: "2024-01-01",
+  jersey_number: 5,
+  status: "active",
+};
+
+const ROW_7: SeedRow = {
+  id: "player_team_membership_default_67",
+  organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+  player_id: SEED_PLAYER_IDS.KYAMBOGO_P6,
+  team_id: SEED_TEAM_IDS.KYAMBOGO_UNIVERSITY_HC,
+  start_date: "2024-01-01",
+  jersey_number: 5,
+  status: "active",
+};
+
+const ROW_8: SeedRow = {
+  id: "player_team_membership_default_68",
+  organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+  player_id: SEED_PLAYER_IDS.KYAMBOGO_P7,
+  team_id: SEED_TEAM_IDS.WANANCHI_HC_WOMEN,
+  start_date: "2024-01-01",
+  jersey_number: 6,
+  status: "active",
+};
+
+const ROW_9: SeedRow = {
+  id: "player_team_membership_default_69",
+  organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+  player_id: SEED_PLAYER_IDS.KYAMBOGO_P8,
+  team_id: SEED_TEAM_IDS.KYAMBOGO_UNIVERSITY_HC,
+  start_date: "2024-01-01",
+  jersey_number: 8,
+  status: "active",
+};
+
+const ROW_10: SeedRow = {
+  id: "player_team_membership_default_70",
+  organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+  player_id: SEED_PLAYER_IDS.KYAMBOGO_P9,
+  team_id: SEED_TEAM_IDS.WANANCHI_HC_WOMEN,
+  start_date: "2024-01-01",
+  jersey_number: 7,
+  status: "active",
+};
+
+const ROW_11: SeedRow = {
+  id: "player_team_membership_default_71",
+  organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+  player_id: SEED_PLAYER_IDS.KYAMBOGO_P10,
+  team_id: SEED_TEAM_IDS.KYAMBOGO_UNIVERSITY_HC,
+  start_date: "2024-01-01",
+  jersey_number: 11,
+  status: "active",
+};
+
+const ROW_12: SeedRow = {
+  id: "player_team_membership_default_72",
+  organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+  player_id: SEED_PLAYER_IDS.KYAMBOGO_P11,
+  team_id: SEED_TEAM_IDS.WANANCHI_HC_WOMEN,
+  start_date: "2024-01-01",
+  jersey_number: 8,
+  status: "active",
+};
+
+const ROW_13: SeedRow = {
+  id: "player_team_membership_default_73",
+  organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+  player_id: SEED_PLAYER_IDS.SIMBA_P4,
+  team_id: SEED_TEAM_IDS.SIMBA_HC,
+  start_date: "2024-01-01",
+  jersey_number: 4,
+  status: "active",
+};
+
+const ROW_14: SeedRow = {
+  id: "player_team_membership_default_74",
+  organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+  player_id: SEED_PLAYER_IDS.SIMBA_P5,
+  team_id: SEED_TEAM_IDS.WANANCHI_HC_WOMEN,
+  start_date: "2024-01-01",
+  jersey_number: 10,
+  status: "active",
+};
+
+const ROW_15: SeedRow = {
+  id: "player_team_membership_default_75",
+  organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+  player_id: SEED_PLAYER_IDS.SIMBA_P6,
+  team_id: SEED_TEAM_IDS.SIMBA_HC,
+  start_date: "2024-01-01",
+  jersey_number: 6,
+  status: "active",
+};
+
 export function create_seed_memberships_part5(): import("$lib/core/types/DomainScalars").ScalarInput<PlayerTeamMembership>[] {
   const now = generate_current_timestamp();
 
   return [
-    {
-      id: "player_team_membership_default_61",
-      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      player_id: SEED_PLAYER_IDS.MAKERERE_P8,
-      team_id: SEED_TEAM_IDS.MAKERERE_UNIVERSITY_HC,
-      start_date: "2024-01-01",
-      jersey_number: 9,
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "player_team_membership_default_62",
-      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      player_id: SEED_PLAYER_IDS.MAKERERE_P9,
-      team_id: SEED_TEAM_IDS.WANANCHI_HC_WOMEN,
-      start_date: "2024-01-01",
-      jersey_number: 2,
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "player_team_membership_default_63",
-      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      player_id: SEED_PLAYER_IDS.MAKERERE_P10,
-      team_id: SEED_TEAM_IDS.MAKERERE_UNIVERSITY_HC,
-      start_date: "2024-01-01",
-      jersey_number: 12,
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "player_team_membership_default_64",
-      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      player_id: SEED_PLAYER_IDS.MAKERERE_P11,
-      team_id: SEED_TEAM_IDS.WANANCHI_HC_WOMEN,
-      start_date: "2024-01-01",
-      jersey_number: 3,
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "player_team_membership_default_65",
-      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      player_id: SEED_PLAYER_IDS.KYAMBOGO_P4,
-      team_id: SEED_TEAM_IDS.KYAMBOGO_UNIVERSITY_HC,
-      start_date: "2024-01-01",
-      jersey_number: 1,
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "player_team_membership_default_66",
-      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      player_id: SEED_PLAYER_IDS.KYAMBOGO_P5,
-      team_id: SEED_TEAM_IDS.WANANCHI_HC_WOMEN,
-      start_date: "2024-01-01",
-      jersey_number: 5,
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "player_team_membership_default_67",
-      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      player_id: SEED_PLAYER_IDS.KYAMBOGO_P6,
-      team_id: SEED_TEAM_IDS.KYAMBOGO_UNIVERSITY_HC,
-      start_date: "2024-01-01",
-      jersey_number: 5,
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "player_team_membership_default_68",
-      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      player_id: SEED_PLAYER_IDS.KYAMBOGO_P7,
-      team_id: SEED_TEAM_IDS.WANANCHI_HC_WOMEN,
-      start_date: "2024-01-01",
-      jersey_number: 6,
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "player_team_membership_default_69",
-      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      player_id: SEED_PLAYER_IDS.KYAMBOGO_P8,
-      team_id: SEED_TEAM_IDS.KYAMBOGO_UNIVERSITY_HC,
-      start_date: "2024-01-01",
-      jersey_number: 8,
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "player_team_membership_default_70",
-      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      player_id: SEED_PLAYER_IDS.KYAMBOGO_P9,
-      team_id: SEED_TEAM_IDS.WANANCHI_HC_WOMEN,
-      start_date: "2024-01-01",
-      jersey_number: 7,
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "player_team_membership_default_71",
-      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      player_id: SEED_PLAYER_IDS.KYAMBOGO_P10,
-      team_id: SEED_TEAM_IDS.KYAMBOGO_UNIVERSITY_HC,
-      start_date: "2024-01-01",
-      jersey_number: 11,
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "player_team_membership_default_72",
-      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      player_id: SEED_PLAYER_IDS.KYAMBOGO_P11,
-      team_id: SEED_TEAM_IDS.WANANCHI_HC_WOMEN,
-      start_date: "2024-01-01",
-      jersey_number: 8,
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "player_team_membership_default_73",
-      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      player_id: SEED_PLAYER_IDS.SIMBA_P4,
-      team_id: SEED_TEAM_IDS.SIMBA_HC,
-      start_date: "2024-01-01",
-      jersey_number: 4,
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "player_team_membership_default_74",
-      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      player_id: SEED_PLAYER_IDS.SIMBA_P5,
-      team_id: SEED_TEAM_IDS.WANANCHI_HC_WOMEN,
-      start_date: "2024-01-01",
-      jersey_number: 10,
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "player_team_membership_default_75",
-      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      player_id: SEED_PLAYER_IDS.SIMBA_P6,
-      team_id: SEED_TEAM_IDS.SIMBA_HC,
-      start_date: "2024-01-01",
-      jersey_number: 6,
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-  ];
+    { ...ROW_1 },
+    { ...ROW_2 },
+    { ...ROW_3 },
+    { ...ROW_4 },
+    { ...ROW_5 },
+    { ...ROW_6 },
+    { ...ROW_7 },
+    { ...ROW_8 },
+    { ...ROW_9 },
+    { ...ROW_10 },
+    { ...ROW_11 },
+    { ...ROW_12 },
+    { ...ROW_13 },
+    { ...ROW_14 },
+    { ...ROW_15 },
+  ].map((row) => ({ ...row, created_at: now, updated_at: now }));
 }

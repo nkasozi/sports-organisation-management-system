@@ -1,13 +1,7 @@
 import {
-  type Fixture,
-  get_period_display_name,
   get_quick_event_buttons,
   type QuickEventButton,
 } from "$lib/core/entities/Fixture";
-import {
-  build_game_clock_state,
-  sort_game_events,
-} from "$lib/presentation/logic/gameManageState";
 import {
   create_missing_managed_game_fixture_state,
   create_missing_managed_game_selected_event_type_state,
@@ -19,6 +13,11 @@ import {
   type ManagedGameSelectedEventTypeState,
   type ManagedGameTeamState,
 } from "$lib/presentation/logic/managedGamePageTypes";
+
+export {
+  build_managed_game_page_title,
+  derive_managed_game_view_state,
+} from "./managedGamePageViewState";
 
 export interface ManagedGamePageState {
   fixture: ManagedGameFixtureState;
@@ -42,18 +41,6 @@ export interface ManagedGamePageState {
   toast_visible: boolean;
   toast_message: string;
   toast_type: "success" | "error" | "info";
-}
-
-interface ManagedGamePageViewState {
-  available_players: unknown[];
-  away_score: number;
-  away_team_name: string;
-  clock_state: ReturnType<typeof build_game_clock_state>;
-  current_period_label: string;
-  home_score: number;
-  home_team_name: string;
-  is_game_active: boolean;
-  sorted_events: Fixture["game_events"];
 }
 
 const managed_game_events = get_quick_event_buttons();
@@ -103,17 +90,6 @@ export function apply_managed_game_bundle(
   };
 }
 
-export function set_managed_game_loading_error(
-  state: ManagedGamePageState,
-  error_message: string,
-): ManagedGamePageState {
-  return {
-    ...state,
-    error_message,
-    is_loading: false,
-  };
-}
-
 export function set_managed_game_toast(
   state: ManagedGamePageState,
   message: string,
@@ -157,67 +133,4 @@ export function close_managed_game_event_modal(
     event_description: "",
     event_minute: 0,
   };
-}
-
-export function derive_managed_game_view_state(
-  state: ManagedGamePageState,
-): ManagedGamePageViewState {
-  const current_period =
-    state.fixture.status === "present"
-      ? state.fixture.fixture.current_period
-      : "first_half";
-  const away_score =
-    state.fixture.status === "present"
-      ? state.fixture.fixture.away_team_score
-      : 0;
-  const home_score =
-    state.fixture.status === "present"
-      ? state.fixture.fixture.home_team_score
-      : 0;
-  const is_game_active =
-    state.fixture.status === "present"
-      ? state.fixture.fixture.status === "in_progress"
-      : false;
-  const sorted_events =
-    state.fixture.status === "present"
-      ? sort_game_events(state.fixture.fixture.game_events)
-      : sort_game_events([]);
-  const home_team_name =
-    state.home_team.status === "present" ? state.home_team.team.name : "Home";
-  const away_team_name =
-    state.away_team.status === "present" ? state.away_team.team.name : "Away";
-
-  const clock_state = build_game_clock_state(
-    state.game_clock_seconds,
-    current_period,
-  );
-  return {
-    available_players:
-      state.selected_team_side === "home"
-        ? state.home_players
-        : state.away_players,
-    away_score,
-    away_team_name,
-    clock_state,
-    current_period_label: get_period_display_name(current_period),
-    home_score,
-    home_team_name,
-    is_game_active,
-    sorted_events,
-  };
-}
-
-export function build_managed_game_page_title(
-  state: ManagedGamePageState,
-): string {
-  if (state.fixture.status !== "present") {
-    return "Game Management";
-  }
-
-  const home_team_name =
-    state.home_team.status === "present" ? state.home_team.team.name : "Home";
-  const away_team_name =
-    state.away_team.status === "present" ? state.away_team.team.name : "Away";
-
-  return `${home_team_name} vs ${away_team_name}`;
 }

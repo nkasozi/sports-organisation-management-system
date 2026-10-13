@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, type Mock, vi } from "vitest";
 
 import { ANY_VALUE } from "$lib/core/interfaces/ports";
 
@@ -12,7 +12,12 @@ describe("fixtureLineupCreateDataReference", () => {
       FixtureLineupCreateDependencies[Key]
     >;
   };
-  function create_dependencies() {
+  function create_dependencies(): {
+    competition_use_cases: { list: Mock };
+    fixture_use_cases: { list: Mock };
+    organization_use_cases: { list: Mock };
+    team_use_cases: { list: Mock };
+  } {
     return {
       competition_use_cases: { list: vi.fn() },
       fixture_use_cases: { list: vi.fn() },

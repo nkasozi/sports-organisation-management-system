@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { download_match_report_for_fixture } from "./matchReportPageDownload";
+import type { MockUseCases } from "./testMockTypes.test_support";
 
 const {
   build_match_report_data_mock,
@@ -21,8 +22,10 @@ vi.mock("$lib/infrastructure/utils/MatchReportPdfGenerator", () => ({
   download_match_report: download_match_report_mock,
 }));
 
+const MALFORMED_REPORT_JSON = "{";
+
 describe("matchReportPageDownload", () => {
-  function create_dependencies() {
+  function create_dependencies(): MockUseCases {
     return {
       organization_use_cases: { get_by_id: vi.fn() },
       team_staff_use_cases: {
@@ -35,6 +38,10 @@ describe("matchReportPageDownload", () => {
   beforeEach(() => {
     build_match_report_data_mock.mockReset();
     download_match_report_mock.mockReset();
+    download_match_report_mock.mockReturnValue({
+      success: true,
+      data: "lions-vs-tigers.pdf",
+    });
     generate_match_report_filename_mock.mockReset();
   });
 
@@ -120,9 +127,9 @@ describe("matchReportPageDownload", () => {
       success: true,
       data: { items: [] },
     });
-    build_match_report_data_mock.mockImplementation(() => {
-      throw new Error("boom");
-    });
+    build_match_report_data_mock.mockImplementation(() =>
+      JSON.parse(MALFORMED_REPORT_JSON),
+    );
 
     await expect(
       download_match_report_for_fixture({
@@ -145,7 +152,43 @@ describe("matchReportPageDownload", () => {
       } as never),
     ).resolves.toEqual({
       success: false,
-      error: "Failed to download match report",
+      error: "We couldn't download the match report. Please try again.",
+    });
+  });
+
+  it("returns a friendly failure when the PDF cannot be saved", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const dependencies = create_dependencies();
+    dependencies.team_staff_use_cases.list_staff_roles.mockResolvedValue({
+      success: true,
+      data: [],
+    });
+    dependencies.team_staff_use_cases.list_staff_by_team.mockResolvedValue({
+      success: true,
+      data: { items: [] },
+    });
+    download_match_report_mock.mockReturnValue({
+      success: false,
+      error: "save blocked",
+    });
+
+    const result = await download_match_report_for_fixture({
+      fixture: { id: "fixture-1", scheduled_date: "2024-06-01" },
+      home_team: { name: "Lions" },
+      away_team: { name: "Tigers" },
+      competition_state: { status: "missing" },
+      sport_state: { status: "missing" },
+      venue_state: { status: "missing" },
+      assigned_officials_data: [],
+      home_players: [],
+      away_players: [],
+      organization_logo_url: "",
+      dependencies: dependencies as never,
+    } as never);
+
+    expect(result).toEqual({
+      success: false,
+      error: "We couldn't download the match report. Please try again.",
     });
   });
 });

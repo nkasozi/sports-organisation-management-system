@@ -1,11 +1,15 @@
 import type {
   CreateSportInput,
-  OfficialRequirement,
   Sport,
   UpdateSportInput,
 } from "../../core/entities/Sport";
 import { validate_sport_input } from "../../core/entities/Sport";
 import type { ScalarValueInput } from "../../core/types/DomainScalars";
+import type { AsyncResult, Result } from "../../core/types/Result";
+import {
+  create_failure_result,
+  create_success_result,
+} from "../../core/types/Result";
 import {
   create_sport as repo_create_sport,
   delete_sport as repo_delete_sport,
@@ -16,205 +20,111 @@ import {
   is_sport_not_found_by_code_error,
   update_sport as repo_update_sport,
 } from "../repositories/InBrowserSportRepository";
+import {
+  get_effective_official_requirements,
+  get_official_requirement_source,
+} from "./sportOfficialRequirements";
+import { verify_sport_code_available_for_update } from "./sportServiceCodeGuards";
+import {
+  build_duplicate_sport_code_message,
+  SPORT_SERVICE_EVENT,
+  SPORT_SERVICE_LOG_MESSAGE,
+  SPORT_SERVICE_MESSAGE,
+} from "./sportServiceConstants";
 
-interface SportServiceResult<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
+function is_blank(value: string): boolean {
+  return !value || value.trim().length === 0;
 }
 
-async function get_all_sports(): Promise<SportServiceResult<Sport[]>> {
-  try {
-    const sports = await repo_get_all_sports();
-    return { success: true, data: sports };
-  } catch (error) {
-    console.error("[SportService] Failed to get all sports", {
-      event: "failed_to_get_all_sports_failed",
-      error: String(error),
-    });
-    return { success: false, error: "Failed to retrieve sports" };
-  }
+function log_sport_failure<TData>(
+  result: Result<TData>,
+  log_message: SPORT_SERVICE_LOG_MESSAGE,
+  event: SPORT_SERVICE_EVENT,
+  sport_id: string,
+): Result<TData> {
+  if (result.success) return result;
+  console.error(log_message, { event, sport_id, error: result.error });
+  return result;
 }
 
 export async function get_sport_by_id(
   id: ScalarValueInput<Sport["id"]>,
-): Promise<SportServiceResult<Sport>> {
-  if (!id || id.trim() === "")
-    return { success: false, error: "Sport ID is required" };
-  try {
-    const sport_result = await repo_get_sport_by_id(id);
-    if (!sport_result.success)
-      return { success: false, error: sport_result.error };
-    return { success: true, data: sport_result.data };
-  } catch (error) {
-    console.error("[SportService] Failed to get sport by ID", {
-      event: "failed_to_get_sport_by_id_failed",
-      error: String(error),
-    });
-    return { success: false, error: "Failed to retrieve sport" };
-  }
+): AsyncResult<Sport> {
+  if (is_blank(id))
+    return create_failure_result(SPORT_SERVICE_MESSAGE.SPORT_ID_REQUIRED);
+  return repo_get_sport_by_id(id);
 }
 
-async function get_sport_by_code(
-  code: string,
-): Promise<SportServiceResult<Sport>> {
-  if (!code || code.trim() === "")
-    return { success: false, error: "Sport code is required" };
-  try {
-    const sport_result = await repo_get_sport_by_code(code);
-    if (!sport_result.success)
-      return { success: false, error: sport_result.error };
-    return { success: true, data: sport_result.data };
-  } catch (error) {
-    console.error("[SportService] Failed to get sport by code", {
-      event: "failed_to_get_sport_by_code_failed",
-      error: String(error),
-    });
-    return { success: false, error: "Failed to retrieve sport" };
-  }
+async function get_sport_by_code(code: string): AsyncResult<Sport> {
+  if (is_blank(code))
+    return create_failure_result(SPORT_SERVICE_MESSAGE.SPORT_CODE_REQUIRED);
+  return repo_get_sport_by_code(code);
 }
 
-async function create_sport(
-  input: CreateSportInput,
-): Promise<SportServiceResult<Sport>> {
+async function verify_sport_code_is_new(code: string): AsyncResult<boolean> {
+  const existing_sport_result = await repo_get_sport_by_code(code);
+  if (existing_sport_result.success)
+    return create_failure_result(build_duplicate_sport_code_message(code));
+  if (!is_sport_not_found_by_code_error(existing_sport_result.error, code))
+    return existing_sport_result;
+  return create_success_result(true);
+}
+
+async function create_sport(input: CreateSportInput): AsyncResult<Sport> {
   const validation_errors = validate_sport_input(input);
   if (validation_errors.length > 0)
-    return { success: false, error: validation_errors.join(", ") };
-  const existing_sport_result = await repo_get_sport_by_code(input.code);
-  if (existing_sport_result.success) {
-    return {
-      success: false,
-      error: `Sport with code '${input.code}' already exists`,
-    };
-  }
-
-  if (
-    !is_sport_not_found_by_code_error(existing_sport_result.error, input.code)
-  ) {
-    return { success: false, error: existing_sport_result.error };
-  }
-
-  const result = await repo_create_sport(input);
-  if (!result.success) {
-    console.error("[SportService] Failed to create sport:", result.error);
-    return { success: false, error: result.error };
-  }
-  return { success: true, data: result.data };
+    return create_failure_result(validation_errors.join(", "));
+  const code_check = await verify_sport_code_is_new(input.code);
+  if (!code_check.success) return code_check;
+  return log_sport_failure(
+    await repo_create_sport(input),
+    SPORT_SERVICE_LOG_MESSAGE.CREATE_SPORT_FAILED,
+    SPORT_SERVICE_EVENT.CREATE_SPORT_FAILED,
+    input.code,
+  );
 }
 
 async function update_sport(
   id: ScalarValueInput<Sport["id"]>,
   input: UpdateSportInput,
-): Promise<SportServiceResult<Sport>> {
-  if (!id || id.trim() === "")
-    return { success: false, error: "Sport ID is required" };
-  try {
-    const existing_sport_result = await repo_get_sport_by_id(id);
-    if (!existing_sport_result.success)
-      return { success: false, error: existing_sport_result.error };
-    if (input.code && input.code !== existing_sport_result.data.code) {
-      const sport_with_code_result = await repo_get_sport_by_code(input.code);
-      if (
-        sport_with_code_result.success &&
-        sport_with_code_result.data.id !== id
-      ) {
-        return {
-          success: false,
-          error: `Sport with code '${input.code}' already exists`,
-        };
-      }
-
-      if (
-        !sport_with_code_result.success &&
-        !is_sport_not_found_by_code_error(
-          sport_with_code_result.error,
-          input.code,
-        )
-      ) {
-        return { success: false, error: sport_with_code_result.error };
-      }
-    }
-    const updated_sport_result = await repo_update_sport(id, input);
-    if (!updated_sport_result.success)
-      return { success: false, error: updated_sport_result.error };
-    return { success: true, data: updated_sport_result.data };
-  } catch (error) {
-    console.error("[SportService] Failed to update sport", {
-      event: "failed_to_update_sport_failed",
-      error: String(error),
-    });
-    return { success: false, error: "Failed to update sport" };
-  }
+): AsyncResult<Sport> {
+  const existing_sport_result = await get_sport_by_id(id);
+  if (!existing_sport_result.success) return existing_sport_result;
+  const code_check = await verify_sport_code_available_for_update(
+    id,
+    input.code,
+    existing_sport_result.data.code,
+  );
+  if (!code_check.success) return code_check;
+  return log_sport_failure(
+    await repo_update_sport(id, input),
+    SPORT_SERVICE_LOG_MESSAGE.UPDATE_SPORT_FAILED,
+    SPORT_SERVICE_EVENT.UPDATE_SPORT_FAILED,
+    id,
+  );
 }
 
 async function delete_sport(
   id: ScalarValueInput<Sport["id"]>,
-): Promise<SportServiceResult<boolean>> {
-  if (!id || id.trim() === "")
-    return { success: false, error: "Sport ID is required" };
-  try {
-    const deleted = await repo_delete_sport(id);
-    if (!deleted)
-      return { success: false, error: `Sport with ID '${id}' not found` };
-    return { success: true, data: true };
-  } catch (error) {
-    console.error("[SportService] Failed to delete sport", {
-      event: "failed_to_delete_sport_failed",
-      error: String(error),
-    });
-    return { success: false, error: "Failed to delete sport" };
-  }
-}
-
-async function get_active_sports(): Promise<SportServiceResult<Sport[]>> {
-  try {
-    const sports = await repo_get_active_sports();
-    return { success: true, data: sports };
-  } catch (error) {
-    console.error("[SportService] Failed to get active sports", {
-      event: "failed_to_get_active_sports_failed",
-      error: String(error),
-    });
-    return { success: false, error: "Failed to retrieve active sports" };
-  }
-}
-
-function get_effective_official_requirements(
-  sport: Sport,
-  competition_overrides?: OfficialRequirement[],
-): OfficialRequirement[] {
-  if (!competition_overrides || competition_overrides.length === 0)
-    return sport.official_requirements;
-  const merged_requirements: Map<string, OfficialRequirement> = new Map();
-  for (const req of sport.official_requirements) {
-    merged_requirements.set(req.role_id, req);
-  }
-  for (const override of competition_overrides) {
-    merged_requirements.set(override.role_id, override);
-  }
-  return Array.from(merged_requirements.values());
-}
-
-function get_official_requirement_source(
-  role_id: string,
-  sport: Sport,
-  competition_overrides?: OfficialRequirement[],
-): "sport" | "competition" {
-  if (!competition_overrides) return "sport";
-  const has_competition_override = competition_overrides.some(
-    (req) => req.role_id === role_id,
+): AsyncResult<boolean> {
+  if (is_blank(id))
+    return create_failure_result(SPORT_SERVICE_MESSAGE.SPORT_ID_REQUIRED);
+  return log_sport_failure(
+    await repo_delete_sport(id),
+    SPORT_SERVICE_LOG_MESSAGE.DELETE_SPORT_FAILED,
+    SPORT_SERVICE_EVENT.DELETE_SPORT_FAILED,
+    id,
   );
-  return has_competition_override ? "competition" : "sport";
 }
 
 export const sportService = {
-  get_all: get_all_sports,
+  get_all: repo_get_all_sports,
   get_by_id: get_sport_by_id,
   get_by_code: get_sport_by_code,
   create: create_sport,
   update: update_sport,
   delete: delete_sport,
-  get_active: get_active_sports,
+  get_active: repo_get_active_sports,
   get_effective_official_requirements,
   get_official_requirement_source,
 };

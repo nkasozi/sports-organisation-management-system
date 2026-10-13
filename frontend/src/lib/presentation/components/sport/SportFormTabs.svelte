@@ -1,7 +1,9 @@
 <script lang="ts">
     import { SPORT_FORM_SECTIONS } from "$lib/presentation/logic/sportFormEditorState";
 
-    export let active_section: string;
+    import type { SportFormSectionId } from "./sportFormSectionConstants";
+
+    export let active_section: SportFormSectionId;
 </script>
 
 <div

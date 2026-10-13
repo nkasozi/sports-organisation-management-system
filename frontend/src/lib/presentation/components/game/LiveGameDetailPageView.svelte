@@ -5,6 +5,11 @@
         LiveGameDetailPageState,
     } from "$lib/presentation/logic/liveGameDetailPageState";
 
+    import type { GameTeamSide } from "./gameDisplayConstants";
+    import {
+        build_live_game_detail_content_state,
+        to_option,
+    } from "./liveGameDetailContentState";
     import LiveGameDetailPageContent from "./LiveGameDetailPageContent.svelte";
 
     export let page_state: LiveGameDetailPageState;
@@ -18,7 +23,7 @@
     export let on_download_match_report: () => Promise<boolean>;
     export let on_open_event_modal: (
         event_button: LiveGameDetailDerivedState["all_event_buttons"][number],
-        team_side: "home" | "away",
+        team_side: GameTeamSide,
     ) => void;
     export let on_toggle_home_lineup: () => void;
     export let on_toggle_away_lineup: () => void;
@@ -30,14 +35,13 @@
         player_id: string,
         new_time_on: PlayerTimeOnStatus,
     ) => Promise<boolean>;
+
+    $: content_state = build_live_game_detail_content_state(page_state);
 </script>
 
 <LiveGameDetailPageContent
-    fixture={page_state.fixture}
-    home_team={page_state.home_team}
-    away_team={page_state.away_team}
+    {content_state}
     organization_name={page_state.organization_name}
-    competition_name={page_state.competition?.name || ""}
     home_score={view_state.home_score}
     away_score={view_state.away_score}
     current_period_label={view_state.current_period_label}
@@ -48,7 +52,7 @@
     is_game_completed={view_state.is_game_completed}
     show_extra_time_button={view_state.show_extra_time_button}
     downloading_report={page_state.downloading_report}
-    period_button_config={view_state.period_button_config}
+    period_button_config={to_option(view_state.period_button_config)}
     permission_info_message={page_state.permission_info_message}
     all_event_buttons={view_state.all_event_buttons}
     home_players={page_state.home_players}
@@ -69,8 +73,6 @@
     officials_color={view_state.officials_color}
     assigned_officials={view_state.assigned_officials}
     sorted_events={view_state.sorted_events}
-    is_loading={page_state.is_loading}
-    error_message={page_state.error_message}
     {on_back}
     {on_start}
     {on_toggle_clock}

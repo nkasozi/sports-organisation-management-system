@@ -14,15 +14,85 @@ import {
   MARGIN_LEFT,
   MARGIN_RIGHT,
   PAGE_WIDTH,
-  parse_hex_color,
 } from "./pdfConstantsAndHelpers";
+import {
+  build_column_styles,
+  build_player_table_data,
+  draw_card_indicators,
+  type LineupColumnStyles,
+} from "./pdfLineupTableData";
 import { draw_team_staff_rows } from "./pdfStaffOfficialsSection";
 
-interface CellDrawData {
-  section: string;
-  column: { index: number };
-  row: { index: number };
-  cell: { x: number; y: number; width: number; height: number };
+interface LineupTableLayout {
+  headers: string[][];
+  column_styles: LineupColumnStyles;
+  card_types: CardTypeConfig[];
+  start_y: number;
+}
+
+interface LineupTableSide {
+  players: MatchPlayerEntry[];
+  left_margin: number;
+  right_margin: number;
+}
+
+const CARD_COLUMN_WIDTH = 5;
+const BASE_HEADERS = ["Time On", "Shirt No.", "Names"];
+const BASE_HEADER_WIDTHS = [10, 10, 40];
+const MISSING_TABLE_HEIGHT = 100;
+const WHITE: [number, number, number] = [255, 255, 255];
+const BLACK: [number, number, number] = [0, 0, 0];
+
+function build_lineup_layout(
+  card_types: CardTypeConfig[],
+  start_y: number,
+): LineupTableLayout {
+  return {
+    headers: [[...BASE_HEADERS, ...card_types.map((ct) => ct.name.charAt(0))]],
+    column_styles: build_column_styles([
+      ...BASE_HEADER_WIDTHS,
+      ...card_types.map(() => CARD_COLUMN_WIDTH),
+    ]),
+    card_types,
+    start_y,
+  };
+}
+
+function draw_lineup_table(
+  doc: jsPDF,
+  layout: LineupTableLayout,
+  side: LineupTableSide,
+): number {
+  autoTable(doc, {
+    startY: layout.start_y,
+    head: layout.headers,
+    body: build_player_table_data(side.players, layout.card_types.length),
+    theme: "grid",
+    styles: {
+      fontSize: FONT_SIZE_SMALL,
+      cellPadding: 1,
+      halign: "center",
+      lineColor: BLACK,
+      lineWidth: 0.3,
+      minCellHeight: 4,
+    },
+    headStyles: {
+      fillColor: WHITE,
+      textColor: BLACK,
+      fontStyle: "bold",
+      fontSize: 6,
+    },
+    bodyStyles: { fillColor: WHITE, textColor: BLACK },
+    columnStyles: layout.column_styles,
+    margin: { left: side.left_margin, right: side.right_margin },
+    tableWidth: HALF_WIDTH - 5,
+    didDrawCell: (cell_data) =>
+      draw_card_indicators(doc, cell_data, side.players, layout.card_types),
+  });
+  return (
+    (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ??
+    layout.start_y + MISSING_TABLE_HEIGHT
+  );
 }
 
 export function draw_lineup_section(
@@ -30,172 +100,22 @@ export function draw_lineup_section(
   data: MatchReportData,
   y_start: number,
 ): number {
-  let y = y_start + 3;
-  const card_types = data.card_types || [];
-  const card_col_width = 5;
-  const base_headers = ["Time On", "Shirt No.", "Names"];
-  const card_headers = card_types.map((ct) => ct.name.charAt(0));
-  const headers = [[...base_headers, ...card_headers]];
-  const base_header_widths = [10, 10, 40];
-  const card_header_widths = card_types.map(() => card_col_width);
-  const all_header_widths = [...base_header_widths, ...card_header_widths];
-  const home_table_data = build_player_table_data(
-    data.home_players,
-    card_types.length,
-  );
-  const away_table_data = build_player_table_data(
-    data.away_players,
-    card_types.length,
-  );
-
-  const columnStyles = build_column_styles(all_header_widths);
-
-  draw_lineup_table(
+  const layout = build_lineup_layout(data.card_types || [], y_start + 3);
+  const center_margin = PAGE_WIDTH / 2 + 5;
+  const home_final_y = draw_lineup_table(doc, layout, {
+    players: data.home_players,
+    left_margin: MARGIN_LEFT,
+    right_margin: center_margin,
+  });
+  const away_final_y = draw_lineup_table(doc, layout, {
+    players: data.away_players,
+    left_margin: center_margin,
+    right_margin: MARGIN_RIGHT,
+  });
+  return draw_team_staff_rows(
     doc,
-    headers,
-    home_table_data,
-    columnStyles,
-    y,
-    data.home_players,
-    card_types,
-    MARGIN_LEFT,
-    PAGE_WIDTH / 2 + 5,
+    data.home_team.staff,
+    data.away_team.staff,
+    Math.max(home_final_y, away_final_y) + 3,
   );
-  const home_final_y =
-    (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? y + 100;
-
-  draw_lineup_table(
-    doc,
-    headers,
-    away_table_data,
-    columnStyles,
-    y,
-    data.away_players,
-    card_types,
-    PAGE_WIDTH / 2 + 5,
-    MARGIN_RIGHT,
-  );
-  const away_final_y =
-    (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? y + 100;
-  y = Math.max(home_final_y, away_final_y) + 3;
-  y = draw_team_staff_rows(doc, data.home_team.staff, data.away_team.staff, y);
-  return y;
-}
-
-function build_column_styles(
-  all_header_widths: number[],
-): Record<string, { cellWidth: number; halign: "left" | "center" | "right" }> {
-  const columnStyles: Record<
-    string,
-    { cellWidth: number; halign: "left" | "center" | "right" }
-  > = {};
-  all_header_widths.forEach((width, index) => {
-    columnStyles[index.toString()] = {
-      cellWidth: width,
-      halign: index === 2 ? "left" : "center",
-    };
-  });
-  return columnStyles;
-}
-
-function draw_lineup_table(
-  doc: jsPDF,
-  headers: string[][],
-  table_data: string[][],
-  columnStyles: Record<
-    string,
-    { cellWidth: number; halign: "left" | "center" | "right" }
-  >,
-  y: number,
-  players: MatchPlayerEntry[],
-  card_types: CardTypeConfig[],
-  left_margin: number,
-  right_margin: number,
-): boolean {
-  autoTable(doc, {
-    startY: y,
-    head: headers,
-    body: table_data,
-    theme: "grid",
-    styles: {
-      fontSize: FONT_SIZE_SMALL,
-      cellPadding: 1,
-      halign: "center",
-      lineColor: [0, 0, 0],
-      lineWidth: 0.3,
-      minCellHeight: 4,
-    },
-    headStyles: {
-      fillColor: [255, 255, 255],
-      textColor: [0, 0, 0],
-      fontStyle: "bold",
-      fontSize: 6,
-    },
-    bodyStyles: {
-      fillColor: [255, 255, 255],
-      textColor: [0, 0, 0],
-    },
-    columnStyles,
-    margin: { left: left_margin, right: right_margin },
-    tableWidth: HALF_WIDTH - 5,
-    didDrawCell: (cell_data) =>
-      draw_card_indicators(doc, cell_data, players, card_types),
-  });
-  return true;
-}
-
-function draw_card_indicators(
-  doc: jsPDF,
-  cell_data: CellDrawData,
-  players: MatchPlayerEntry[],
-  card_types: CardTypeConfig[],
-): boolean {
-  if (cell_data.section !== "body") return false;
-  const row_index = cell_data.row.index;
-  if (row_index >= players.length) return false;
-  const player = players[row_index];
-  if (!player.cards || player.cards.length === 0) return false;
-  const base_columns = 3;
-  const card_col_offset = cell_data.column.index - base_columns;
-  if (card_col_offset < 0 || card_col_offset >= card_types.length) return false;
-  const card_config = card_types[card_col_offset];
-  const player_card = player.cards.find((c) => c.card_type === card_config.id);
-  if (!player_card) return false;
-  const x = cell_data.cell.x + 0.5;
-  const y_pos = cell_data.cell.y + 0.5;
-  const w = cell_data.cell.width - 1;
-  const h = cell_data.cell.height - 1;
-  const { r, g, b } = parse_hex_color(card_config.color);
-  doc.setFillColor(r, g, b);
-  doc.rect(x, y_pos, w, h, "F");
-  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-  const text_color = brightness > 128 ? 0 : 255;
-  doc.setFontSize(5);
-  doc.setTextColor(text_color, text_color, text_color);
-  doc.text(player_card.minute, x + w / 2, y_pos + h / 2 + 1, {
-    align: "center",
-  });
-  doc.setTextColor(0, 0, 0);
-  return true;
-}
-function build_player_table_data(
-  players: MatchPlayerEntry[],
-  card_count: number,
-): string[][] {
-  const rows: string[][] = [];
-  for (const player of players) {
-    const row = [player.time_on, player.jersey_number.toString(), player.name];
-    for (let i = 0; i < card_count; i++) {
-      row.push("");
-    }
-    rows.push(row);
-  }
-  const empty_row = ["", "", ""];
-  for (let i = 0; i < card_count; i++) {
-    empty_row.push("");
-  }
-  while (rows.length < 18) {
-    rows.push([...empty_row]);
-  }
-  return rows;
 }

@@ -7,54 +7,58 @@
     import { fetch_public_data_from_convex } from "$lib/infrastructure/sync/convexPublicDataService";
     import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
     import { match_report_page_dependencies } from "$lib/presentation/logic/matchReportPageDependencies";
-    import { download_match_report_for_fixture } from "$lib/presentation/logic/matchReportPageDownload";
-    import {
-        load_match_report_page_data,
-        refresh_match_report_fixture_data,
-    } from "$lib/presentation/logic/matchReportPageLoad";
-    import type {
-        MatchReportPageData,
-        MatchReportPageDataState,
-        MatchReportRefreshData,
-    } from "$lib/presentation/logic/matchReportPageLoadTypes";
+    import { refresh_match_report_fixture_data } from "$lib/presentation/logic/matchReportPageLoad";
+    import type { MatchReportPageDataState } from "$lib/presentation/logic/matchReportPageLoadTypes";
     import {
         build_match_report_page_title,
         build_match_report_view_state,
         should_poll_match_report_fixture,
     } from "$lib/presentation/logic/matchReportPageState";
+    import { apply_match_report_refresh_data } from "$lib/presentation/logic/matchReportPageTransitions";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
+    import type { ToastType } from "$lib/presentation/logic/toastConfig";
     import { is_public_viewer } from "$lib/presentation/stores/auth";
     import { branding_store } from "$lib/presentation/stores/branding";
 
+    import {
+        download_match_report_for_page,
+        load_match_report_page,
+        MATCH_REPORT_DOWNLOAD_OUTCOME,
+    } from "./matchReportPageActions";
+    import {
+        MATCH_REPORT_LIVE_POLL_INTERVAL_MS,
+        MATCH_REPORT_LOG_EVENTS,
+        MATCH_REPORT_PAGE_TEXT,
+    } from "./matchReportPageMessages";
     import MatchReportPageShell from "./MatchReportPageShell.svelte";
+    import {
+        create_match_report_failed_state,
+        MATCH_REPORT_LIVE_POLL_STATUS,
+        MATCH_REPORT_LOADING_STATE,
+        MATCH_REPORT_PAGE_STATUS,
+        type MatchReportLivePollState,
+        type MatchReportPageStatusState,
+        stop_match_report_live_poll,
+    } from "./matchReportPageStatus";
 
-    const LIVE_POLL_INTERVAL_MS = 10000;
-    const MATCH_REPORT_PAGE_TEXT = {
-        title_suffix: "Sports Management",
-        loading_error_title: "Error Loading Match",
-        missing_fixture_id: "No fixture ID provided",
-    } as const;
-
-    type MatchReportLivePollState =
-        | { status: "stopped" }
-        | { status: "active"; interval_id: ReturnType<typeof setInterval> };
-
-    let page_data_state: MatchReportPageDataState = { status: "missing" },
-        is_loading = true,
-        error_message = "",
+    let page_data_state: MatchReportPageDataState = {
+            status: PRESENCE_STATUS.MISSING,
+        },
+        page_status_state: MatchReportPageStatusState =
+            MATCH_REPORT_LOADING_STATE,
         downloading_report = false,
-        live_poll_state: MatchReportLivePollState = { status: "stopped" },
+        live_poll_state: MatchReportLivePollState = {
+            status: MATCH_REPORT_LIVE_POLL_STATUS.STOPPED,
+        },
         toast_visible = false,
         toast_message = "",
-        toast_type: "success" | "error" | "info" = "info";
+        toast_type: ToastType = "info";
 
     $: fixture_id = $page.params.id ?? "";
     $: view_state = build_match_report_view_state({ page_data_state });
     $: page_title = build_match_report_page_title(page_data_state);
 
-    function show_toast(
-        message: string,
-        type: "success" | "error" | "info",
-    ): void {
+    function show_toast(message: string, type: ToastType): void {
         toast_message = message;
         toast_type = type;
         toast_visible = true;
@@ -62,63 +66,37 @@
 
     function navigate_back(): void {
         if (window.history.length > 1) return window.history.back();
-        void goto("/competition-results");
+        void goto(MATCH_REPORT_PAGE_TEXT.fallback_back_path);
     }
 
     function stop_live_polling(): void {
-        if (live_poll_state.status === "stopped") return;
-        clearInterval(live_poll_state.interval_id);
-        live_poll_state = { status: "stopped" };
+        live_poll_state = stop_match_report_live_poll(live_poll_state);
     }
 
     function start_live_polling_if_needed(): void {
         if (
-            live_poll_state.status === "active" ||
+            live_poll_state.status === MATCH_REPORT_LIVE_POLL_STATUS.ACTIVE ||
             !should_poll_match_report_fixture(page_data_state)
         )
             return;
         live_poll_state = {
-            status: "active",
-            interval_id: setInterval(refresh_fixture_data, LIVE_POLL_INTERVAL_MS),
-        };
-    }
-
-    function apply_refreshed_match_report_data(
-        refresh_data: MatchReportRefreshData,
-    ): void {
-        if (page_data_state.status === "missing") return;
-        const current_page_data: MatchReportPageData = page_data_state.page_data;
-
-        page_data_state = {
-            status: "present",
-            page_data: {
-                ...current_page_data,
-                fixture: refresh_data.fixture,
-                home_players: refresh_data.home_players,
-                away_players: refresh_data.away_players,
-            },
+            status: MATCH_REPORT_LIVE_POLL_STATUS.ACTIVE,
+            interval_id: setInterval(
+                () => void refresh_fixture_data(),
+                MATCH_REPORT_LIVE_POLL_INTERVAL_MS,
+            ),
         };
     }
 
     async function load_match_data(): Promise<boolean> {
-        if (!fixture_id) {
-            error_message = MATCH_REPORT_PAGE_TEXT.missing_fixture_id;
-            is_loading = false;
-            return false;
-        }
-        is_loading = true;
-        error_message = "";
-        const result = await load_match_report_page_data({
+        page_status_state = MATCH_REPORT_LOADING_STATE;
+        const outcome = await load_match_report_page(
             fixture_id,
-            dependencies: match_report_page_dependencies,
-        });
-        is_loading = false;
-        if (!result.success) {
-            error_message = result.error;
-            return false;
-        }
-        page_data_state = { status: "present", page_data: result.data };
-        return true;
+            page_data_state,
+        );
+        page_status_state = outcome.page_status_state;
+        page_data_state = outcome.page_data_state;
+        return page_status_state.status === MATCH_REPORT_PAGE_STATUS.READY;
     }
 
     async function refresh_fixture_data(): Promise<boolean> {
@@ -127,51 +105,64 @@
             fixture_id,
             dependencies: match_report_page_dependencies,
         });
-        if (!result.success) return false;
-        apply_refreshed_match_report_data(result.data);
+        if (!result.success) {
+            console.warn("[MatchReport] Live refresh failed", {
+                event: MATCH_REPORT_LOG_EVENTS.REFRESH_FAILED,
+                fixture_id,
+                error: result.error,
+            });
+            return false;
+        }
+        page_data_state = apply_match_report_refresh_data(
+            page_data_state,
+            result.data,
+        );
         if (!should_poll_match_report_fixture(page_data_state))
             stop_live_polling();
         return true;
     }
 
     async function handle_download_match_report(): Promise<boolean> {
-        if (page_data_state.status === "missing") return false;
-        const current_page_data: MatchReportPageData = page_data_state.page_data;
-        if (
-            current_page_data.home_team_state.status === "missing" ||
-            current_page_data.away_team_state.status === "missing"
-        )
-            return false;
         downloading_report = true;
-        const result = await download_match_report_for_fixture({
-            fixture: current_page_data.fixture,
-            home_team: current_page_data.home_team_state.team,
-            away_team: current_page_data.away_team_state.team,
-            competition_state: current_page_data.competition_state,
-            sport_state: current_page_data.sport_state,
-            venue_state: current_page_data.venue_state,
-            assigned_officials_data: current_page_data.assigned_officials_data,
-            home_players: current_page_data.home_players,
-            away_players: current_page_data.away_players,
-            organization_logo_url: get(branding_store).organization_logo_url,
-            dependencies: match_report_page_dependencies,
-        });
-        downloading_report = false;
-        show_toast(
-            result.success ? result.data : result.error,
-            result.success ? "success" : "error",
+        const outcome = await download_match_report_for_page(
+            page_data_state,
+            get(branding_store).organization_logo_url,
+            fixture_id,
         );
-        return result.success;
+        downloading_report = false;
+        switch (outcome.status) {
+            case MATCH_REPORT_DOWNLOAD_OUTCOME.SKIPPED:
+                return false;
+            case MATCH_REPORT_DOWNLOAD_OUTCOME.FAILED:
+                show_toast(outcome.message, "error");
+                return false;
+            case MATCH_REPORT_DOWNLOAD_OUTCOME.SUCCEEDED:
+                show_toast(outcome.message, "success");
+                return true;
+        }
     }
 
     onMount(async () => {
         const auth_result = await ensure_auth_profile();
         if (!auth_result.success && !get(is_public_viewer)) {
-            error_message = auth_result.error_message;
-            is_loading = false;
+            console.warn("[MatchReport] Auth profile unavailable", {
+                event: MATCH_REPORT_LOG_EVENTS.AUTH_PROFILE_MISSING,
+                fixture_id,
+            });
+            page_status_state = create_match_report_failed_state(
+                auth_result.error_message,
+            );
             return;
         }
-        await fetch_public_data_from_convex("match_report");
+        const public_data_result = await fetch_public_data_from_convex(
+            MATCH_REPORT_PAGE_TEXT.public_data_scope,
+        );
+        if (!public_data_result.success)
+            console.warn("[MatchReport] Public data refresh skipped", {
+                event: MATCH_REPORT_LOG_EVENTS.PUBLIC_DATA_FETCH_FAILED,
+                fixture_id,
+                error: public_data_result.error,
+            });
         const loaded = await load_match_data();
         if (loaded) start_live_polling_if_needed();
     });
@@ -187,10 +178,9 @@
 <MatchReportPageShell
     {page_data_state}
     {view_state}
-    {is_loading}
-    {error_message}
+    {page_status_state}
     {downloading_report}
-    live_poll_interval_ms={LIVE_POLL_INTERVAL_MS}
+    live_poll_interval_ms={MATCH_REPORT_LIVE_POLL_INTERVAL_MS}
     loading_error_title={MATCH_REPORT_PAGE_TEXT.loading_error_title}
     {toast_message}
     {toast_type}

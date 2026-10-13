@@ -11,16 +11,16 @@ import {
   download_match_report,
 } from "$lib/infrastructure/utils/MatchReportPdfGenerator";
 import {
-  build_assigned_officials,
-  build_staff_entries,
   build_staff_roles_map,
   COMPETITION_RESULTS_MATCH_REPORT_TEXT,
   type CompetitionResultsMatchReportDependencies,
   type MatchReportCompetitionState,
   resolve_match_report_organization_name,
 } from "$lib/presentation/logic/competitionResultsMatchReportHelpers";
+import { fetch_match_report_participants } from "$lib/presentation/logic/competitionResultsMatchReportParticipants";
+import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
-export async function build_report_data_for_fixture(command: {
+interface MatchReportFixtureCommand {
   fixture: Fixture;
   selected_competition_state: MatchReportCompetitionState;
   team_map: Map<string, Team>;
@@ -28,48 +28,31 @@ export async function build_report_data_for_fixture(command: {
   organization_logo_url: string;
   staff_roles_map: Map<string, string>;
   dependencies: CompetitionResultsMatchReportDependencies;
-}): Promise<MatchReportData | undefined> {
-  const {
-    fixture,
-    selected_competition_state,
-    team_map,
-    organization_name,
-    organization_logo_url,
-    staff_roles_map,
-    dependencies,
-  } = command;
+}
+
+interface MatchReportDownloadCommand {
+  selected_competition_state: MatchReportCompetitionState;
+  team_map: Map<string, Team>;
+  organization_logo_url: string;
+  dependencies: CompetitionResultsMatchReportDependencies;
+}
+
+export async function build_report_data_for_fixture(
+  command: MatchReportFixtureCommand,
+): Promise<MatchReportData | undefined> {
+  const { fixture, selected_competition_state, team_map } = command;
   const selected_competition =
-    selected_competition_state.status === "present"
+    selected_competition_state.status === PRESENCE_STATUS.PRESENT
       ? selected_competition_state.competition
       : void 0;
   const home_team = team_map.get(fixture.home_team_id);
   const away_team = team_map.get(fixture.away_team_id);
   if (!home_team || !away_team) return;
 
-  const [home_lineup_result, away_lineup_result, home_staff, away_staff] =
-    await Promise.all([
-      dependencies.fixture_lineup_use_cases.get_lineup_for_team_in_fixture(
-        fixture.id,
-        fixture.home_team_id,
-      ),
-      dependencies.fixture_lineup_use_cases.get_lineup_for_team_in_fixture(
-        fixture.id,
-        fixture.away_team_id,
-      ),
-      build_staff_entries(
-        fixture.home_team_id,
-        staff_roles_map,
-        dependencies.team_staff_use_cases,
-      ),
-      build_staff_entries(
-        fixture.away_team_id,
-        staff_roles_map,
-        dependencies.team_staff_use_cases,
-      ),
-    ]);
-  const assigned_officials = await build_assigned_officials(
+  const participants = await fetch_match_report_participants(
     fixture,
-    dependencies,
+    command.staff_roles_map,
+    command.dependencies,
   );
 
   const context: MatchReportBuildContext = {
@@ -77,56 +60,51 @@ export async function build_report_data_for_fixture(command: {
     home_team,
     away_team,
     competition: selected_competition,
-    home_lineup:
-      home_lineup_result.success && home_lineup_result.data
-        ? home_lineup_result.data.selected_players
-        : [],
-    away_lineup:
-      away_lineup_result.success && away_lineup_result.data
-        ? away_lineup_result.data.selected_players
-        : [],
-    assigned_officials,
-    home_staff,
-    away_staff,
-    organization_name,
-    organization_logo_url,
+    ...participants,
+    organization_name: command.organization_name,
+    organization_logo_url: command.organization_logo_url,
   };
 
   return build_match_report_data(context);
 }
 
-export async function download_fixture_report(command: {
-  fixture: Fixture;
-  selected_competition_state: MatchReportCompetitionState;
-  team_map: Map<string, Team>;
-  organization_logo_url: string;
-  dependencies: CompetitionResultsMatchReportDependencies;
-}): Promise<boolean> {
-  const {
-    fixture,
-    selected_competition_state,
-    team_map,
-    organization_logo_url,
-    dependencies,
-  } = command;
+async function build_match_report_fixture_commands(
+  command: MatchReportDownloadCommand,
+): Promise<Omit<MatchReportFixtureCommand, "fixture">> {
   const organization_name = await resolve_match_report_organization_name(
-    selected_competition_state,
-    dependencies,
+    command.selected_competition_state,
+    command.dependencies,
   );
-  const staff_roles_map = await build_staff_roles_map(dependencies);
-  const report_data = await build_report_data_for_fixture({
-    fixture,
-    selected_competition_state,
-    team_map,
+  const staff_roles_map = await build_staff_roles_map(command.dependencies);
+  return {
+    selected_competition_state: command.selected_competition_state,
+    team_map: command.team_map,
     organization_name,
-    organization_logo_url,
+    organization_logo_url: command.organization_logo_url,
     staff_roles_map,
-    dependencies,
+    dependencies: command.dependencies,
+  };
+}
+
+const COMPETITION_RESULTS_REPORT_EVENTS = {
+  REPORT_DOWNLOAD_FAILED: "competition_results_match_report_download_failed",
+  ALL_REPORTS_DOWNLOAD_FAILED:
+    "competition_results_all_match_reports_download_failed",
+} as const;
+
+export async function download_fixture_report(
+  command: MatchReportDownloadCommand & { fixture: Fixture },
+): Promise<boolean> {
+  const { fixture, team_map } = command;
+  const shared_command = await build_match_report_fixture_commands(command);
+  const report_data = await build_report_data_for_fixture({
+    ...shared_command,
+    fixture,
   });
   const home_team = team_map.get(fixture.home_team_id);
   const away_team = team_map.get(fixture.away_team_id);
   if (!report_data || !home_team || !away_team) return false;
-  download_match_report(
+  const download_result = download_match_report(
     report_data,
     generate_match_report_filename(
       home_team.name,
@@ -134,49 +112,48 @@ export async function download_fixture_report(command: {
       fixture.scheduled_date,
     ),
   );
-  return true;
+  if (download_result.success) return true;
+  console.error("[CompetitionResults] Match report download failed", {
+    event: COMPETITION_RESULTS_REPORT_EVENTS.REPORT_DOWNLOAD_FAILED,
+    fixture_id: fixture.id,
+    error: download_result.error,
+  });
+  return false;
 }
 
-export async function download_all_fixture_reports(command: {
-  completed_fixtures: Fixture[];
-  selected_competition_state: MatchReportCompetitionState;
-  team_map: Map<string, Team>;
-  organization_logo_url: string;
-  dependencies: CompetitionResultsMatchReportDependencies;
-}): Promise<boolean> {
-  const {
-    completed_fixtures,
-    selected_competition_state,
-    team_map,
-    organization_logo_url,
-    dependencies,
-  } = command;
-  if (completed_fixtures.length === 0) return false;
-  const organization_name = await resolve_match_report_organization_name(
-    selected_competition_state,
-    dependencies,
-  );
-  const staff_roles_map = await build_staff_roles_map(dependencies);
+function build_all_match_reports_filename(
+  selected_competition_state: MatchReportCompetitionState,
+): string {
+  const competition_name =
+    selected_competition_state.status === PRESENCE_STATUS.PRESENT
+      ? selected_competition_state.competition.name
+      : COMPETITION_RESULTS_MATCH_REPORT_TEXT.default_competition_name;
+  return `${competition_name}${COMPETITION_RESULTS_MATCH_REPORT_TEXT.all_reports_suffix}`;
+}
+
+export async function download_all_fixture_reports(
+  command: MatchReportDownloadCommand & { completed_fixtures: Fixture[] },
+): Promise<boolean> {
+  if (command.completed_fixtures.length === 0) return false;
+  const shared_command = await build_match_report_fixture_commands(command);
   const report_data = await Promise.all(
-    completed_fixtures.map((fixture: Fixture) =>
-      build_report_data_for_fixture({
-        fixture,
-        selected_competition_state,
-        team_map,
-        organization_name,
-        organization_logo_url,
-        staff_roles_map,
-        dependencies,
-      }),
+    command.completed_fixtures.map((fixture: Fixture) =>
+      build_report_data_for_fixture({ ...shared_command, fixture }),
     ),
   );
   const valid_reports = report_data.filter(
     (item): item is MatchReportData => item != void 0,
   );
   if (valid_reports.length === 0) return false;
-  download_all_match_reports(
+  const download_result = download_all_match_reports(
     valid_reports,
-    `${selected_competition_state.status === "present" ? selected_competition_state.competition.name : COMPETITION_RESULTS_MATCH_REPORT_TEXT.default_competition_name}${COMPETITION_RESULTS_MATCH_REPORT_TEXT.all_reports_suffix}`,
+    build_all_match_reports_filename(command.selected_competition_state),
   );
-  return true;
+  if (download_result.success) return true;
+  console.error("[CompetitionResults] All match reports download failed", {
+    event: COMPETITION_RESULTS_REPORT_EVENTS.ALL_REPORTS_DOWNLOAD_FAILED,
+    fixture_count: valid_reports.length,
+    error: download_result.error,
+  });
+  return false;
 }

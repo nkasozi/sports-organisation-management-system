@@ -1,85 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type {
-  Competition,
-  CreateCompetitionInput,
-} from "../entities/Competition";
 import type { CompetitionRepository } from "../interfaces/ports";
-import type { ScalarInput } from "../types/DomainScalars";
 import {
   type CompetitionStageLifecyclePort,
   create_competition_use_cases_with_stage_lifecycle,
 } from "./CompetitionUseCases";
-
-function create_mock_repository(): CompetitionRepository {
-  return {
-    find_all: vi.fn(),
-    find_by_id: vi.fn(),
-    find_by_ids: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete_by_id: vi.fn(),
-    delete_by_ids: vi.fn(),
-    count: vi.fn(),
-    find_by_organization: vi.fn(),
-    find_active_competitions: vi.fn(),
-  } as CompetitionRepository;
-}
-
-function create_test_competition(
-  overrides: Partial<ScalarInput<Competition>> = {},
-): Competition {
-  return {
-    id: "comp-123",
-    name: "Test League",
-    description: "Test Description",
-    organization_id: "org-123",
-    competition_format_id: "format-123",
-    team_ids: [],
-    allow_auto_squad_submission: false,
-    squad_generation_strategy: "first_available",
-    allow_auto_fixture_details_setup: false,
-    lineup_submission_deadline_hours: 2,
-    start_date: "2024-01-01",
-    end_date: "2024-12-31",
-    registration_deadline: "2023-12-31",
-    max_teams: 16,
-    entry_fee: 0,
-    prize_pool: 0,
-    location: "Test Location",
-    rule_overrides: {},
-    status: "active",
-    created_at: "2024-01-01T00:00:00Z",
-    updated_at: "2024-01-01T00:00:00Z",
-    ...overrides,
-  } as unknown as Competition;
-}
-
-function create_valid_input(
-  overrides: Partial<CreateCompetitionInput> = {},
-): CreateCompetitionInput {
-  return {
-    name: "New Competition",
-    description: "New Description",
-    organization_id: "org-123",
-    competition_format_id: "format-123",
-    team_ids: [],
-    allow_auto_squad_submission: false,
-    squad_generation_strategy: "first_available",
-    allow_auto_fixture_details_setup: false,
-    lineup_submission_deadline_hours: 2,
-    start_date: "2024-01-01",
-    end_date: "2024-12-31",
-    registration_deadline: "2023-12-31",
-    max_teams: 16,
-    entry_fee: 0,
-    prize_pool: 0,
-    location: "Test Location",
-    rule_overrides: {},
-    status: "active",
-    ...overrides,
-  } as CreateCompetitionInput;
-}
+import {
+  create_mock_repository,
+  create_mock_stage_lifecycle,
+  create_test_competition,
+  create_valid_input,
+} from "./CompetitionUseCases.test_support";
 
 describe("CompetitionUseCases", () => {
   let mock_repository: CompetitionRepository;
@@ -90,20 +21,7 @@ describe("CompetitionUseCases", () => {
 
   beforeEach(() => {
     mock_repository = create_mock_repository();
-    mock_stage_lifecycle = {
-      ensure_stages_for_competition: vi.fn().mockResolvedValue({
-        success: true,
-        data: true,
-      }),
-      can_replace_stages_for_competition: vi.fn().mockResolvedValue({
-        success: true,
-        data: true,
-      }),
-      replace_stages_for_competition: vi.fn().mockResolvedValue({
-        success: true,
-        data: true,
-      }),
-    };
+    mock_stage_lifecycle = create_mock_stage_lifecycle();
     use_cases = create_competition_use_cases_with_stage_lifecycle(
       mock_repository,
       mock_stage_lifecycle,
@@ -243,129 +161,6 @@ describe("CompetitionUseCases", () => {
       const input = create_valid_input({ organization_id: "" });
 
       const result = await use_cases.create(input);
-
-      expect(result.success).toBe(false);
-    });
-  });
-
-  describe("update", () => {
-    it("should update with valid input", async () => {
-      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
-        success: true,
-        data: create_test_competition(),
-      });
-      vi.mocked(mock_repository.update).mockResolvedValue({
-        success: true,
-        data: create_test_competition({ name: "Updated" }),
-      });
-
-      const result = await use_cases.update("comp-123", { name: "Updated" });
-
-      expect(result.success).toBe(true);
-      expect(
-        mock_stage_lifecycle.ensure_stages_for_competition,
-      ).toHaveBeenCalledWith("comp-123", "format-123");
-    });
-
-    it("should fail for empty id", async () => {
-      const result = await use_cases.update("", { name: "Updated" });
-
-      expect(result.success).toBe(false);
-      if (result.success) return;
-      expect(result.error).toBe("Competition ID is required");
-    });
-
-    it("should replace stages when the competition format changes", async () => {
-      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
-        success: true,
-        data: create_test_competition({ competition_format_id: "format-old" }),
-      });
-      vi.mocked(mock_repository.update).mockResolvedValue({
-        success: true,
-        data: create_test_competition({ competition_format_id: "format-new" }),
-      });
-
-      const result = await use_cases.update("comp-123", {
-        competition_format_id: "format-new",
-      });
-
-      expect(result.success).toBe(true);
-      expect(
-        mock_stage_lifecycle.can_replace_stages_for_competition,
-      ).toHaveBeenCalledWith("comp-123");
-      expect(
-        mock_stage_lifecycle.replace_stages_for_competition,
-      ).toHaveBeenCalledWith("comp-123", "format-new");
-    });
-  });
-
-  describe("delete", () => {
-    it("should delete by id", async () => {
-      vi.mocked(mock_repository.delete_by_id).mockResolvedValue({
-        success: true,
-        data: true,
-      });
-
-      const result = await use_cases.delete("comp-123");
-
-      expect(result.success).toBe(true);
-    });
-
-    it("should fail for empty id", async () => {
-      const result = await use_cases.delete("");
-
-      expect(result.success).toBe(false);
-    });
-  });
-
-  describe("delete_competitions", () => {
-    it("should delete multiple", async () => {
-      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
-        success: true,
-        data: create_test_competition(),
-      });
-      vi.mocked(mock_repository.delete_by_ids).mockResolvedValue({
-        success: true,
-        data: 2,
-      });
-
-      const result = await use_cases.delete_competitions(["1", "2"]);
-
-      expect(result.success).toBe(true);
-    });
-
-    it("should fail for empty array", async () => {
-      const result = await use_cases.delete_competitions([]);
-
-      expect(result.success).toBe(false);
-    });
-  });
-
-  describe("list_competitions_by_organization", () => {
-    it("should return competitions for organization", async () => {
-      vi.mocked(mock_repository.find_by_organization).mockResolvedValue({
-        success: true,
-        data: {
-          items: [create_test_competition()],
-          total_count: 1,
-          page_number: 1,
-          page_size: 10,
-          total_pages: 1,
-        },
-      });
-
-      const result =
-        await use_cases.list_competitions_by_organization("org-123");
-
-      expect(result.success).toBe(true);
-      expect(mock_repository.find_by_organization).toHaveBeenCalledWith(
-        "org-123",
-        {},
-      );
-    });
-
-    it("should fail for empty organization_id", async () => {
-      const result = await use_cases.list_competitions_by_organization("");
 
       expect(result.success).toBe(false);
     });

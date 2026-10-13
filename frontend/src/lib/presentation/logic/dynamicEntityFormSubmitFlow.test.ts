@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { DYNAMIC_ENTITY_FORM_SUBMIT_STATUS } from "./dynamicEntityFormConstants";
 import {
   type DynamicEntityFormSubmitCommand,
   submit_dynamic_entity_form,
@@ -62,12 +63,7 @@ describe("dynamicEntityFormSubmitFlow", () => {
   it("returns an empty result when metadata is missing or the action is permission denied", async () => {
     await expect(
       submit_dynamic_entity_form(create_submit_command()),
-    ).resolves.toEqual({
-      validation_errors: {},
-      save_error_message: "",
-
-      transfer_declined: false,
-    });
+    ).resolves.toEqual({ status: DYNAMIC_ENTITY_FORM_SUBMIT_STATUS.SKIPPED });
 
     await expect(
       submit_dynamic_entity_form(
@@ -76,12 +72,7 @@ describe("dynamicEntityFormSubmitFlow", () => {
           permission_denied: true,
         }),
       ),
-    ).resolves.toEqual({
-      validation_errors: {},
-      save_error_message: "",
-
-      transfer_declined: false,
-    });
+    ).resolves.toEqual({ status: DYNAMIC_ENTITY_FORM_SUBMIT_STATUS.SKIPPED });
   });
 
   it("returns validation errors without attempting to save when metadata validation fails", async () => {
@@ -98,10 +89,8 @@ describe("dynamicEntityFormSubmitFlow", () => {
         }),
       ),
     ).resolves.toEqual({
+      status: DYNAMIC_ENTITY_FORM_SUBMIT_STATUS.INVALID,
       validation_errors: { name: "Required" },
-      save_error_message: "",
-
-      transfer_declined: false,
     });
   });
 
@@ -125,10 +114,8 @@ describe("dynamicEntityFormSubmitFlow", () => {
         }),
       ),
     ).resolves.toEqual({
-      validation_errors: {},
+      status: DYNAMIC_ENTITY_FORM_SUBMIT_STATUS.FAILED,
       save_error_message: "create failed",
-
-      transfer_declined: false,
     });
     await expect(
       submit_dynamic_entity_form(
@@ -140,10 +127,8 @@ describe("dynamicEntityFormSubmitFlow", () => {
         }),
       ),
     ).resolves.toEqual({
-      validation_errors: {},
+      status: DYNAMIC_ENTITY_FORM_SUBMIT_STATUS.FAILED,
       save_error_message: "update failed",
-
-      transfer_declined: false,
     });
   });
 
@@ -173,8 +158,7 @@ describe("dynamicEntityFormSubmitFlow", () => {
         }),
       ),
     ).resolves.toEqual({
-      validation_errors: {},
-      save_error_message: "",
+      status: DYNAMIC_ENTITY_FORM_SUBMIT_STATUS.SAVED,
       saved_entity: { id: "transfer-1" },
       transfer_declined: true,
     });

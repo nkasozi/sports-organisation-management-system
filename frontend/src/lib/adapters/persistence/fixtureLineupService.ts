@@ -17,9 +17,3 @@ export async function submit_lineup(
 ): AsyncResult<FixtureLineup> {
   return use_cases.submit_lineup(id);
 }
-
-async function lock_lineup(
-  id: ScalarValueInput<FixtureLineup["id"]>,
-): AsyncResult<FixtureLineup> {
-  return use_cases.lock_lineup(id);
-}

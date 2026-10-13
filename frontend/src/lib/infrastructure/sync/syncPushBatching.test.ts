@@ -48,9 +48,7 @@ describe("syncPushBatching", () => {
     });
 
     expect(result.success).toBe(true);
-    if (!result.success) {
-      throw new Error("Expected batch construction to succeed");
-    }
+    if (!result.success) return expect.unreachable();
     expect(result.data).toHaveLength(2);
     expect(result.data[0]).toEqual([first_record]);
     expect(result.data[1]).toEqual([second_record]);
@@ -70,9 +68,7 @@ describe("syncPushBatching", () => {
     });
 
     expect(result.success).toBe(false);
-    if (result.success) {
-      throw new Error("Expected batch construction to fail");
-    }
+    if (result.success) return expect.unreachable();
     expect(result.error).toContain("team-3");
     expect(result.error).toContain("logo_url");
     expect(result.error).toContain("smaller image");

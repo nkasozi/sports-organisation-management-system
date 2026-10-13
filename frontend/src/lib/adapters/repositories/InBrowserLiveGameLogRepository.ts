@@ -6,7 +6,11 @@ import type {
   LiveGameLog,
   UpdateLiveGameLogInput,
 } from "../../core/entities/LiveGameLog";
-import { GAME_STATUS } from "../../core/entities/StatusConstants";
+import {
+  ENTITY_STATUS,
+  GAME_PERIOD,
+  GAME_STATUS,
+} from "../../core/entities/StatusConstants";
 import type {
   LiveGameLogFilter,
   LiveGameLogRepository,
@@ -15,12 +19,30 @@ import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../core/types/Result";
-import {
-  create_failure_result,
-  create_success_result,
-} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import {
+  apply_entity_filter_rules,
+  type EntityFilterRule,
+  equals_rule,
+} from "./InBrowserRepositoryFilterRules";
+import {
+  convert_page_pagination_to_query_options,
+  map_paginated_items,
+  type PagePagination,
+  select_first_paginated_item,
+} from "./InBrowserRepositoryPagedQueries";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
 const ENTITY_PREFIX = "livegame";
+
+const LIVE_GAME_FILTER_RULES: EntityFilterRule<
+  LiveGameLog,
+  LiveGameLogFilter
+>[] = [
+  equals_rule("organization_id"),
+  equals_rule("fixture_id"),
+  equals_rule("game_status"),
+  equals_rule("started_by_user_id"),
+];
 
 class InBrowserLiveGameLogRepository
   extends InBrowserBaseRepository<
@@ -51,20 +73,20 @@ class InBrowserLiveGameLogRepository
       fixture_id: input.fixture_id,
       home_lineup_id: input.home_lineup_id || "",
       away_lineup_id: input.away_lineup_id || "",
-      current_period: input.current_period || "pre_game",
+      current_period: input.current_period || GAME_PERIOD.PRE_GAME,
       current_minute: 0,
       stoppage_time_minutes: 0,
       clock_running: false,
       clock_paused_at_seconds: 0,
       home_team_score: 0,
       away_team_score: 0,
-      game_status: input.game_status || "pre_game",
+      game_status: input.game_status || GAME_STATUS.PRE_GAME,
       started_at: "",
       ended_at: "",
       started_by_user_id: input.started_by_user_id || "",
       ended_by_user_id: "",
       notes: input.notes || "",
-      status: input.status || "active",
+      status: input.status || ENTITY_STATUS.ACTIVE,
     } as LiveGameLog;
   }
 
@@ -78,16 +100,16 @@ class InBrowserLiveGameLogRepository
 
     if (
       updates.game_status === GAME_STATUS.IN_PROGRESS &&
-      entity.game_status === "pre_game"
+      entity.game_status === GAME_STATUS.PRE_GAME
     ) {
       started_at = now;
     }
 
     if (
       (updates.game_status === GAME_STATUS.COMPLETED ||
-        updates.game_status === "abandoned") &&
+        updates.game_status === GAME_STATUS.ABANDONED) &&
       entity.game_status !== GAME_STATUS.COMPLETED &&
-      entity.game_status !== "abandoned"
+      entity.game_status !== GAME_STATUS.ABANDONED
     ) {
       ended_at = now;
     }
@@ -104,46 +126,16 @@ class InBrowserLiveGameLogRepository
     entities: LiveGameLog[],
     filter: LiveGameLogFilter,
   ): LiveGameLog[] {
-    let filtered = entities;
-    if (filter.organization_id) {
-      filtered = filtered.filter(
-        (l) => l.organization_id === filter.organization_id,
-      );
-    }
-    if (filter.fixture_id) {
-      filtered = filtered.filter((l) => l.fixture_id === filter.fixture_id);
-    }
-    if (filter.game_status) {
-      filtered = filtered.filter((l) => l.game_status === filter.game_status);
-    }
-    if (filter.started_by_user_id) {
-      filtered = filtered.filter(
-        (l) => l.started_by_user_id === filter.started_by_user_id,
-      );
-    }
-    return filtered;
-  }
-
-  private build_query_options(pagination?: {
-    page: number;
-    page_size: number;
-  }) {
-    return pagination
-      ? { page_number: pagination.page, page_size: pagination.page_size }
-      : void 0;
+    return apply_entity_filter_rules(entities, filter, LIVE_GAME_FILTER_RULES);
   }
 
   async get_live_game_log_for_fixture(
     fixture_id: LiveGameLog["fixture_id"],
   ): AsyncResult<LiveGameLog> {
-    const result = await this.find_all({ fixture_id });
-    if (!result.success) {
-      return create_failure_result(result.error);
-    }
-    if (result.data.items.length === 0) {
-      return create_failure_result("No live game log found for this fixture");
-    }
-    return create_success_result(result.data.items[0]);
+    return select_first_paginated_item(
+      await this.find_all({ fixture_id }),
+      "No live game log found for this fixture",
+    );
   }
 
   async get_active_games(
@@ -152,64 +144,47 @@ class InBrowserLiveGameLogRepository
     const filter: LiveGameLogFilter = organization_id
       ? { organization_id }
       : {};
-    const result = await this.find_all(filter);
-    if (!result.success) {
-      return { success: false, error: result.error };
-    }
-    const active_games = result.data.items
-      .filter(
-        (l) =>
-          l.game_status === GAME_STATUS.IN_PROGRESS ||
-          l.game_status === GAME_STATUS.PAUSED,
-      )
-      .sort(
-        (a, b) =>
-          new Date(b.started_at || b.created_at).getTime() -
-          new Date(a.started_at || a.created_at).getTime(),
-      );
-    return { success: true, data: active_games };
+    return map_paginated_items(await this.find_all(filter), (items) =>
+      items
+        .filter(
+          (l) =>
+            l.game_status === GAME_STATUS.IN_PROGRESS ||
+            l.game_status === GAME_STATUS.PAUSED,
+        )
+        .sort(
+          (a, b) =>
+            new Date(b.started_at || b.created_at).getTime() -
+            new Date(a.started_at || a.created_at).getTime(),
+        ),
+    );
   }
 
   async find_by_organization(
     organization_id: LiveGameLog["organization_id"],
-    options?: { page: number; page_size: number },
+    options?: PagePagination,
   ): PaginatedAsyncResult<LiveGameLog> {
     return this.find_all(
       { organization_id },
-      this.build_query_options(options),
+      convert_page_pagination_to_query_options(options),
     );
   }
 
   async find_completed_games(
     organization_id?: string,
-    options?: { page: number; page_size: number },
+    options?: PagePagination,
   ): PaginatedAsyncResult<LiveGameLog> {
-    const filter: LiveGameLogFilter = { game_status: "completed" };
+    const filter: LiveGameLogFilter = {
+      game_status: GAME_STATUS.COMPLETED,
+    };
     if (organization_id) {
       filter.organization_id = organization_id;
     }
-    return this.find_all(filter, this.build_query_options(options));
+    return this.find_all(
+      filter,
+      convert_page_pagination_to_query_options(options),
+    );
   }
 }
 
-type LiveGameLogRepositoryState =
-  | { status: "uninitialized" }
-  | {
-      status: "ready";
-      repository: InBrowserLiveGameLogRepository;
-    };
-
-let live_game_log_repository_state: LiveGameLogRepositoryState = {
-  status: "uninitialized",
-};
-
-export function get_live_game_log_repository(): LiveGameLogRepository {
-  if (live_game_log_repository_state.status === "ready") {
-    return live_game_log_repository_state.repository;
-  }
-
-  const repository = new InBrowserLiveGameLogRepository();
-  live_game_log_repository_state = { status: "ready", repository };
-
-  return repository;
-}
+export const get_live_game_log_repository: () => LiveGameLogRepository =
+  create_lazy_repository_accessor(() => new InBrowserLiveGameLogRepository());

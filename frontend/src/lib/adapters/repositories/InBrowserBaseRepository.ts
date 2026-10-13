@@ -9,6 +9,7 @@ import type {
 import type {
   AsyncResult,
   PaginatedAsyncResult,
+  PaginatedResult,
 } from "../../core/types/Result";
 import { get_database, type SportSyncDatabase } from "./database";
 import {
@@ -19,11 +20,11 @@ import {
 import {
   create_entity,
   delete_entities_by_ids,
-  delete_entity_by_id,
+  delete_existing_entity,
   find_all_entities,
   find_entities_by_ids,
   find_entity_by_id,
-  update_entity,
+  write_updated_entity,
 } from "./InBrowserBaseRepositoryOperations";
 import {
   clear_entity_data,
@@ -31,6 +32,11 @@ import {
   seed_entities,
   table_has_data,
 } from "./InBrowserBaseRepositoryTableOperations";
+import {
+  type RepositoryWriteOrigin,
+  run_repository_write,
+  USER_WRITE_ORIGIN,
+} from "./InBrowserRepositoryWriteOrigin";
 
 export abstract class InBrowserBaseRepository<
   TEntity extends BaseEntity,
@@ -39,6 +45,7 @@ export abstract class InBrowserBaseRepository<
   TFilter extends object = Record<string, never>,
 > implements Repository<TEntity, TCreateInput, TUpdateInput, TFilter> {
   protected entity_prefix: string;
+  protected write_origin: RepositoryWriteOrigin = USER_WRITE_ORIGIN;
 
   protected get database(): SportSyncDatabase {
     return get_database();
@@ -46,6 +53,18 @@ export abstract class InBrowserBaseRepository<
 
   constructor(entity_prefix: string) {
     this.entity_prefix = entity_prefix;
+  }
+
+  with_write_origin(origin: RepositoryWriteOrigin): this {
+    const origin_bound_view = Object.create(this) as this;
+    origin_bound_view.write_origin = origin;
+    return origin_bound_view;
+  }
+
+  protected run_write<TData>(
+    write: () => AsyncResult<TData>,
+  ): AsyncResult<TData> {
+    return run_repository_write(this.get_table(), this.write_origin, write);
   }
 
   protected abstract get_table(): Table<TEntity, string>;
@@ -70,7 +89,7 @@ export abstract class InBrowserBaseRepository<
     items: TEntity[],
     total_count: number,
     options?: QueryOptions,
-  ) {
+  ): PaginatedResult<TEntity> {
     return create_paginated_result_from_options(items, total_count, options);
   }
 
@@ -108,49 +127,69 @@ export abstract class InBrowserBaseRepository<
   }
 
   create(input: TCreateInput): AsyncResult<TEntity> {
-    return create_entity(
-      this.get_table(),
-      input,
-      this.entity_prefix,
-      this.create_entity_from_input.bind(this),
+    return this.run_write(() =>
+      create_entity(
+        this.get_table(),
+        input,
+        this.entity_prefix,
+        this.create_entity_from_input.bind(this),
+      ),
     );
   }
 
-  update(
+  async update(
     id: ScalarValueInput<TEntity["id"]>,
     updates: TUpdateInput,
   ): AsyncResult<TEntity> {
-    return update_entity(
+    const existing_entity_result = await find_entity_by_id(
       this.get_table(),
       id,
-      updates,
-      this.apply_updates_to_entity.bind(this),
+    );
+    if (!existing_entity_result.success) return existing_entity_result;
+    return this.run_write(() =>
+      write_updated_entity(
+        this.get_table(),
+        existing_entity_result.data,
+        updates,
+        this.apply_updates_to_entity.bind(this),
+      ),
     );
   }
 
-  delete_by_id(id: ScalarValueInput<TEntity["id"]>): AsyncResult<boolean> {
-    return delete_entity_by_id(this.get_table(), id);
+  async delete_by_id(
+    id: ScalarValueInput<TEntity["id"]>,
+  ): AsyncResult<boolean> {
+    const existing_entity_result = await find_entity_by_id(
+      this.get_table(),
+      id,
+    );
+    if (!existing_entity_result.success) return existing_entity_result;
+    return this.run_write(() => delete_existing_entity(this.get_table(), id));
   }
 
   delete_by_ids(
     ids: Array<ScalarValueInput<TEntity["id"]>>,
   ): AsyncResult<number> {
-    return delete_entities_by_ids(this.get_table(), ids);
+    return this.run_write(() => delete_entities_by_ids(this.get_table(), ids));
   }
 
   count(): AsyncResult<number> {
-    return count_entities(this.get_table());
+    return count_entities(this.get_table(), this.entity_prefix);
   }
 
   seed_with_data(entities: ScalarInput<TEntity>[]): AsyncResult<number> {
-    return seed_entities(this.get_table(), entities, this.entity_prefix);
+    return this.run_write(() =>
+      seed_entities(this.get_table(), entities, this.entity_prefix),
+    );
   }
 
-  async clear_all_data(): Promise<void> {
-    await clear_entity_data(this.get_table(), this.entity_prefix);
+  clear_all_data(): AsyncResult<boolean> {
+    return this.run_write(() =>
+      clear_entity_data(this.get_table(), this.entity_prefix),
+    );
   }
 
-  async has_data(): Promise<boolean> {
+  has_data(): AsyncResult<boolean> {
     return table_has_data(this.get_table(), this.entity_prefix);
   }
 }

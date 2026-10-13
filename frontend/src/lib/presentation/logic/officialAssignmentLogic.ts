@@ -26,16 +26,6 @@ export function build_official_options_from_records(
   }));
 }
 
-export function filter_officials_by_organization(
-  officials: OfficialRecord[],
-  organization_id: string,
-): OfficialRecord[] {
-  if (!organization_id) return officials;
-  return officials.filter(
-    (official) => official.organization_id === organization_id,
-  );
-}
-
 export function build_organization_official_filter(
   organization_id: string,
 ): OrganizationOfficialFilter {

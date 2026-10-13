@@ -1,5 +1,8 @@
 import type { BaseEntity, FieldMetadata } from "../../core/entities/BaseEntity";
 import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
+import { DYNAMIC_FORM_FIELD_TYPE } from "./dynamicFormConstants";
+import { DYNAMIC_FORM_DATA_LOADER_EVENT } from "./dynamicFormMessages";
+import { is_object_value } from "./runtimeTypeGuards";
 
 export {
   compute_teams_after_exclusion,
@@ -19,40 +22,42 @@ export {
   fetch_officials_from_fixture,
 } from "./officialDataFetcher";
 
+const DEFAULT_ENTITY_PAGE_SIZE = 1000;
+
+function extract_listed_entities(data: unknown): BaseEntity[] {
+  if (Array.isArray(data)) return data as BaseEntity[];
+  const items = is_object_value(data)
+    ? (data as { items?: unknown }).items
+    : void 0;
+  return Array.isArray(items) ? (items as BaseEntity[]) : [];
+}
+
 export async function fetch_entities_for_type(
   entity_type: string,
   filter?: Record<string, string>,
-  page_size: number = 1000,
+  page_size: number = DEFAULT_ENTITY_PAGE_SIZE,
 ): Promise<BaseEntity[]> {
   const use_cases_result = get_use_cases_for_entity_type(
     entity_type.toLowerCase(),
   );
-  if (
-    !use_cases_result.success ||
-    typeof use_cases_result.data.list !== "function"
-  ) {
-    console.warn(
-      `[DataLoader] No list method found for entity type: ${entity_type}`,
-    );
+  if (!use_cases_result.success) {
+    console.warn("[DataLoader] No use cases for entity type", {
+      event: DYNAMIC_FORM_DATA_LOADER_EVENT.USE_CASES_MISSING,
+      entity_type,
+      error: use_cases_result.error,
+    });
     return [];
   }
   const result = await use_cases_result.data.list(filter, { page_size });
   if (!result.success) {
-    const error_msg =
-      "error_message" in result
-        ? (result as { error_message: string }).error_message
-        : "error" in result
-          ? (result as { error: string }).error
-          : "Unknown error";
-    console.warn(`[DataLoader] Failed to load ${entity_type}:`, error_msg);
+    console.warn("[DataLoader] Failed to load entities", {
+      event: DYNAMIC_FORM_DATA_LOADER_EVENT.ENTITY_LIST_FAILED,
+      entity_type,
+      error: result.error,
+    });
     return [];
   }
-  const data = result.data as unknown;
-  if (Array.isArray(data)) return data as BaseEntity[];
-  if (Array.isArray((data as { items?: unknown })?.items)) {
-    return (data as { items: unknown[] }).items as unknown as BaseEntity[];
-  }
-  return [];
+  return extract_listed_entities(result.data);
 }
 
 export async function fetch_unfiltered_foreign_key_options(
@@ -60,11 +65,15 @@ export async function fetch_unfiltered_foreign_key_options(
 ): Promise<Record<string, BaseEntity[]>> {
   const new_options: Record<string, BaseEntity[]> = {};
   for (const field of fields) {
-    if (field.field_type !== "foreign_key" || !field.foreign_key_entity)
+    if (
+      field.field_type !== DYNAMIC_FORM_FIELD_TYPE.FOREIGN_KEY ||
+      !field.foreign_key_entity
+    )
       continue;
     if (field.foreign_key_filter) continue;
     const entities = await fetch_entities_for_type(field.foreign_key_entity);
     console.debug("[DataLoader] Loaded FK options", {
+      event: DYNAMIC_FORM_DATA_LOADER_EVENT.FOREIGN_KEY_OPTIONS_LOADED,
       field: field.field_name,
       count: entities.length,
     });

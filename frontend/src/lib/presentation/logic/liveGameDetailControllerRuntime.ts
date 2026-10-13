@@ -14,7 +14,7 @@ import { create_live_game_detail_game_handlers } from "./liveGameDetailControlle
 import { create_live_game_detail_period_handlers } from "./liveGameDetailControllerPeriodActions";
 import { create_live_game_detail_report_handlers } from "./liveGameDetailControllerReportActions";
 
-export function create_live_game_detail_controller_runtime(command: {
+type LiveGameDetailControllerRuntimeCommand = {
   action_dependencies: LiveGameDetailPageActionDependencies;
   data_dependencies: LiveGameDetailDataDependencies;
   fixture_id: () => string;
@@ -29,12 +29,16 @@ export function create_live_game_detail_controller_runtime(command: {
   set_modal_state: (state: LiveGameDetailModalState) => void;
   set_page_state: (state: LiveGameDetailPageState) => void;
   set_toast_state: (state: LiveGameDetailToastState) => void;
-}): ReturnType<typeof create_live_game_detail_clock_handlers> &
-  ReturnType<typeof create_live_game_detail_event_handlers> &
-  ReturnType<typeof create_live_game_detail_game_handlers> &
-  ReturnType<typeof create_live_game_detail_period_handlers> &
-  ReturnType<typeof create_live_game_detail_report_handlers> {
-  const clock_handlers = create_live_game_detail_clock_handlers({
+};
+
+type LiveGameDetailClockHandlers = ReturnType<
+  typeof create_live_game_detail_clock_handlers
+>;
+
+function build_clock_handlers(
+  command: LiveGameDetailControllerRuntimeCommand,
+): LiveGameDetailClockHandlers {
+  return create_live_game_detail_clock_handlers({
     data_dependencies: command.data_dependencies,
     fixture_id: command.fixture_id,
     get_event_state: command.get_event_state,
@@ -43,7 +47,12 @@ export function create_live_game_detail_controller_runtime(command: {
     raw_token: command.raw_token,
     set_page_state: command.set_page_state,
   });
-  const event_handlers = create_live_game_detail_event_handlers({
+}
+
+function build_event_handlers(
+  command: LiveGameDetailControllerRuntimeCommand,
+): ReturnType<typeof create_live_game_detail_event_handlers> {
+  return create_live_game_detail_event_handlers({
     action_dependencies: command.action_dependencies,
     get_event_state: command.get_event_state,
     get_page_state: command.get_page_state,
@@ -52,7 +61,13 @@ export function create_live_game_detail_controller_runtime(command: {
     set_page_state: command.set_page_state,
     set_toast_state: command.set_toast_state,
   });
-  const game_handlers = create_live_game_detail_game_handlers({
+}
+
+function build_game_handlers(
+  command: LiveGameDetailControllerRuntimeCommand,
+  clock_handlers: LiveGameDetailClockHandlers,
+): ReturnType<typeof create_live_game_detail_game_handlers> {
+  return create_live_game_detail_game_handlers({
     action_dependencies: command.action_dependencies,
     get_modal_state: command.get_modal_state,
     get_page_state: command.get_page_state,
@@ -64,7 +79,13 @@ export function create_live_game_detail_controller_runtime(command: {
     start_clock: clock_handlers.start_clock,
     stop_clock: clock_handlers.stop_clock,
   });
-  const period_handlers = create_live_game_detail_period_handlers({
+}
+
+function build_period_handlers(
+  command: LiveGameDetailControllerRuntimeCommand,
+  clock_handlers: LiveGameDetailClockHandlers,
+): ReturnType<typeof create_live_game_detail_period_handlers> {
+  return create_live_game_detail_period_handlers({
     action_dependencies: command.action_dependencies,
     get_modal_state: command.get_modal_state,
     get_page_state: command.get_page_state,
@@ -75,13 +96,32 @@ export function create_live_game_detail_controller_runtime(command: {
     start_clock: clock_handlers.start_clock,
     stop_clock: clock_handlers.stop_clock,
   });
-  const report_handlers = create_live_game_detail_report_handlers({
+}
+
+function build_report_handlers(
+  command: LiveGameDetailControllerRuntimeCommand,
+): ReturnType<typeof create_live_game_detail_report_handlers> {
+  return create_live_game_detail_report_handlers({
     action_dependencies: command.action_dependencies,
     get_branding_logo_url: command.get_branding_logo_url,
     get_page_state: command.get_page_state,
     set_page_state: command.set_page_state,
     set_toast_state: command.set_toast_state,
   });
+}
+
+export function create_live_game_detail_controller_runtime(
+  command: LiveGameDetailControllerRuntimeCommand,
+): LiveGameDetailClockHandlers &
+  ReturnType<typeof create_live_game_detail_event_handlers> &
+  ReturnType<typeof create_live_game_detail_game_handlers> &
+  ReturnType<typeof create_live_game_detail_period_handlers> &
+  ReturnType<typeof create_live_game_detail_report_handlers> {
+  const clock_handlers = build_clock_handlers(command);
+  const event_handlers = build_event_handlers(command);
+  const game_handlers = build_game_handlers(command, clock_handlers);
+  const period_handlers = build_period_handlers(command, clock_handlers);
+  const report_handlers = build_report_handlers(command);
   return {
     ...clock_handlers,
     ...event_handlers,

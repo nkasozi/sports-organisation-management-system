@@ -1,44 +1,78 @@
-import type { CompetitionFormat } from "../../core/entities/CompetitionFormat";
-import type { GameOfficialRole } from "../../core/entities/GameOfficialRole";
-import type { PlayerPosition } from "../../core/entities/PlayerPosition";
-import type { TeamStaffRole } from "../../core/entities/TeamStaffRole";
 import type { Result } from "../../core/types/Result";
 import {
   create_failure_result,
   create_success_result,
 } from "../../core/types/Result";
-import { get_competition_format_repository } from "../repositories/InBrowserCompetitionFormatRepository";
+import type { get_competition_format_repository } from "../repositories/InBrowserCompetitionFormatRepository";
 import type { InBrowserGameOfficialRoleRepository } from "../repositories/InBrowserGameOfficialRoleRepository";
 import type { InBrowserPlayerPositionRepository } from "../repositories/InBrowserPlayerPositionRepository";
 import type { InBrowserTeamStaffRoleRepository } from "../repositories/InBrowserTeamStaffRoleRepository";
+import { SEED_LOOKUP_PAGE_SIZE } from "./initializationConstants";
+import {
+  INITIALIZATION_ERROR_CODE,
+  INITIALIZATION_EVENT,
+} from "./initializationEvents";
+import { INITIALIZATION_ERROR_MESSAGE } from "./initializationMessages";
+import {
+  build_seed_entity_id_lookups,
+  type CodedRecord,
+  type SeedLookupRecords,
+} from "./seedEntityIdLookupCodes";
 import type { SeedEntityIdLookups } from "./seedingTypes";
 
-function find_position_id_by_code(
-  code: string,
-  positions: PlayerPosition[],
-): string {
-  return positions.find((p) => p.code === code)?.id ?? "";
+interface CodedRecordPage {
+  items: CodedRecord[];
 }
 
-function find_staff_role_id_by_code(
-  code: string,
-  roles: TeamStaffRole[],
-): string {
-  return roles.find((r) => r.code === code)?.id ?? "";
+const PAGE_OPTIONS = { page_size: SEED_LOOKUP_PAGE_SIZE };
+
+async function load_lookup_records(
+  lookup_name: string,
+  load: () => Promise<Result<CodedRecordPage>>,
+): Promise<Result<CodedRecord[]>> {
+  const load_result = await load();
+  if (load_result.success) return create_success_result(load_result.data.items);
+  console.error("[Seeding] Failed to load seed lookup records", {
+    event: INITIALIZATION_EVENT.SEED_LOOKUPS_LOAD_FAILED,
+    error_code: INITIALIZATION_ERROR_CODE.SEED_LOOKUPS_FAILED,
+    lookup_name,
+    error: load_result.error,
+  });
+  return create_failure_result(
+    INITIALIZATION_ERROR_MESSAGE.SEED_LOOKUPS_FAILED,
+  );
 }
 
-function find_official_role_id_by_code(
-  code: string,
-  roles: GameOfficialRole[],
-): string {
-  return roles.find((r) => r.code === code)?.id ?? "";
-}
-
-function find_competition_format_id_by_code(
-  code: string,
-  formats: CompetitionFormat[],
-): string {
-  return formats.find((f) => f.code === code)?.id ?? "";
+async function load_all_lookup_records(
+  player_position_repository: InBrowserPlayerPositionRepository,
+  team_staff_role_repository: InBrowserTeamStaffRoleRepository,
+  official_role_repository: InBrowserGameOfficialRoleRepository,
+  competition_format_repository: ReturnType<
+    typeof get_competition_format_repository
+  >,
+): Promise<Result<SeedLookupRecords>> {
+  const positions = await load_lookup_records("player_positions", () =>
+    player_position_repository.find_all({}, PAGE_OPTIONS),
+  );
+  if (!positions.success) return positions;
+  const staff_roles = await load_lookup_records("team_staff_roles", () =>
+    team_staff_role_repository.find_all_with_filter({}, PAGE_OPTIONS),
+  );
+  if (!staff_roles.success) return staff_roles;
+  const official_roles = await load_lookup_records("game_official_roles", () =>
+    official_role_repository.find_all_with_filter({}, PAGE_OPTIONS),
+  );
+  if (!official_roles.success) return official_roles;
+  const formats = await load_lookup_records("competition_formats", () =>
+    competition_format_repository.find_all({}, PAGE_OPTIONS),
+  );
+  if (!formats.success) return formats;
+  return create_success_result({
+    positions: positions.data,
+    staff_roles: staff_roles.data,
+    official_roles: official_roles.data,
+    formats: formats.data,
+  });
 }
 
 export async function load_seed_entity_id_lookups(
@@ -49,99 +83,19 @@ export async function load_seed_entity_id_lookups(
     typeof get_competition_format_repository
   >,
 ): Promise<Result<SeedEntityIdLookups>> {
-  console.log("[Seeding] Loading entity ID lookups from seeded data");
-
-  const positions_result = await player_position_repository.find_all(
-    {},
-    { page_size: 100 },
+  console.log("[Seeding] Loading seed entity id lookups", {
+    event: INITIALIZATION_EVENT.SEED_LOOKUPS_LOADING,
+  });
+  const records_result = await load_all_lookup_records(
+    player_position_repository,
+    team_staff_role_repository,
+    official_role_repository,
+    competition_format_repository,
   );
-  if (!positions_result.success)
-    return create_failure_result(
-      `Failed to load positions: ${positions_result.error}`,
-    );
-
-  const staff_roles_result =
-    await team_staff_role_repository.find_all_with_filter(
-      {},
-      {
-        page_size: 100,
-      },
-    );
-  if (!staff_roles_result.success)
-    return create_failure_result(
-      `Failed to load staff roles: ${staff_roles_result.error}`,
-    );
-
-  const official_roles_result =
-    await official_role_repository.find_all_with_filter(
-      {},
-      {
-        page_size: 100,
-      },
-    );
-  if (!official_roles_result.success)
-    return create_failure_result(
-      `Failed to load official roles: ${official_roles_result.error}`,
-    );
-
-  const formats_result = await competition_format_repository.find_all(
-    {},
-    { page_size: 100 },
-  );
-  if (!formats_result.success)
-    return create_failure_result(
-      `Failed to load competition formats: ${formats_result.error}`,
-    );
-
-  const positions = positions_result.data.items;
-  const staff_roles = staff_roles_result.data.items;
-  const official_roles = official_roles_result.data.items;
-  const formats = formats_result.data.items;
-
-  const lookups: SeedEntityIdLookups = {
-    position_ids: {
-      gk: find_position_id_by_code("GK", positions),
-      sw: find_position_id_by_code("SW", positions),
-      cb: find_position_id_by_code("CB", positions),
-      lb: find_position_id_by_code("LB", positions),
-      rb: find_position_id_by_code("RB", positions),
-      cdm: find_position_id_by_code("CDM", positions),
-      cm: find_position_id_by_code("CM", positions),
-      lm: find_position_id_by_code("LM", positions),
-      rm: find_position_id_by_code("RM", positions),
-      lw: find_position_id_by_code("LW", positions),
-      rw: find_position_id_by_code("RW", positions),
-      cf: find_position_id_by_code("CF", positions),
-    },
-    head_coach_role_id: find_staff_role_id_by_code("HC", staff_roles),
-    assistant_coach_role_id: find_staff_role_id_by_code("AC", staff_roles),
-    physio_role_id: find_staff_role_id_by_code("PHYSIO", staff_roles),
-    team_manager_role_id: find_staff_role_id_by_code("TM", staff_roles),
-    referee_role_id: find_official_role_id_by_code("REF", official_roles),
-    assistant_referee_role_id: find_official_role_id_by_code(
-      "AR",
-      official_roles,
-    ),
-    competition_format_ids: {
-      easter_cup_format_id: find_competition_format_id_by_code(
-        "world_cup_style",
-        formats,
-      ),
-      uganda_cup_format_id: find_competition_format_id_by_code(
-        "cup_tournament",
-        formats,
-      ),
-      nhl_format_id: find_competition_format_id_by_code(
-        "standard_league",
-        formats,
-      ),
-      university_format_id: find_competition_format_id_by_code(
-        "single_round_robin",
-        formats,
-      ),
-    },
-  };
-
-  console.log("[Seeding] Entity ID lookups loaded successfully");
+  if (!records_result.success) return records_result;
+  const lookups = build_seed_entity_id_lookups(records_result.data);
+  console.log("[Seeding] Seed entity id lookups loaded", {
+    event: INITIALIZATION_EVENT.SEED_LOOKUPS_LOADED,
+  });
   return create_success_result(lookups);
 }

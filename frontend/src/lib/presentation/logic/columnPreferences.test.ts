@@ -1,32 +1,13 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import type { AppSettingsPort } from "$lib/core/interfaces/ports";
 
 import {
   build_column_cache_key,
   clear_column_preferences,
-  load_column_preferences,
   save_column_preferences,
 } from "./columnPreferences";
-
-function create_mock_storage(): AppSettingsPort {
-  const store = {} as Record<string, string>;
-  return {
-    get_setting: vi.fn((key: string) => Promise.resolve(store[key] ?? "")),
-    set_setting: vi.fn((key: string, value: string) => {
-      store[key] = value;
-      return Promise.resolve();
-    }),
-    remove_setting: vi.fn((key: string) => {
-      delete store[key];
-      return Promise.resolve();
-    }),
-    clear_all_settings: vi.fn(() => {
-      Object.keys(store).forEach((k) => delete store[k]);
-      return Promise.resolve();
-    }),
-  } as AppSettingsPort;
-}
+import { create_mock_storage } from "./columnPreferences.test_support";
 
 describe("build_column_cache_key", () => {
   it("builds key from entity_type alone", () => {
@@ -115,108 +96,6 @@ describe("save_column_preferences", () => {
 
     expect(saved).toBe(false);
     expect(storage.set_setting).not.toHaveBeenCalled();
-  });
-});
-
-describe("load_column_preferences", () => {
-  let storage: AppSettingsPort;
-
-  beforeEach(() => {
-    storage = create_mock_storage();
-  });
-
-  it("returns restored columns when cached data exists", async () => {
-    await storage.set_setting(
-      "col_prefs_Team",
-      JSON.stringify(["name", "status"]),
-    );
-
-    const result = await load_column_preferences({
-      entity_type: "Team",
-      available_field_names: ["name", "status", "city"],
-      storage,
-    });
-
-    expect(result.restored).toBe(true);
-    expect(result.columns).toEqual(new Set(["name", "status"]));
-  });
-
-  it("filters out columns that no longer exist in available fields", async () => {
-    await storage.set_setting(
-      "col_prefs_Team",
-      JSON.stringify(["name", "deleted_field", "status"]),
-    );
-
-    const result = await load_column_preferences({
-      entity_type: "Team",
-      available_field_names: ["name", "status", "city"],
-      storage,
-    });
-
-    expect(result.restored).toBe(true);
-    expect(result.columns).toEqual(new Set(["name", "status"]));
-  });
-
-  it("returns not-restored when no cached data exists", async () => {
-    const result = await load_column_preferences({
-      entity_type: "Team",
-      available_field_names: ["name", "status"],
-      storage,
-    });
-
-    expect(result.restored).toBe(false);
-    expect(result.columns).toEqual(new Set());
-  });
-
-  it("returns not-restored when cached data is invalid JSON", async () => {
-    await storage.set_setting("col_prefs_Team", "not-valid-json");
-
-    const result = await load_column_preferences({
-      entity_type: "Team",
-      available_field_names: ["name", "status"],
-      storage,
-    });
-
-    expect(result.restored).toBe(false);
-    expect(result.columns).toEqual(new Set());
-  });
-
-  it("returns not-restored when all cached columns are gone from available fields", async () => {
-    await storage.set_setting(
-      "col_prefs_Team",
-      JSON.stringify(["old_field_1", "old_field_2"]),
-    );
-
-    const result = await load_column_preferences({
-      entity_type: "Team",
-      available_field_names: ["name", "status"],
-      storage,
-    });
-
-    expect(result.restored).toBe(false);
-    expect(result.columns).toEqual(new Set());
-  });
-
-  it("loads with sub_entity_filter context", async () => {
-    const filter = {
-      foreign_key_field: "team_id",
-      foreign_key_value: "t-1",
-    };
-
-    await storage.set_setting(
-      "col_prefs_PlayerTeamMembership_team_id",
-      JSON.stringify(["player_id"]),
-    );
-
-    const result = await load_column_preferences({
-      entity_type: "PlayerTeamMembership",
-      sub_entity_filter: filter,
-      available_field_names: ["player_id", "team_id", "status"],
-      storage,
-    });
-
-    expect(result.restored).toBe(true);
-    expect(result.columns).toEqual(new Set(["player_id"]));
   });
 });
 

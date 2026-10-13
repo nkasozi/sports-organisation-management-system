@@ -77,7 +77,7 @@ import type {
   VenueRepository,
 } from "../core/interfaces/ports";
 
-export interface RepositoryContainer {
+interface PrimaryRepositories {
   organization_repository: OrganizationRepository;
   competition_repository: CompetitionRepository;
   team_repository: TeamRepository;
@@ -96,6 +96,9 @@ export interface RepositoryContainer {
   competition_team_repository: CompetitionTeamRepository;
   fixture_lineup_repository: FixtureLineupRepository;
   fixture_details_setup_repository: FixtureDetailsSetupRepository;
+}
+
+interface ReferenceRepositories {
   game_event_type_repository: GameEventTypeRepository;
   game_official_role_repository: GameOfficialRoleRepository;
   identification_type_repository: IdentificationTypeRepository;
@@ -118,7 +121,10 @@ export interface RepositoryContainer {
   organization_settings_repository: OrganizationSettingsRepository;
 }
 
-export function create_in_browser_repository_container(): RepositoryContainer {
+export interface RepositoryContainer
+  extends PrimaryRepositories, ReferenceRepositories {}
+
+function create_primary_repositories(): PrimaryRepositories {
   return {
     organization_repository: get_organization_repository(),
     competition_repository: get_competition_repository(),
@@ -138,6 +144,11 @@ export function create_in_browser_repository_container(): RepositoryContainer {
     competition_team_repository: get_competition_team_repository(),
     fixture_lineup_repository: get_fixture_lineup_repository(),
     fixture_details_setup_repository: get_fixture_details_setup_repository(),
+  };
+}
+
+function create_reference_repositories(): ReferenceRepositories {
+  return {
     game_event_type_repository: get_game_event_type_repository(),
     game_official_role_repository: get_game_official_role_repository(),
     identification_type_repository: get_identification_type_repository(),
@@ -161,5 +172,12 @@ export function create_in_browser_repository_container(): RepositoryContainer {
     game_event_log_repository: get_game_event_log_repository(),
     competition_stage_repository: get_competition_stage_repository(),
     organization_settings_repository: get_organization_settings_repository(),
+  };
+}
+
+export function create_in_browser_repository_container(): RepositoryContainer {
+  return {
+    ...create_primary_repositories(),
+    ...create_reference_repositories(),
   };
 }

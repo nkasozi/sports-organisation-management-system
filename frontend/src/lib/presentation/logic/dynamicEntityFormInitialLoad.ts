@@ -12,10 +12,19 @@ import type {
   DynamicEntityFormWarningState,
 } from "./dynamicEntityFormState";
 import {
+  DYNAMIC_FORM_ENTITY_TYPE,
+  DYNAMIC_FORM_FIELD_NAME,
+  type DynamicFormData,
+  is_dynamic_form_entity_type,
+} from "./dynamicFormConstants";
+import { read_dynamic_form_text_value } from "./dynamicFormDataAccess";
+import {
   fetch_entities_for_type,
   fetch_filtered_entities_for_field,
   fetch_unfiltered_foreign_key_options,
 } from "./dynamicFormDataLoader";
+
+const EMPTY_ENTITY_TYPE = "";
 
 type InitialLoadState = Pick<
   DynamicEntityFormState,
@@ -24,7 +33,7 @@ type InitialLoadState = Pick<
 
 export async function load_dynamic_form_initial_state(
   metadata: EntityMetadata,
-  form_data: Record<string, any>,
+  form_data: DynamicFormData,
   entity_type: string,
   conflict_dependencies: DynamicEntityFormConflictDependencies,
 ): Promise<{
@@ -69,11 +78,11 @@ export async function load_dynamic_form_initialized_filtered_options(
   let current_state = { ...state };
   for (const field of metadata.fields) {
     if (!field.foreign_key_filter) continue;
-    const dependency_value =
-      initialized_data[field.foreign_key_filter.depends_on_field];
-    if (typeof dependency_value !== "string" || dependency_value.length === 0) {
-      continue;
-    }
+    const dependency_value = read_dynamic_form_text_value(
+      initialized_data,
+      field.foreign_key_filter.depends_on_field,
+    );
+    if (dependency_value.length === 0) continue;
     current_state = await resolve_filtered_field_options(
       field,
       dependency_value,
@@ -91,16 +100,21 @@ async function resolve_filtered_field_options(
   const result = await fetch_filtered_entities_for_field(
     field,
     dependency_value,
-    state.foreign_key_options["player_id"] || [],
+    state.foreign_key_options[DYNAMIC_FORM_FIELD_NAME.PLAYER_ID] || [],
     state.form_data,
   );
   const foreign_key_options = {
     ...state.foreign_key_options,
     [field.field_name]: result.entities,
   };
-  if (field.foreign_key_entity?.toLowerCase() === "fixture") {
-    foreign_key_options["competition_id"] =
-      await fetch_entities_for_type("competition");
+  if (
+    is_dynamic_form_entity_type(
+      field.foreign_key_entity ?? EMPTY_ENTITY_TYPE,
+      DYNAMIC_FORM_ENTITY_TYPE.FIXTURE,
+    )
+  ) {
+    foreign_key_options[DYNAMIC_FORM_FIELD_NAME.COMPETITION_ID] =
+      await fetch_entities_for_type(DYNAMIC_FORM_ENTITY_TYPE.COMPETITION);
   }
   return {
     form_data:

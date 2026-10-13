@@ -6,14 +6,15 @@
         HELP_FAQ_SECTION_ID,
         HELP_FAQ_SECTION_TITLE,
     } from "../../logic/helpPageContent";
+    import { is_help_section_item_expanded } from "./helpSectionConstants";
 
     export let expanded_faq_state: HelpSectionExpansionState;
     export let on_toggle: (selected_index: number) => void;
 
     function is_faq_item_expanded(selected_index: number): boolean {
-        return (
-            expanded_faq_state.status === "expanded" &&
-            expanded_faq_state.index === selected_index
+        return is_help_section_item_expanded(
+            expanded_faq_state,
+            selected_index,
         );
     }
 </script>
