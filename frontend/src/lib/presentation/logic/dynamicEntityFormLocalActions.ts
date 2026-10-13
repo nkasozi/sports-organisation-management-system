@@ -6,10 +6,22 @@ import { DYNAMIC_ENTITY_FORM_EVENT } from "./dynamicEntityFormMessages";
 import type { DynamicEntityFormState } from "./dynamicEntityFormState";
 import { build_foreign_entity_route } from "./dynamicFormLogic";
 
+function omit_locked_fields(
+  generated_data: Record<string, unknown>,
+  locked_field_names: ReadonlySet<string>,
+): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(generated_data).filter(
+      ([field_name]) => !locked_field_names.has(field_name),
+    ),
+  );
+}
+
 export function build_dynamic_form_fake_data_state(
   entity_metadata: EntityMetadata | undefined,
   is_edit_mode: boolean,
   form_state: DynamicEntityFormState,
+  locked_field_names: ReadonlySet<string>,
 ): DynamicEntityFormState {
   if (
     !entity_metadata ||
@@ -26,7 +38,10 @@ export function build_dynamic_form_fake_data_state(
     ...form_state,
     form_data: {
       ...form_state.form_data,
-      ...fake_data_result.generated_data,
+      ...omit_locked_fields(
+        fake_data_result.generated_data,
+        locked_field_names,
+      ),
     },
     validation_errors: {},
   };

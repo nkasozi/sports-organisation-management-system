@@ -10,6 +10,7 @@
     } from "$lib/infrastructure/registry/useCaseFactories";
     import EntityCrudWrapper from "$lib/presentation/components/EntityCrudWrapper.svelte";
     import { load_fixture_details_setup_auto_populated_data } from "$lib/presentation/logic/fixtureDetailsSetupAutoPopulate";
+    import { build_live_games_resume_start_url } from "$lib/presentation/logic/liveGamesStartResume";
 
     const fixture_use_cases = get_fixture_use_cases();
     const jersey_color_use_cases = get_jersey_color_use_cases();
@@ -39,7 +40,8 @@
         if (fixture_id) {
             initial_view = "create";
             initial_create_data = await load_auto_populated_data(fixture_id);
-            after_save_redirect_url = "/live-games";
+            after_save_redirect_url =
+                build_live_games_resume_start_url(fixture_id);
             info_message =
                 "No fixture details were found for this game. Please review the pre-filled details below (jersey colors and officials) and save to continue starting the game.";
         }

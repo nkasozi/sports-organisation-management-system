@@ -79,6 +79,7 @@ describe("dynamicEntityFormControllerFactory", () => {
       player_team_membership_use_cases: {} as never,
       get_entity_metadata: () =>
         (command?.entity_metadata ?? { fields: [] }) as never,
+      get_locked_field_names: () => new Set<string>(),
       get_is_edit_mode: () => false,
       get_entity_data: () => ({}) as never,
       get_form_state: () => form_state,

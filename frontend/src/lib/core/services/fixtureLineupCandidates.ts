@@ -22,6 +22,7 @@ import {
   FIXTURE_LINEUP_GENERATION_MESSAGES,
 } from "./FixtureLineupGenerationConstants";
 import { build_lineup_players_from_memberships } from "./fixtureLineupLookup";
+import { compare_lineup_player_names } from "./fixtureLineupNameOrder";
 import { log_service_failure } from "./serviceFailure";
 
 export type LineupGenerationResult =
@@ -149,11 +150,7 @@ export async function load_sorted_lineup_players(
     memberships,
     players,
     position_name_by_id,
-  ).sort((a, b) =>
-    `${a.last_name} ${a.first_name}`
-      .toLowerCase()
-      .localeCompare(`${b.last_name} ${b.first_name}`.toLowerCase()),
-  );
+  ).sort(compare_lineup_player_names);
 }
 
 export function build_auto_generated_lineup(

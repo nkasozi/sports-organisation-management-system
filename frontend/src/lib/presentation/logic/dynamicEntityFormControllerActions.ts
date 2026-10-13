@@ -29,6 +29,7 @@ export type DynamicEntityFormControllerDependencies = {
   is_inline_mode: boolean;
   player_team_membership_use_cases: PlayerTeamMembershipUseCasesPort;
   get_entity_metadata: () => EntityMetadata | undefined;
+  get_locked_field_names: () => ReadonlySet<string>;
   get_is_edit_mode: () => boolean;
   get_entity_data: () => Partial<BaseEntity> | undefined;
   get_form_state: () => DynamicEntityFormState;
@@ -120,6 +121,7 @@ export function generate_dynamic_entity_form_fake_data(
       dependencies.get_entity_metadata(),
       dependencies.get_is_edit_mode(),
       dependencies.get_form_state(),
+      dependencies.get_locked_field_names(),
     ),
   );
 }

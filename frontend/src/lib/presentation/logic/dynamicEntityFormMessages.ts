@@ -2,6 +2,7 @@ export const DYNAMIC_ENTITY_FORM_EVENT = {
   SUB_ENTITY_USE_CASES_MISSING:
     "dynamic_entity_form_sub_entity_use_cases_missing",
   SAVE_FAILED: "dynamic_entity_form_save_failed",
+  SAVE_CRASHED: "dynamic_entity_form_save_crashed",
   SAVE_HANDLER_MISSING: "dynamic_entity_form_save_handler_missing",
   CREATE_NOT_SUPPORTED: "dynamic_entity_form_create_not_supported",
   UPDATE_NOT_SUPPORTED: "dynamic_entity_form_update_not_supported",

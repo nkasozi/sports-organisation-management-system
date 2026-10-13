@@ -65,6 +65,7 @@ describe("get_player_rules_from_competition", () => {
       success: true,
       min_players: 4,
       max_players: 16,
+      starters_count: 11,
       squad_generation_strategy: "previous_match",
     });
   });

@@ -14,7 +14,7 @@ function create_dependencies(): LiveGameDetailDataDependencies {
     competition_use_cases: { get_by_id: vi.fn() },
     organization_use_cases: { get_by_id: vi.fn() },
     sport_use_cases: { get_by_id: vi.fn() },
-    venue_use_cases: { get_by_id: vi.fn() },
+    venue_use_cases: { list: vi.fn() },
     official_use_cases: { get_by_id: vi.fn() },
   } as unknown as LiveGameDetailDataDependencies;
 }
@@ -22,8 +22,15 @@ function create_dependencies(): LiveGameDetailDataDependencies {
 describe("liveGameDetailDataLoaders", () => {
   it("treats a successful lookup without data as missing", async () => {
     const dependencies = create_dependencies();
-    vi.mocked(dependencies.venue_use_cases.get_by_id).mockResolvedValue({
+    vi.mocked(dependencies.venue_use_cases.list).mockResolvedValue({
       success: true,
+      data: {
+        items: [],
+        total_count: 1,
+        page_number: 1,
+        page_size: 10,
+        total_pages: 1,
+      },
     } as never);
 
     await expect(
@@ -36,9 +43,15 @@ describe("liveGameDetailDataLoaders", () => {
 
   it("returns the venue when the lookup succeeds", async () => {
     const dependencies = create_dependencies();
-    vi.mocked(dependencies.venue_use_cases.get_by_id).mockResolvedValue({
+    vi.mocked(dependencies.venue_use_cases.list).mockResolvedValue({
       success: true,
-      data: { id: "venue-1" },
+      data: {
+        items: [{ id: "venue-1", name: "venue-1" }],
+        total_count: 1,
+        page_number: 1,
+        page_size: 10,
+        total_pages: 1,
+      },
     } as never);
 
     await expect(
@@ -46,7 +59,10 @@ describe("liveGameDetailDataLoaders", () => {
         { venue: "venue-1" } as LoaderFixture,
         dependencies,
       ),
-    ).resolves.toEqual({ status: "some", value: { id: "venue-1" } });
+    ).resolves.toEqual({
+      status: "some",
+      value: { id: "venue-1", name: "venue-1" },
+    });
   });
 
   it("skips organization and sport lookups when the competition is missing", async () => {
@@ -114,6 +130,6 @@ describe("liveGameDetailDataLoaders", () => {
     await expect(
       load_live_game_detail_assigned_officials(fixture, dependencies),
     ).resolves.toEqual([]);
-    expect(dependencies.venue_use_cases.get_by_id).not.toHaveBeenCalled();
+    expect(dependencies.venue_use_cases.list).not.toHaveBeenCalled();
   });
 });

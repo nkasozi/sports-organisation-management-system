@@ -48,8 +48,13 @@ type ParseNumberCommand<TValue extends number> = {
   require_integer?: boolean;
 };
 
+const STRING_TYPE_NAME = "string";
+const EMPTY_SCALAR_VALUE = "";
+
 export function normalize_scalar_input(raw_value: string): string {
-  return raw_value.trim();
+  return typeof raw_value === STRING_TYPE_NAME
+    ? raw_value.trim()
+    : EMPTY_SCALAR_VALUE;
 }
 
 export function parse_string_value<TValue extends string>(

@@ -1,3 +1,5 @@
+import { create_fixture_officials_sync } from "$lib/core/usecases/FixtureOfficialsSync";
+
 import type { AuditLogUseCases } from "../../core/usecases/AuditLogUseCases";
 import { create_audit_log_use_cases } from "../../core/usecases/AuditLogUseCases";
 import type { CompetitionFormatUseCases } from "../../core/usecases/CompetitionFormatUseCases";
@@ -57,8 +59,13 @@ export function get_competition_use_cases(): CompetitionUseCases {
 }
 
 export function get_fixture_details_setup_use_cases(): FixtureDetailsSetupUseCases {
+  const container = get_repository_container();
   return create_fixture_details_setup_use_cases(
-    get_repository_container().fixture_details_setup_repository,
+    container.fixture_details_setup_repository,
+    create_fixture_officials_sync({
+      fixture_repository: container.fixture_repository,
+      role_repository: container.game_official_role_repository,
+    }),
   );
 }
 

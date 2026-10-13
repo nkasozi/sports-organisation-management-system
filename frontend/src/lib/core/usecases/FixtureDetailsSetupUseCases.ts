@@ -5,7 +5,7 @@ import type {
 import { validate_fixture_details_setup_input } from "../entities/FixtureDetailsSetup";
 import type { FixtureDetailsSetupRepository } from "../interfaces/ports";
 import type { FixtureDetailsSetupUseCasesPort } from "../interfaces/ports";
-import type { AsyncResult } from "../types/Result";
+import type { AsyncResult, Result } from "../types/Result";
 import { create_success_result } from "../types/Result";
 import { fail_use_case, UseCaseErrorCode } from "../types/UseCaseFailure";
 import {
@@ -27,6 +27,7 @@ import {
   FIXTURE_DETAILS_SETUP_MESSAGE,
 } from "./FixtureDetailsSetupConstants";
 import { create_fixture_details_setup_queries } from "./FixtureDetailsSetupQueries";
+import type { FixtureOfficialsSyncPort } from "./FixtureOfficialsSync";
 
 export type FixtureDetailsSetupUseCases = FixtureDetailsSetupUseCasesPort;
 
@@ -56,6 +57,17 @@ async function ensure_fixture_has_no_setup(
   });
 }
 
+async function sync_saved_setup(
+  officials_sync: FixtureOfficialsSyncPort,
+  saved_result: Result<FixtureDetailsSetup>,
+): AsyncResult<FixtureDetailsSetup> {
+  if (!saved_result.success) return saved_result;
+  const sync_result = await officials_sync.sync_setup_officials(
+    saved_result.data,
+  );
+  return sync_result.success ? saved_result : sync_result;
+}
+
 async function create_setup(
   repository: FixtureDetailsSetupRepository,
   input: CreateFixtureDetailsSetupInput,
@@ -82,11 +94,17 @@ async function create_setup(
 
 export function create_fixture_details_setup_use_cases(
   repository: FixtureDetailsSetupRepository,
+  officials_sync: FixtureOfficialsSyncPort,
 ): FixtureDetailsSetupUseCases {
   return {
     ...create_fixture_details_setup_queries(repository),
-    create: (input) => create_setup(repository, input),
-    update: (id, input) => update_existing_setup(repository, id, input),
+    create: async (input) =>
+      sync_saved_setup(officials_sync, await create_setup(repository, input)),
+    update: async (id, input) =>
+      sync_saved_setup(
+        officials_sync,
+        await update_existing_setup(repository, id, input),
+      ),
     delete: (id) => delete_existing_setup(repository, id),
     confirm_assignment: (id) =>
       decide_assignment(repository, id, ASSIGNMENT_DECISION.CONFIRM),

@@ -1,5 +1,6 @@
 import type { CreateTeamInput, Team, UpdateTeamInput } from "../entities/Team";
 import { validate_team_input } from "../entities/Team";
+import { apply_team_input_defaults } from "../entities/TeamInputDefaults";
 import type {
   QueryOptions,
   TeamFilter,
@@ -74,8 +75,9 @@ async function get_team_by_id(
 
 async function create_team(
   repository: TeamRepository,
-  input: CreateTeamInput,
+  submitted_input: CreateTeamInput,
 ): AsyncResult<Team> {
+  const input = apply_team_input_defaults(submitted_input);
   const validation_errors = validate_team_input(input);
   if (validation_errors.length > 0) {
     return fail_validation(

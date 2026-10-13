@@ -23,6 +23,8 @@ import type {
   get_venue_use_cases,
 } from "$lib/infrastructure/registry/useCaseFactories";
 
+import { find_fixture_venue } from "./fixtureVenueLookup";
+
 export interface LiveGameDetailDataDependencies {
   fixture_use_cases: ReturnType<typeof get_fixture_use_cases>;
   team_use_cases: ReturnType<typeof get_team_use_cases>;
@@ -122,10 +124,7 @@ export async function load_live_game_detail_venue(
   fixture: Fixture,
   dependencies: LiveGameDetailDataDependencies,
 ): Promise<Option<Venue>> {
-  const venue_result = fixture.venue
-    ? await dependencies.venue_use_cases.get_by_id(fixture.venue)
-    : FAILED_LOOKUP_RESULT;
-  return extract_success_data<Venue>(venue_result);
+  return find_fixture_venue(fixture.venue ?? "", dependencies.venue_use_cases);
 }
 
 async function load_assigned_official(

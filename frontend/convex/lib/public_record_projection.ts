@@ -110,6 +110,7 @@ export const PUBLIC_RECORD_PROJECTIONS: Record<
   PublicProjection
 > = {
   organizations: ORGANIZATION_PROJECTION,
+  sports: ALL_FIELDS,
   competitions: ALL_FIELDS,
   competition_formats: ALL_FIELDS,
   competition_stages: ALL_FIELDS,

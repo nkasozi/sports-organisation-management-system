@@ -59,6 +59,7 @@ export const code_quality_shared_config = [
     plugins: { "code-quality": code_quality_plugin },
     rules: {
       "code-quality/no-code-comments": "error",
+      "code-quality/no-stale-spread-across-await": "error",
       "no-restricted-syntax": ["error", ...PRODUCTION_SYNTAX_RULES],
       "max-lines": ["error", { max: 200 }],
       "max-lines-per-function": [

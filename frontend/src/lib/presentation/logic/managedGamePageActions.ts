@@ -1,4 +1,8 @@
-import type { Fixture, GamePeriod } from "$lib/core/entities/Fixture";
+import {
+  type Fixture,
+  type GamePeriod,
+  get_period_display_name,
+} from "$lib/core/entities/Fixture";
 import type { FixtureUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/FixtureUseCasesPort";
 import { create_failure_result, type Result } from "$lib/core/types/Result";
 import type {
@@ -7,6 +11,7 @@ import type {
 } from "$lib/presentation/logic/managedGamePageTypes";
 
 import {
+  build_default_period_transition,
   change_game_period,
   end_game_period,
   end_game_session,
@@ -87,12 +92,13 @@ export async function change_managed_game_period(command: {
     return create_failure_result("No fixture loaded");
   }
 
-  return change_game_period(
-    command.fixture.fixture,
-    command.new_period,
-    command.minute,
-    command.fixture_use_cases,
-  );
+  return change_game_period({
+    fixture: command.fixture.fixture,
+    new_period: command.new_period,
+    new_period_label: get_period_display_name(command.new_period),
+    minute: command.minute,
+    fixture_use_cases: command.fixture_use_cases,
+  });
 }
 
 export async function end_managed_game_period(command: {
@@ -107,9 +113,10 @@ export async function end_managed_game_period(command: {
     return create_failure_result("No fixture loaded");
   }
 
-  return end_game_period(
-    command.fixture.fixture,
-    command.minute,
-    command.fixture_use_cases,
-  );
+  return end_game_period({
+    fixture: command.fixture.fixture,
+    minute: command.minute,
+    transition: build_default_period_transition(command.fixture.fixture),
+    fixture_use_cases: command.fixture_use_cases,
+  });
 }

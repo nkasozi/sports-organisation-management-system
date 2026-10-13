@@ -52,7 +52,26 @@ export type DynamicEntityFormSubmitCommand = {
   player_team_membership_use_cases: PlayerTeamMembershipUseCasesPort;
 };
 
+const SAVE_CRASHED_LOG_MESSAGE =
+  "[DynamicEntityForm] Save crashed unexpectedly";
+
 async function save_dynamic_entity_form_record(
+  command: DynamicEntityFormSubmitCommand,
+): Promise<Result<BaseEntity, string>> {
+  try {
+    return await request_dynamic_entity_form_save(command);
+  } catch (error) {
+    console.error(SAVE_CRASHED_LOG_MESSAGE, {
+      event: DYNAMIC_ENTITY_FORM_EVENT.SAVE_CRASHED,
+      entity_type: command.entity_type,
+      is_edit_mode: command.is_edit_mode,
+      error: String(error),
+    });
+    return create_failure_result(DYNAMIC_ENTITY_FORM_MESSAGE.SAVE_FAILED);
+  }
+}
+
+async function request_dynamic_entity_form_save(
   command: DynamicEntityFormSubmitCommand,
 ): Promise<Result<BaseEntity, string>> {
   return command.is_edit_mode && command.entity_data?.id

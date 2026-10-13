@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import type { Venue } from "$lib/core/entities/Venue";
 import {
   create_failure_result,
   create_success_result,
@@ -49,7 +50,14 @@ describe("matchReportPageLoad", () => {
           get_by_id: async () => create_success_result(create_sport()),
         },
         venue_use_cases: {
-          get_by_id: async () => create_success_result(create_venue()),
+          list: async () =>
+            create_success_result({
+              items: [{ ...create_venue(), name: "venue_1" as Venue["name"] }],
+              total_count: 1,
+              page_number: 1,
+              page_size: 10,
+              total_pages: 1,
+            }),
         },
         official_use_cases: {
           get_by_id: async () => create_success_result(create_official()),
@@ -102,7 +110,14 @@ describe("matchReportPageLoad", () => {
           get_by_id: async () => create_success_result(create_sport()),
         },
         venue_use_cases: {
-          get_by_id: async () => create_success_result(create_venue()),
+          list: async () =>
+            create_success_result({
+              items: [{ ...create_venue(), name: "venue_1" as Venue["name"] }],
+              total_count: 1,
+              page_number: 1,
+              page_size: 10,
+              total_pages: 1,
+            }),
         },
         official_use_cases: {
           get_by_id: async () => create_success_result(create_official()),
@@ -134,7 +149,7 @@ describe("matchReportPageLoad", () => {
     });
     expect(result.data.venue_state).toEqual({
       status: "present",
-      venue: expect.objectContaining({ name: "Main Stadium" }),
+      venue: expect.objectContaining({ name: "venue_1" }),
     });
     expect(result.data.assigned_officials_data).toHaveLength(1);
     expect(result.data.home_players).toHaveLength(1);

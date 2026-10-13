@@ -20,6 +20,11 @@ import {
   BRANDING_CONTEXT_STATUS,
   BRANDING_LOG_EVENTS,
 } from "./brandingConstants";
+import {
+  BRANDING_MIGRATION_DECISION,
+  decide_branding_migration,
+  keep_usable_social_media_links,
+} from "./brandingMigrationPolicy";
 import type {
   BrandingConfig,
   BrandingOrganizationContext,
@@ -62,6 +67,32 @@ export function apply_organization_settings_branding(
   });
 }
 
+function build_migration_settings_input(
+  current: BrandingConfig,
+  scoped_context: ScopedBrandingOrganizationContext,
+): Parameters<
+  ReturnType<
+    typeof get_use_cases_container
+  >["organization_settings_use_cases"]["save_or_update"]
+>[2] {
+  return {
+    display_name: scoped_context.organization_name ?? current.organization_name,
+    logo_url: current.organization_logo_url,
+    tagline: current.organization_tagline,
+    contact_email:
+      scoped_context.organization_email ?? current.organization_email,
+    contact_address:
+      scoped_context.organization_address ?? current.organization_address,
+    social_media_links: keep_usable_social_media_links(
+      current.social_media_links,
+    ),
+    header_pattern: current.header_pattern,
+    footer_pattern: current.footer_pattern,
+    background_pattern_url: current.background_pattern_url,
+    show_panel_borders: current.show_panel_borders,
+  };
+}
+
 async function migrate_current_branding_to_org_settings(
   context: BrandingStoreContext,
   scoped_context: ScopedBrandingOrganizationContext,
@@ -72,21 +103,7 @@ async function migrate_current_branding_to_org_settings(
   const save_result = await use_cases.save_or_update(
     get_caller_role(),
     org_id,
-    {
-      display_name:
-        scoped_context.organization_name ?? current.organization_name,
-      logo_url: current.organization_logo_url,
-      tagline: current.organization_tagline,
-      contact_email:
-        scoped_context.organization_email ?? current.organization_email,
-      contact_address:
-        scoped_context.organization_address ?? current.organization_address,
-      social_media_links: current.social_media_links,
-      header_pattern: current.header_pattern,
-      footer_pattern: current.footer_pattern,
-      background_pattern_url: current.background_pattern_url,
-      show_panel_borders: current.show_panel_borders,
-    },
+    build_migration_settings_input(current, scoped_context),
   );
   if (!save_result.success) {
     console.error("[BrandingStore] Branding auto-migration failed", {
@@ -103,6 +120,24 @@ async function migrate_current_branding_to_org_settings(
   return create_success_result(true);
 }
 
+async function migrate_branding_when_permitted(
+  context: BrandingStoreContext,
+  scoped_context: ScopedBrandingOrganizationContext,
+): AsyncResult<boolean> {
+  const caller_role = get_caller_role();
+  switch (decide_branding_migration(caller_role)) {
+    case BRANDING_MIGRATION_DECISION.SKIP_NOT_PERMITTED:
+      console.debug("[BrandingStore] Keeping current branding", {
+        event: BRANDING_LOG_EVENTS.AUTO_MIGRATION_SKIPPED_NOT_PERMITTED,
+        organization_id: scoped_context.organization_id,
+        caller_role,
+      });
+      return create_success_result(true);
+    case BRANDING_MIGRATION_DECISION.MIGRATE:
+      return migrate_current_branding_to_org_settings(context, scoped_context);
+  }
+}
+
 export async function load_branding_from_org_settings(
   context: BrandingStoreContext,
   scoped_context: ScopedBrandingOrganizationContext,
@@ -117,7 +152,7 @@ export async function load_branding_from_org_settings(
       organization_id: org_id,
       error: result.error,
     });
-    return migrate_current_branding_to_org_settings(context, scoped_context);
+    return migrate_branding_when_permitted(context, scoped_context);
   }
 
   apply_organization_settings_branding(context, result.data);

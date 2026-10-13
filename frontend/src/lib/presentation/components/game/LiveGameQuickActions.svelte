@@ -30,6 +30,7 @@
                 <div class="grid grid-cols-4 gap-2">
                     {#each all_event_buttons as event_button}<button
                             class={`flex flex-col items-center justify-center p-2 rounded-[0.175rem] text-white transition-all active:scale-95 ${event_button.color}`}
+                            aria-label={`${event_button.label} for ${home_team_name}`}
                             on:click={() =>
                                 on_open_event_modal(
                                     event_button,
@@ -59,6 +60,7 @@
                 <div class="grid grid-cols-4 gap-2">
                     {#each all_event_buttons as event_button}<button
                             class={`flex flex-col items-center justify-center p-2 rounded-[0.175rem] text-white transition-all active:scale-95 ${event_button.color}`}
+                            aria-label={`${event_button.label} for ${away_team_name}`}
                             on:click={() =>
                                 on_open_event_modal(
                                     event_button,

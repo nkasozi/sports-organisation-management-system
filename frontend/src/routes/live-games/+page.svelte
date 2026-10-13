@@ -37,6 +37,7 @@
         build_live_games_route_start_dependencies,
         IDLE_PENDING_START,
         request_live_games_start_confirmation,
+        resume_route_start,
     } from "./liveGamesRouteStart";
     import {
         current_live_games_fixture_state,
@@ -112,6 +113,10 @@
                 view_state = settle_live_games_fixture_load(
                     create_success_result(result.fixture_state),
                 );
+                resume_route_start(
+                    result.fixture_state.fixtures,
+                    handle_start_click,
+                );
                 return;
         }
     }
@@ -135,10 +140,6 @@
             return;
         }
         pending_start_fixture_state = confirmation_result.data;
-    }
-
-    function cancel_start_fixture(): void {
-        pending_start_fixture_state = IDLE_PENDING_START;
     }
 
     function confirm_start_fixture(): void {
@@ -192,6 +193,6 @@
     {is_starting}
     on_start_click={handle_start_click}
     {pending_start_fixture_state}
-    on_cancel_start={cancel_start_fixture}
+    on_cancel_start={() => (pending_start_fixture_state = IDLE_PENDING_START)}
     on_confirm_start={confirm_start_fixture}
 />

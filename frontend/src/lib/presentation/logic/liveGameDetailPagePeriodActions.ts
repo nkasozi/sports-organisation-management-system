@@ -45,28 +45,23 @@ const SECONDS_PER_MINUTE = 60;
 async function end_current_live_game_period(
   command: ConfirmPeriodCommand,
 ): Promise<ConfirmPeriodResult> {
-  const end_result = await end_game_period(
-    command.fixture,
-    command.elapsed_minutes,
-    command.fixture_use_cases,
-  );
+  const end_result = await end_game_period({
+    fixture: command.fixture,
+    minute: command.elapsed_minutes,
+    transition: {
+      next_period: command.period_button_config.next_period,
+      completed_period_label: get_sport_period_display_name(
+        command.fixture.current_period,
+        command.effective_periods,
+      ),
+    },
+    fixture_use_cases: command.fixture_use_cases,
+  });
   if (!end_result.success)
     return build_game_action_failure({
       event: GAME_ACTION_EVENT.END_PERIOD_FAILED,
       fixture_id: command.fixture.id,
       technical_error: end_result.error,
-      user_message: GAME_ACTION_USER_MESSAGE.END_PERIOD_FAILED,
-    });
-  const update_result = await command.fixture_use_cases.update_period(
-    end_result.data.fixture.id,
-    end_result.data.fixture.current_period,
-    command.elapsed_minutes,
-  );
-  if (!update_result.success)
-    return build_game_action_failure({
-      event: GAME_ACTION_EVENT.END_PERIOD_UPDATE_FAILED,
-      fixture_id: command.fixture.id,
-      technical_error: update_result.error,
       user_message: GAME_ACTION_USER_MESSAGE.END_PERIOD_FAILED,
     });
   return {
@@ -89,12 +84,16 @@ async function start_next_live_game_period(
     next_period,
     command.playing_periods,
   );
-  const change_result = await change_game_period(
-    command.fixture,
-    next_period,
-    Math.floor(next_game_clock_seconds / SECONDS_PER_MINUTE),
-    command.fixture_use_cases,
-  );
+  const change_result = await change_game_period({
+    fixture: command.fixture,
+    new_period: next_period,
+    new_period_label: get_sport_period_display_name(
+      next_period,
+      command.effective_periods,
+    ),
+    minute: Math.floor(next_game_clock_seconds / SECONDS_PER_MINUTE),
+    fixture_use_cases: command.fixture_use_cases,
+  });
   return change_result.success
     ? {
         success: true,
