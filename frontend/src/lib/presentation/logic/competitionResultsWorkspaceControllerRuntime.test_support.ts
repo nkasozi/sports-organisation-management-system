@@ -1,5 +1,10 @@
 import { type Mock, vi } from "vitest";
 
+import {
+  build_match_report_sport_rules,
+  type MatchReportSportRules,
+} from "./matchReportSportRules";
+
 type ResultsWorkspaceTestState = { selected_team_id: string };
 
 type ResultsWorkspaceTestCommand = {
@@ -8,6 +13,7 @@ type ResultsWorkspaceTestCommand = {
   get_branding_logo_url: () => string;
   get_completed_fixtures: () => never;
   get_selected_competition_state: () => never;
+  get_sport_rules: () => MatchReportSportRules;
   get_selected_team_id: () => string;
   selected_competition_id: string;
   selected_organization_id: string;
@@ -45,6 +51,7 @@ export function create_results_workspace_command(): {
         status: "present",
         competition: { id: "competition-1", name: "Summer Cup" },
       }) as never,
+    get_sport_rules: () => build_match_report_sport_rules(void 0, void 0),
     get_selected_team_id: () => state.selected_team_id,
     selected_competition_id: "competition-1",
     selected_organization_id: "organization-1",

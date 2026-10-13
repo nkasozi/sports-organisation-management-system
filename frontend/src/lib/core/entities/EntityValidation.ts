@@ -93,7 +93,7 @@ const STRING_TYPE_NAME = "string";
 
 type NumericParser = (raw_value: number, error_message: string) => FieldCheck;
 
-function read_provided_number(raw_value: unknown): Option<number> {
+export function read_provided_number(raw_value: unknown): Option<number> {
   if (typeof raw_value === NUMBER_TYPE_NAME) {
     return create_some_option(raw_value as number);
   }

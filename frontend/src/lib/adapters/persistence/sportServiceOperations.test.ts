@@ -23,7 +23,11 @@ vi.mock("../repositories/InBrowserSportRepository", () => ({
     error === `Sport not found: code=${code.toLowerCase()}`,
 }));
 
-const SPORT = { id: "s1", code: "HOCKEY" } as unknown as Sport;
+const SPORT = {
+  ...create_basketball_sport_preset(),
+  id: "s1",
+  code: "HOCKEY",
+} as unknown as Sport;
 const NOT_FOUND = (code: string): { success: false; error: string } => ({
   success: false,
   error: `Sport not found: code=${code.toLowerCase()}`,

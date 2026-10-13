@@ -90,6 +90,12 @@ async function update_sport(
 ): AsyncResult<Sport> {
   const existing_sport_result = await get_sport_by_id(id);
   if (!existing_sport_result.success) return existing_sport_result;
+  const validation_errors = validate_sport_input({
+    ...existing_sport_result.data,
+    ...input,
+  } as CreateSportInput);
+  if (validation_errors.length > 0)
+    return create_failure_result(validation_errors.join(", "));
   const code_check = await verify_sport_code_available_for_update(
     id,
     input.code,

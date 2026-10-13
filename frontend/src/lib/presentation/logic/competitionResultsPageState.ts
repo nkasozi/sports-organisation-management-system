@@ -11,6 +11,7 @@ import type { CompetitionTeamUseCasesPort } from "$lib/core/interfaces/ports/int
 import type { CompetitionUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/CompetitionUseCasesPort";
 import type { FixtureUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/FixtureUseCasesPort";
 import type { OrganizationUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/OrganizationUseCasesPort";
+import type { SportUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/SportUseCasesPort";
 import type { TeamUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/TeamUseCasesPort";
 import {
   load_competitions_by_organization,
@@ -24,6 +25,10 @@ import type {
   CompetitionResultsProfileState,
   CompetitionResultsSelectedCompetitionState,
 } from "./competitionResultsPageContracts";
+import {
+  build_match_report_sport_rules,
+  type MatchReportSportRules,
+} from "./matchReportSportRules";
 
 export interface CompetitionResultsSelectedBundle {
   selected_competition_state: CompetitionResultsSelectedCompetitionState;
@@ -32,10 +37,12 @@ export interface CompetitionResultsSelectedBundle {
   fixtures: Fixture[];
   teams: Team[];
   team_map: Map<string, Team>;
+  sport_rules: MatchReportSportRules;
 }
 
 export interface CompetitionResultsPageStateDependencies {
   organization_use_cases: OrganizationUseCasesPort;
+  sport_use_cases: SportUseCasesPort;
   competition_use_cases: CompetitionUseCasesPort;
   format_use_cases: CompetitionFormatUseCasesPort;
   competition_stage_use_cases: CompetitionStageUseCasesPort;
@@ -52,6 +59,7 @@ export function create_empty_competition_results_bundle(): CompetitionResultsSel
     fixtures: [],
     teams: [],
     team_map: new Map<string, Team>(),
+    sport_rules: build_match_report_sport_rules(void 0, void 0),
   };
 }
 

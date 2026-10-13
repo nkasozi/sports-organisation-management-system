@@ -1,7 +1,11 @@
 import { vi } from "vitest";
 
 import type { CreateSportInput, Sport } from "../entities/Sport";
-import { create_default_penalties_config } from "../entities/SportDefaults";
+import {
+  create_default_football_periods,
+  create_default_official_requirements,
+  create_default_penalties_config,
+} from "../entities/SportDefaults";
 import type { SportRepository } from "../interfaces/ports";
 import type { ScalarInput } from "../types/DomainScalars";
 
@@ -28,10 +32,10 @@ export function create_test_sport(
     description: "Association football",
     icon_url: "",
     standard_game_duration_minutes: 90,
-    periods: [],
+    periods: create_default_football_periods(),
     card_types: [],
     foul_categories: [],
-    official_requirements: [],
+    official_requirements: create_default_official_requirements(),
     overtime_rules: {
       is_enabled: false,
       trigger_condition: "never",
@@ -68,10 +72,10 @@ export function create_valid_input(
     description: "Team sport",
     icon_url: "",
     standard_game_duration_minutes: 48,
-    periods: [],
+    periods: create_default_football_periods(),
     card_types: [],
     foul_categories: [],
-    official_requirements: [],
+    official_requirements: create_default_official_requirements(),
     overtime_rules: {
       is_enabled: false,
       trigger_condition: "never",

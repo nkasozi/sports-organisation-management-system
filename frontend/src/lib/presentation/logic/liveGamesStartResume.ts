@@ -9,12 +9,30 @@ import {
 
 const LIVE_GAMES_ROUTE = "/live-games";
 const START_FIXTURE_PARAMETER = "start_fixture_id";
+const ORGANIZATION_PARAMETER = "organization_id";
+const NO_ORGANIZATION_ID = "";
 
-export function build_live_games_resume_start_url(fixture_id: string): string {
+export function build_live_games_resume_start_url(
+  fixture_id: string,
+  organization_id: string,
+): string {
   const parameters = new URLSearchParams({
     [START_FIXTURE_PARAMETER]: fixture_id,
+    [ORGANIZATION_PARAMETER]: organization_id,
   });
   return `${LIVE_GAMES_ROUTE}?${parameters.toString()}`;
+}
+
+export function select_live_games_organization_id(
+  organizations: readonly { id: string }[],
+  search_parameters: URLSearchParams,
+): string {
+  const requested_id = search_parameters.get(ORGANIZATION_PARAMETER);
+  const requested = organizations.filter(
+    (organization) => organization.id === requested_id,
+  );
+  const [selected] = [...requested, ...organizations];
+  return selected ? selected.id : NO_ORGANIZATION_ID;
 }
 
 export function find_fixture_to_resume_starting(

@@ -27,6 +27,7 @@ export interface LiveGamesPageInitializationCommand {
   authorization_adapter: LiveGamesAuthorizationAdapter;
   organization_use_cases: LiveGamesDataDependencies["organization_use_cases"];
   fixture_state_dependencies: LiveGamesDataDependencies;
+  search_parameters: URLSearchParams;
 }
 
 export interface LiveGamesPageFixtureStateCommand {

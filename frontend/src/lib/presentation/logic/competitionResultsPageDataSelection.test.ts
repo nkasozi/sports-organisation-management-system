@@ -51,10 +51,23 @@ describe("competition results rules helpers", () => {
               data: { items: [] },
             }),
           },
+          organization_use_cases: {
+            get_by_id: async () => ({
+              success: true,
+              data: { id: "org_1", sport_id: "sport_netball" },
+            }),
+          },
+          sport_use_cases: {
+            get_by_id: async () => ({
+              success: true,
+              data: { code: "NETBALL", scoring_rules: [], card_types: [] },
+            }),
+          },
         } as never,
         "competition_2",
       ),
     ).resolves.toMatchObject({
+      sport_rules: { event_source: { sport_code: "NETBALL" } },
       selected_competition_state: {
         status: "present",
         competition,

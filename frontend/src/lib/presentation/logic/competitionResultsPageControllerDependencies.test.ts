@@ -7,6 +7,7 @@ const competition_results_page_dependency_mocks = vi.hoisted(() => ({
   get_competition_use_cases: vi.fn(),
   get_fixture_use_cases: vi.fn(),
   get_organization_use_cases: vi.fn(),
+  get_sport_use_cases: vi.fn(),
   get_team_use_cases: vi.fn(),
 }));
 
@@ -23,6 +24,8 @@ vi.mock("$lib/infrastructure/registry/useCaseFactories", () => ({
     competition_results_page_dependency_mocks.get_fixture_use_cases,
   get_organization_use_cases:
     competition_results_page_dependency_mocks.get_organization_use_cases,
+  get_sport_use_cases:
+    competition_results_page_dependency_mocks.get_sport_use_cases,
   get_team_use_cases:
     competition_results_page_dependency_mocks.get_team_use_cases,
 }));
@@ -32,6 +35,7 @@ describe("competitionResultsPageControllerDependencies", () => {
     vi.resetModules();
     const expected_dependencies = {
       organization_use_cases: { kind: "organizations" },
+      sport_use_cases: { kind: "sports" },
       competition_use_cases: { kind: "competitions" },
       format_use_cases: { kind: "competition-formats" },
       competition_stage_use_cases: { kind: "competition-stages" },
@@ -41,6 +45,9 @@ describe("competitionResultsPageControllerDependencies", () => {
     };
     competition_results_page_dependency_mocks.get_organization_use_cases.mockReturnValue(
       expected_dependencies.organization_use_cases,
+    );
+    competition_results_page_dependency_mocks.get_sport_use_cases.mockReturnValue(
+      expected_dependencies.sport_use_cases,
     );
     competition_results_page_dependency_mocks.get_competition_use_cases.mockReturnValue(
       expected_dependencies.competition_use_cases,

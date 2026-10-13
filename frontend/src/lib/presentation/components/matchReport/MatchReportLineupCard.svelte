@@ -103,7 +103,7 @@
                             <div
                                 class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 font-medium"
                             >
-                                Starting XI
+                                Starting Lineup
                             </div>
                             <div class="space-y-1">
                                 {#each lineup_groups.starters as player}

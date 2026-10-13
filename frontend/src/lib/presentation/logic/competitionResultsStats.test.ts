@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Fixture } from "$lib/core/entities/Fixture";
+import { create_score_award_resolver } from "$lib/core/entities/SportEventCatalog";
 import type { Team } from "$lib/core/entities/Team";
 import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
@@ -70,7 +71,7 @@ function create_test_fixture(
 }
 
 describe("calculate_player_stats", () => {
-  it("aggregates goals and cards by player and team", () => {
+  it("aggregates scores and cards by player and team", () => {
     const team_map = new Map<string, Team>([
       ["team_1", create_test_team({ id: "team_1", name: "Falcons" })],
       ["team_2", create_test_team({ id: "team_2", name: "Wolves" })],
@@ -115,11 +116,17 @@ describe("calculate_player_stats", () => {
       }),
     ];
 
-    expect(calculate_player_stats(fixtures, team_map)).toEqual([
+    expect(
+      calculate_player_stats(
+        fixtures,
+        team_map,
+        create_score_award_resolver([]),
+      ),
+    ).toEqual([
       {
         player_name: "Alex",
         team_name: "Falcons",
-        goals: 2,
+        points: 2,
         assists: 0,
         yellow_cards: 0,
         red_cards: 0,
@@ -127,7 +134,7 @@ describe("calculate_player_stats", () => {
       {
         player_name: "Jordan",
         team_name: "Wolves",
-        goals: 0,
+        points: 0,
         assists: 0,
         yellow_cards: 1,
         red_cards: 0,
@@ -141,7 +148,7 @@ describe("competition results stats filters", () => {
     {
       player_name: "Alex",
       team_name: "Falcons",
-      goals: 4,
+      points: 4,
       assists: 0,
       yellow_cards: 1,
       red_cards: 0,
@@ -149,7 +156,7 @@ describe("competition results stats filters", () => {
     {
       player_name: "Sam",
       team_name: "Wolves",
-      goals: 2,
+      points: 2,
       assists: 0,
       yellow_cards: 0,
       red_cards: 1,
@@ -157,7 +164,7 @@ describe("competition results stats filters", () => {
     {
       player_name: "Jamie",
       team_name: "Falcons",
-      goals: 0,
+      points: 0,
       assists: 0,
       yellow_cards: 3,
       red_cards: 0,

@@ -1,12 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GameEvent } from "../entities/Fixture";
+import { create_score_award_resolver } from "../entities/SportEventCatalog";
 import type { FixtureRepository } from "../interfaces/ports";
 import { create_fixture_use_cases } from "./FixtureUseCases";
 import {
   create_mock_repository,
   create_test_fixture,
 } from "./FixtureUseCases.test_support";
+
+const LEGACY_SCORING = create_score_award_resolver([]);
 
 describe("FixtureUseCases", () => {
   let mock_repository: FixtureRepository;
@@ -44,7 +47,11 @@ describe("FixtureUseCases", () => {
         recorded_at: new Date().toISOString(),
       } as GameEvent;
 
-      const result = await use_cases.record_game_event("fixture-123", event);
+      const result = await use_cases.record_game_event(
+        "fixture-123",
+        event,
+        LEGACY_SCORING(event.event_type),
+      );
 
       expect(result.success).toBe(true);
       expect(mock_repository.update).toHaveBeenCalledWith(
@@ -81,7 +88,11 @@ describe("FixtureUseCases", () => {
         recorded_at: new Date().toISOString(),
       } as GameEvent;
 
-      const result = await use_cases.record_game_event("fixture-123", event);
+      const result = await use_cases.record_game_event(
+        "fixture-123",
+        event,
+        LEGACY_SCORING(event.event_type),
+      );
 
       expect(result.success).toBe(true);
       expect(mock_repository.update).toHaveBeenCalledWith(
@@ -104,7 +115,11 @@ describe("FixtureUseCases", () => {
         description: "",
         recorded_at: new Date().toISOString(),
       } as GameEvent;
-      const result = await use_cases.record_game_event("", event);
+      const result = await use_cases.record_game_event(
+        "",
+        event,
+        LEGACY_SCORING(event.event_type),
+      );
 
       expect(result.success).toBe(false);
     });

@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { NO_SCORE_AWARD } from "$lib/core/entities/SportEventCatalog";
+
 import {
   record_live_game_detail_event,
   record_live_game_extra_time_event,
@@ -18,6 +20,7 @@ describe("liveGameDetailEventActions", () => {
     const selected_event_type = {
       id: "substitution",
       label: "Substitution",
+      score_award: NO_SCORE_AWARD,
     } as SelectedEventType;
 
     const result = await record_live_game_detail_event(
@@ -42,6 +45,7 @@ describe("liveGameDetailEventActions", () => {
         secondary_player_name: "Ben Flint",
         description: "Ada Stone ON for Ben Flint",
       }),
+      NO_SCORE_AWARD,
     );
   });
 
@@ -71,6 +75,7 @@ describe("liveGameDetailEventActions", () => {
         player_name: "",
         description: "5 min added time - First Half",
       }),
+      NO_SCORE_AWARD,
     );
   });
 });

@@ -20,6 +20,11 @@ import {
   type AutoSetupLookups,
   load_auto_setup_lookups,
 } from "./fixtureDetailsAutoSetupLookups";
+import {
+  assign_officials_to_slots,
+  build_official_role_slots,
+  type OfficialRequirementSource,
+} from "./officialRoleSlots";
 
 export type { AutoSetupDependencies } from "./fixtureDetailsAutoSetupLookups";
 
@@ -32,6 +37,7 @@ interface JerseySelection {
 export async function auto_create_fixture_details_setup(
   fixture: Fixture,
   dependencies: AutoSetupDependencies,
+  official_requirements: readonly OfficialRequirementSource[],
 ): Promise<Result<FixtureDetailsSetup>> {
   console.debug(FIXTURE_DETAILS_AUTO_SETUP_LOG_SCOPE, {
     event: FIXTURE_DETAILS_AUTO_SETUP_EVENT.STARTED,
@@ -39,7 +45,11 @@ export async function auto_create_fixture_details_setup(
   });
   const lookups_result = await load_auto_setup_lookups(fixture, dependencies);
   if (!lookups_result.success) return lookups_result;
-  const input_result = build_auto_populated_input(fixture, lookups_result.data);
+  const input_result = build_auto_populated_input(
+    fixture,
+    lookups_result.data,
+    official_requirements,
+  );
   if (!input_result.success) return input_result;
   const create_result =
     await dependencies.fixture_details_setup_use_cases.create(
@@ -120,6 +130,7 @@ function fail_missing_data(
 function build_auto_populated_input(
   fixture: Fixture,
   lookups: AutoSetupLookups,
+  official_requirements: readonly OfficialRequirementSource[],
 ): Result<CreateFixtureDetailsSetupInput> {
   const jersey_result = select_jerseys(fixture, lookups);
   const official_errors = collect_official_errors(fixture, lookups);
@@ -136,21 +147,12 @@ function build_auto_populated_input(
     organization_id: fixture.organization_id,
     fixture_id: fixture.id,
     ...jersey_result.data,
-    assigned_officials: build_official_assignments(lookups),
+    assigned_officials: assign_officials_to_slots(
+      lookups.officials,
+      build_official_role_slots(official_requirements, lookups.official_roles),
+    ),
     assignment_notes: "",
     confirmation_status: CONFIRMATION_STATUS.CONFIRMED,
     status: ENTITY_STATUS.ACTIVE,
   });
-}
-
-function build_official_assignments(
-  lookups: AutoSetupLookups,
-): CreateFixtureDetailsSetupInput["assigned_officials"] {
-  const officials = lookups.officials;
-  return lookups.official_roles
-    .slice(0, officials.length)
-    .map((role, index) => ({
-      official_id: officials[index].id,
-      role_id: role.id,
-    }));
 }

@@ -21,6 +21,7 @@
         format_competition_results_date,
     } from "$lib/presentation/logic/competitionResultsWorkspaceDisplay";
     import { derive_competition_results_workspace_state } from "$lib/presentation/logic/competitionResultsWorkspaceState";
+    import type { MatchReportSportRules } from "$lib/presentation/logic/matchReportSportRules";
     import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
     import { branding_store } from "$lib/presentation/stores/branding";
 
@@ -46,6 +47,7 @@
         competition_format_state: CompetitionResultsCompetitionFormatState =
             MISSING_STATE,
         competition_stages: CompetitionStage[],
+        sport_rules: MatchReportSportRules,
         fixtures: Fixture[],
         teams: Team[],
         team_map: Map<string, Team>,
@@ -93,6 +95,7 @@
         show_all_competitions_fixtures,
         team_fixtures_page,
         team_fixtures_per_page,
+        sport_rules,
     });
     $: team_fixtures_reset_key = `${show_all_competitions_fixtures}:${team_fixtures_in_competition.length}:${team_fixtures_all_competitions.length}`;
     $: if (active_tab) upcoming_page = results_page = 1;
@@ -112,6 +115,7 @@
         get_branding_logo_url: () => get(branding_store).organization_logo_url,
         get_completed_fixtures: () => workspace_state.completed_fixtures,
         get_selected_competition_state: () => selected_competition_state,
+        get_sport_rules: () => sport_rules,
         get_selected_team_id: () => selected_team_id,
         selected_competition_id,
         selected_organization_id,

@@ -70,13 +70,30 @@ describe("build_match_report_data", () => {
     expect(report.card_types).toEqual(custom_cards);
   });
 
-  it("score_by_period always includes at least two periods", () => {
+  it("score_by_period shows the score at the end of the first half by default", () => {
     const ctx = make_basic_context();
     const report = build_match_report_data(ctx);
-    expect(report.score_by_period.length).toBeGreaterThanOrEqual(2);
+    expect(report.score_by_period.map((p) => p.period_name)).toEqual([
+      "First Half",
+    ]);
   });
 
-  it("score_by_period adds extra time periods when extra time goals exist", () => {
+  it("score_by_period follows the periods the sport defines", () => {
+    const ctx = make_basic_context({
+      periods: [
+        { name: "1st Quarter", duration_minutes: 15, is_break: false },
+        { name: "2nd Quarter", duration_minutes: 15, is_break: false },
+        { name: "3rd Quarter", duration_minutes: 15, is_break: false },
+      ],
+    });
+    const report = build_match_report_data(ctx);
+    expect(report.score_by_period.map((p) => p.period_name)).toEqual([
+      "2nd Quarter",
+      "1st Quarter",
+    ]);
+  });
+
+  it("score_by_period adds the end of regulation when extra time goals exist", () => {
     const fixture = make_fixture({
       game_events: [
         make_game_event({
@@ -90,6 +107,6 @@ describe("build_match_report_data", () => {
     const ctx = make_basic_context({ fixture });
     const report = build_match_report_data(ctx);
     const period_names = report.score_by_period.map((p) => p.period_name);
-    expect(period_names).toContain("Third Period");
+    expect(period_names).toEqual(["Second Half", "First Half"]);
   });
 });

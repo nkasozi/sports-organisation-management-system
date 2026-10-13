@@ -1,21 +1,56 @@
 import type { GameEvent } from "$lib/core/entities/Fixture";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
+import {
+  humanize_event_code,
+  SCORE_AWARD_KIND,
+  SCORE_CREDITED_SIDE,
+  type ScoreAwardResolver,
+} from "$lib/core/entities/SportEventCatalog";
+import type { ScoreCreditedSide } from "$lib/core/entities/SportEventCatalogConstants";
 
 import {
-  MATCH_REPORT_FIELD_GOAL_LABEL,
   MATCH_REPORT_GOAL_ACTION_LABELS,
-  MATCH_REPORT_GOAL_EVENT,
-  MATCH_REPORT_GOAL_EVENT_TYPES,
   MATCH_REPORT_TEAM_SIDE,
   MATCH_REPORT_UNKNOWN_JERSEY,
 } from "./MatchReportConstants";
 import type { MatchGoalEntry } from "./MatchReportTypes";
 
-function is_home_scoring_event(event: GameEvent): boolean {
-  const is_own_goal = event.event_type === MATCH_REPORT_GOAL_EVENT.OWN_GOAL;
+type CreditedScore = {
+  event: GameEvent;
+  is_home_credited: boolean;
+  points: number;
+};
+
+function is_home_credited(
+  event: GameEvent,
+  credited_side: ScoreCreditedSide,
+): boolean {
   const is_home_side = event.team_side === MATCH_REPORT_TEAM_SIDE.HOME;
-  const is_away_side = event.team_side === MATCH_REPORT_TEAM_SIDE.AWAY;
-  return is_own_goal ? is_away_side : is_home_side;
+  switch (credited_side) {
+    case SCORE_CREDITED_SIDE.ACTING:
+      return is_home_side;
+    case SCORE_CREDITED_SIDE.OPPOSING:
+      return event.team_side === MATCH_REPORT_TEAM_SIDE.AWAY;
+  }
+}
+
+function to_credited_score(
+  event: GameEvent,
+  resolve_score: ScoreAwardResolver,
+): CreditedScore[] {
+  const award = resolve_score(event.event_type);
+  switch (award.kind) {
+    case SCORE_AWARD_KIND.NONE:
+      return [];
+    case SCORE_AWARD_KIND.CREDIT:
+      return [
+        {
+          event,
+          is_home_credited: is_home_credited(event, award.credited_side),
+          points: award.points,
+        },
+      ];
+  }
 }
 
 interface GoalExtractionContext {
@@ -31,6 +66,7 @@ export function extract_goals_from_events(
   away_initials: string,
   home_players: LineupPlayer[],
   away_players: LineupPlayer[],
+  resolve_score: ScoreAwardResolver,
 ): MatchGoalEntry[] {
   const context: GoalExtractionContext = {
     home_initials,
@@ -39,20 +75,21 @@ export function extract_goals_from_events(
     away_players,
   };
   const score = { home: 0, away: 0 };
-  return game_events
-    .filter((e) => MATCH_REPORT_GOAL_EVENT_TYPES.includes(e.event_type))
+  return [...game_events]
     .sort((a, b) => a.minute - b.minute)
-    .map((event) => build_goal_entry(event, context, score));
+    .flatMap((event) => to_credited_score(event, resolve_score))
+    .map((credited) => build_goal_entry(credited, context, score));
 }
 
 function build_goal_entry(
-  event: GameEvent,
+  credited: CreditedScore,
   context: GoalExtractionContext,
   score: { home: number; away: number },
 ): MatchGoalEntry {
-  const is_home_scoring = is_home_scoring_event(event);
-  score.home += is_home_scoring ? 1 : 0;
-  score.away += is_home_scoring ? 0 : 1;
+  const { event } = credited;
+  const is_home_scoring = credited.is_home_credited;
+  score.home += is_home_scoring ? credited.points : 0;
+  score.away += is_home_scoring ? 0 : credited.points;
   return {
     team_initials: is_home_scoring
       ? context.home_initials
@@ -100,8 +137,17 @@ function find_player_jersey_number(
   return matching_player.jersey_number ?? MATCH_REPORT_UNKNOWN_JERSEY;
 }
 
+function abbreviate_event_code(event_type: string): string {
+  return humanize_event_code(event_type)
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase();
+}
+
 function get_goal_action_label(event_type: string): string {
   return (
-    MATCH_REPORT_GOAL_ACTION_LABELS[event_type] ?? MATCH_REPORT_FIELD_GOAL_LABEL
+    MATCH_REPORT_GOAL_ACTION_LABELS[event_type] ??
+    abbreviate_event_code(event_type)
   );
 }

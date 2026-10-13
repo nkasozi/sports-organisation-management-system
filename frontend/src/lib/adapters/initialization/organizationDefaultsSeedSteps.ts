@@ -1,5 +1,7 @@
 import type { Organization } from "../../core/entities/Organization";
+import type { Sport } from "../../core/entities/Sport";
 import type { ScalarValueInput } from "../../core/types/DomainScalars";
+import type { Option } from "../../core/types/Option";
 import type { AsyncResult } from "../../core/types/Result";
 import {
   create_seed_genders,
@@ -11,12 +13,10 @@ import {
   InBrowserCompetitionFormatRepository,
 } from "../repositories/InBrowserCompetitionFormatRepository";
 import {
-  create_default_game_event_types_for_organization,
   get_game_event_type_repository,
   InBrowserGameEventTypeRepository,
 } from "../repositories/InBrowserGameEventTypeRepository";
 import {
-  create_default_game_official_roles_for_organization,
   get_game_official_role_repository,
   InBrowserGameOfficialRoleRepository,
 } from "../repositories/InBrowserGameOfficialRoleRepository";
@@ -29,7 +29,6 @@ import {
   InBrowserIdentificationTypeRepository,
 } from "../repositories/InBrowserIdentificationTypeRepository";
 import {
-  create_default_player_positions_for_organization,
   get_player_position_repository,
   InBrowserPlayerPositionRepository,
 } from "../repositories/InBrowserPlayerPositionRepository";
@@ -42,6 +41,11 @@ import {
   get_team_staff_role_repository,
   InBrowserTeamStaffRoleRepository,
 } from "../repositories/InBrowserTeamStaffRoleRepository";
+import {
+  select_event_types_for_organization,
+  select_official_roles_for_organization,
+  select_player_positions_for_organization,
+} from "./organizationDefaultsSportData";
 
 export type OrgSeedStepName =
   | "genders"
@@ -78,6 +82,7 @@ function create_step<T>(
 export function build_reference_data_steps(
   organization_id: ScalarValueInput<Organization["id"]>,
   origin: RepositoryWriteOrigin,
+  seed_sport: Option<Sport>,
 ): OrgSeedStep[] {
   return [
     create_step(
@@ -102,7 +107,7 @@ export function build_reference_data_steps(
         get_player_position_repository() as InBrowserPlayerPositionRepository,
         origin,
       ),
-      create_default_player_positions_for_organization(organization_id),
+      select_player_positions_for_organization(organization_id, seed_sport),
     ),
   ];
 }
@@ -110,6 +115,7 @@ export function build_reference_data_steps(
 export function build_role_and_format_steps(
   organization_id: ScalarValueInput<Organization["id"]>,
   origin: RepositoryWriteOrigin,
+  seed_sport: Option<Sport>,
 ): OrgSeedStep[] {
   return [
     create_step(
@@ -118,7 +124,7 @@ export function build_role_and_format_steps(
         get_game_official_role_repository() as InBrowserGameOfficialRoleRepository,
         origin,
       ),
-      create_default_game_official_roles_for_organization(organization_id),
+      select_official_roles_for_organization(organization_id, seed_sport),
     ),
     create_step(
       "game_event_types",
@@ -126,7 +132,7 @@ export function build_role_and_format_steps(
         get_game_event_type_repository() as InBrowserGameEventTypeRepository,
         origin,
       ),
-      create_default_game_event_types_for_organization(organization_id),
+      select_event_types_for_organization(organization_id, seed_sport),
     ),
     create_step(
       "team_staff_roles",

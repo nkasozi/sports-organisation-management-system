@@ -2,6 +2,11 @@ import type { Competition } from "$lib/core/entities/Competition";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
 import type { Official } from "$lib/core/entities/Official";
+import { create_default_football_periods } from "$lib/core/entities/SportDefaults";
+import {
+  create_score_award_resolver,
+  type SportEventCatalogSource,
+} from "$lib/core/entities/SportEventCatalog";
 import type { Team } from "$lib/core/entities/Team";
 import type {
   CardTypeConfig,
@@ -24,7 +29,10 @@ import {
   build_player_entries,
   type ReportTeamSide,
 } from "./matchReportEntries";
-import { calculate_score_by_period } from "./matchReportScoring";
+import {
+  calculate_score_by_period,
+  type ReportScoringPeriod,
+} from "./matchReportScoring";
 import { SCORING_TEAM_SIDE } from "./matchReportScoringConstants";
 
 const HOME_SIDE = SCORING_TEAM_SIDE.HOME;
@@ -40,6 +48,8 @@ export interface MatchReportBuildContext {
   home_staff?: MatchStaffEntry[];
   away_staff?: MatchStaffEntry[];
   card_types?: CardTypeConfig[];
+  event_source: SportEventCatalogSource;
+  periods: readonly ReportScoringPeriod[];
   organization_name?: string;
   organization_logo_url?: string;
   venue_name?: string;
@@ -118,8 +128,15 @@ function build_report_events(
   "score_by_period" | "home_players" | "away_players" | "goals"
 > {
   const events = ctx.fixture.game_events;
+  const resolve_score = create_score_award_resolver(
+    ctx.event_source.scoring_rules,
+  );
   return {
-    score_by_period: calculate_score_by_period(events),
+    score_by_period: calculate_score_by_period(
+      events,
+      ctx.periods.length > 0 ? ctx.periods : create_default_football_periods(),
+      resolve_score,
+    ),
     home_players: build_player_entries(
       ctx.home_lineup,
       events,
@@ -138,6 +155,7 @@ function build_report_events(
       get_team_initials(ctx.away_team.name),
       ctx.home_lineup,
       ctx.away_lineup,
+      resolve_score,
     ),
   };
 }

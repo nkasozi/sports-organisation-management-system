@@ -4,8 +4,10 @@ import {
   DYNAMIC_FORM_FIELD_NAME_HINT,
   DYNAMIC_FORM_FIELD_TYPE,
   DYNAMIC_FORM_INPUT_TYPE,
+  DYNAMIC_FORM_VALIDATION_RULE_TYPE,
   type DynamicFormInputType,
 } from "./dynamicFormConstants";
+import { is_number_value } from "./runtimeTypeGuards";
 
 const EMPTY_TEXT_VALUE = "";
 const ZERO_NUMERIC_VALUE = 0;
@@ -17,11 +19,27 @@ function get_default_enum_value(field: FieldMetadata): string {
   return field.enum_values[0];
 }
 
+function is_zero_rejected_by_rules(field: FieldMetadata): boolean {
+  return (field.validation_rules ?? []).some(
+    (rule) =>
+      rule.rule_type === DYNAMIC_FORM_VALIDATION_RULE_TYPE.MIN_VALUE &&
+      is_number_value(rule.rule_value) &&
+      rule.rule_value > ZERO_NUMERIC_VALUE,
+  );
+}
+
+function get_default_number_value(field: FieldMetadata): number | string {
+  if (!field.is_required && is_zero_rejected_by_rules(field))
+    return EMPTY_TEXT_VALUE;
+  return ZERO_NUMERIC_VALUE;
+}
+
 export function get_default_value_for_field_type(
   field: FieldMetadata,
 ): unknown {
   switch (field.field_type) {
     case DYNAMIC_FORM_FIELD_TYPE.NUMBER:
+      return get_default_number_value(field);
     case DYNAMIC_FORM_FIELD_TYPE.STAR_RATING:
       return ZERO_NUMERIC_VALUE;
     case DYNAMIC_FORM_FIELD_TYPE.BOOLEAN:

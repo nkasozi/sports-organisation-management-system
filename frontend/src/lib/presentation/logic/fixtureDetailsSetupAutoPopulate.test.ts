@@ -44,6 +44,24 @@ function create_dependencies(
       list:
         overrides.role_list || vi.fn(async () => list_of(["r1", "r2", "r3"])),
     },
+    competition_use_cases: {
+      get_by_id: vi.fn(async () => ({
+        success: true,
+        data: { id: "comp", organization_id: "org", rule_overrides: {} },
+      })),
+    },
+    organization_use_cases: {
+      get_by_id: vi.fn(async () => ({
+        success: true,
+        data: { id: "org", sport_id: "sport" },
+      })),
+    },
+    sport_use_cases: {
+      get_by_id: vi.fn(async () => ({
+        success: true,
+        data: { id: "sport", official_requirements: [] },
+      })),
+    },
   } as unknown as FixtureDetailsSetupAutoPopulateDependencies;
 }
 
@@ -66,6 +84,7 @@ describe("fixtureDetailsSetupAutoPopulate", () => {
     );
     expect(result).toEqual({
       fixture_id: "fixture-1",
+      organization_id: "organization-1",
       home_team_jersey_id: "home-jersey",
       official_jersey_id: "any-official-jersey",
       assigned_officials: [
@@ -100,6 +119,7 @@ describe("fixtureDetailsSetupAutoPopulate", () => {
       assign_officials_to_roles(
         [{ id: "o1" }] as never,
         [{ id: "r1" }, { id: "r2" }] as never,
+        [],
       ),
     ).toEqual([{ official_id: "o1", role_id: "r1" }]);
   });

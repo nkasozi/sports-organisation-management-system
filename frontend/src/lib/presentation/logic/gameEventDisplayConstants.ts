@@ -1,4 +1,4 @@
-import type { GameEventType } from "$lib/core/entities/FixtureTypes";
+import type { GameEventLogType } from "$lib/core/entities/GameEventLogTypes";
 
 const SCORING_EVENT_CLASS =
   "border-l-green-500 bg-green-50 dark:bg-green-900/20";
@@ -8,10 +8,11 @@ const CAUTION_EVENT_CLASS =
 const DISMISSAL_EVENT_CLASS = "border-l-red-500 bg-red-50 dark:bg-red-900/20";
 const PERIOD_EVENT_CLASS =
   "border-l-purple-500 bg-purple-50 dark:bg-purple-900/20";
-const NEUTRAL_EVENT_CLASS = "border-l-gray-300 bg-gray-50 dark:bg-accent-800";
+export const NEUTRAL_EVENT_CLASS =
+  "border-l-gray-300 bg-gray-50 dark:bg-accent-800";
 
 export const GAME_EVENT_BACKGROUND_CLASS_BY_TYPE: Readonly<
-  Record<GameEventType, string>
+  Record<GameEventLogType, string>
 > = {
   goal: SCORING_EVENT_CLASS,
   penalty_scored: SCORING_EVENT_CLASS,

@@ -1,7 +1,8 @@
-import type {
-  CreateSportInput,
-  Sport,
-  UpdateSportInput,
+import {
+  type CreateSportInput,
+  type Sport,
+  type UpdateSportInput,
+  validate_sport_input,
 } from "$lib/core/entities/Sport";
 import type {
   QueryOptions,
@@ -10,7 +11,12 @@ import type {
   SportUseCasesPort,
 } from "$lib/core/interfaces/ports";
 import type { ScalarValueInput } from "$lib/core/types/DomainScalars";
-import type { AsyncResult, PaginatedAsyncResult } from "$lib/core/types/Result";
+import {
+  type AsyncResult,
+  create_success_result,
+  type PaginatedAsyncResult,
+  type Result,
+} from "$lib/core/types/Result";
 import { UseCaseErrorCode } from "$lib/core/types/UseCaseFailure";
 
 import {
@@ -38,6 +44,23 @@ function fail_missing_sport_id(
     context: {},
     user_message: SportUseCaseMessage.ID_REQUIRED,
   });
+}
+
+function check_sport_rules(
+  input: CreateSportInput,
+  event: string,
+): Result<true> {
+  const validation_errors = validate_sport_input(input);
+  if (validation_errors.length === 0) return create_success_result(true);
+  return fail_with_message(
+    {
+      log_scope: SPORT_USE_CASES_LOG_SCOPE,
+      event,
+      context: { validation_errors },
+      user_message: validation_errors.join(", "),
+    },
+    UseCaseErrorCode.VALIDATION_FAILED,
+  );
 }
 
 async function list_sports(
@@ -83,6 +106,11 @@ async function create_sport(
       UseCaseErrorCode.VALIDATION_FAILED,
     );
   }
+  const invalid_result = check_sport_rules(
+    input,
+    SportUseCaseEvent.CREATE_INVALID,
+  );
+  if (!invalid_result.success) return invalid_result;
   return forward_dependency_result(await repository.create(input), {
     log_scope: SPORT_USE_CASES_LOG_SCOPE,
     event: SportUseCaseEvent.CREATE_FAILED,
@@ -99,6 +127,13 @@ async function update_sport(
   if (is_blank_identifier(id)) {
     return fail_missing_sport_id(SportUseCaseEvent.UPDATE_ID_MISSING);
   }
+  const existing_result = await get_sport_by_id(repository, id);
+  if (!existing_result.success) return existing_result;
+  const invalid_result = check_sport_rules(
+    { ...existing_result.data, ...input } as CreateSportInput,
+    SportUseCaseEvent.UPDATE_INVALID,
+  );
+  if (!invalid_result.success) return invalid_result;
   return forward_dependency_result(await repository.update(id, input), {
     log_scope: SPORT_USE_CASES_LOG_SCOPE,
     event: SportUseCaseEvent.UPDATE_FAILED,

@@ -18,6 +18,28 @@ describe("dynamicFormLogic", () => {
       expect(get_default_value_for_field_type(field)).toBe(0);
     });
 
+    it("leaves an optional number blank when its rules reject zero", () => {
+      const field = create_field_metadata({
+        field_type: "number",
+        is_required: false,
+        validation_rules: [
+          { rule_type: "min_value", rule_value: 1800, error_message: "x" },
+        ],
+      });
+      expect(get_default_value_for_field_type(field)).toBe("");
+    });
+
+    it("keeps 0 for an optional number whose rules allow zero", () => {
+      const field = create_field_metadata({
+        field_type: "number",
+        is_required: false,
+        validation_rules: [
+          { rule_type: "min_value", rule_value: 0, error_message: "x" },
+        ],
+      });
+      expect(get_default_value_for_field_type(field)).toBe(0);
+    });
+
     it("returns false for boolean fields", () => {
       const field = create_field_metadata({ field_type: "boolean" });
       expect(get_default_value_for_field_type(field)).toBe(false);

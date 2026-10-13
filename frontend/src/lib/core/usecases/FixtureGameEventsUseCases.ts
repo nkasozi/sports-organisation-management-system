@@ -1,4 +1,5 @@
 import type { Fixture, GameEvent } from "../entities/Fixture";
+import type { ScoreAward } from "../entities/SportEventCatalogConstants";
 import { FIXTURE_STATUS, GAME_PERIOD } from "../entities/StatusConstants";
 import type {
   FixtureRepository,
@@ -76,8 +77,9 @@ function create_start_fixture_plan(): FixtureUpdatePlan {
 function create_recorded_event_plan(
   fixture: Fixture,
   event: GameEvent,
+  score_award: ScoreAward,
 ): FixtureUpdatePlan {
-  const delta = calculate_score_delta(event);
+  const delta = calculate_score_delta(event, score_award);
   return plan_from_updates({
     game_events: [...(fixture.game_events || []), event],
     home_team_score: (fixture.home_team_score || 0) + delta.home,
@@ -99,13 +101,14 @@ async function record_game_event(
   repository: FixtureRepository,
   id: FixtureId,
   event: GameEvent,
+  score_award: ScoreAward,
 ): AsyncResult<Fixture> {
   const fixture_result = await find_fixture_for_event(repository, id);
   if (!fixture_result.success) return fixture_result;
   return update_and_emit(
     repository,
     id,
-    create_recorded_event_plan(fixture_result.data, event),
+    create_recorded_event_plan(fixture_result.data, event, score_award),
     { status: PREVIOUS_FIXTURE_STATUS.KNOWN, fixture: fixture_result.data },
   );
 }
@@ -122,6 +125,14 @@ async function end_fixture(
     create_end_fixture_plan(fixture_result.data),
     { status: PREVIOUS_FIXTURE_STATUS.KNOWN, fixture: fixture_result.data },
   );
+}
+
+async function start_fixture(
+  repository: FixtureRepository,
+  id: FixtureId,
+): AsyncResult<Fixture> {
+  if (is_blank_identifier(id)) return fail_missing_fixture_id();
+  return update_tracking_previous(repository, id, create_start_fixture_plan());
 }
 
 export function create_fixture_game_events(
@@ -144,15 +155,9 @@ export function create_fixture_game_events(
         }),
       );
     },
-    async start_fixture(id) {
-      if (is_blank_identifier(id)) return fail_missing_fixture_id();
-      return update_tracking_previous(
-        repository,
-        id,
-        create_start_fixture_plan(),
-      );
-    },
-    record_game_event: (id, event) => record_game_event(repository, id, event),
+    start_fixture: (id) => start_fixture(repository, id),
+    record_game_event: (id, event, score_award) =>
+      record_game_event(repository, id, event, score_award),
     async update_period(id, period, minute) {
       if (is_blank_identifier(id)) return fail_missing_fixture_id();
       return update_tracking_previous(

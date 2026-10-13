@@ -18,11 +18,13 @@ import {
   resolve_match_report_organization_name,
 } from "$lib/presentation/logic/competitionResultsMatchReportHelpers";
 import { fetch_match_report_participants } from "$lib/presentation/logic/competitionResultsMatchReportParticipants";
+import type { MatchReportSportRules } from "$lib/presentation/logic/matchReportSportRules";
 import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
 interface MatchReportFixtureCommand {
   fixture: Fixture;
   selected_competition_state: MatchReportCompetitionState;
+  sport_rules: MatchReportSportRules;
   team_map: Map<string, Team>;
   organization_name: string;
   organization_logo_url: string;
@@ -32,6 +34,7 @@ interface MatchReportFixtureCommand {
 
 interface MatchReportDownloadCommand {
   selected_competition_state: MatchReportCompetitionState;
+  sport_rules: MatchReportSportRules;
   team_map: Map<string, Team>;
   organization_logo_url: string;
   dependencies: CompetitionResultsMatchReportDependencies;
@@ -60,6 +63,7 @@ export async function build_report_data_for_fixture(
     home_team,
     away_team,
     competition: selected_competition,
+    ...command.sport_rules,
     ...participants,
     organization_name: command.organization_name,
     organization_logo_url: command.organization_logo_url,
@@ -78,6 +82,7 @@ async function build_match_report_fixture_commands(
   const staff_roles_map = await build_staff_roles_map(command.dependencies);
   return {
     selected_competition_state: command.selected_competition_state,
+    sport_rules: command.sport_rules,
     team_map: command.team_map,
     organization_name,
     organization_logo_url: command.organization_logo_url,

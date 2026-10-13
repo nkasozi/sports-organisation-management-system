@@ -138,4 +138,21 @@ describe("sportService", () => {
 
     expect(result.data.code).toBe("BB");
   });
+
+  it("rejects an update that breaks the sport's lineup limits", async () => {
+    get_sport_by_id_mock.mockResolvedValue({
+      success: true,
+      data: create_test_sport({ id: "sport-123", code: "FB" }),
+    });
+
+    const result = await sportService.update("sport-123", {
+      max_players_per_fixture: 99,
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "Maximum players per fixture must be <= maximum squad size",
+    });
+    expect(update_sport_mock).not.toHaveBeenCalled();
+  });
 });

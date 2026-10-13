@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Organization } from "$lib/core/entities/Organization";
+import { create_none_option } from "$lib/core/types/Option";
 
 import { seed_default_lookup_entities_for_organization } from "./organizationDefaultsSeeder";
 
@@ -95,6 +96,14 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
+const seed_without_sport = (
+  organization_id: string,
+): ReturnType<typeof seed_default_lookup_entities_for_organization> =>
+  seed_default_lookup_entities_for_organization(
+    organization_id,
+    create_none_option(),
+  );
+
 describe("seed_default_lookup_entities_for_organization", () => {
   it("returns a failure result when gender seeding fails", async () => {
     mock_gender_seed.mockResolvedValueOnce({
@@ -102,8 +111,7 @@ describe("seed_default_lookup_entities_for_organization", () => {
       error: "Gender DB error",
     });
 
-    const result =
-      await seed_default_lookup_entities_for_organization("org-fail");
+    const result = await seed_without_sport("org-fail");
 
     expect(result.success).toBe(false);
     if (result.success) return;
@@ -116,8 +124,7 @@ describe("seed_default_lookup_entities_for_organization", () => {
       error: "Gender DB error",
     });
 
-    const result =
-      await seed_default_lookup_entities_for_organization("org-stop");
+    const result = await seed_without_sport("org-stop");
     expect(result.success).toBe(false);
 
     expect(mock_gender_seed).toHaveBeenCalledTimes(1);
@@ -134,8 +141,7 @@ describe("seed_default_lookup_entities_for_organization", () => {
       error: "ID type DB error",
     });
 
-    const result =
-      await seed_default_lookup_entities_for_organization("org-stop-2");
+    const result = await seed_without_sport("org-stop-2");
     expect(result.success).toBe(false);
 
     expect(mock_gender_seed).toHaveBeenCalledTimes(1);
@@ -144,16 +150,14 @@ describe("seed_default_lookup_entities_for_organization", () => {
   });
 
   it("calls seed_with_data on the competition format repository", async () => {
-    const result =
-      await seed_default_lookup_entities_for_organization("org-abc");
+    const result = await seed_without_sport("org-abc");
     expect(result.success).toBe(true);
 
     expect(mock_competition_format_seed).toHaveBeenCalledTimes(1);
   });
 
   it("seeds competition formats with data that includes the given organization_id", async () => {
-    const result =
-      await seed_default_lookup_entities_for_organization("org-abc");
+    const result = await seed_without_sport("org-abc");
     expect(result.success).toBe(true);
 
     const seeded = mock_competition_format_seed.mock.calls[0][0] as Array<{
@@ -168,8 +172,7 @@ describe("seed_default_lookup_entities_for_organization", () => {
     const { create_default_competition_formats_for_organization } =
       await import("../repositories/InBrowserCompetitionFormatRepository");
 
-    const result =
-      await seed_default_lookup_entities_for_organization("org-formats-test");
+    const result = await seed_without_sport("org-formats-test");
     expect(result.success).toBe(true);
 
     expect(
@@ -183,8 +186,7 @@ describe("seed_default_lookup_entities_for_organization", () => {
       error: "Format DB error",
     });
 
-    const result =
-      await seed_default_lookup_entities_for_organization("org-fmt-fail");
+    const result = await seed_without_sport("org-fmt-fail");
 
     expect(result.success).toBe(false);
     if (result.success) return;

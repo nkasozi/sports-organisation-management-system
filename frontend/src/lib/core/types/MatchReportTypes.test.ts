@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { GameEvent } from "$lib/core/entities/Fixture";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
+import { create_score_award_resolver } from "$lib/core/entities/SportEventCatalog";
 
 import {
   build_match_player_entry,
@@ -9,6 +10,8 @@ import {
   extract_goals_from_events,
   get_team_initials,
 } from "./MatchReportTypes";
+
+const LEGACY_SCORING = create_score_award_resolver([]);
 
 function build_event(
   event_type: string,
@@ -106,6 +109,7 @@ describe("extract_goals_from_events", () => {
       "AWY",
       home_players,
       away_players,
+      LEGACY_SCORING,
     );
     expect(goals).toEqual([
       {
@@ -149,8 +153,33 @@ describe("extract_goals_from_events", () => {
       "AWY",
       [],
       [],
+      LEGACY_SCORING,
     );
     expect(goals.map((goal) => goal.jersey_number)).toEqual(["?", "?"]);
+  });
+
+  it("counts each score with the points the sport awards", () => {
+    const goals = extract_goals_from_events(
+      [
+        build_event("super_shot", "home", 3, ""),
+        build_event("goal", "away", 4, ""),
+        build_event("foul", "away", 5, ""),
+      ],
+      "HOM",
+      "AWY",
+      [],
+      [],
+      create_score_award_resolver([
+        { event_type: "goal", points_awarded: 1 },
+        { event_type: "super_shot", points_awarded: 2 },
+      ]),
+    );
+    expect(
+      goals.map((goal) => [goal.team_initials, goal.action, goal.score]),
+    ).toEqual([
+      ["HOM", "SS", "2-0"],
+      ["AWY", "FG", "2-1"],
+    ]);
   });
 });
 

@@ -9,6 +9,7 @@ import {
   load_competitions_for_results_organization,
   select_preferred_results_organization,
 } from "./competitionResultsPageState";
+import { build_match_report_sport_rules } from "./matchReportSportRules";
 
 const competition_results_page_state_mocks = vi.hoisted(() => ({
   check_data_permission: vi.fn(),
@@ -44,6 +45,7 @@ describe("competitionResultsPageState", () => {
       fixtures: [],
       teams: [],
       team_map: new Map(),
+      sport_rules: build_match_report_sport_rules(void 0, void 0),
     });
     expect(
       find_competition_results_organization(

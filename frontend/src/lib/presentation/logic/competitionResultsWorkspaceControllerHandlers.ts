@@ -71,6 +71,7 @@ export async function handle_competition_results_download_all_reports(
   const result = await download_all_fixture_reports({
     completed_fixtures: command.get_completed_fixtures(),
     selected_competition_state: command.get_selected_competition_state(),
+    sport_rules: command.get_sport_rules(),
     team_map: command.team_map,
     organization_logo_url: command.get_branding_logo_url(),
     dependencies: competition_results_match_report_dependencies,
@@ -89,6 +90,7 @@ export async function handle_competition_results_download_match_report(
   const result = await download_fixture_report({
     fixture,
     selected_competition_state: command.get_selected_competition_state(),
+    sport_rules: command.get_sport_rules(),
     team_map: command.team_map,
     organization_logo_url: command.get_branding_logo_url(),
     dependencies: competition_results_match_report_dependencies,

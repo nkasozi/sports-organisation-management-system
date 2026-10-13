@@ -1,10 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { create_score_award_resolver } from "$lib/core/entities/SportEventCatalog";
+
 import {
   auto_generate_live_game_lineup,
   ensure_live_game_lineups_before_start,
   record_live_game_detail_event,
 } from "./liveGameDetailActions";
+
+const GOAL_AWARD = create_score_award_resolver([])("goal");
 
 describe("liveGameDetailActions", () => {
   type FixtureUseCases = Parameters<typeof record_live_game_detail_event>[7];
@@ -41,6 +45,7 @@ describe("liveGameDetailActions", () => {
     const selected_event_type = {
       id: "goal",
       label: "Goal",
+      score_award: GOAL_AWARD,
     } as SelectedEventType;
 
     const record_live_game_detail_event_result =
@@ -64,6 +69,7 @@ describe("liveGameDetailActions", () => {
         description: "Goal",
         player_name: "Ada Stone",
       }),
+      GOAL_AWARD,
     );
   });
 

@@ -91,6 +91,7 @@
             organization_use_cases:
                 live_games_page_dependencies.organization_use_cases,
             fixture_state_dependencies,
+            search_parameters: new URL(window.location.href).searchParams,
         });
         switch (result.status) {
             case LIVE_GAMES_PAGE_STATUS.ERROR:

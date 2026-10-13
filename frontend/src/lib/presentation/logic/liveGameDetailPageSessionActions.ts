@@ -1,5 +1,6 @@
 import { create_game_event, type Fixture } from "$lib/core/entities/Fixture";
 import type { SportGamePeriod } from "$lib/core/entities/Sport";
+import { NO_SCORE_AWARD } from "$lib/core/entities/SportEventCatalog";
 import { GAME_PERIOD } from "$lib/core/entities/StatusConstants";
 import {
   end_game_session,
@@ -125,17 +126,18 @@ export async function start_live_game_detail_action(
   return apply_first_playing_period(command, start_result.data);
 }
 
-export async function end_live_game_detail_action(command: {
+type EndLiveGameCommand = {
   away_score: number;
   elapsed_minutes: number;
   fixture: Fixture;
   fixture_use_cases: FixtureUseCases;
   home_score: number;
-}): Promise<
-  | { fixture: Fixture; success: true }
-  | { error_message: string; success: false }
-> {
-  const record_result = await command.fixture_use_cases.record_game_event(
+};
+
+function record_final_whistle(
+  command: EndLiveGameCommand,
+): ReturnType<FixtureUseCases["record_game_event"]> {
+  return command.fixture_use_cases.record_game_event(
     command.fixture.id,
     create_game_event(
       GAME_EVENT_TYPE.PERIOD_END,
@@ -144,7 +146,17 @@ export async function end_live_game_detail_action(command: {
       "",
       `Match ended. Final score: ${command.home_score}-${command.away_score}`,
     ),
+    NO_SCORE_AWARD,
   );
+}
+
+export async function end_live_game_detail_action(
+  command: EndLiveGameCommand,
+): Promise<
+  | { fixture: Fixture; success: true }
+  | { error_message: string; success: false }
+> {
+  const record_result = await record_final_whistle(command);
   if (!record_result.success)
     return build_game_action_failure({
       event: GAME_ACTION_EVENT.END_GAME_EVENT_RECORD_FAILED,

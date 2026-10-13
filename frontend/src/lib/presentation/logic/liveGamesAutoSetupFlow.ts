@@ -3,6 +3,7 @@ import { auto_create_fixture_details_setup } from "$lib/core/services/fixtureDet
 import type { PreFlightCheck } from "$lib/core/services/fixtureStartChecks";
 import { CHECK_STATUS } from "$lib/core/services/FixtureStartChecksConstants";
 
+import { load_fixture_official_requirements } from "./fixtureOfficialRequirements";
 import {
   type LiveGamesStartFlowDependencies,
   publish_checks,
@@ -42,17 +43,21 @@ async function redirect_to_fixture_details_setup(
   return true;
 }
 
-function run_auto_create_fixture_details(
+async function run_auto_create_fixture_details(
   fixture: Fixture,
   dependencies: LiveGamesStartFlowDependencies,
 ): ReturnType<typeof auto_create_fixture_details_setup> {
-  return auto_create_fixture_details_setup(fixture, {
-    fixture_details_setup_use_cases:
-      dependencies.fixture_details_setup_use_cases,
-    jersey_color_use_cases: dependencies.jersey_color_use_cases,
-    official_use_cases: dependencies.official_use_cases,
-    game_official_role_use_cases: dependencies.game_official_role_use_cases,
-  });
+  return auto_create_fixture_details_setup(
+    fixture,
+    {
+      fixture_details_setup_use_cases:
+        dependencies.fixture_details_setup_use_cases,
+      jersey_color_use_cases: dependencies.jersey_color_use_cases,
+      official_use_cases: dependencies.official_use_cases,
+      game_official_role_use_cases: dependencies.game_official_role_use_cases,
+    },
+    await load_fixture_official_requirements(fixture, dependencies),
+  );
 }
 
 async function silently_create_fixture_details(

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   format_periods_summary,
+  format_substitution_limit,
   get_effective_periods,
   get_max_players_on_field,
   get_max_squad_size,
@@ -108,5 +109,15 @@ describe("sportRulesCustomizerLogic", () => {
     expect(has_rule_override({}, "periods")).toBe(false);
     expect(has_custom_squad_limits({})).toBe(false);
     expect(has_custom_squad_limits({ max_squad_size: 10 })).toBe(true);
+  });
+});
+
+describe("format_substitution_limit", () => {
+  it("shows a negative limit as unlimited", () => {
+    expect(format_substitution_limit(-1)).toBe("Unlimited subs");
+  });
+
+  it("shows a set number of substitutions", () => {
+    expect(format_substitution_limit(5)).toBe("5 subs");
   });
 });

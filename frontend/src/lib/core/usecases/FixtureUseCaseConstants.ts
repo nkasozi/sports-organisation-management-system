@@ -1,5 +1,3 @@
-import type { GameEventType } from "../entities/FixtureTypes";
-
 export const FIXTURE_LOG_SCOPE = "[FixtureUseCases]";
 
 export const FIXTURE_ENTITY_TYPE = "fixture";
@@ -39,12 +37,6 @@ export const FIXTURE_MESSAGE = {
   START_DATE_REQUIRED: "Start date is required",
   NEGATIVE_SCORE: "Scores cannot be negative",
 } as const;
-
-export const SCORE_EVENT_TYPE = {
-  GOAL: "goal",
-  PENALTY_SCORED: "penalty_scored",
-  OWN_GOAL: "own_goal",
-} as const satisfies Record<string, GameEventType>;
 
 export function build_unmapped_rounds_message(rounds: number[]): string {
   return `All rounds must be mapped to a stage. Missing stage mappings for rounds: ${rounds.join(", ")}`;

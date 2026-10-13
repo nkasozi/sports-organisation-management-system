@@ -1,4 +1,5 @@
-import { get_quick_event_buttons } from "$lib/core/entities/Fixture";
+import { build_sport_event_buttons } from "$lib/core/entities/SportEventCatalog";
+import { resolve_sport_event_source } from "$lib/core/entities/SportEventSource";
 import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
 import {
   build_player_select_options_for_team,
@@ -48,7 +49,9 @@ function derive_live_game_detail_lineup_and_event_state(
     sorted_events: sort_game_events(page_state),
     is_game_active: fixture?.status === FIXTURE_STATUS.IN_PROGRESS,
     is_game_completed: fixture?.status === FIXTURE_STATUS.COMPLETED,
-    all_event_buttons: get_quick_event_buttons(),
+    all_event_buttons: build_sport_event_buttons(
+      resolve_sport_event_source(page_state.sport, page_state.competition),
+    ),
     player_select_options: build_player_select_options_for_team(
       team_side,
       home_players,

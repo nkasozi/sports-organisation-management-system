@@ -1,4 +1,10 @@
 import type { OfficialAssignment } from "$lib/core/entities/FixtureDetailsSetup";
+import {
+  assign_officials_to_slots,
+  build_official_role_slots,
+  type OfficialRequirementSource,
+  type OfficialRoleSource,
+} from "$lib/core/services/officialRoleSlots";
 import type { EntityId } from "$lib/core/types/DomainScalars";
 import {
   create_none_option,
@@ -13,7 +19,12 @@ import type {
   get_official_use_cases,
 } from "$lib/infrastructure/registry/useCaseFactories";
 
-export interface FixtureDetailsSetupAutoPopulateDependencies {
+import {
+  type FixtureOfficialRequirementsDependencies,
+  load_fixture_official_requirements,
+} from "./fixtureOfficialRequirements";
+
+export interface FixtureDetailsSetupAutoPopulateDependencies extends FixtureOfficialRequirementsDependencies {
   fixture_use_cases: Pick<
     ReturnType<typeof get_fixture_use_cases>,
     "get_by_id"
@@ -60,22 +71,13 @@ function get_first_item_id(list_result: ListResultWithItems): Option<EntityId> {
 
 export function assign_officials_to_roles(
   officials: IdentifiedRecord[],
-  roles: IdentifiedRecord[],
+  roles: OfficialRoleSource[],
+  requirements: readonly OfficialRequirementSource[],
 ): OfficialAssignment[] {
-  const assigned_officials: OfficialAssignment[] = [];
-  const used_official_ids = new Set<string>();
-  for (const role of roles) {
-    const available_official = officials.find(
-      (official: IdentifiedRecord) => !used_official_ids.has(official.id),
-    );
-    if (!available_official) continue;
-    assigned_officials.push({
-      official_id: available_official.id,
-      role_id: role.id,
-    });
-    used_official_ids.add(available_official.id);
-  }
-  return assigned_officials;
+  return assign_officials_to_slots(
+    officials,
+    build_official_role_slots(requirements, roles),
+  ) as OfficialAssignment[];
 }
 
 async function resolve_official_jersey_id(
@@ -156,6 +158,11 @@ export async function load_fixture_details_setup_auto_populated_data(
   const fixture_result =
     await dependencies.fixture_use_cases.get_by_id(fixture_id);
   if (!fixture_result.success || !fixture_result.data) return result;
+  result.organization_id = fixture_result.data.organization_id;
+  const requirements = await load_fixture_official_requirements(
+    fixture_result.data,
+    dependencies,
+  );
   const [home_jerseys, away_jerseys, official_jerseys, officials, roles] =
     await load_fixture_related_lists(fixture_result.data, dependencies);
   assign_if_present(
@@ -176,6 +183,7 @@ export async function load_fixture_details_setup_auto_populated_data(
   const assigned_officials = assign_officials_to_roles(
     officials.success ? officials.data.items || [] : [],
     roles.success ? roles.data.items || [] : [],
+    requirements,
   );
   if (assigned_officials.length > 0)
     result.assigned_officials = assigned_officials;

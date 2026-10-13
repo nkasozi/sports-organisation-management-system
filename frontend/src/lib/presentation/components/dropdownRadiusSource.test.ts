@@ -15,7 +15,6 @@ const SOURCE_FILES = [
   "./calendar/CalendarCategoryModal.svelte",
   "./competition/CompetitionCreateAutoSquadSettings.svelte",
   "./competition/CompetitionResultsStatsSection.svelte",
-  "./game/GameManageEventModal.svelte",
   "./playerTeamMemberships/BulkPlayerAssignmentTeamSelection.svelte",
 ] as const;
 

@@ -10,7 +10,6 @@ export {
   get_event_icon,
   get_event_label,
   get_period_display_name,
-  get_quick_event_buttons,
 } from "./FixtureGameEvents";
 export type { FixtureGenerationConfig } from "./FixtureGeneration";
 export { generate_round_robin_fixtures } from "./FixtureGeneration";

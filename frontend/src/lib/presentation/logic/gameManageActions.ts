@@ -2,27 +2,16 @@ import {
   create_game_event,
   type Fixture,
   type GamePeriod,
-  get_period_display_name,
-  type QuickEventButton,
 } from "$lib/core/entities/Fixture";
+import { NO_SCORE_AWARD } from "$lib/core/entities/SportEventCatalog";
 import type { FixtureUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/FixtureUseCasesPort";
 import {
   create_failure_result,
   create_success_result,
   type Result,
 } from "$lib/core/types/Result";
-import { get_next_period } from "$lib/presentation/logic/gameManageState";
 
-interface RecordGameManageEventCommand {
-  fixture_id: string;
-  selected_event_type: QuickEventButton;
-  event_minute: number;
-  selected_team_side: "home" | "away";
-  event_player_name: string;
-  event_description: string;
-}
-
-export interface EndGamePeriodResult {
+interface EndGamePeriodResult {
   fixture: Fixture;
   completed_period_label: string;
 }
@@ -39,22 +28,6 @@ export async function end_game_session(
   fixture_use_cases: Pick<FixtureUseCasesPort, "end_fixture">,
 ): Promise<Result<Fixture>> {
   return fixture_use_cases.end_fixture(fixture_id);
-}
-
-export async function record_game_manage_event(
-  command: RecordGameManageEventCommand,
-  fixture_use_cases: Pick<FixtureUseCasesPort, "record_game_event">,
-): Promise<Result<Fixture>> {
-  return fixture_use_cases.record_game_event(
-    command.fixture_id,
-    create_game_event(
-      command.selected_event_type.id,
-      command.event_minute,
-      command.selected_team_side,
-      command.event_player_name,
-      command.event_description || command.selected_event_type.label,
-    ),
-  );
 }
 
 export async function change_game_period(command: {
@@ -77,6 +50,7 @@ export async function change_game_period(command: {
       "",
       `${command.new_period_label} started`,
     ),
+    NO_SCORE_AWARD,
   );
 
   if (!period_event_result.success) {
@@ -90,15 +64,6 @@ type GamePeriodTransition = {
   next_period: GamePeriod;
   completed_period_label: string;
 };
-
-export function build_default_period_transition(
-  fixture: Fixture,
-): GamePeriodTransition {
-  return {
-    next_period: get_next_period(fixture.current_period),
-    completed_period_label: get_period_display_name(fixture.current_period),
-  };
-}
 
 export async function end_game_period(command: {
   fixture: Fixture;
@@ -119,6 +84,7 @@ export async function end_game_period(command: {
       "",
       `${transition.completed_period_label} ended`,
     ),
+    NO_SCORE_AWARD,
   );
   if (!period_event_result.success) {
     return create_failure_result(period_event_result.error);

@@ -2,6 +2,7 @@ import type { Competition } from "$lib/core/entities/Competition";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Team } from "$lib/core/entities/Team";
 import type { CompetitionResultsSelectedCompetitionState } from "$lib/presentation/logic/competitionResultsPageContracts";
+import type { MatchReportSportRules } from "$lib/presentation/logic/matchReportSportRules";
 
 export interface CompetitionResultsWorkspaceControllerCommand {
   competitions: Competition[];
@@ -9,6 +10,7 @@ export interface CompetitionResultsWorkspaceControllerCommand {
   get_branding_logo_url: () => string;
   get_completed_fixtures: () => Fixture[];
   get_selected_competition_state: () => CompetitionResultsSelectedCompetitionState;
+  get_sport_rules: () => MatchReportSportRules;
   get_selected_team_id: () => string;
   selected_competition_id: string;
   selected_organization_id: string;

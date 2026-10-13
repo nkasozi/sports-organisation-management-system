@@ -1,3 +1,4 @@
+import type { Organization } from "../../core/entities/Organization";
 import type { OrganizationSettingsUseCasesPort } from "../../core/interfaces/ports/internal/usecases/OrganizationSettingsUseCasesPort";
 import type { GameEventLogUseCases } from "../../core/usecases/GameEventLogUseCases";
 import { create_game_event_log_use_cases } from "../../core/usecases/GameEventLogUseCases";
@@ -28,6 +29,7 @@ import { create_sport_use_cases } from "../../core/usecases/SportUseCases";
 import type { VenueUseCases } from "../../core/usecases/VenueUseCases";
 import { create_venue_use_cases } from "../../core/usecases/VenueUseCases";
 import { get_repository_container } from "../container";
+import { find_organization_seed_sport } from "./organizationSeedSport";
 import { REGISTRY_LOG_EVENT } from "./registryConstants";
 
 export function get_game_event_log_use_cases(): GameEventLogUseCases {
@@ -91,15 +93,17 @@ export function get_organization_use_cases(): OrganizationUseCases {
 export function get_organization_with_defaults_use_cases(): OrganizationUseCases {
   return create_organization_use_cases_with_default_seeder(
     get_repository_container().organization_repository,
-    async (organization_id: string): Promise<void> => {
+    async (organization: Organization): Promise<void> => {
       const { seed_default_lookup_entities_for_organization } =
         await import("../../adapters/initialization/organizationDefaultsSeeder");
-      const seed_result =
-        await seed_default_lookup_entities_for_organization(organization_id);
+      const seed_result = await seed_default_lookup_entities_for_organization(
+        organization.id,
+        await find_organization_seed_sport(organization, get_sport_use_cases()),
+      );
       if (seed_result.success) return;
       console.error("[UseCaseFactories] Organization defaults seeding failed", {
         event: REGISTRY_LOG_EVENT.ORGANIZATION_DEFAULTS_SEED_FAILED,
-        organization_id,
+        organization_id: organization.id,
         error: seed_result.error,
       });
     },

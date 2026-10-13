@@ -75,5 +75,19 @@
             bind:value={form_data.max_squad_size}
             required={true}
         />
+        <FormField
+            label="Min Players per Fixture Lineup"
+            name="min_players_per_fixture"
+            type="number"
+            bind:value={form_data.min_players_per_fixture}
+            required={true}
+        />
+        <FormField
+            label="Max Players per Fixture Lineup"
+            name="max_players_per_fixture"
+            type="number"
+            bind:value={form_data.max_players_per_fixture}
+            required={true}
+        />
     </div>
 </div>

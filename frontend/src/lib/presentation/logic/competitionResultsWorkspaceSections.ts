@@ -1,5 +1,6 @@
 import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
 import type { Fixture } from "$lib/core/entities/Fixture";
+import { create_score_award_resolver } from "$lib/core/entities/SportEventCatalog";
 import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
 import {
   derive_effective_points_config,
@@ -127,6 +128,7 @@ export function derive_competition_results_stats_section(
   const player_stats = calculate_player_stats(
     command.fixtures,
     command.team_map,
+    create_score_award_resolver(command.sport_rules.event_source.scoring_rules),
   );
   return {
     stats_available_teams: derive_stats_available_teams(player_stats),
