@@ -22,6 +22,7 @@ describe("liveGameDetailData", () => {
       sport_use_cases: { get_by_id: vi.fn() },
       team_use_cases: { get_by_id: vi.fn() },
       venue_use_cases: { list: vi.fn() },
+      competition_stage_use_cases: { get_by_id: vi.fn() },
     } satisfies MockDependencies;
   }
 

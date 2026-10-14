@@ -2,10 +2,18 @@ import adapter from "@sveltejs/adapter-vercel";
 import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 import { loadEnv } from "vite";
 
-import { build_content_security_policy_directives } from "./src/lib/infrastructure/security/contentSecurityPolicy.js";
+import {
+  build_content_security_policy_directives,
+  CSP_DEPLOYMENT_MODE,
+} from "./src/lib/infrastructure/security/contentSecurityPolicy.js";
+
+const content_security_policy_deployment_mode =
+  process.env.NODE_ENV === "production"
+    ? CSP_DEPLOYMENT_MODE.PRODUCTION
+    : CSP_DEPLOYMENT_MODE.DEVELOPMENT;
 
 const content_security_policy_environment = loadEnv(
-  process.env.NODE_ENV === "production" ? "production" : "development",
+  content_security_policy_deployment_mode,
   process.cwd(),
   "PUBLIC_",
 );
@@ -23,6 +31,7 @@ const config = {
       mode: "auto",
       directives: build_content_security_policy_directives(
         content_security_policy_environment,
+        content_security_policy_deployment_mode,
       ),
     },
 

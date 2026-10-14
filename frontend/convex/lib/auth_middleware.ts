@@ -48,6 +48,7 @@ export interface SystemUserRecord {
 interface ConvexIdentityRecord {
   subject: string;
   email?: string;
+  [claim_name: string]: unknown;
 }
 
 export type ConvexContext = Pick<QueryCtx, "db" | "auth">;
@@ -59,7 +60,10 @@ export type ConvexResult<TData> =
 const AuthFailureReason = {
   NO_IDENTITY: "no_identity",
   NO_EMAIL_CLAIM: "no_email_claim",
+  EMAIL_NOT_VERIFIED: "email_not_verified",
 } as const;
+
+const EMAIL_VERIFIED_CLAIM_NAME = "emailVerified";
 
 const AUTH_FAILED_EVENT = "auth_failed";
 const PERMISSION_DENIED_EVENT = "permission_denied";
@@ -82,6 +86,11 @@ export async function require_auth(
     return log_convex_failure(ConvexErrorCode.ACCESS_DENIED, {
       event: AUTH_FAILED_EVENT,
       reason: AuthFailureReason.NO_EMAIL_CLAIM,
+    });
+  if (identity_result[EMAIL_VERIFIED_CLAIM_NAME] !== true)
+    return log_convex_failure(ConvexErrorCode.ACCESS_DENIED, {
+      event: AUTH_FAILED_EVENT,
+      reason: AuthFailureReason.EMAIL_NOT_VERIFIED,
     });
   return load_active_system_user_by_email(ctx, email);
 }

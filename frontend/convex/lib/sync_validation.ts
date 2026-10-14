@@ -1,6 +1,7 @@
 import type { SystemUserRecord } from "./auth_middleware";
 import {
   CallerScopeKind,
+  filter_global_table_records,
   GLOBAL_ORGANIZATION_ID,
   resolve_caller_scope,
 } from "./caller_scope";
@@ -22,7 +23,6 @@ export {
 
 const EMPTY_SCOPE_VALUE = "";
 const ORGANIZATIONS_TABLE_NAME = "organizations";
-const TEAM_FIELD_NAME = "team_id";
 
 function get_record_field_value(
   record: Record<string, unknown>,
@@ -52,23 +52,10 @@ function filter_caller_own_records(
     : [];
 }
 
-function is_within_team_scope(
-  record: Record<string, unknown>,
-  scoped_team_id: string,
-): boolean {
-  const record_team_id = get_record_field_value(record, TEAM_FIELD_NAME);
-  return (
-    !scoped_team_id ||
-    record_team_id === EMPTY_SCOPE_VALUE ||
-    record_team_id === scoped_team_id
-  );
-}
-
 function filter_records_for_organization(
   records: Array<Record<string, unknown>>,
   table_name: string,
   organization_id: string,
-  scoped_team_id: string,
 ): Array<Record<string, unknown>> {
   if (is_parent_scoped_table(table_name)) return [];
   if (table_name === ORGANIZATIONS_TABLE_NAME)
@@ -78,8 +65,7 @@ function filter_records_for_organization(
     );
   return records.filter(
     (record) =>
-      get_record_field_value(record, "organization_id") === organization_id &&
-      is_within_team_scope(record, scoped_team_id),
+      get_record_field_value(record, "organization_id") === organization_id,
   );
 }
 
@@ -87,10 +73,11 @@ export function filter_records_by_organization_scope(
   records: Array<Record<string, unknown>>,
   caller: SystemUserRecord,
   table_name: string,
-  scope_filter: Record<string, string>,
+  _scope_filter: Record<string, string>,
 ): Array<Record<string, unknown>> {
-  if (is_global_table(table_name)) return records;
   const caller_scope = resolve_caller_scope(caller);
+  if (is_global_table(table_name))
+    return filter_global_table_records(records, caller_scope);
   switch (caller_scope.kind) {
     case CallerScopeKind.GLOBAL:
       return records;
@@ -101,7 +88,6 @@ export function filter_records_by_organization_scope(
         records,
         table_name,
         caller_scope.organization_id,
-        get_record_field_value(scope_filter, "team_id"),
       );
   }
 }

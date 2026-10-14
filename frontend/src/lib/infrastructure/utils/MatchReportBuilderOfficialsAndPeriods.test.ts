@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { create_default_football_periods } from "$lib/core/entities/SportDefaults";
+
 import { build_match_report_data } from "./MatchReportBuilder";
 import {
   make_basic_context,
@@ -70,12 +72,10 @@ describe("build_match_report_data", () => {
     expect(report.card_types).toEqual(custom_cards);
   });
 
-  it("score_by_period shows the score at the end of the first half by default", () => {
+  it("score_by_period treats a sport without periods as one generic match period", () => {
     const ctx = make_basic_context();
     const report = build_match_report_data(ctx);
-    expect(report.score_by_period.map((p) => p.period_name)).toEqual([
-      "First Half",
-    ]);
+    expect(report.score_by_period.map((p) => p.period_name)).toEqual([]);
   });
 
   it("score_by_period follows the periods the sport defines", () => {
@@ -119,7 +119,10 @@ describe("build_match_report_data", () => {
         }),
       ],
     });
-    const ctx = make_basic_context({ fixture });
+    const ctx = make_basic_context({
+      fixture,
+      periods: create_default_football_periods(),
+    });
     const report = build_match_report_data(ctx);
     const period_names = report.score_by_period.map((p) => p.period_name);
     expect(period_names).toEqual(["Extra Time", "Second Half", "First Half"]);

@@ -2,20 +2,15 @@ import { get, type Readable, writable } from "svelte/store";
 
 import {
   clerk_session,
-  get_clerk_reachability,
   initialize_clerk,
 } from "$lib/adapters/iam/clerkAuthService";
+import type { AsyncResult } from "$lib/core/types/Result";
 import {
-  CLERK_REACHABILITY_STATUS,
-  type ClerkReachability,
-} from "$lib/adapters/iam/clerkReachability";
+  create_failure_result,
+  create_success_result,
+} from "$lib/core/types/Result";
 
 import { build_active_clerk_identity_state } from "./activeClerkIdentity";
-import {
-  classify_device_session,
-  type DeviceSessionState,
-} from "./deviceSessionState";
-import { resolve_session_identity } from "./sessionIdentityResolution";
 import {
   build_session_sync_marker_for_identity,
   has_identity_completed_session_sync,
@@ -26,6 +21,7 @@ import {
   write_session_sync_marker,
 } from "./sessionSyncMarker";
 
+export { resolve_current_device_session } from "./deviceSessionStateResolution";
 export {
   evaluate_recoverable_session_sync_marker_state,
   get_recoverable_session_sync_marker_state,
@@ -48,11 +44,15 @@ const INITIAL_SYNC_MESSAGES = {
 const SYNC_STARTED_PROGRESS_PERCENTAGE = 5;
 const SYNC_COMPLETE_PROGRESS_PERCENTAGE = 100;
 const SESSION_SYNC_FLAG_CLEARED_EVENT = "session_sync_flag_cleared";
+const SESSION_SYNC_MARKER_WRITE_FAILED_EVENT =
+  "session_sync_marker_write_failed";
+const SESSION_SYNC_MARKER_WRITE_FAILED_MESSAGE =
+  "This device could not save that you signed in.";
 
 interface InitialSyncStore extends Readable<InitialSyncState> {
   start_sync: () => void;
   update_progress: (message: string, percentage: number) => void;
-  complete_sync: () => Promise<void>;
+  complete_sync: () => AsyncResult<boolean>;
   reset: () => void;
 }
 
@@ -72,29 +72,21 @@ export async function has_session_been_synced(): Promise<boolean> {
   );
 }
 
-async function settle_clerk_reachability(): Promise<ClerkReachability> {
-  const current_reachability = get_clerk_reachability();
-  if (current_reachability.status !== CLERK_REACHABILITY_STATUS.PENDING)
-    return current_reachability;
-  await initialize_clerk();
-  return get_clerk_reachability();
-}
-
-export async function resolve_current_device_session(): Promise<DeviceSessionState> {
-  const clerk_reachability = await settle_clerk_reachability();
-
-  return classify_device_session(
-    resolve_session_identity(clerk_reachability, get(clerk_session)),
-    await read_session_sync_state_from_storage(),
-  );
-}
-
-async function mark_session_synced(): Promise<boolean> {
-  return write_session_sync_marker(
-    build_session_sync_marker_for_identity(
-      build_active_clerk_identity_state(get(clerk_session)),
-    ),
-  );
+async function mark_session_synced(): AsyncResult<boolean> {
+  try {
+    await write_session_sync_marker(
+      build_session_sync_marker_for_identity(
+        build_active_clerk_identity_state(get(clerk_session)),
+      ),
+    );
+    return create_success_result(true);
+  } catch (error) {
+    console.error("[InitialSync] Session sync marker could not be saved", {
+      event: SESSION_SYNC_MARKER_WRITE_FAILED_EVENT,
+      error: String(error),
+    });
+    return create_failure_result(SESSION_SYNC_MARKER_WRITE_FAILED_MESSAGE);
+  }
 }
 
 export async function clear_session_sync_flag(): Promise<void> {
@@ -127,14 +119,16 @@ function create_initial_sync_store(): InitialSyncStore {
       }));
     },
 
-    complete_sync: async (): Promise<void> => {
-      await mark_session_synced();
+    complete_sync: async (): AsyncResult<boolean> => {
+      const marker_result = await mark_session_synced();
+      if (!marker_result.success) return marker_result;
       set({
         is_syncing: false,
         status_message: INITIAL_SYNC_MESSAGES.READY,
         progress_percentage: SYNC_COMPLETE_PROGRESS_PERCENTAGE,
         sync_complete: true,
       });
+      return marker_result;
     },
 
     reset: (): void => {

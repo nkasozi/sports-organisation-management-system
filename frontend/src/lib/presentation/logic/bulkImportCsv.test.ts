@@ -90,8 +90,33 @@ describe("bulkImportCsv", () => {
         [{ field_name: "name" }, { field_name: "notes" }] as never,
       ),
     ).toBe(
-      'name,notes,import_error_reason\nAda,"Lions, Senior","Duplicate, record"',
+      'name,notes,import_error_reason\n"Ada","Lions, Senior","Duplicate, record"',
     );
+  });
+
+  it("escapes quotes and neutralises formulas in the failure report", () => {
+    expect(
+      generate_bulk_import_failure_report(
+        [
+          {
+            success: false,
+            row_number: 2,
+            original_data: { name: '=HYPERLINK("http://evil")', notes: "" },
+            error_message: 'Team "Lions" not found',
+          },
+        ],
+        [{ field_name: "name" }, { field_name: "notes" }] as never,
+      ),
+    ).toBe(
+      'name,notes,import_error_reason\n"\'=HYPERLINK(""http://evil"")","","Team ""Lions"" not found"',
+    );
+  });
+
+  it("parses doubled quotes inside quoted cells as a literal quote", () => {
+    expect(parse_bulk_import_csv_line('"Team ""Lions""",Kampala')).toEqual([
+      'Team "Lions"',
+      "Kampala",
+    ]);
   });
 
   it("downloads non-empty csv content through a temporary anchor element", () => {

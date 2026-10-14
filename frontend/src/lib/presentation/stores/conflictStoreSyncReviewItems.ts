@@ -15,7 +15,9 @@ function build_review_item_id(table_name: string, local_id: string): string {
   return `${table_name}:${local_id}`;
 }
 
-function build_remote_deletion_item(deletion: RemoteDeletion): SyncReviewItem {
+export function build_remote_deletion_item(
+  deletion: RemoteDeletion,
+): SyncReviewItem {
   return {
     kind: SyncReviewItemKind.REMOTE_DELETION,
     id: build_review_item_id(deletion.table_name, deletion.local_id),

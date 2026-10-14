@@ -1,5 +1,6 @@
 import type { MutationCtx } from "../_generated/server";
 import type { SystemUserCensus } from "./bootstrap_gate";
+import { normalize_email_address } from "./email_normalization";
 import type { SystemUserSnapshot } from "./system_user_change_types";
 import {
   SUPER_ADMIN_ROLE,
@@ -83,7 +84,7 @@ export async function is_email_registered(
   const existing_user = await ctx.db
     .query(SYSTEM_USERS_TABLE_NAME)
     .withIndex(SYSTEM_USER_EMAIL_INDEX_NAME, (query) =>
-      query.eq("email", email.toLowerCase()),
+      query.eq("email", normalize_email_address(email)),
     )
     .first();
   return Boolean(existing_user);

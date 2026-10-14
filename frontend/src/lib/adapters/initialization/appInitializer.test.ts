@@ -138,7 +138,7 @@ describe("determine_seeding_strategy", () => {
   });
 
   describe("authenticated user whose session is NOT yet synced (first login)", () => {
-    it("returns 'convex_mandatory' to pull all data from the server", () => {
+    it("returns 'skip_seeding' because the sign-in sync wipes and pulls everything", () => {
       expect(
         determine_seeding_strategy(
           true,
@@ -146,10 +146,10 @@ describe("determine_seeding_strategy", () => {
           SEEDING_COMPLETION_STATE.COMPLETE,
           false,
         ),
-      ).toBe("convex_mandatory");
+      ).toBe("skip_seeding");
     });
 
-    it("returns 'convex_mandatory' even if seeding was previously complete", () => {
+    it("returns 'skip_seeding' even if seeding was previously complete", () => {
       expect(
         determine_seeding_strategy(
           true,
@@ -157,10 +157,10 @@ describe("determine_seeding_strategy", () => {
           SEEDING_COMPLETION_STATE.COMPLETE,
           false,
         ),
-      ).toBe("convex_mandatory");
+      ).toBe("skip_seeding");
     });
 
-    it("returns 'convex_mandatory' when seeding was never complete either", () => {
+    it("returns 'skip_seeding' when seeding was never complete either", () => {
       expect(
         determine_seeding_strategy(
           true,
@@ -168,7 +168,7 @@ describe("determine_seeding_strategy", () => {
           SEEDING_COMPLETION_STATE.NOT_COMPLETE,
           false,
         ),
-      ).toBe("convex_mandatory");
+      ).toBe("skip_seeding");
     });
   });
 });

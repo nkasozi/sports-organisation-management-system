@@ -8,6 +8,10 @@ import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
 import type { Team } from "$lib/core/entities/Team";
 
 import type { TeamStanding } from "./competitionStageResults";
+import {
+  DEFAULT_FAIR_PLAY_CARD_WEIGHTS,
+  type FairPlayCardWeights,
+} from "./competitionStandingsFairPlay";
 import { build_team_form_map } from "./competitionStandingsForm";
 import { sort_standings_by_tiebreakers } from "./competitionStandingsTiebreakers";
 
@@ -27,6 +31,7 @@ function create_empty_team_standing(team: Team): TeamStanding {
     goal_difference: 0,
     points: 0,
     form: [],
+    requires_playoff: false,
   };
 }
 
@@ -88,6 +93,7 @@ export function calculate_team_standings(
   teams: Team[],
   points_config: PointsConfig = DEFAULT_POINTS_CONFIG,
   tie_breakers: TieBreaker[] = ["goal_difference", "goals_scored"],
+  card_weights: FairPlayCardWeights = DEFAULT_FAIR_PLAY_CARD_WEIGHTS,
 ): TeamStanding[] {
   const standings_map = new Map<string, TeamStanding>();
   for (const team of teams) {
@@ -115,5 +121,6 @@ export function calculate_team_standings(
     completed_fixtures,
     tie_breakers,
     points_config,
+    card_weights,
   );
 }

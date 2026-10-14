@@ -39,6 +39,7 @@ export const TombstoneVisibilityKind = {
   LEGACY: "legacy",
   DELETED: "deleted",
   SCOPE_EXIT: "scope_exit",
+  ACCESS_REVIEW: "access_review",
 } as const;
 
 export type StoredTombstoneVisibility =
@@ -50,6 +51,10 @@ export type StoredTombstoneVisibility =
       kind: typeof TombstoneVisibilityKind.SCOPE_EXIT;
       previous_scope: StoredTombstoneScope;
       current_scope: StoredTombstoneScope;
+    }
+  | {
+      kind: typeof TombstoneVisibilityKind.ACCESS_REVIEW;
+      scope: StoredTombstoneScope;
     };
 
 const stored_tombstone_scope_validator = v.object({
@@ -75,6 +80,10 @@ export const stored_tombstone_visibility_validator = v.union(
     kind: v.literal(TombstoneVisibilityKind.SCOPE_EXIT),
     previous_scope: stored_tombstone_scope_validator,
     current_scope: stored_tombstone_scope_validator,
+  }),
+  v.object({
+    kind: v.literal(TombstoneVisibilityKind.ACCESS_REVIEW),
+    scope: stored_tombstone_scope_validator,
   }),
 );
 

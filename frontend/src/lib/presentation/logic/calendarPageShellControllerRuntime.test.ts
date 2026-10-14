@@ -47,6 +47,10 @@ vi.mock(
   }),
 );
 
+vi.mock("$lib/infrastructure/sync/convexPublicDataService", () => ({
+  fetch_public_data_from_convex: async () => ({ success: true }),
+}));
+
 vi.mock("$lib/presentation/stores/auth", () => ({
   is_public_viewer: is_public_viewer_store,
 }));

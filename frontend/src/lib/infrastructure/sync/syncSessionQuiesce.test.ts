@@ -5,6 +5,7 @@ import { ConvexSyncManager } from "./syncManager";
 import {
   start_background_sync_and_resume,
   stop_background_sync_and_wait_for_idle,
+  stop_background_sync_for_maintenance,
 } from "./syncSessionQuiesce";
 import type { ConvexClient, SyncResult } from "./syncTypes";
 
@@ -29,6 +30,17 @@ afterEach(() => {
 });
 
 const COMPLETED_RUN = { success: true } as SyncResult;
+
+function create_configured_manager(): ConvexSyncManager {
+  const manager = new ConvexSyncManager({
+    convex_url: "https://example.test",
+  });
+  manager.set_convex_client({
+    query: vi.fn(),
+    mutation: vi.fn(),
+  } as ConvexClient);
+  return manager;
+}
 
 describe("stop_background_sync_and_wait_for_idle", () => {
   it("resolves only after an in-flight sync run has finished", async () => {
@@ -77,5 +89,38 @@ describe("stop_background_sync_and_wait_for_idle", () => {
 
     expect(mocks.start_background_sync).toHaveBeenCalledOnce();
     expect(outcome).toBe("ran");
+  });
+
+  it("refuses a manual sync run while a data reset holds sync in maintenance", async () => {
+    mocks.sync_all_tables.mockResolvedValue(COMPLETED_RUN);
+    const manager = create_configured_manager();
+    await stop_background_sync_for_maintenance();
+
+    const result = await manager.sync_now();
+
+    expect(mocks.sync_all_tables).not.toHaveBeenCalled();
+    expect(result.success).toBe(false);
+  });
+
+  it("still runs the session owner's manual sync while background work is paused", async () => {
+    mocks.sync_all_tables.mockResolvedValue(COMPLETED_RUN);
+    const manager = create_configured_manager();
+    await stop_background_sync_and_wait_for_idle();
+
+    const result = await manager.sync_now();
+
+    expect(mocks.sync_all_tables).toHaveBeenCalledOnce();
+    expect(result.success).toBe(true);
+  });
+
+  it("skips realtime pulls during maintenance", async () => {
+    await stop_background_sync_for_maintenance();
+
+    const outcome = await sync_in_flight_work.run_if_accepting(
+      async () => "ran",
+      () => "paused",
+    );
+
+    expect(outcome).toBe("paused");
   });
 });

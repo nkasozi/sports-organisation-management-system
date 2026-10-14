@@ -1,25 +1,12 @@
 import { SYNC_WRITE_REJECTION_MESSAGES } from "$convex/lib/sync_write_decision";
 import type { SyncOutboxEntry } from "$lib/adapters/repositories/syncOutbox/syncOutboxTypes";
-import { type Option, OptionStatus } from "$lib/core/types/Option";
-import {
-  create_failure_result,
-  create_success_result,
-  type Result,
-} from "$lib/core/types/Result";
 
 import {
   confirm_outbox_entry,
   mark_outbox_entry_conflicted,
   mark_outbox_entry_rejected,
 } from "./syncOutboxEntryUpdates";
-import {
-  convert_server_record_to_remote_change,
-  type RemoteApplyDependencies,
-} from "./syncRemoteApply";
-import {
-  apply_resolved_remote_record,
-  ResolvedRecordGuardKind,
-} from "./syncRemoteApplyRecords";
+import type { RemoteApplyDependencies } from "./syncRemoteApply";
 
 const PushResultAction = {
   CREATED: "created",
@@ -37,15 +24,11 @@ export const RECORD_TOO_LARGE_REJECTION = {
     "This record is too large to sync. Remove large attachments or images and save it again.",
 } as const;
 
-const MISSING_REMOTE_COPY_ERROR =
-  "Server reported a delete conflict without sending its copy of the record";
-
 export const PushOutcomeKind = {
   CONFIRMED: "confirmed",
   CONFLICTED: "conflicted",
   DELETED_REMOTELY: "deleted_remotely",
   REJECTED: "rejected",
-  SUPERSEDED_BY_REMOTE: "superseded_by_remote",
 } as const;
 
 export type PushOutcomeKindValue =
@@ -130,7 +113,6 @@ export async function settle_upsert_result(
       );
       return outcome;
     case PushOutcomeKind.REJECTED:
-    case PushOutcomeKind.SUPERSEDED_BY_REMOTE:
       await mark_outbox_entry_rejected(dependencies.database, entry, {
         code: result.action,
         message: describe_rejection(result.action),
@@ -139,38 +121,11 @@ export async function settle_upsert_result(
   }
 }
 
-async function restore_remote_copy_after_lost_delete(
-  dependencies: RemoteApplyDependencies,
-  entry: SyncOutboxEntry,
-  result: ServerRecordResult,
-  remote_copy: Option<Record<string, unknown>>,
-): Promise<Result<PushOutcomeKindValue>> {
-  if (remote_copy.status === OptionStatus.NONE)
-    return create_failure_result(MISSING_REMOTE_COPY_ERROR);
-  await apply_resolved_remote_record(
-    dependencies,
-    entry.table_name,
-    {
-      ...convert_server_record_to_remote_change({
-        ...remote_copy.value,
-        local_id: entry.local_id,
-      }),
-      server_version: result.server_version,
-    },
-    {
-      kind: ResolvedRecordGuardKind.CHANGE_TOKEN,
-      change_token: entry.change_token,
-    },
-  );
-  return create_success_result(PushOutcomeKind.SUPERSEDED_BY_REMOTE);
-}
-
 export async function settle_delete_result(
   dependencies: RemoteApplyDependencies,
   entry: SyncOutboxEntry,
   result: ServerRecordResult,
-  remote_copy: Option<Record<string, unknown>>,
-): Promise<Result<PushOutcomeKindValue>> {
+): Promise<PushOutcomeKindValue> {
   const outcome = classify_server_result(result);
   switch (outcome) {
     case PushOutcomeKind.CONFIRMED:
@@ -179,21 +134,14 @@ export async function settle_delete_result(
         entry,
         result.server_version,
       );
-      return create_success_result(outcome);
+      return outcome;
     case PushOutcomeKind.CONFLICTED:
-      return restore_remote_copy_after_lost_delete(
-        dependencies,
-        entry,
-        result,
-        remote_copy,
-      );
     case PushOutcomeKind.DELETED_REMOTELY:
     case PushOutcomeKind.REJECTED:
-    case PushOutcomeKind.SUPERSEDED_BY_REMOTE:
       await mark_outbox_entry_rejected(dependencies.database, entry, {
         code: result.action,
         message: describe_rejection(result.action),
       });
-      return create_success_result(PushOutcomeKind.REJECTED);
+      return PushOutcomeKind.REJECTED;
   }
 }

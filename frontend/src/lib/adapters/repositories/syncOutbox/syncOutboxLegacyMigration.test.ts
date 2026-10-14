@@ -1,10 +1,9 @@
 import Dexie from "dexie";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   create_test_database_name,
   open_real_test_database,
-  read_real_outbox,
   read_real_outbox_ids,
 } from "./realDexieDatabase.test_support";
 import { LEGACY_SYNC_METADATA_SETTING_KEY } from "./syncOutboxLegacyMigration";
@@ -42,20 +41,28 @@ afterEach(async () => {
 });
 
 describe("v8 legacy outbox migration", () => {
-  it("enqueues every pre-existing record of a synced table so offline edits get pushed", async () => {
+  it("does not enqueue legacy records because the legacy scheme kept no per-record dirtiness", async () => {
     const database = open_real_test_database(await create_legacy_database());
     await database.open();
 
-    expect(await read_real_outbox_ids(database)).toEqual([
-      "players:player_offline",
-      "teams:team_offline_edit",
-      "teams:team_synced",
-    ]);
-    const entries = await read_real_outbox(database);
-    expect(entries.every((entry) => entry.status === "pending")).toBe(true);
-    expect(
-      entries.every((entry) => entry.base_version.kind === "unknown"),
-    ).toBe(true);
+    expect(await read_real_outbox_ids(database)).toEqual([]);
+    expect(await database.table("teams").count()).toBe(2);
+    database.close();
+  });
+
+  it("logs how many legacy records were left for the next server pull", async () => {
+    const log_spy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const database = open_real_test_database(await create_legacy_database());
+    await database.open();
+
+    expect(log_spy).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        event: "sync_outbox_legacy_migration_enqueue_skipped",
+        legacy_record_count: 3,
+      }),
+    );
+    log_spy.mockRestore();
     database.close();
   });
 

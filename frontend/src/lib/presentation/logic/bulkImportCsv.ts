@@ -9,6 +9,7 @@ import {
 } from "$lib/presentation/logic/bulkImportConstants";
 import { generate_bulk_import_example_value } from "$lib/presentation/logic/bulkImportCsvExampleValues";
 import type { BulkImportResult } from "$lib/presentation/logic/bulkImportTypes";
+import { escape_csv_cell_value } from "$lib/presentation/logic/csvCellEscaping";
 import { DYNAMIC_FORM_FIELD_TYPE } from "$lib/presentation/logic/dynamicFormConstants";
 
 function convert_value_for_field_type(
@@ -51,7 +52,17 @@ export function parse_bulk_import_csv_line(line: string): string[] {
   const values: string[] = [];
   let current_value = "";
   let in_quotes = false;
-  for (const character of line) {
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+    const is_escaped_quote =
+      in_quotes &&
+      character === BULK_IMPORT_CSV_QUOTE &&
+      line[index + 1] === BULK_IMPORT_CSV_QUOTE;
+    if (is_escaped_quote) {
+      current_value += BULK_IMPORT_CSV_QUOTE;
+      index += 1;
+      continue;
+    }
     if (character === BULK_IMPORT_CSV_QUOTE) {
       in_quotes = !in_quotes;
       continue;
@@ -110,12 +121,6 @@ export function convert_bulk_import_record_to_entity_input(
   );
 }
 
-function quote_csv_value_when_needed(value: string): string {
-  return value.includes(BULK_IMPORT_CSV_DELIMITER)
-    ? `${BULK_IMPORT_CSV_QUOTE}${value}${BULK_IMPORT_CSV_QUOTE}`
-    : value;
-}
-
 export function generate_bulk_import_failure_report(
   import_results: BulkImportResult[],
   importable_fields: FieldMetadata[],
@@ -134,9 +139,9 @@ export function generate_bulk_import_failure_report(
   const data_rows = failed_results.map((result: BulkImportResult) => {
     const original_values = original_headers.map((header: string) => {
       const value = result.original_data[header] || "";
-      return quote_csv_value_when_needed(value);
+      return escape_csv_cell_value(value);
     });
-    const error_value = quote_csv_value_when_needed(result.error_message);
+    const error_value = escape_csv_cell_value(result.error_message);
     return [...original_values, error_value].join(BULK_IMPORT_CSV_DELIMITER);
   });
   return [header_row, ...data_rows].join(BULK_IMPORT_CSV_LINE_BREAK);

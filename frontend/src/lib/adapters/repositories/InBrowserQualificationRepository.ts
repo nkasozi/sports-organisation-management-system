@@ -7,6 +7,7 @@ import type {
   QualificationHolderType,
   UpdateQualificationInput,
 } from "../../core/entities/Qualification";
+import { is_qualification_expired } from "../../core/entities/Qualification";
 import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 import type {
   QualificationFilter,
@@ -30,8 +31,9 @@ function matches_expiry_filter(
   today: Date,
 ): boolean {
   if (!qualification.expiry_date) return !is_expired;
-  const expiry = new Date(qualification.expiry_date);
-  return is_expired ? expiry < today : expiry >= today;
+  return (
+    is_qualification_expired(qualification.expiry_date, today) === is_expired
+  );
 }
 
 class InBrowserQualificationRepository

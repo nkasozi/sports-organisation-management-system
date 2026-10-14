@@ -1,5 +1,6 @@
 import type { FieldMetadata } from "../../core/entities/BaseEntity";
 import type { Fixture } from "../../core/entities/Fixture";
+import { FIXTURE_STATUS } from "../../core/entities/StatusConstants";
 
 export const FIXTURE_ORGANIZATION_ID_FIELD: FieldMetadata = {
   field_name: "organization_id" satisfies keyof Fixture,
@@ -94,15 +95,8 @@ export const FIXTURE_STATUS_FIELD: FieldMetadata = {
   display_name: "Status",
   field_type: "enum",
   is_required: true,
-  is_read_only: false,
-  enum_values: [
-    "scheduled",
-    "in_progress",
-    "paused",
-    "completed",
-    "cancelled",
-    "postponed",
-  ],
+  is_read_only: true,
+  enum_values: Object.values(FIXTURE_STATUS),
   show_in_list: true,
 };
 
@@ -111,7 +105,7 @@ export const FIXTURE_HOME_TEAM_SCORE_FIELD: FieldMetadata = {
   display_name: "Home Team Score",
   field_type: "number",
   is_required: false,
-  is_read_only: false,
+  is_read_only: true,
   hide_on_create: true,
   validation_rules: [
     {
@@ -127,7 +121,7 @@ export const FIXTURE_AWAY_TEAM_SCORE_FIELD: FieldMetadata = {
   display_name: "Away Team Score",
   field_type: "number",
   is_required: false,
-  is_read_only: false,
+  is_read_only: true,
   hide_on_create: true,
   validation_rules: [
     {

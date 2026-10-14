@@ -18,6 +18,7 @@ export interface SessionEndedPolicyDependencies {
   sign_out_and_tear_down_device(landing_path: string): AsyncResult<boolean>;
   lock_to_public_viewer(): Promise<unknown>;
   show_session_ended_notice(unsynced_change_count: number): boolean;
+  show_session_ended_notice_without_count(): boolean;
   show_session_notice(kind: SessionSyncNoticeKind): boolean;
 }
 
@@ -106,9 +107,7 @@ async function keep_changes_without_count(
   dependencies: SessionEndedPolicyDependencies,
 ): Promise<Result<SessionEndedOutcome>> {
   await dependencies.lock_to_public_viewer();
-  dependencies.show_session_notice(
-    SESSION_SYNC_NOTICE_KIND.LOCAL_CHANGES_CHECK_FAILED,
-  );
+  dependencies.show_session_ended_notice_without_count();
   return create_success_result(SESSION_ENDED_OUTCOME.LOCKED_COUNT_UNAVAILABLE);
 }
 

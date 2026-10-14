@@ -17,6 +17,10 @@ import {
   PlayerTeamTransferEvent,
 } from "./PlayerTeamTransferUseCasesConstants";
 import {
+  end_from_team_membership,
+  reactivate_from_team_membership,
+} from "./TransferMembershipEnding";
+import {
   fail_from_team_mismatch,
   MembershipMoveKind,
   plan_membership_move,
@@ -26,42 +30,6 @@ import { forward_dependency_result } from "./UseCaseResultGuards";
 
 function as_record(value: object): Record<string, unknown> {
   return { ...value };
-}
-
-async function move_existing_membership(
-  membership_repository: PlayerTeamMembershipRepository,
-  transfer: PlayerTeamTransferHistory,
-  membership: PlayerTeamMembership,
-): AsyncResult<boolean> {
-  const update_result = forward_dependency_result(
-    await membership_repository.update(membership.id, {
-      team_id: transfer.to_team_id,
-      start_date: transfer.transfer_date,
-    }),
-    {
-      log_scope: PLAYER_TEAM_TRANSFER_LOG_SCOPE,
-      event: PlayerTeamTransferEvent.MEMBERSHIP_UPDATE_FAILED,
-      code: UseCaseErrorCode.DEPENDENCY_FAILED,
-      context: { transfer_id: transfer.id, membership_id: membership.id },
-    },
-  );
-  if (!update_result.success) {
-    return update_result;
-  }
-  EventBus.emit_entity_updated(
-    MEMBERSHIP_ENTITY_TYPE,
-    membership.id,
-    membership.id,
-    as_record(membership),
-    as_record(update_result.data),
-    ["team_id", "start_date"],
-  );
-  console.log(PLAYER_TEAM_TRANSFER_LOG_SCOPE, {
-    event: PlayerTeamTransferEvent.MEMBERSHIP_UPDATED,
-    transfer_id: transfer.id,
-    membership_id: membership.id,
-  });
-  return create_success_result(true);
 }
 
 function build_destination_membership_input(
@@ -81,11 +49,6 @@ async function create_destination_membership(
   membership_repository: PlayerTeamMembershipRepository,
   transfer: PlayerTeamTransferHistory,
 ): AsyncResult<boolean> {
-  console.warn(PLAYER_TEAM_TRANSFER_LOG_SCOPE, {
-    event: PlayerTeamTransferEvent.MEMBERSHIP_NOT_FOUND,
-    transfer_id: transfer.id,
-    player_id: transfer.player_id,
-  });
   const create_result = forward_dependency_result(
     await membership_repository.create(
       build_destination_membership_input(transfer),
@@ -115,6 +78,55 @@ async function create_destination_membership(
   return create_success_result(true);
 }
 
+async function end_and_create_membership(
+  membership_repository: PlayerTeamMembershipRepository,
+  transfer: PlayerTeamTransferHistory,
+  from_membership: PlayerTeamMembership,
+): AsyncResult<boolean> {
+  const ended = await end_from_team_membership(
+    membership_repository,
+    transfer,
+    from_membership,
+  );
+  if (!ended.success) return ended;
+  const created = await create_destination_membership(
+    membership_repository,
+    transfer,
+  );
+  if (created.success) return created;
+  const reactivated = await reactivate_from_team_membership(
+    membership_repository,
+    transfer,
+    from_membership,
+  );
+  return reactivated.success ? created : reactivated;
+}
+
+async function end_from_membership_only(
+  membership_repository: PlayerTeamMembershipRepository,
+  transfer: PlayerTeamTransferHistory,
+  from_membership: PlayerTeamMembership,
+): AsyncResult<boolean> {
+  const ended = await end_from_team_membership(
+    membership_repository,
+    transfer,
+    from_membership,
+  );
+  return ended.success ? create_success_result(true) : ended;
+}
+
+function create_unlinked_destination_membership(
+  membership_repository: PlayerTeamMembershipRepository,
+  transfer: PlayerTeamTransferHistory,
+): AsyncResult<boolean> {
+  console.warn(PLAYER_TEAM_TRANSFER_LOG_SCOPE, {
+    event: PlayerTeamTransferEvent.MEMBERSHIP_NOT_FOUND,
+    transfer_id: transfer.id,
+    player_id: transfer.player_id,
+  });
+  return create_destination_membership(membership_repository, transfer);
+}
+
 export async function move_membership_for_transfer(
   membership_repository: PlayerTeamMembershipRepository,
   transfer: PlayerTeamTransferHistory,
@@ -128,14 +140,23 @@ export async function move_membership_for_transfer(
   }
   const plan = plan_result.data;
   switch (plan.kind) {
-    case MembershipMoveKind.MOVE_EXISTING:
-      return move_existing_membership(
+    case MembershipMoveKind.END_AND_CREATE:
+      return end_and_create_membership(
+        membership_repository,
+        transfer,
+        plan.membership,
+      );
+    case MembershipMoveKind.END_FROM_ONLY:
+      return end_from_membership_only(
         membership_repository,
         transfer,
         plan.membership,
       );
     case MembershipMoveKind.CREATE_NEW:
-      return create_destination_membership(membership_repository, transfer);
+      return create_unlinked_destination_membership(
+        membership_repository,
+        transfer,
+      );
     case MembershipMoveKind.ALREADY_ON_DESTINATION:
       return report_already_on_destination(transfer);
     case MembershipMoveKind.FROM_TEAM_MISMATCH:

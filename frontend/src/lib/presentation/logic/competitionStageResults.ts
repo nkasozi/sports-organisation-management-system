@@ -8,6 +8,10 @@ import type { Fixture } from "$lib/core/entities/Fixture";
 import { STAGE_TYPE } from "$lib/core/entities/StatusConstants";
 import type { Team } from "$lib/core/entities/Team";
 
+import {
+  DEFAULT_FAIR_PLAY_CARD_WEIGHTS,
+  type FairPlayCardWeights,
+} from "./competitionStandingsFairPlay";
 import { calculate_team_standings } from "./competitionTeamStandings";
 import { infer_group_stage_team_groups } from "./groupStageInference";
 
@@ -28,6 +32,7 @@ export interface TeamStanding {
   goal_difference: number;
   points: number;
   form: FormResult[];
+  requires_playoff: boolean;
 }
 export interface InferredStageGroup {
   label: string;
@@ -46,6 +51,7 @@ interface StageSectionContext {
   team_map: Map<string, Team>;
   points_config: PointsConfig;
   tie_breakers: TieBreaker[];
+  card_weights: FairPlayCardWeights;
 }
 
 function collect_present_teams(
@@ -89,6 +95,7 @@ function build_inferred_stage_group(
       group_teams,
       context.points_config,
       context.tie_breakers,
+      context.card_weights,
     ),
   };
 }
@@ -135,6 +142,7 @@ function build_regular_stage_section(
           stage_teams,
           context.points_config,
           context.tie_breakers,
+          context.card_weights,
         )
       : [],
     inferred_groups: [],
@@ -147,11 +155,13 @@ export function build_competition_stage_results_sections(
   teams: Team[],
   points_config: PointsConfig = DEFAULT_POINTS_CONFIG,
   tie_breakers: TieBreaker[] = ["goal_difference", "goals_scored"],
+  card_weights: FairPlayCardWeights = DEFAULT_FAIR_PLAY_CARD_WEIGHTS,
 ): CompetitionStageResultsSection[] {
   const context: StageSectionContext = {
     team_map: new Map<string, Team>(teams.map((team) => [team.id, team])),
     points_config,
     tie_breakers,
+    card_weights,
   };
   return [...stages]
     .sort((left, right) => left.stage_order - right.stage_order)

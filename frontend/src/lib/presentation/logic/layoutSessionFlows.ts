@@ -18,7 +18,7 @@ import {
 interface AnonymousInitialSyncStorePort {
   start_sync(): void;
   update_progress(message: string, percentage: number): void;
-  complete_sync(): Promise<void>;
+  complete_sync(): AsyncResult<boolean>;
   reset(): void;
 }
 
@@ -128,7 +128,12 @@ async function reset_and_initialize_first_time_session(
   dependencies.auth_store.reset_initialized_state();
   await dependencies.auth_store.initialize();
   dependencies.start_background_sync();
-  await dependencies.initial_sync_store.complete_sync();
+  const completion = await dependencies.initial_sync_store.complete_sync();
+  if (!completion.success)
+    console.warn("[Layout] Demo session marker not saved; setup repeats", {
+      event: LAYOUT_SESSION_EVENT.ANONYMOUS_MARKER_NOT_SAVED,
+      error: completion.error,
+    });
   console.log("[Layout] First-time anonymous user setup complete", {
     event: LAYOUT_SESSION_EVENT.ANONYMOUS_FIRST_TIME_SETUP_COMPLETE,
   });
@@ -160,19 +165,20 @@ export async function handle_returning_anonymous_user_session(
   return create_success_result(true);
 }
 
+interface VerifiedSessionResumeDependencies {
+  auth_store: AuthStorePort;
+  start_background_sync(): void;
+  start_realtime_sync(): boolean;
+  trigger_full_sync_on_page_reload(): void | Promise<void>;
+}
+
 export async function handle_verified_user_page_reload_session(
-  dependencies: Pick<
-    {
-      auth_store: AuthStorePort;
-      start_background_sync(): void;
-      trigger_full_sync_on_page_reload(): void | Promise<void>;
-    },
-    "auth_store" | "start_background_sync" | "trigger_full_sync_on_page_reload"
-  >,
+  dependencies: VerifiedSessionResumeDependencies,
 ): Promise<Result<boolean>> {
   dependencies.auth_store.reset_initialized_state();
   await dependencies.auth_store.initialize();
   dependencies.start_background_sync();
+  dependencies.start_realtime_sync();
   void dependencies.trigger_full_sync_on_page_reload();
   console.log("[Layout] Verified user page reload — session restored", {
     event: LAYOUT_SESSION_EVENT.VERIFIED_USER_PAGE_RELOAD_COMPLETE,

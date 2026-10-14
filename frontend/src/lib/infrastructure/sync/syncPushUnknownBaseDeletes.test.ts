@@ -24,7 +24,7 @@ function conflicted_delete_response(): Record<string, unknown> {
   };
 }
 
-describe("push_table_outbox_to_convex deletes without a known base version", () => {
+describe("push_table_outbox_to_convex deletes that lose to a remote update", () => {
   it("parks the delete for review instead of silently restoring the record", async () => {
     const { fake, command } = create_command([conflicted_delete_response()]);
     fake.seed("sync_outbox", [
@@ -51,13 +51,19 @@ describe("push_table_outbox_to_convex deletes without a known base version", () 
     ]);
   });
 
-  it("still lets a newer remote update win over a delete with a known base", async () => {
+  it("parks a delete with a known base for review too instead of restoring the record", async () => {
     const { fake, command } = create_command([conflicted_delete_response()]);
     fake.seed("sync_outbox", [build_entry({ operation: "delete" })]);
 
     const result = await push_table_outbox_to_convex(command);
 
-    expect(result.success).toBe(true);
-    expect(fake.rows("teams")).toEqual([{ id: "team_a", name: "Theirs" }]);
+    expect(result.success && result.data.rejected).toEqual([
+      expect.objectContaining({ rejection_code: "delete_needs_review" }),
+    ]);
+    expect(fake.rows("teams")).toEqual([]);
+    expect(fake.rows("sync_outbox")[0]).toMatchObject({
+      status: "rejected",
+      base_version: { kind: "known", version: 9 },
+    });
   });
 });

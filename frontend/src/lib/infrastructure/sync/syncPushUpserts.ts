@@ -13,6 +13,10 @@ import {
   build_sync_push_batches,
   type SyncBatchRecord,
 } from "./syncPushBatching";
+import {
+  attach_cleared_fields,
+  split_cleared_fields,
+} from "./syncPushClearedFields";
 import { reject_oversized_records } from "./syncPushOversized";
 import {
   load_outbox_records,
@@ -42,15 +46,19 @@ function build_batch_record(
   loaded: LoadedOutboxRecord,
 ): VersionedSyncBatchRecord {
   const base_version = loaded.entry.base_version;
-  return {
-    local_id: loaded.entry.local_id,
-    data: loaded.record,
-    version:
-      base_version.kind === SyncBaseVersionKind.KNOWN
-        ? base_version.version
-        : LEGACY_VERSION_PLACEHOLDER,
-    base_version,
-  };
+  const split = split_cleared_fields(loaded.record);
+  return attach_cleared_fields(
+    {
+      local_id: loaded.entry.local_id,
+      data: split.data,
+      version:
+        base_version.kind === SyncBaseVersionKind.KNOWN
+          ? base_version.version
+          : LEGACY_VERSION_PLACEHOLDER,
+      base_version,
+    },
+    split.cleared_fields,
+  );
 }
 
 async function send_upsert_batches(

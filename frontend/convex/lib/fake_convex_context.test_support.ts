@@ -43,6 +43,7 @@ export interface FakeConvexContext {
   };
   tables: Map<string, StoredDocument[]>;
   scheduled_calls: ScheduledCall[];
+  unindexed_collects: string[];
 }
 
 const CONVEX_EMPTY_LOOKUP_RESULT: unknown = null;
@@ -87,11 +88,15 @@ function seed_tables(
 
 function build_fake_database(
   tables: Map<string, StoredDocument[]>,
+  unindexed_collects: string[],
 ): FakeConvexContext["db"] {
   let insert_counter = 0;
   return {
     query: (table_name: string): FakeTableQuery =>
-      build_table_query(get_table_rows(tables, table_name)),
+      build_table_query(get_table_rows(tables, table_name), () => {
+        unindexed_collects.push(table_name);
+        return true;
+      }),
     get: async (document_id: string): Promise<unknown> => {
       const location = find_document_location(tables, document_id);
       return location.index < 0
@@ -128,9 +133,10 @@ export function create_fake_convex_context(command: {
 }): FakeConvexContext {
   const tables = seed_tables(command.tables);
   const scheduled_calls: ScheduledCall[] = [];
+  const unindexed_collects: string[] = [];
   const identity = command.identity;
   return {
-    db: build_fake_database(tables),
+    db: build_fake_database(tables, unindexed_collects),
     auth: {
       getUserIdentity: async (): Promise<unknown> =>
         identity.status === FakeIdentityStatus.AUTHENTICATED
@@ -149,6 +155,7 @@ export function create_fake_convex_context(command: {
     },
     tables,
     scheduled_calls,
+    unindexed_collects,
   };
 }
 

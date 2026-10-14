@@ -9,6 +9,8 @@ import { validate_player_team_transfer_history_input } from "../entities/PlayerT
 import type { PlayerTeamTransferHistoryRepository } from "../interfaces/ports";
 import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult, Result } from "../types/Result";
+import { create_success_result } from "../types/Result";
+import { UseCaseErrorCode } from "../types/UseCaseFailure";
 import {
   fail_missing_transfer_identifier,
   forward_transfer_dependency,
@@ -19,7 +21,16 @@ import {
   PlayerTeamTransferMessage,
   TRANSFER_ENTITY_TYPE,
 } from "./PlayerTeamTransferUseCasesConstants";
-import { fail_validation, is_blank_identifier } from "./UseCaseResultGuards";
+import {
+  decide_transfer_creation,
+  decide_transfer_edit,
+  TRANSFER_EDIT_DECISION,
+} from "./TransferEditGuard";
+import {
+  fail_validation,
+  fail_with_message,
+  is_blank_identifier,
+} from "./UseCaseResultGuards";
 
 type TransferId = ScalarValueInput<PlayerTeamTransferHistory["id"]>;
 
@@ -39,11 +50,56 @@ export async function create_transfer(
       validation_errors,
     );
   }
+  const creation_decision = decide_transfer_creation(input);
+  if (creation_decision.kind === TRANSFER_EDIT_DECISION.REJECTED)
+    return reject_transfer_edit(
+      PlayerTeamTransferEvent.CREATE_STATUS_REJECTED,
+      context,
+      creation_decision.reason,
+    );
   return forward_transfer_dependency(
     await repository.create(input),
     PlayerTeamTransferEvent.CREATE_FAILED,
     context,
   );
+}
+
+function reject_transfer_edit(
+  event: string,
+  context: Record<string, unknown>,
+  reason: string,
+): Result<never> {
+  return fail_with_message(
+    {
+      log_scope: PLAYER_TEAM_TRANSFER_LOG_SCOPE,
+      event,
+      context,
+      user_message: reason,
+    },
+    UseCaseErrorCode.INVALID_STATE_TRANSITION,
+  );
+}
+
+async function check_transfer_edit_allowed(
+  repository: PlayerTeamTransferHistoryRepository,
+  id: TransferId,
+  input: UpdatePlayerTeamTransferHistoryInput,
+): AsyncResult<boolean> {
+  const context = { transfer_id: id };
+  const existing_result = forward_transfer_dependency(
+    await repository.find_by_id(id),
+    PlayerTeamTransferEvent.UPDATE_TARGET_LOOKUP_FAILED,
+    context,
+  );
+  if (!existing_result.success) return existing_result;
+  const decision = decide_transfer_edit(existing_result.data, input);
+  return decision.kind === TRANSFER_EDIT_DECISION.REJECTED
+    ? reject_transfer_edit(
+        PlayerTeamTransferEvent.UPDATE_REJECTED,
+        { ...context, status: existing_result.data.status },
+        decision.reason,
+      )
+    : create_success_result(true);
 }
 
 export async function update_transfer(
@@ -57,6 +113,8 @@ export async function update_transfer(
       PlayerTeamTransferMessage.ID_REQUIRED,
     );
   }
+  const edit_check = await check_transfer_edit_allowed(repository, id, input);
+  if (!edit_check.success) return edit_check;
   return forward_transfer_dependency(
     await repository.update(id, input),
     PlayerTeamTransferEvent.UPDATE_FAILED,

@@ -17,15 +17,10 @@
         reset_initialization,
     } from "$lib/adapters/initialization/appInitializer";
     import RootLayoutShell from "$lib/presentation/components/layout/RootLayoutShell.svelte";
+    import { sync_verified_user_login_session } from "$lib/presentation/logic/layoutLoginSync";
     import {
-        create_hidden_login_local_change_prompt_state,
-        LOGIN_LOCAL_CHANGE_PROMPT_CHOICE,
-        type LoginLocalChangePromptState,
-    } from "$lib/presentation/logic/layoutLoginLocalChangePrompt";
-    import { create_login_local_change_prompt_gate } from "$lib/presentation/logic/layoutLoginLocalChangePromptGate";
-    import {
-        guard_root_layout_initial_route,
         register_root_layout_navigation_guards,
+        reveal_root_layout_after_initial_route,
     } from "$lib/presentation/logic/layoutNavigationGuardRuntime";
     import {
         create_root_layout_restore_progress_callbacks,
@@ -48,6 +43,7 @@
         type RootLayoutViewState,
     } from "$lib/presentation/logic/layoutRootLayoutViewState";
     import { subscribe_root_layout_state } from "$lib/presentation/logic/layoutRouteSubscriptions";
+    import { start_root_layout_session_maintenance } from "$lib/presentation/logic/layoutSessionMaintenanceRuntime";
     import {
         complete_root_layout_pending_clerk_sign_out,
         handle_root_layout_user_signed_in,
@@ -73,7 +69,6 @@
 
     const VERCEL_ANALYTICS_FRAMEWORK = "sveltekit";
     const RECOVERY_CHOICE = STARTUP_STORAGE_RECOVERY_CHOICE;
-    const LOCAL_CHANGE_CHOICE = LOGIN_LOCAL_CHANGE_PROMPT_CHOICE;
     const navigating_state_store = derived(navigating, ($navigating) =>
         Boolean($navigating),
     );
@@ -84,23 +79,20 @@
         create_initial_root_layout_view_state("");
     let storage_recovery_prompt_state: StartupStorageRecoveryPromptState =
         create_hidden_startup_storage_recovery_prompt_state();
-    let login_local_change_prompt_state: LoginLocalChangePromptState =
-        create_hidden_login_local_change_prompt_state();
     let cleanup_layout_subscriptions: () => void = () => {};
+    let stop_session_maintenance: () => void = () => {};
 
     const storage_recovery_choice_gate =
         create_startup_storage_recovery_choice_gate((prompt_state) => {
             storage_recovery_prompt_state = prompt_state;
             return true;
         });
-    const login_local_change_prompt_gate =
-        create_login_local_change_prompt_gate((prompt_state) => {
-            login_local_change_prompt_state = prompt_state;
-            return true;
-        });
-    const login_sync_dependencies = create_root_layout_login_sync_dependencies(
-        login_local_change_prompt_gate.request_discard_confirmation,
-    );
+    const login_sync_dependencies =
+        create_root_layout_login_sync_dependencies();
+
+    function retry_login_sync(): Promise<unknown> {
+        return sync_verified_user_login_session(login_sync_dependencies);
+    }
 
     function update_view_state(
         transform: (state: RootLayoutViewState) => RootLayoutViewState,
@@ -168,10 +160,14 @@
             );
             return;
         }
-        view_state = mark_root_layout_ready(view_state);
-        await guard_root_layout_initial_route(get(page).url.pathname);
+        await reveal_root_layout_after_initial_route(
+            get(page).url.pathname,
+            () => update_view_state(mark_root_layout_ready),
+        );
+        stop_session_maintenance = start_root_layout_session_maintenance();
     });
     onDestroy(() => {
+        stop_session_maintenance();
         cleanup_layout_subscriptions();
         reset_initialization();
     });
@@ -180,19 +176,11 @@
 <RootLayoutShell
     {...view_state}
     {storage_recovery_prompt_state}
-    {login_local_change_prompt_state}
     on_restore_storage_backup={() =>
         storage_recovery_choice_gate.resolve_choice(RECOVERY_CHOICE.RESTORE)}
     on_continue_without_storage_backup={() =>
         storage_recovery_choice_gate.resolve_choice(RECOVERY_CHOICE.CONTINUE)}
-    on_discard_local_changes={() =>
-        login_local_change_prompt_gate.resolve_choice(
-            LOCAL_CHANGE_CHOICE.DISCARD_AND_CONTINUE,
-        )}
-    on_keep_local_changes={() =>
-        login_local_change_prompt_gate.resolve_choice(
-            LOCAL_CHANGE_CHOICE.KEEP_AND_SIGN_OUT,
-        )}
+    on_retry_login_sync={retry_login_sync}
 >
     <slot />
 </RootLayoutShell>

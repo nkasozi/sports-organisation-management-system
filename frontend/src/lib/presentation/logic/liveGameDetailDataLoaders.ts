@@ -1,4 +1,5 @@
 import type { Competition } from "$lib/core/entities/Competition";
+import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { FixtureLineup } from "$lib/core/entities/FixtureLineup";
 import type { Official } from "$lib/core/entities/Official";
@@ -13,6 +14,7 @@ import {
   OptionStatus,
 } from "$lib/core/types/Option";
 import type {
+  get_competition_stage_use_cases,
   get_competition_use_cases,
   get_fixture_lineup_use_cases,
   get_fixture_use_cases,
@@ -34,6 +36,9 @@ export interface LiveGameDetailDataDependencies {
   sport_use_cases: ReturnType<typeof get_sport_use_cases>;
   venue_use_cases: ReturnType<typeof get_venue_use_cases>;
   official_use_cases: ReturnType<typeof get_official_use_cases>;
+  competition_stage_use_cases: ReturnType<
+    typeof get_competition_stage_use_cases
+  >;
 }
 
 export type LiveGameDetailAssignedOfficial = {
@@ -52,6 +57,7 @@ export type LiveGameDetailCompetitionContext = {
   competition: Option<Competition>;
   organization: Option<Organization>;
   sport: Option<Sport>;
+  stage: Option<CompetitionStage>;
 };
 
 const FAILED_LOOKUP_RESULT = { success: false };
@@ -113,10 +119,14 @@ export async function load_live_game_detail_competition_context(
           organization.value.sport_id,
         )
       : FAILED_LOOKUP_RESULT;
+  const stage_result = fixture.stage_id
+    ? await dependencies.competition_stage_use_cases.get_by_id(fixture.stage_id)
+    : FAILED_LOOKUP_RESULT;
   return {
     competition,
     organization,
     sport: extract_success_data<Sport>(sport_result),
+    stage: extract_success_data<CompetitionStage>(stage_result),
   };
 }
 

@@ -1,7 +1,12 @@
 import type { MutationCtx } from "../_generated/server";
 import type { SystemUserRecord } from "./auth_middleware";
 import { resolve_caller_scope } from "./caller_scope";
-import { create_none_option, type Option, OptionStatus } from "./option";
+import {
+  create_none_option,
+  create_some_option,
+  type Option,
+  OptionStatus,
+} from "./option";
 import { resolve_write_parent_organizations } from "./parent_write_resolution";
 import {
   evaluate_record_write_ownership,
@@ -12,6 +17,7 @@ import {
   schedule_security_audit,
   type SecurityAuditEntry,
 } from "./security_audit_scheduler";
+import { apply_server_owned_fields } from "./server_owned_fields";
 import {
   type AllowedSyncTable,
   get_entity_type_for_table,
@@ -140,13 +146,24 @@ async function guard_owned_record_write(
   const scope_rejection = await find_scoped_write_rejection(ctx, command);
   if (scope_rejection.status === OptionStatus.SOME)
     return reject_sync_write(scope_rejection.value, scope_rejection.value);
-  const normalized_record: Option<Record<string, unknown>> =
-    command.incoming_record.status === OptionStatus.SOME
-      ? { status: OptionStatus.SOME, value: command.normalized_record }
-      : create_none_option();
+  if (command.incoming_record.status === OptionStatus.NONE)
+    return command.table_name === SYSTEM_USERS_TABLE_NAME
+      ? guard_system_user_fields(ctx, command, create_none_option())
+      : allow_sync_write(command.normalized_record);
+  const record_data = apply_server_owned_fields({
+    table_name: command.table_name,
+    caller: command.caller,
+    local_id: command.local_id,
+    record_data: command.normalized_record,
+    existing_record: command.existing_record,
+  });
   if (command.table_name !== SYSTEM_USERS_TABLE_NAME)
-    return allow_sync_write(command.normalized_record);
-  return guard_system_user_fields(ctx, command, normalized_record);
+    return allow_sync_write(record_data);
+  return guard_system_user_fields(
+    ctx,
+    command,
+    create_some_option(record_data),
+  );
 }
 
 export async function audit_rejected_sync_write(

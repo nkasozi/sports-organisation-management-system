@@ -28,6 +28,13 @@ type RunningScore = { home: number; away: number };
 
 type PeriodBoundary = { id: string; name: string; end_minute: number };
 
+type PeriodRanking = {
+  boundaries: readonly PeriodBoundary[];
+  break_ranks: ReadonlyMap<string, number>;
+};
+
+const BEFORE_FIRST_PERIOD_RANK = 0;
+
 type RankedScore = { rank: number; event: GameEvent; award: ScoreAward };
 
 function build_playing_boundaries(
@@ -42,6 +49,24 @@ function build_playing_boundaries(
     });
 }
 
+function build_break_ranks(
+  periods: readonly ReportScoringPeriod[],
+): ReadonlyMap<string, number> {
+  const break_ranks = new Map<string, number>();
+  let playing_period_count = 0;
+  for (const period of periods) {
+    if (!period.is_break) {
+      playing_period_count += 1;
+      continue;
+    }
+    break_ranks.set(
+      period.id,
+      Math.max(BEFORE_FIRST_PERIOD_RANK, playing_period_count - 1),
+    );
+  }
+  return break_ranks;
+}
+
 function rank_by_minute(
   event: GameEvent,
   boundaries: readonly PeriodBoundary[],
@@ -54,37 +79,42 @@ function rank_by_minute(
 
 function rank_by_stored_period(
   period_id: string,
-  boundaries: readonly PeriodBoundary[],
+  ranking: PeriodRanking,
 ): number {
-  const index = boundaries.findIndex((boundary) => boundary.id === period_id);
-  return index === -1 ? boundaries.length : index;
+  const break_rank = ranking.break_ranks.get(period_id);
+  if (break_rank !== void 0) return break_rank;
+  const index = ranking.boundaries.findIndex(
+    (boundary) => boundary.id === period_id,
+  );
+  return index === -1 ? ranking.boundaries.length : index;
 }
 
-function rank_event(
-  event: GameEvent,
-  boundaries: readonly PeriodBoundary[],
-): number {
+function rank_event(event: GameEvent, ranking: PeriodRanking): number {
   const stored_period = read_event_period_id(event);
   switch (stored_period.status) {
     case OptionStatus.SOME:
-      return rank_by_stored_period(stored_period.value, boundaries);
+      return rank_by_stored_period(stored_period.value, ranking);
     case OptionStatus.NONE:
-      return rank_by_minute(event, boundaries);
+      return rank_by_minute(event, ranking.boundaries);
   }
 }
 
 function rank_scores(
   game_events: readonly GameEvent[],
-  boundaries: readonly PeriodBoundary[],
+  ranking: PeriodRanking,
   resolve_score: ScoreAwardResolver,
 ): RankedScore[] {
   return game_events
     .map((event) => ({
-      rank: rank_event(event, boundaries),
+      rank: rank_event(event, ranking),
       event,
       award: resolve_event_score_award(event, resolve_score),
     }))
-    .filter((ranked) => ranked.award.kind === SCORE_AWARD_KIND.CREDIT);
+    .filter(
+      (ranked) =>
+        ranked.award.kind === SCORE_AWARD_KIND.CREDIT &&
+        ranked.event.team_side !== SCORING_TEAM_SIDE.MATCH,
+    );
 }
 
 function credit_points(
@@ -146,7 +176,11 @@ export function calculate_score_by_period(
   resolve_score: ScoreAwardResolver,
 ): MatchScoreByPeriod[] {
   const boundaries = build_playing_boundaries(periods);
-  const ranked_scores = rank_scores(game_events, boundaries, resolve_score);
+  const ranked_scores = rank_scores(
+    game_events,
+    { boundaries, break_ranks: build_break_ranks(periods) },
+    resolve_score,
+  );
   return select_reported_boundaries(boundaries, ranked_scores)
     .map((boundary, boundary_rank) => {
       const score = score_until(ranked_scores, boundary_rank);

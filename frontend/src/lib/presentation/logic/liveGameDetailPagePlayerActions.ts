@@ -6,7 +6,6 @@ import type {
   LineupPlayer,
   PlayerTimeOnStatus,
 } from "$lib/core/entities/FixtureLineup";
-import type { Option } from "$lib/core/types/Option";
 import { create_success_result, type Result } from "$lib/core/types/Result";
 import {
   record_live_game_detail_timed_event,
@@ -25,10 +24,13 @@ import type {
 } from "./liveGameDetailPageActionTypes";
 import { save_live_game_substitution_lineup } from "./liveGameDetailSubstitutionLineup";
 import {
-  normalize_event_time_for_period,
-  type PeriodMinuteWindow,
+  attribute_event_time,
+  type AttributedEventTime,
+  type EventTimingContext,
 } from "./liveGameEventTiming";
 import { validate_substitution } from "./liveGameOnFieldPlayers";
+import type { PlayerAvailability } from "./liveGamePlayerAvailability";
+import type { EffectiveSubstitutionRules } from "./liveGameSubstitutionRules";
 
 export async function update_live_game_detail_player_time_on_action(command: {
   away_lineup_id: string;
@@ -80,8 +82,10 @@ type RecordPageEventCommand = {
   secondary_player_name: string;
   secondary_player_id: string;
   on_field_players: LineupPlayer[];
+  substitution_availability: PlayerAvailability;
+  substitution_rules: EffectiveSubstitutionRules;
   max_players_on_field: number;
-  period_window: Option<PeriodMinuteWindow>;
+  event_timing: EventTimingContext;
   selected_event_type: QuickEventButton;
   selected_player_id: string;
   selected_team_side: "home" | "away";
@@ -130,16 +134,15 @@ function check_substitution(command: RecordPageEventCommand): Result<boolean> {
     player_on_id: command.selected_player_id,
     player_off_id: command.secondary_player_id,
     max_players_on_field: command.max_players_on_field,
+    availability: command.substitution_availability,
+    rules: command.substitution_rules,
   });
 }
 
 function record_page_event(
   command: RecordPageEventCommand,
+  event_time: AttributedEventTime,
 ): ReturnType<typeof record_live_game_detail_timed_event> {
-  const event_time = normalize_event_time_for_period(
-    command.event_minute,
-    command.period_window,
-  );
   return record_live_game_detail_timed_event({
     fixture_id: command.fixture_id,
     selected_event_type: command.selected_event_type,
@@ -151,6 +154,7 @@ function record_page_event(
     event_description: command.event_description,
     secondary_player_name: command.secondary_player_name,
     secondary_player_id: command.secondary_player_id,
+    period: event_time.period,
     fixture_use_cases: command.fixture_use_cases,
   });
 }
@@ -166,7 +170,13 @@ export async function record_live_game_detail_page_event_action(
     });
     return { success: false, error_message: substitution_result.error };
   }
-  const event_result = await record_page_event(command);
+  const event_time = attribute_event_time(
+    command.event_minute,
+    command.event_timing,
+  );
+  if (!event_time.success)
+    return { success: false, error_message: event_time.error };
+  const event_result = await record_page_event(command, event_time.data);
   if (!event_result.success)
     return build_game_action_failure({
       event: GAME_ACTION_EVENT.RECORD_EVENT_FAILED,

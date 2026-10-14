@@ -5,7 +5,11 @@ import type {
   ConflictResolutionAction,
 } from "$lib/infrastructure/sync/conflictTypes";
 import type { ConflictResolutionRequest } from "$lib/infrastructure/sync/convexSyncService";
-import { resolve_conflict } from "$lib/infrastructure/sync/convexSyncService";
+import { resolve_conflict_with_outcome } from "$lib/infrastructure/sync/convexSyncService";
+import {
+  type ConflictResolutionOutcome,
+  create_failed_resolution,
+} from "$lib/infrastructure/sync/syncConflictResolutionOutcome";
 
 import { get_resolved_data_for_action } from "./conflictStoreHelpers";
 
@@ -15,19 +19,15 @@ type ConvexClient = {
 };
 
 type EditableConflictRecord = ScalarInput<ConflictRecord>;
-type ConflictResolutionExecutionResult =
-  | { success: true }
-  | { success: false; error: string };
 
 export async function execute_conflict_resolution(
   convex_client_result: Result<ConvexClient>,
   conflict: EditableConflictRecord,
   action: ConflictResolutionAction,
   merged_data?: Record<string, unknown>,
-): Promise<ConflictResolutionExecutionResult> {
-  if (!convex_client_result.success) {
-    return { success: false, error: convex_client_result.error };
-  }
+): Promise<ConflictResolutionOutcome> {
+  if (!convex_client_result.success)
+    return create_failed_resolution(convex_client_result.error);
 
   const resolved_data = get_resolved_data_for_action(
     conflict,
@@ -43,9 +43,5 @@ export async function execute_conflict_resolution(
     base_version: conflict.remote_version,
   };
 
-  const result = await resolve_conflict(convex_client_result.data, request);
-
-  return result.success
-    ? { success: true }
-    : { success: false, error: result.error };
+  return resolve_conflict_with_outcome(convex_client_result.data, request);
 }

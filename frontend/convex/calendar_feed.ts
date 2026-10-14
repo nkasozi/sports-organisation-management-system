@@ -10,7 +10,9 @@ import {
   select_feed_activities,
   to_calendar_feed_event,
 } from "./lib/calendar_feed_scope";
-import { option_from_document } from "./lib/option";
+import { GLOBAL_ORGANIZATION_ID } from "./lib/caller_scope";
+import { type Option, option_from_document, OptionStatus } from "./lib/option";
+import { SystemUserStatus } from "./lib/system_user_constants";
 import { read_string_or } from "./lib/value_guards";
 
 const DEFAULT_ORGANIZATION_NAME = "Sport-Sync";
@@ -18,6 +20,12 @@ const ENDED_MEMBERSHIP_STATUSES = new Set(["inactive", "ended"]);
 const EMPTY_TEXT = "";
 const CALENDAR_FEED_SERVED_EVENT = "calendar_feed_served";
 const CALENDAR_FEED_REJECTED_EVENT = "calendar_feed_rejected";
+
+type CalendarTokenAccess = ReturnType<typeof classify_calendar_token>;
+
+const NOT_FOUND_ACCESS: CalendarTokenAccess = {
+  status: CalendarFeedStatus.NOT_FOUND,
+};
 
 async function load_organization_name(
   ctx: QueryCtx,
@@ -62,12 +70,43 @@ async function load_feed_team_ids(
   }
 }
 
-function is_in_current_year(
-  activity: Record<string, unknown>,
+function build_year_start(year: number): string {
+  return `${year}`;
+}
+
+async function load_current_year_activities(
+  ctx: QueryCtx,
+  organization_id: string,
   now_milliseconds: number,
-): boolean {
-  const year = String(new Date(now_milliseconds).getUTCFullYear());
-  return read_string_or(activity.start_datetime, EMPTY_TEXT).startsWith(year);
+): Promise<Array<Record<string, unknown>>> {
+  const year = new Date(now_milliseconds).getUTCFullYear();
+  return ctx.db
+    .query("activities")
+    .withIndex("by_organization_start", (range) =>
+      range
+        .eq("organization_id", organization_id)
+        .gte("start_datetime", build_year_start(year))
+        .lt("start_datetime", build_year_start(year + 1)),
+    )
+    .collect();
+}
+
+async function is_token_owner_active(
+  ctx: QueryCtx,
+  stored_token: Record<string, unknown>,
+  organization_id: string,
+): Promise<boolean> {
+  const user_id = read_string_or(stored_token.user_id, EMPTY_TEXT).trim();
+  if (!user_id) return false;
+  const owner = await ctx.db
+    .query("system_users")
+    .withIndex("by_local_id", (range) => range.eq("local_id", user_id))
+    .first();
+  if (!owner || owner.status === SystemUserStatus.INACTIVE) return false;
+  return (
+    owner.organization_id === organization_id ||
+    owner.organization_id === GLOBAL_ORGANIZATION_ID
+  );
 }
 
 async function load_feed_events(
@@ -75,20 +114,31 @@ async function load_feed_events(
   token: CalendarFeedToken,
   now_milliseconds: number,
 ): Promise<ReturnType<typeof to_calendar_feed_event>[]> {
-  const activities = await ctx.db
-    .query("activities")
-    .withIndex("by_organization_local_id", (range) =>
-      range.eq("organization_id", token.organization_id),
-    )
-    .collect();
-  const in_window = activities.filter((activity) =>
-    is_in_current_year(activity, now_milliseconds),
+  const activities = await load_current_year_activities(
+    ctx,
+    token.organization_id,
+    now_milliseconds,
   );
   return select_feed_activities(
     token,
-    in_window,
+    activities,
     await load_feed_team_ids(ctx, token),
   ).map(to_calendar_feed_event);
+}
+
+async function confirm_token_owner(
+  ctx: QueryCtx,
+  stored_token: Option<Record<string, unknown>>,
+  access: CalendarTokenAccess,
+): Promise<CalendarTokenAccess> {
+  if (access.status !== CalendarFeedStatus.GRANTED) return access;
+  if (stored_token.status === OptionStatus.NONE) return NOT_FOUND_ACCESS;
+  const is_owner_active = await is_token_owner_active(
+    ctx,
+    stored_token.value,
+    access.token.organization_id,
+  );
+  return is_owner_active ? access : NOT_FOUND_ACCESS;
 }
 
 export const get_calendar_feed_by_token = query({
@@ -101,7 +151,8 @@ export const get_calendar_feed_by_token = query({
         .withIndex("by_token", (range) => range.eq("token", args.token))
         .first(),
     );
-    const access = classify_calendar_token(stored_token, now_milliseconds);
+    const classified = classify_calendar_token(stored_token, now_milliseconds);
+    const access = await confirm_token_owner(ctx, stored_token, classified);
     if (access.status !== CalendarFeedStatus.GRANTED) {
       console.warn("[CalendarFeed] Feed request rejected", {
         event: CALENDAR_FEED_REJECTED_EVENT,

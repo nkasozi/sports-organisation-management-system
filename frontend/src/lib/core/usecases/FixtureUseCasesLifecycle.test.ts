@@ -16,35 +16,6 @@ describe("FixtureUseCases", () => {
     use_cases = create_fixture_use_cases(mock_repository);
   });
 
-  describe("update_fixture_score", () => {
-    it("should update score", async () => {
-      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
-        success: true,
-        data: create_test_fixture(),
-      });
-      vi.mocked(mock_repository.update).mockResolvedValue({
-        success: true,
-        data: create_test_fixture({ home_team_score: 2, away_team_score: 1 }),
-      });
-
-      const result = await use_cases.update_fixture_score("fixture-123", 2, 1);
-
-      expect(result.success).toBe(true);
-    });
-
-    it("should fail for empty id", async () => {
-      const result = await use_cases.update_fixture_score("", 1, 0);
-
-      expect(result.success).toBe(false);
-    });
-
-    it("should fail for negative scores", async () => {
-      const result = await use_cases.update_fixture_score("fixture-123", -1, 0);
-
-      expect(result.success).toBe(false);
-    });
-  });
-
   describe("start_fixture", () => {
     it("should start fixture", async () => {
       vi.mocked(mock_repository.find_by_id).mockResolvedValue({

@@ -22,21 +22,28 @@ import {
   FIRST_TIME_SETUP_STEP,
   is_first_time_use,
 } from "./appFirstTimeSetupProgress";
-import { start_signed_in_realtime_sync } from "./appRealtimeSyncWiring";
+import {
+  forget_realtime_session,
+  remember_realtime_convex_client,
+  start_realtime_sync_when_signed_in,
+} from "./appInitializerRealtime";
+import { determine_seeding_strategy } from "./appInitializerSeedingStrategy";
 import { run_seeding_with_strategy } from "./appSeedingOrchestrator";
 import { initialize_all_use_cases } from "./appUseCaseInitializer";
 import {
   APP_INIT_RESULT,
   type AppInitResult,
   is_browser_environment,
-  SEEDING_COMPLETION_STATE,
-  SEEDING_STRATEGY,
-  type SeedingCompletionState,
 } from "./initializationConstants";
 import {
   is_seeding_already_complete,
   type SeedingStrategy,
 } from "./seedingService";
+
+export {
+  determine_seeding_strategy,
+  get_is_public_content_page,
+} from "./appInitializerSeedingStrategy";
 
 const AppInitializationStatus = {
   NOT_INITIALIZED: "not_initialized",
@@ -48,12 +55,6 @@ type AppInitializationStatusValue =
 
 let initialization_status: AppInitializationStatusValue =
   AppInitializationStatus.NOT_INITIALIZED;
-
-const PUBLIC_CONTENT_PATH_PREFIXES = [
-  "/competition-results",
-  "/calendar",
-  "/match-report",
-] as const;
 
 const APP_INITIALIZER_EVENT = {
   SEEDING_STRATEGY_DETERMINED: "seeding_strategy_determined",
@@ -67,38 +68,6 @@ interface InitializeOptions {
 interface PreparedRuntimeServices {
   convex_client_result: Result<ConvexClient>;
   user_is_signed_in: boolean;
-}
-
-export function get_is_public_content_page(path: string): boolean {
-  return PUBLIC_CONTENT_PATH_PREFIXES.some((prefix) => path.startsWith(prefix));
-}
-
-function can_skip_seeding_for_public_visitor(
-  current_path: string,
-  completion_state: SeedingCompletionState,
-): boolean {
-  switch (completion_state) {
-    case SEEDING_COMPLETION_STATE.COMPLETE:
-      return get_is_public_content_page(current_path);
-    case SEEDING_COMPLETION_STATE.NOT_COMPLETE:
-    case SEEDING_COMPLETION_STATE.UNREADABLE:
-      return false;
-  }
-}
-
-export function determine_seeding_strategy(
-  user_is_signed_in: boolean,
-  current_path: string,
-  completion_state: SeedingCompletionState,
-  session_already_synced: boolean,
-): SeedingStrategy {
-  if (user_is_signed_in)
-    return session_already_synced
-      ? SEEDING_STRATEGY.SKIP_SEEDING
-      : SEEDING_STRATEGY.CONVEX_MANDATORY;
-  return can_skip_seeding_for_public_visitor(current_path, completion_state)
-    ? SEEDING_STRATEGY.SKIP_SEEDING
-    : SEEDING_STRATEGY.LOCAL_ONLY;
 }
 
 async function resolve_seeding_strategy(
@@ -133,8 +102,10 @@ async function prepare_runtime_services(
   await wait_for_clerk_to_settle();
   const convex_client_result = initialize_convex_client();
   const user_is_signed_in = get(is_signed_in);
-  if (convex_client_result.success)
+  if (convex_client_result.success) {
+    remember_realtime_convex_client(convex_client_result.data);
     start_auth_cache_invalidation(convex_client_result.data);
+  }
   await announce_first_time_setup_step(
     is_first_time,
     FIRST_TIME_SETUP_STEP.DATA_REPOSITORIES,
@@ -172,8 +143,7 @@ async function run_first_initialization(
   options: InitializeOptions,
 ): Promise<AppInitResult> {
   const is_first_time = await is_first_time_use();
-  const { convex_client_result, user_is_signed_in } =
-    await prepare_runtime_services(is_first_time);
+  const { user_is_signed_in } = await prepare_runtime_services(is_first_time);
   const strategy = await resolve_seeding_strategy(user_is_signed_in, options);
   const seed_outcome = await run_seeding_with_strategy(strategy, is_first_time);
   switch (seed_outcome) {
@@ -183,8 +153,7 @@ async function run_first_initialization(
       break;
   }
   await restore_unresolved_sync_review();
-  if (convex_client_result.success && user_is_signed_in)
-    start_signed_in_realtime_sync(convex_client_result.data);
+  start_realtime_sync_when_signed_in(user_is_signed_in);
   initialization_status = AppInitializationStatus.INITIALIZED;
   return APP_INIT_RESULT.SUCCESS;
 }
@@ -193,6 +162,11 @@ export function reset_initialization(): boolean {
   stop_background_sync();
   stop_realtime_sync();
   stop_auth_cache_invalidation();
+  forget_realtime_session();
   initialization_status = AppInitializationStatus.NOT_INITIALIZED;
   return true;
+}
+
+export function start_realtime_sync_for_signed_in_session(): boolean {
+  return start_realtime_sync_when_signed_in(get(is_signed_in));
 }

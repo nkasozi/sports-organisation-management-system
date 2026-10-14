@@ -99,4 +99,48 @@ describe("calendarPageShellControllerInitialData", () => {
       bundle: { calendar_events: [{ id: "event-1" }] },
     });
   });
+
+  it("fetches public data for the preferred organization", async () => {
+    ensure_auth_profile_mock.mockResolvedValue({ success: true });
+    fetch_public_data_from_convex_mock.mockResolvedValue({ success: true });
+    load_calendar_organizations_mock.mockResolvedValueOnce([
+      { id: "organization-2" },
+    ]);
+    load_calendar_organization_bundle_mock.mockResolvedValueOnce({});
+
+    await load_calendar_shell_initial_data({
+      is_public: true,
+      current_profile_state: { status: "missing" },
+      preferred_organization_id: "organization-2",
+      use_cases: {} as never,
+    });
+
+    expect(fetch_public_data_from_convex_mock.mock.calls).toEqual([
+      ["calendar", { status: "some", value: "organization-2" }],
+    ]);
+  });
+
+  it("fetches the selected organization's data when no organization was preferred", async () => {
+    ensure_auth_profile_mock.mockResolvedValue({ success: true });
+    fetch_public_data_from_convex_mock
+      .mockResolvedValueOnce({ success: true })
+      .mockResolvedValueOnce({ success: false });
+    load_calendar_organizations_mock.mockResolvedValueOnce([
+      { id: "organization-1" },
+    ]);
+    load_calendar_organization_bundle_mock.mockResolvedValueOnce({});
+
+    const result = await load_calendar_shell_initial_data({
+      is_public: true,
+      current_profile_state: { status: "missing" },
+      preferred_organization_id: "",
+      use_cases: {} as never,
+    });
+
+    expect(fetch_public_data_from_convex_mock.mock.calls).toEqual([
+      ["calendar", { status: "none" }],
+      ["calendar", { status: "some", value: "organization-1" }],
+    ]);
+    expect(result).toMatchObject({ is_using_cached_data: true });
+  });
 });

@@ -114,9 +114,17 @@ function build_indexed_query(rows: StoredDocument[]): FakeIndexedQuery {
   };
 }
 
-export function build_table_query(rows: StoredDocument[]): FakeTableQuery {
+export function build_table_query(
+  rows: StoredDocument[],
+  record_unindexed_collect: () => boolean = () => false,
+): FakeTableQuery {
+  const unindexed_query = build_indexed_query(rows);
   return {
-    ...build_indexed_query(rows),
+    ...unindexed_query,
+    collect: async (): Promise<StoredDocument[]> => {
+      record_unindexed_collect();
+      return unindexed_query.collect();
+    },
     withIndex: (_index_name, predicate): FakeIndexedQuery => {
       const builder = predicate(create_range_builder([]));
       const matching_rows = rows.filter((row) =>

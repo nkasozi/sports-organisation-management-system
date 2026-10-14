@@ -3,36 +3,13 @@ import type {
   EntityMetadata,
   FieldMetadata,
 } from "../../core/entities/BaseEntity";
+import { escape_csv_cell_value } from "./csvCellEscaping";
 import { get_display_value_for_entity_field } from "./listDisplayValueLogic";
 import { PRESENCE_STATUS } from "./presenceStatus";
 
 type CsvMetadataState =
   | { status: typeof PRESENCE_STATUS.MISSING }
   | { status: typeof PRESENCE_STATUS.PRESENT; metadata: EntityMetadata };
-
-const CSV_FORMULA_TRIGGER_CHARACTERS: readonly string[] = [
-  "=",
-  "+",
-  "-",
-  "@",
-  "\t",
-  "\r",
-];
-const CSV_FORMULA_NEUTRALISING_PREFIX = "'";
-
-function neutralise_csv_formula_value(value: string): string {
-  const starts_with_formula_trigger = CSV_FORMULA_TRIGGER_CHARACTERS.some(
-    (trigger_character: string) => value.startsWith(trigger_character),
-  );
-  return starts_with_formula_trigger
-    ? `${CSV_FORMULA_NEUTRALISING_PREFIX}${value}`
-    : value;
-}
-
-function escape_csv_cell_value(value: string): string {
-  const neutralised_value = neutralise_csv_formula_value(value);
-  return `"${neutralised_value.replace(/"/g, '""')}"`;
-}
 
 export function create_missing_csv_metadata_state(): CsvMetadataState {
   return { status: PRESENCE_STATUS.MISSING };

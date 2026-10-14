@@ -1,3 +1,4 @@
+import { is_calendar_token_expired } from "./calendar_token_lifetime";
 import { type Option, OptionStatus } from "./option";
 import {
   is_number,
@@ -74,11 +75,6 @@ function read_feed_type(value: string): Option<CalendarFeedTypeValue> {
     : { status: OptionStatus.NONE };
 }
 
-function is_expired(expires_at: string, now_milliseconds: number): boolean {
-  const expiry = Date.parse(expires_at);
-  return Number.isNaN(expiry) || expiry <= now_milliseconds;
-}
-
 export function classify_calendar_token(
   stored_token: Option<Record<string, unknown>>,
   now_milliseconds: number,
@@ -94,7 +90,7 @@ export function classify_calendar_token(
     !organization_id
   )
     return { status: CalendarFeedStatus.NOT_FOUND };
-  if (is_expired(read_text(record, "expires_at"), now_milliseconds))
+  if (is_calendar_token_expired(record, now_milliseconds))
     return { status: CalendarFeedStatus.EXPIRED };
   return {
     status: CalendarFeedStatus.GRANTED,

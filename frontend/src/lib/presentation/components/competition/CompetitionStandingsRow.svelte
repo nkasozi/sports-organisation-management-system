@@ -5,6 +5,8 @@
     import {
         get_standing_form_classes,
         get_standing_form_label,
+        STANDING_PLAYOFF_LABEL,
+        STANDING_PLAYOFF_TITLE,
     } from "./competitionResultsDisplayConstants";
 
     export let standing: TeamStanding;
@@ -56,6 +58,13 @@
             >
                 {standing.team_name}
             </span>
+            {#if standing.requires_playoff}
+                <span
+                    class="flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300"
+                    title={STANDING_PLAYOFF_TITLE}
+                    >{STANDING_PLAYOFF_LABEL}</span
+                >
+            {/if}
             <svg
                 class="w-3.5 h-3.5 flex-shrink-0 text-gray-400"
                 fill="none"

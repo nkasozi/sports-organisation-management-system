@@ -49,6 +49,7 @@ describe("push_table_outbox_to_convex upserts", () => {
         table_name: "teams",
         local_id: "team_a",
         server_version: 5,
+        server_sequence: 0,
         record_state: "live",
       },
     ]);

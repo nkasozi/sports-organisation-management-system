@@ -10,10 +10,10 @@
     export let on_enable_customization: () => void;
 
     const all_tie_breakers: { value: TieBreaker; label: string }[] = [
-        { value: "goal_difference", label: "Goal Difference" },
+        { value: "goal_difference", label: "Score Difference" },
         { value: "head_to_head", label: "Head to Head" },
-        { value: "goals_scored", label: "Goals Scored" },
-        { value: "away_goals", label: "Away Goals" },
+        { value: "goals_scored", label: "Total Scored" },
+        { value: "away_goals", label: "Away Scored" },
         { value: "fair_play", label: "Fair Play" },
         { value: "draw", label: "Draw (Lot)" },
         { value: "playoff", label: "Playoff" },

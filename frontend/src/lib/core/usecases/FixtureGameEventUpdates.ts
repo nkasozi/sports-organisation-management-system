@@ -95,27 +95,6 @@ export async function update_and_emit(
   return result;
 }
 
-export async function update_tracking_previous(
-  repository: FixtureRepository,
-  fixture_id: ScalarValueInput<Fixture["id"]>,
-  plan: FixtureUpdatePlan,
-): AsyncResult<Fixture> {
-  const old_result = await repository.find_by_id(fixture_id);
-  if (old_result.success)
-    return update_and_emit(repository, fixture_id, plan, {
-      status: PREVIOUS_FIXTURE_STATUS.KNOWN,
-      fixture: old_result.data,
-    });
-  console.warn(FIXTURE_LOG_SCOPE, {
-    event: FIXTURE_EVENT.PREVIOUS_STATE_UNAVAILABLE,
-    fixture_id,
-    technical_detail: old_result.error,
-  });
-  return update_and_emit(repository, fixture_id, plan, {
-    status: PREVIOUS_FIXTURE_STATUS.UNKNOWN,
-  });
-}
-
 function opposing_side(team_side: FixtureTeamSide): FixtureTeamSide {
   switch (team_side) {
     case TEAM_SIDE.HOME:

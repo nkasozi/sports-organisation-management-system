@@ -30,33 +30,6 @@ describe("push_table_outbox_to_convex deletes", () => {
     expect(fake.rows("sync_outbox")).toEqual([]);
   });
 
-  it("restores the remote copy when a delete lost to a newer remote update", async () => {
-    const { fake, command } = create_command([
-      {
-        success: true,
-        results: [
-          {
-            local_id: "team_a",
-            success: true,
-            action: "conflict_detected",
-            server_version: 9,
-          },
-        ],
-        conflicts: [
-          {
-            local_id: "team_a",
-            remote_data: { local_id: "team_a", name: "Theirs", version: 9 },
-            remote_version: 9,
-          },
-        ],
-      },
-    ]);
-    fake.seed("sync_outbox", [build_entry({ operation: "delete" })]);
-    expect((await push_table_outbox_to_convex(command)).success).toBe(true);
-    expect(fake.rows("teams")).toEqual([{ id: "team_a", name: "Theirs" }]);
-    expect(fake.rows("sync_outbox")).toEqual([]);
-  });
-
   it("drops entries whose local record no longer exists", async () => {
     const { fake, mutation, command } = create_command([]);
     fake.seed("sync_outbox", [build_entry()]);
@@ -65,7 +38,7 @@ describe("push_table_outbox_to_convex deletes", () => {
     expect(mutation).not.toHaveBeenCalled();
   });
 
-  it("fails instead of writing a stub when a delete conflict has no server copy", async () => {
+  it("parks a conflicting delete for review even when the server omits its copy", async () => {
     const { fake, command } = create_command([
       {
         success: true,
@@ -84,9 +57,9 @@ describe("push_table_outbox_to_convex deletes", () => {
 
     const result = await push_table_outbox_to_convex(command);
 
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
     expect(fake.rows("teams")).toEqual([]);
-    expect(fake.rows("sync_outbox")[0].status).toBe("pending");
+    expect(fake.rows("sync_outbox")[0].status).toBe("rejected");
   });
 
   it("keeps a newer local edit made while the delete was in flight", async () => {
@@ -117,14 +90,15 @@ describe("push_table_outbox_to_convex deletes", () => {
     });
     fake.seed("sync_outbox", [build_entry({ operation: "delete" })]);
 
-    expect((await push_table_outbox_to_convex(command)).success).toBe(true);
+    const result = await push_table_outbox_to_convex(command);
 
+    expect(result.success && result.data.rejected).toEqual([]);
     expect(fake.rows("teams")).toEqual([
       { id: "team_a", name: "Recreated locally" },
     ]);
     expect(fake.rows("sync_outbox")[0]).toMatchObject({
       change_token: "token_newer",
-      base_version: { kind: "known", version: 9 },
+      status: "pending",
     });
   });
 });

@@ -2,7 +2,6 @@ import type { Competition } from "$lib/core/entities/Competition";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
 import type { Official } from "$lib/core/entities/Official";
-import { create_default_football_periods } from "$lib/core/entities/SportDefaults";
 import {
   create_score_award_resolver,
   type SportEventCatalogSource,
@@ -21,9 +20,11 @@ import {
 
 import {
   DEFAULT_CARD_TYPES,
+  GENERIC_MATCH_PERIODS,
   MATCH_REPORT_DEFAULTS,
   REPORT_FILENAME_UNSAFE_CHARACTERS,
 } from "./matchReportBuilderConstants";
+import { resolve_fixture_year } from "./matchReportDates";
 import {
   build_officials_list,
   build_player_entries,
@@ -53,13 +54,6 @@ export interface MatchReportBuildContext {
   organization_name?: string;
   organization_logo_url?: string;
   venue_name?: string;
-}
-
-function resolve_fixture_year(fixture: Fixture): string {
-  const reference_date = fixture.scheduled_date
-    ? new Date(fixture.scheduled_date)
-    : new Date();
-  return reference_date.getFullYear().toString();
 }
 
 function build_report_team(
@@ -134,7 +128,7 @@ function build_report_events(
   return {
     score_by_period: calculate_score_by_period(
       events,
-      ctx.periods.length > 0 ? ctx.periods : create_default_football_periods(),
+      ctx.periods.length > 0 ? ctx.periods : GENERIC_MATCH_PERIODS,
       resolve_score,
     ),
     home_players: build_player_entries(

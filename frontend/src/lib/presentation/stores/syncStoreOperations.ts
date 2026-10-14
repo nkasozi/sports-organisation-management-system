@@ -13,6 +13,15 @@ import {
 import { conflict_store } from "$lib/presentation/stores/conflictStore";
 import { sync_review_store } from "$lib/presentation/stores/conflictStoreSyncReviewInstance";
 
+import {
+  apply_conflict_resolution_outcome,
+  type ConflictResolutionFeedback,
+  ConflictResolutionFeedbackStatus,
+} from "./syncStoreConflictOutcome";
+import {
+  conflict_outcome_dependencies,
+  has_pending_conflicts_in_store,
+} from "./syncStoreConflictOutcomeInstance";
 import { execute_conflict_resolution } from "./syncStoreResolveConflict";
 import {
   build_unexpected_failure_result,
@@ -110,14 +119,21 @@ export async function run_conflict_resolution(
   conflict: ScalarInput<ConflictRecord>,
   action: ConflictResolutionAction,
   merged_data?: Record<string, unknown>,
-): Promise<{ success: true } | { success: false; error: string }> {
-  const result = await execute_conflict_resolution(
+): Promise<ConflictResolutionFeedback> {
+  const outcome = await execute_conflict_resolution(
     get_sync_manager().get_convex_client(),
     conflict,
     action,
     merged_data,
   );
-  if (result.success)
-    update((state) => ({ ...state, has_pending_conflicts: false }));
-  return result;
+  const feedback = await apply_conflict_resolution_outcome(
+    conflict_outcome_dependencies,
+    { conflict, action, merged_data, outcome },
+  );
+  if (feedback.status !== ConflictResolutionFeedbackStatus.NEEDS_ATTENTION)
+    update((state) => ({
+      ...state,
+      has_pending_conflicts: has_pending_conflicts_in_store(),
+    }));
+  return feedback;
 }

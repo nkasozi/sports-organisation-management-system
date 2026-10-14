@@ -161,6 +161,7 @@ describe("discard_remotely_deleted_change", () => {
         table_name: "teams",
         local_id: "team_a",
         server_version: 7,
+        server_sequence: 0,
         record_state: "deleted",
       },
     ]);

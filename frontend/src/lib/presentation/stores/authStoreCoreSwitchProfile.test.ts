@@ -57,6 +57,8 @@ vi.mock("./profileLoader", () => ({
     auth_store_core_mocks.load_profiles_from_repository,
 }));
 
+const TARGET_PROFILE_ID = "system_user_default_4";
+
 describe("authStoreCore", () => {
   beforeEach(() => {
     prepare_auth_store_core_test(auth_store_core_mocks);
@@ -68,10 +70,10 @@ describe("authStoreCore", () => {
 
   it("switches profiles, updates state, and syncs dependent systems", async () => {
     const target_profile = build_profile({
-      id: "profile-2",
+      id: TARGET_PROFILE_ID,
       role: "team_manager",
     });
-    const generated_token = build_auth_token("new-token", "profile-2");
+    const generated_token = build_auth_token("new-token", TARGET_PROFILE_ID);
     const sidebar_groups = [{ group_name: "Team", items: [] }];
 
     auth_store_core_mocks.execute_auth_initialization.mockImplementation(
@@ -80,6 +82,7 @@ describe("authStoreCore", () => {
           build_auth_state({
             available_profiles: [target_profile],
             is_initialized: true,
+            is_demo_session: true,
           }),
         );
         return { success: true, data: true };
@@ -96,11 +99,11 @@ describe("authStoreCore", () => {
     const { auth_store } = await import_auth_store();
 
     expect((await auth_store.initialize()).success).toBe(true);
-    expect(await auth_store.switch_profile("profile-2")).toBe(true);
+    expect(await auth_store.switch_profile(TARGET_PROFILE_ID)).toBe(true);
 
     expect(auth_store_core_mocks.save_token).toHaveBeenCalledWith("new-token");
     expect(auth_store_core_mocks.save_profile_id).toHaveBeenCalledWith(
-      "profile-2",
+      TARGET_PROFILE_ID,
     );
     expect(
       auth_store_core_mocks.sync_user_context_with_event_bus,

@@ -5,7 +5,8 @@
     import LogoutWarningModalBody from "$lib/presentation/components/ui/logoutWarning/LogoutWarningModalBody.svelte";
     import {
         build_logout_discard_message,
-        evaluate_logout_request,
+        create_logout_sync_stop_control,
+        evaluate_logout_request_with_stop,
         LOGOUT_WARNING_MODAL_STATE,
         LOGOUT_WARNING_TEXT,
         type LogoutWarningModalView,
@@ -25,6 +26,7 @@
         state: LOGOUT_WARNING_MODAL_STATE.CHECKING,
     };
     let visibility_check_generation = 0;
+    let stop_control = create_logout_sync_stop_control();
 
     $: if (is_visible) void refresh_modal_view(is_visible);
 
@@ -41,8 +43,11 @@
         visibility_check_generation += 1;
         const check_generation = visibility_check_generation;
         modal_view = { state: LOGOUT_WARNING_MODAL_STATE.CHECKING };
-        const next_view = await evaluate_logout_request(sync_port, () =>
-            show_syncing(check_generation),
+        stop_control = create_logout_sync_stop_control();
+        const next_view = await evaluate_logout_request_with_stop(
+            sync_port,
+            () => show_syncing(check_generation),
+            stop_control,
         );
         if (check_generation !== visibility_check_generation || !is_visible)
             return false;
@@ -54,6 +59,10 @@
 
     function handle_confirm(): boolean {
         return dispatch("confirm_logout");
+    }
+
+    function handle_stop_syncing(): boolean {
+        return stop_control.stop();
     }
 
     function handle_cancel(): boolean {
@@ -88,6 +97,9 @@
             on:cancel={handle_cancel}
         />
     {:else if modal_view.state !== LOGOUT_WARNING_MODAL_STATE.READY_TO_SIGN_OUT}
-        <LogoutWarningModalBody modal_state={modal_view.state} />
+        <LogoutWarningModalBody
+            modal_state={modal_view.state}
+            on_stop_syncing={handle_stop_syncing}
+        />
     {/if}
 {/if}

@@ -10,12 +10,15 @@ import {
   is_blank_identifier,
   relay_repository_result,
 } from "./FailureRelay";
+import { update_fixture_details } from "./FixtureGuardedEdit";
 import {
   FIXTURE_EVENT,
   FIXTURE_LOG_SCOPE,
   FIXTURE_MESSAGE,
   MINIMUM_ROUND_NUMBER,
 } from "./FixtureUseCaseConstants";
+import { SHARED_FIXTURE_WRITE_EXECUTOR } from "./FixtureWriteExecutor";
+import type { KeyedSerialExecutor } from "./KeyedSerialExecutor";
 
 type FixtureQueries = Pick<
   FixtureUseCasesPort,
@@ -95,6 +98,7 @@ function create_fixture_listing_queries(
 
 export function create_fixture_queries(
   repository: FixtureRepository,
+  executor: KeyedSerialExecutor = SHARED_FIXTURE_WRITE_EXECUTOR,
 ): FixtureQueries {
   return {
     ...create_fixture_listing_queries(repository),
@@ -105,13 +109,8 @@ export function create_fixture_queries(
             repository.find_by_id(id),
             log_target(FIXTURE_EVENT.LOOKUP_FAILED, { fixture_id: id }),
           ),
-    update: async (id, input) =>
-      is_blank_identifier(id)
-        ? fail_missing_fixture_id()
-        : relay_repository_result(
-            repository.update(id, input),
-            log_target(FIXTURE_EVENT.UPDATE_FAILED, { fixture_id: id }),
-          ),
+    update: (id, input) =>
+      update_fixture_details(repository, executor, id, input),
     delete: async (id) =>
       is_blank_identifier(id)
         ? fail_missing_fixture_id()

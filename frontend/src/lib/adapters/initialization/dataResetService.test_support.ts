@@ -24,6 +24,13 @@ export function create_background_sync_mock(): Record<string, Mock> {
   };
 }
 
+export function create_session_quiesce_mock(): Record<string, Mock> {
+  return {
+    stop_background_sync_for_maintenance: vi.fn().mockResolvedValue(0),
+    resume_in_flight_sync_work: vi.fn().mockReturnValue(true),
+  };
+}
+
 interface SignedInStoreMock {
   is_signed_in: {
     subscribe(listener: (value: boolean) => void): () => boolean;

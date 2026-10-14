@@ -19,6 +19,7 @@ import {
 import {
   apply_remote_change_page,
   convert_server_record_to_remote_change,
+  convert_tombstone_to_remote_deletion,
 } from "./syncRemoteApply";
 import { resync_table_from_server } from "./syncTableResync";
 
@@ -35,10 +36,7 @@ async function apply_change_page(
     const summary = await apply_remote_change_page(command, {
       table_name: command.table_name,
       records: page.records.map(convert_server_record_to_remote_change),
-      deletions: page.tombstones.map((tombstone) => ({
-        local_id: tombstone.local_id,
-        server_version: tombstone.version,
-      })),
+      deletions: page.tombstones.map(convert_tombstone_to_remote_deletion),
       next_cursor: page.next_cursor,
     });
     if (summary.deferred_local_ids.length > 0)

@@ -77,17 +77,10 @@ async function has_verified_session_ended(
   return device_session.status === DEVICE_SESSION_STATUS.SESSION_ENDED;
 }
 
-async function has_finished_deferred_sign_out(
-  command: RootLayoutStartupCommand,
-): Promise<boolean> {
-  if (!command.is_signed_in()) return false;
-  const outcome = await command.complete_pending_clerk_sign_out();
-  return outcome !== PENDING_CLERK_SIGN_OUT_OUTCOME.NONE_PENDING;
-}
-
 export async function run_root_layout_startup(
   command: RootLayoutStartupCommand,
 ): Promise<RootLayoutStartupOutcome> {
+  const pending_sign_out = await command.complete_pending_clerk_sign_out();
   await command.run_startup_storage_recovery();
   await command.initialize_stores();
   command.subscribe_layout_state();
@@ -105,7 +98,7 @@ export async function run_root_layout_startup(
     await command.session_handlers.session_ended();
     return ROOT_LAYOUT_STARTUP_OUTCOME.READY;
   }
-  if (await has_finished_deferred_sign_out(command)) {
+  if (pending_sign_out !== PENDING_CLERK_SIGN_OUT_OUTCOME.NONE_PENDING) {
     await command.session_handlers.returning_anonymous();
     return ROOT_LAYOUT_STARTUP_OUTCOME.READY;
   }

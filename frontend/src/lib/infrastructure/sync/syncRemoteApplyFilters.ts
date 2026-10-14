@@ -3,6 +3,7 @@ import type { Table } from "dexie";
 import { build_sync_outbox_key } from "$lib/adapters/repositories/syncOutbox/syncOutboxTypes";
 
 import {
+  type IncomingChangeKind,
   IncomingVersionRule,
   type IncomingVersionRuleValue,
   is_incoming_version_stale,
@@ -14,6 +15,8 @@ type GenericTable = Table<Record<string, unknown>, unknown>;
 interface VersionedRemoteChange {
   local_id: string;
   server_version: number;
+  server_sequence: number;
+  change_kind: (typeof IncomingChangeKind)[keyof typeof IncomingChangeKind];
 }
 
 export async function find_dirty_local_ids(
@@ -43,7 +46,11 @@ export async function find_stale_local_ids(
       .filter((change, index) =>
         is_incoming_version_stale(
           read_known_record_version(known_versions[index]),
-          change.server_version,
+          {
+            kind: change.change_kind,
+            version: change.server_version,
+            sequence: change.server_sequence,
+          },
           rule,
         ),
       )

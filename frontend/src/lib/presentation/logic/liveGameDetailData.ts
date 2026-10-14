@@ -8,7 +8,10 @@ import {
   normalize_lineup_players,
 } from "$lib/presentation/logic/liveGameDetailState";
 
-import { restore_live_game_clock_seconds } from "./liveGameDetailClockRestore";
+import {
+  restore_live_game_clock_extras,
+  restore_live_game_clock_seconds,
+} from "./liveGameDetailClockRestore";
 import {
   type LiveGameDetailAssignedOfficial,
   type LiveGameDetailCompetitionContext,
@@ -90,6 +93,7 @@ function build_live_game_detail_bundle(
     ...to_bundle_entry("away_team", teams_and_lineups.away_team),
     ...to_bundle_entry("competition", competition_context.competition),
     ...to_bundle_entry("sport", competition_context.sport),
+    ...to_bundle_entry("stage", competition_context.stage),
     organization_name:
       organization.status === OptionStatus.SOME ? organization.value.name : "",
     ...to_bundle_entry("venue", sources.venue),
@@ -99,6 +103,10 @@ function build_live_game_detail_bundle(
     home_lineup_id: read_lineup_id(home_lineup),
     away_lineup_id: read_lineup_id(away_lineup),
     game_clock_seconds: restore_bundle_clock_seconds(sources),
+    ...restore_live_game_clock_extras({
+      fixture: sources.fixture,
+      now: sources.now,
+    }),
   } as LiveGameDetailBundle;
 }
 

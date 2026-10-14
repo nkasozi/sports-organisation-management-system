@@ -108,6 +108,7 @@ export function create_conflict_sync_result(
             local_data: { name: "Local Team" },
             local_version: 1,
             remote_data: { name: "Remote Team" },
+            remote_data_status: "visible",
             remote_version: 2,
             remote_updated_at: REMOTE_UPDATED_AT,
             remote_updated_by: create_unknown_conflict_field_value(),

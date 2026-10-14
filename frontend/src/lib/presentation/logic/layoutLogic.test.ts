@@ -103,6 +103,16 @@ describe("is_route_guard_exempt", () => {
     expect(is_route_guard_exempt("/match-report/fix-1")).toBe(true);
   });
 
+  it("exempts public player and team profile pages for every role", () => {
+    expect(is_route_guard_exempt("/profile/ada-lovelace")).toBe(true);
+    expect(is_route_guard_exempt("/team-profile/kampala-lions")).toBe(true);
+  });
+
+  it("does NOT exempt pages that only share a public profile prefix", () => {
+    expect(is_route_guard_exempt("/profiles")).toBe(false);
+    expect(is_route_guard_exempt("/team-profiles")).toBe(false);
+  });
+
   it("does NOT exempt protected pages", () => {
     expect(is_route_guard_exempt("/players")).toBe(false);
     expect(is_route_guard_exempt("/fixtures")).toBe(false);

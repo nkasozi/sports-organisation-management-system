@@ -1,11 +1,13 @@
 import type { Competition } from "$lib/core/entities/Competition";
 import type { CompetitionTeam } from "$lib/core/entities/CompetitionTeam";
 import type { Fixture } from "$lib/core/entities/Fixture";
+import { parse_local_calendar_date } from "$lib/core/entities/LocalCalendarDate";
 import type { Team } from "$lib/core/entities/Team";
 import {
   matches_team_player_search,
   type TeamPlayer,
 } from "$lib/core/services/teamPlayers";
+import { OptionStatus } from "$lib/core/types/Option";
 
 export type FixtureLineupCreateWizardStep = {
   step_key: "organization" | "fixture" | "team" | "players" | "confirm";
@@ -95,9 +97,9 @@ export function format_fixture_date_time(
   scheduled_date: string,
   scheduled_time: string,
 ): string {
-  if (!scheduled_date.trim()) return "";
-  const date = new Date(scheduled_date);
-  if (Number.isNaN(date.getTime())) return "";
+  const parsed_date = parse_local_calendar_date(scheduled_date);
+  if (parsed_date.status === OptionStatus.NONE) return "";
+  const date = parsed_date.value;
   const month_names = [
     "Jan",
     "Feb",

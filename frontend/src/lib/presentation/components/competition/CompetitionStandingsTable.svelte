@@ -51,15 +51,15 @@
                     >
                     <th
                         class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
-                        >GF</th
+                        >F</th
                     >
                     <th
                         class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
-                        >GA</th
+                        >A</th
                     >
                     <th
                         class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
-                        >GD</th
+                        >+/-</th
                     >
                     <th
                         class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold whitespace-nowrap"
@@ -115,16 +115,17 @@
                     Lost</span
                 >
                 <span
-                    ><strong class="text-gray-700 dark:text-gray-300">GF</strong
-                    > = Goals For</span
+                    ><strong class="text-gray-700 dark:text-gray-300">F</strong> =
+                    Scored For</span
                 >
                 <span
-                    ><strong class="text-gray-700 dark:text-gray-300">GA</strong
-                    > = Goals Against</span
+                    ><strong class="text-gray-700 dark:text-gray-300">A</strong> =
+                    Scored Against</span
                 >
                 <span
-                    ><strong class="text-gray-700 dark:text-gray-300">GD</strong
-                    > = Goal Difference</span
+                    ><strong class="text-gray-700 dark:text-gray-300"
+                        >+/-</strong
+                    > = Score Difference</span
                 >
                 <span
                     ><strong class="text-gray-700 dark:text-gray-300"

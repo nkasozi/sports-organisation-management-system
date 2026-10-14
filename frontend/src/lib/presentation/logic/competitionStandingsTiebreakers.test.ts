@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { DEFAULT_POINTS_CONFIG } from "$lib/core/entities/CompetitionFormat";
+
 import {
   apply_single_tiebreaker,
   sort_standings_by_tiebreakers,
@@ -32,6 +34,7 @@ describe("competitionStandingsTiebreakers", () => {
           },
         ] as never,
         "away_goals",
+        DEFAULT_POINTS_CONFIG,
       ),
     ).toBe(-1);
 
@@ -62,6 +65,7 @@ describe("competitionStandingsTiebreakers", () => {
           },
         ] as never,
         "head_to_head",
+        DEFAULT_POINTS_CONFIG,
       ),
     ).toBe(3);
   });

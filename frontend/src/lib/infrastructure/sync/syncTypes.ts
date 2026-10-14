@@ -19,6 +19,10 @@ import {
   create_known_conflict_field_value,
   create_unknown_conflict_field_value,
 } from "./conflictTypes";
+import {
+  type ConflictRemoteDataStatusValue,
+  normalize_remote_data_status,
+} from "./syncConflictVisibility";
 
 export {
   get_push_excluded_tables,
@@ -46,6 +50,7 @@ export interface ConflictFromServer {
   local_data: Record<string, unknown>;
   local_version: number;
   remote_data: Record<string, unknown>;
+  remote_data_status: ConflictRemoteDataStatusValue;
   remote_version: number;
   remote_updated_at: ScalarInput<ConflictRecord>["remote_updated_at"];
   remote_updated_by: ConflictFieldValue<EntityId>;
@@ -56,6 +61,7 @@ export interface RawConflictFromServer {
   local_data: Record<string, unknown>;
   local_version: number;
   remote_data: Record<string, unknown>;
+  remote_data_status: unknown;
   remote_version: number;
   remote_updated_at: ScalarInput<ConflictRecord>["remote_updated_at"];
   remote_updated_by: unknown;
@@ -142,6 +148,9 @@ export function normalize_conflict_from_server(
 ): ConflictFromServer {
   return {
     ...raw_conflict,
+    remote_data_status: normalize_remote_data_status(
+      raw_conflict.remote_data_status,
+    ),
     remote_updated_by: normalize_remote_author(raw_conflict.remote_updated_by),
   };
 }

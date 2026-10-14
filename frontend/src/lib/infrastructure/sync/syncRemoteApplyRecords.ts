@@ -69,6 +69,7 @@ export async function apply_resolved_remote_record(
           table_name,
           change.local_id,
           change.server_version,
+          change.server_sequence,
         ),
       );
       if (current !== void 0 && is_superseded_by_local_edit(current, guard)) {

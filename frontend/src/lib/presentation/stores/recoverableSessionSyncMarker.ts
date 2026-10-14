@@ -1,11 +1,5 @@
-import { get } from "svelte/store";
-
-import {
-  clerk_session,
-  initialize_clerk,
-} from "$lib/adapters/iam/clerkAuthService";
-
-import { build_active_clerk_identity_state } from "./activeClerkIdentity";
+import { resolve_current_device_session } from "./deviceSessionStateResolution";
+import { resolve_backup_owner_identity } from "./recoverableSessionSyncMarkerDeviceIdentity";
 import {
   classify_recoverable_session_sync_marker_safety,
   RECOVERABLE_SESSION_SYNC_MARKER_STATUS,
@@ -85,10 +79,8 @@ export async function persist_recoverable_session_sync_marker_state(
 export async function evaluate_recoverable_session_sync_marker_state(
   marker_state: RecoverableSessionSyncMarkerState,
 ): Promise<RecoverableSessionSyncMarkerSafety> {
-  await initialize_clerk();
-
   return classify_recoverable_session_sync_marker_safety(
     marker_state,
-    build_active_clerk_identity_state(get(clerk_session)),
+    resolve_backup_owner_identity(await resolve_current_device_session()),
   );
 }

@@ -1,5 +1,7 @@
 import type { CardTypeConfig } from "$lib/core/types/MatchReportTypes";
 
+import type { ReportScoringPeriod } from "./matchReportScoring";
+
 export const DEFAULT_CARD_TYPES: CardTypeConfig[] = [
   { id: "green", name: "Green", color: "#00FF00", event_type: "green_card" },
   { id: "yellow", name: "Yellow", color: "#FFFF00", event_type: "yellow_card" },
@@ -35,3 +37,12 @@ export const OFFICIAL_ROLE_DISPLAY_NAMES: Readonly<Record<string, string>> = {
 };
 
 export const REPORT_FILENAME_UNSAFE_CHARACTERS = /[^a-zA-Z0-9]/g;
+
+export const GENERIC_MATCH_PERIODS: readonly ReportScoringPeriod[] = [
+  {
+    id: "match",
+    name: "Match",
+    duration_minutes: Number.POSITIVE_INFINITY,
+    is_break: false,
+  },
+];

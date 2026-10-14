@@ -56,6 +56,7 @@ export const AUTH_STORE_LOG_EVENTS = {
   PROFILES_REFRESHED: "auth_profiles_refreshed",
   PROFILE_SWITCHED: "auth_profile_switched",
   PROFILE_SWITCH_TARGET_MISSING: "auth_profile_switch_target_missing",
+  PROFILE_SWITCH_REJECTED: "auth_profile_switch_rejected",
   PROFILE_SWITCH_FAILED: "auth_profile_switch_failed",
   LOGGED_OUT: "auth_logged_out",
   SAVED_TOKEN_OWNER_MISMATCH: "auth_saved_token_owner_mismatch",

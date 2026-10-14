@@ -1,9 +1,15 @@
 import {
   create_game_event,
   type GameEvent,
+  type GamePeriod,
   type QuickEventButton,
 } from "$lib/core/entities/Fixture";
 import { NO_SCORE_AWARD } from "$lib/core/entities/SportEventCatalog";
+import {
+  create_none_option,
+  type Option,
+  OptionStatus,
+} from "$lib/core/types/Option";
 import { get_fixture_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
 
 type FixtureUseCases = ReturnType<typeof get_fixture_use_cases>;
@@ -19,10 +25,19 @@ type TimedLiveGameEventCommand = {
   event_description: string;
   secondary_player_name: string;
   secondary_player_id: string;
+  period: Option<GamePeriod>;
   fixture_use_cases: FixtureUseCases;
 };
 
 type EventPlayerIdFields = Pick<GameEvent, "player_id" | "secondary_player_id">;
+
+function build_event_period_fields(
+  command: TimedLiveGameEventCommand,
+): Pick<GameEvent, "period_id"> {
+  return command.period.status === OptionStatus.SOME
+    ? { period_id: command.period.value }
+    : {};
+}
 
 function build_event_player_id_fields(
   command: TimedLiveGameEventCommand,
@@ -61,6 +76,7 @@ export async function record_live_game_detail_timed_event(
     {
       ...event,
       ...build_event_player_id_fields(command),
+      ...build_event_period_fields(command),
       stoppage_time_minute:
         command.stoppage_time_minute as typeof event.stoppage_time_minute,
     },
@@ -89,6 +105,7 @@ export async function record_live_game_detail_event(
     event_description,
     secondary_player_name,
     secondary_player_id: "",
+    period: create_none_option(),
     fixture_use_cases,
   });
 }

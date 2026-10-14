@@ -130,4 +130,19 @@ describe("sync review store", () => {
     );
     expect(dependencies.request_push).not.toHaveBeenCalled();
   });
+
+  it("shows a single remote deletion found while resolving a conflict", () => {
+    const store = create_sync_review_store(create_dependencies());
+
+    expect(
+      store.add_remote_deletion(
+        sync_result_with_deletion().deleted_remotely[0],
+      ),
+    ).toBe(true);
+
+    expect(get(store)).toMatchObject({
+      is_visible: true,
+      items: [{ kind: "remote_deletion", local_id: "team_a" }],
+    });
+  });
 });

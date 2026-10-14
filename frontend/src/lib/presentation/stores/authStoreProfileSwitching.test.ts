@@ -85,6 +85,7 @@ describe("auth_store integration", () => {
     });
 
     it("player cannot create/delete teams but can view", async () => {
+      auth_store.mark_as_demo_session();
       const profiles = get(auth_store).available_profiles;
       const player_profile = profiles.find((p) => p.role === "player");
 

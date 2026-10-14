@@ -23,7 +23,7 @@ export type TombstoneVisibility =
   | { kind: typeof TombstoneVisibilityKind.LEGACY }
   | StoredTombstoneVisibility;
 
-interface SyncTombstoneFields {
+export interface SyncTombstoneFields {
   table_name: string;
   local_id: string;
   version: number;
@@ -82,6 +82,7 @@ export function read_remote_deletion(
     case TombstoneVisibilityKind.DELETED:
       return create_some_option({ version, deleted_at });
     case TombstoneVisibilityKind.SCOPE_EXIT:
+    case TombstoneVisibilityKind.ACCESS_REVIEW:
       return create_none_option();
   }
 }
@@ -104,7 +105,7 @@ export async function load_sync_tombstone(
     : create_none_option();
 }
 
-async function upsert_tombstone_row(
+export async function upsert_tombstone_row(
   ctx: MutationCtx,
   fields: SyncTombstoneFields & { visibility: StoredTombstoneVisibility },
 ): Promise<boolean> {

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  CLOCK_TEST_NOW,
   create_clock_handlers,
   create_state_store,
 } from "./liveGameDetailControllerClock.test_support";
@@ -71,6 +72,7 @@ describe("live game clock saving", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
+    vi.setSystemTime(CLOCK_TEST_NOW);
     derive_live_game_detail_view_state_mock.mockReturnValue({
       is_current_period_playing: true,
     });
@@ -81,48 +83,53 @@ describe("live game clock saving", () => {
   });
 
   it("saves the exact running clock when the clock starts", () => {
-    const save_clock_state = vi.fn().mockResolvedValue({ success: true });
+    const save_clock_snapshot = vi.fn().mockResolvedValue({ success: true });
     const handlers = create_clock_handlers(create_in_play_store(), {
-      save_clock_state,
+      save_clock_snapshot,
     });
 
     handlers.start_clock();
 
-    expect(save_clock_state).toHaveBeenCalledWith("fixture-1", {
-      status: "running",
-      elapsed_seconds: 125,
-      started_at: "2024-06-01T10:00:00.000Z",
+    expect(save_clock_snapshot).toHaveBeenCalledWith("fixture-1", {
+      game_clock: {
+        status: "running",
+        elapsed_seconds: 125,
+        started_at: "2024-06-01T10:00:00.000Z",
+      },
+      added_seconds: 0,
+      break_clock: { status: "not_on_break" },
     });
     handlers.cleanup();
   });
 
   it("saves a stopped clock when the clock is paused", () => {
-    const save_clock_state = vi.fn().mockResolvedValue({ success: true });
+    const save_clock_snapshot = vi.fn().mockResolvedValue({ success: true });
     const handlers = create_clock_handlers(create_in_play_store(), {
-      save_clock_state,
+      save_clock_snapshot,
     });
     handlers.start_clock();
     vi.advanceTimersByTime(3000);
 
     handlers.toggle_clock();
 
-    expect(save_clock_state).toHaveBeenLastCalledWith("fixture-1", {
-      status: "stopped",
-      elapsed_seconds: 128,
+    expect(save_clock_snapshot).toHaveBeenLastCalledWith("fixture-1", {
+      game_clock: { status: "stopped", elapsed_seconds: 128 },
+      added_seconds: 0,
+      break_clock: { status: "not_on_break" },
     });
   });
 
   it("does not save when the page is left so the clock keeps running", () => {
-    const save_clock_state = vi.fn().mockResolvedValue({ success: true });
+    const save_clock_snapshot = vi.fn().mockResolvedValue({ success: true });
     const handlers = create_clock_handlers(create_in_play_store(), {
-      save_clock_state,
+      save_clock_snapshot,
     });
     handlers.start_clock();
-    save_clock_state.mockClear();
+    save_clock_snapshot.mockClear();
 
     handlers.cleanup();
 
-    expect(save_clock_state).not.toHaveBeenCalled();
+    expect(save_clock_snapshot).not.toHaveBeenCalled();
   });
 
   it("keeps a paused clock paused after reloading the game", async () => {

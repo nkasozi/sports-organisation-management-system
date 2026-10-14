@@ -41,6 +41,11 @@ vi.mock("$lib/infrastructure/sync/backgroundSyncService", async () =>
     await import("./dataResetService.test_support")
   ).create_background_sync_mock(),
 );
+vi.mock("$lib/infrastructure/sync/syncSessionQuiesce", async () =>
+  (
+    await import("./dataResetService.test_support")
+  ).create_session_quiesce_mock(),
+);
 vi.mock("$lib/presentation/stores/syncStore", () => ({
   sync_store: { sync_now: vi.fn().mockResolvedValue({ success: true }) },
 }));

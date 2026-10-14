@@ -16,7 +16,8 @@ import {
 } from "./UseCaseResultGuards";
 
 export const MembershipMoveKind = {
-  MOVE_EXISTING: "move_existing",
+  END_AND_CREATE: "end_and_create",
+  END_FROM_ONLY: "end_from_only",
   CREATE_NEW: "create_new",
   ALREADY_ON_DESTINATION: "already_on_destination",
   FROM_TEAM_MISMATCH: "from_team_mismatch",
@@ -24,7 +25,9 @@ export const MembershipMoveKind = {
 
 type MembershipMovePlan =
   | {
-      kind: typeof MembershipMoveKind.MOVE_EXISTING;
+      kind:
+        | typeof MembershipMoveKind.END_AND_CREATE
+        | typeof MembershipMoveKind.END_FROM_ONLY;
       membership: PlayerTeamMembership;
     }
   | { kind: typeof MembershipMoveKind.CREATE_NEW }
@@ -62,16 +65,19 @@ function classify_active_memberships(
   const from_team_membership = active_memberships.find(
     (membership) => membership.team_id === transfer.from_team_id,
   );
+  const is_active_on_destination = active_memberships.some(
+    (membership) => membership.team_id === transfer.to_team_id,
+  );
   if (from_team_membership)
     return {
-      kind: MembershipMoveKind.MOVE_EXISTING,
+      kind: is_active_on_destination
+        ? MembershipMoveKind.END_FROM_ONLY
+        : MembershipMoveKind.END_AND_CREATE,
       membership: from_team_membership,
     };
   if (active_memberships.length === 0)
     return { kind: MembershipMoveKind.CREATE_NEW };
-  return active_memberships.some(
-    (membership) => membership.team_id === transfer.to_team_id,
-  )
+  return is_active_on_destination
     ? { kind: MembershipMoveKind.ALREADY_ON_DESTINATION }
     : { kind: MembershipMoveKind.FROM_TEAM_MISMATCH };
 }

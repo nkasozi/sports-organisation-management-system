@@ -39,7 +39,11 @@ describe("recording live game events with player ids", () => {
       selected_event_type: { id: "goal", label: "Goal" },
       selected_player_id: "home-1",
       selected_team_side: "home",
-      period_window: { status: "none" },
+      event_timing: {
+        effective_periods: [],
+        current_period_id: { status: "none" },
+        elapsed_minutes: 120,
+      },
     } as never);
 
     expect(result.success).toBe(true);

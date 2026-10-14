@@ -7,7 +7,10 @@ import {
 
 import { sync_in_flight_work } from "./syncInFlightWork";
 import { sync_all_tables } from "./syncOrchestrator";
-import { SYNC_ALREADY_IN_PROGRESS_ERROR } from "./syncRunSignals";
+import {
+  SYNC_ALREADY_IN_PROGRESS_ERROR,
+  SYNC_PAUSED_ERROR,
+} from "./syncRunSignals";
 import type {
   ConvexClient,
   SyncConfig,
@@ -47,6 +50,13 @@ function build_failed_sync_result(error: string): SyncResult {
     rejected_records: [],
     deleted_remotely: [],
   };
+}
+
+function refuse_run_during_maintenance(): SyncResult {
+  console.warn("[Sync:Manager] Sync run refused during data maintenance", {
+    event: "sync_manager_run_refused_maintenance",
+  });
+  return build_failed_sync_result(SYNC_PAUSED_ERROR);
 }
 
 type ConvexClientState =
@@ -114,13 +124,15 @@ export class ConvexSyncManager {
     this.is_syncing = true;
     try {
       const client = this.convex_client_state.client;
-      return await sync_in_flight_work.run_tracked(() =>
-        sync_all_tables(
-          client,
-          direction_override ?? this.config.direction,
-          this.config.enabled_tables,
-          on_progress,
-        ),
+      return await sync_in_flight_work.run_unless_maintenance(
+        () =>
+          sync_all_tables(
+            client,
+            direction_override ?? this.config.direction,
+            this.config.enabled_tables,
+            on_progress,
+          ),
+        refuse_run_during_maintenance,
       );
     } catch (error) {
       console.error("[Sync:Manager] Sync run threw unexpectedly", {

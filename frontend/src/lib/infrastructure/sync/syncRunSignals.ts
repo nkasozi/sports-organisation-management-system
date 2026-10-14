@@ -6,6 +6,7 @@ import {
 
 export const SYNC_ALREADY_IN_PROGRESS_ERROR = "Sync already in progress";
 export const SYNC_RUN_CANCELLED_ERROR = "Sync run cancelled";
+export const SYNC_PAUSED_ERROR = "Sync is paused for data maintenance";
 
 interface SyncRunCancellation {
   current_epoch(): number;

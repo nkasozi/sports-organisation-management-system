@@ -14,6 +14,7 @@ import {
   configure_restoration_handlers,
 } from "./backgroundSyncConfiguration";
 import { sync_engine_runtime } from "./backgroundSyncRuntimeInstance";
+import { sync_deferred_remote_changes } from "./syncDeferredRemoteChanges";
 import {
   SyncEngineEventType,
   SyncEngineStatus,
@@ -23,13 +24,12 @@ import {
   count_unsynced_changes,
   reset_sync_bookkeeping,
 } from "./syncOutboxRepository";
-import { enqueue_local_snapshot } from "./syncOutboxSnapshot";
-import { TABLE_NAMES } from "./syncTypes";
 
 export {
   pause_remote_change_subscriptions,
   resume_remote_change_subscriptions,
 } from "./remoteSubscriptionPause";
+export { enqueue_all_local_records_for_push } from "./syncOutboxSnapshot";
 export {
   configure_orchestrator,
   configure_remote_subscriber,
@@ -164,16 +164,8 @@ export async function trigger_full_sync_on_page_reload(): Promise<void> {
   });
 }
 
-export async function enqueue_all_local_records_for_push(): Promise<number> {
-  return enqueue_local_snapshot({
-    database: get_database(),
-    table_names: TABLE_NAMES,
-    generate_change_token: () => crypto.randomUUID(),
-    now_iso: () => new Date().toISOString(),
-  });
-}
-
 export async function reset_local_sync_bookkeeping(): Promise<boolean> {
+  sync_deferred_remote_changes.clear();
   return reset_sync_bookkeeping(get_database());
 }
 

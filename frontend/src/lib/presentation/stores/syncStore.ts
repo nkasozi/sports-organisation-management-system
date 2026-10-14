@@ -19,6 +19,7 @@ import {
   type SyncResult,
 } from "$lib/infrastructure/sync/convexSyncService";
 
+import type { ConflictResolutionFeedback } from "./syncStoreConflictOutcome";
 import { run_conflict_resolution, run_sync_now } from "./syncStoreOperations";
 import {
   create_last_sync_time_state,
@@ -44,10 +45,6 @@ interface SyncConfigurationActions {
   reset(): boolean;
 }
 
-type ConflictResolutionOutcome =
-  | { success: true }
-  | { success: false; error: string };
-
 interface SyncStore extends Readable<SyncState>, SyncConfigurationActions {
   sync_now(direction?: SyncDirection, hints?: SyncHints): Promise<SyncResult>;
   get_sync_orchestrator(): SyncOrchestratorPort;
@@ -55,7 +52,7 @@ interface SyncStore extends Readable<SyncState>, SyncConfigurationActions {
     conflict: EditableConflictRecord,
     action: ConflictResolutionAction,
     merged_data?: Record<string, unknown>,
-  ): Promise<ConflictResolutionOutcome>;
+  ): Promise<ConflictResolutionFeedback>;
 }
 
 function create_sync_configuration_actions(
@@ -108,7 +105,7 @@ function create_sync_store(): SyncStore {
       conflict: EditableConflictRecord,
       action: ConflictResolutionAction,
       merged_data?: Record<string, unknown>,
-    ): Promise<ConflictResolutionOutcome> =>
+    ): Promise<ConflictResolutionFeedback> =>
       run_conflict_resolution(update, conflict, action, merged_data),
   };
 }

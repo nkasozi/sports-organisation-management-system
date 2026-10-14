@@ -1,21 +1,17 @@
 import type { Result } from "$lib/core/types/Result";
-import {
-  create_failure_result,
-  create_success_result,
-} from "$lib/core/types/Result";
+import { create_success_result } from "$lib/core/types/Result";
+import { SESSION_SYNC_RETRY_KIND } from "$lib/presentation/stores/sessionSyncRetryNotice";
 
 import {
-  abort_login_to_protect_local_changes,
-  allows_login_data_wipe,
-  evaluate_login_local_change_guard,
-} from "./layoutLoginLocalChangeGuard";
+  log_discarded_pending_changes,
+  stop_login_sync_for_retry,
+} from "./layoutLoginSyncFailure";
 import type { LayoutLoginSyncDependencies } from "./layoutLoginSyncPorts";
 import {
   clear_sync_progress_subscription,
+  create_inactive_sync_progress_subscription,
   subscribe_to_login_sync_progress,
-  type SyncProgressSubscriptionState,
 } from "./layoutLoginSyncProgress";
-import { sign_out_after_failed_login } from "./layoutLoginSyncSignOut";
 import {
   look_up_login_sync_profile,
   prepare_login_sync_workspace,
@@ -26,9 +22,10 @@ import {
   LAYOUT_SESSION_PROGRESS,
 } from "./layoutSessionConstants";
 import {
-  build_sign_in_error_path,
-  SIGN_IN_ERROR_CODE,
-} from "./signInPageState";
+  run_with_timeout,
+  SESSION_OPERATION_TIMEOUT_MS,
+  TIMED_OPERATION_STATUS,
+} from "./layoutSessionTimeouts";
 
 export type {
   AuthStorePort,
@@ -36,23 +33,29 @@ export type {
 } from "./layoutLoginSyncPorts";
 
 const PULL_DIRECTION = "pull";
+const FINALIZE_DELAY_MS = 400;
+const COMPLETE_DELAY_MS = 500;
 
-async function cleanup_failed_login_sync(
+async function pull_first_pass(
   dependencies: LayoutLoginSyncDependencies,
-  error_message: string,
-  sync_progress_subscription: SyncProgressSubscriptionState,
 ): Promise<Result<boolean>> {
-  console.error("[Layout] Login sync failed", {
-    event: LAYOUT_SESSION_EVENT.LOGIN_SYNC_FAILED,
-    error: error_message,
-  });
-  clear_sync_progress_subscription(sync_progress_subscription);
-  dependencies.initial_sync_store.reset();
-  await sign_out_after_failed_login(
-    dependencies,
-    build_sign_in_error_path(SIGN_IN_ERROR_CODE.SYNC_FAILED),
+  const outcome = await run_with_timeout(
+    dependencies.sync_store.sync_now(PULL_DIRECTION),
+    SESSION_OPERATION_TIMEOUT_MS.ACCOUNT_PULL,
   );
-  return create_failure_result(error_message);
+  switch (outcome.status) {
+    case TIMED_OPERATION_STATUS.TIMED_OUT:
+      return { success: false, error: LAYOUT_SESSION_MESSAGE.PULL_TIMED_OUT };
+    case TIMED_OPERATION_STATUS.FAILED:
+      return { success: false, error: outcome.error };
+    case TIMED_OPERATION_STATUS.COMPLETED:
+      return outcome.value.success || outcome.value.errors.length === 0
+        ? create_success_result(true)
+        : {
+            success: false,
+            error: `${LAYOUT_SESSION_MESSAGE.SYNC_FAILED_PREFIX} ${outcome.value.errors[0]?.error || LAYOUT_SESSION_MESSAGE.UNKNOWN_SYNC_ERROR}`,
+          };
+  }
 }
 
 async function pull_account_data(
@@ -60,12 +63,12 @@ async function pull_account_data(
 ): Promise<Result<boolean>> {
   const sync_progress_subscription =
     subscribe_to_login_sync_progress(dependencies);
-  const first_sync_result =
-    await dependencies.sync_store.sync_now(PULL_DIRECTION);
-  if (!first_sync_result.success && first_sync_result.errors.length > 0)
-    return cleanup_failed_login_sync(
+  const first_pull = await pull_first_pass(dependencies);
+  if (!first_pull.success)
+    return stop_login_sync_for_retry(
       dependencies,
-      `${LAYOUT_SESSION_MESSAGE.SYNC_FAILED_PREFIX} ${first_sync_result.errors[0]?.error || LAYOUT_SESSION_MESSAGE.UNKNOWN_SYNC_ERROR}`,
+      SESSION_SYNC_RETRY_KIND.ACCOUNT_DATA_UNAVAILABLE,
+      first_pull.error,
       sync_progress_subscription,
     );
   clear_sync_progress_subscription(sync_progress_subscription);
@@ -73,7 +76,10 @@ async function pull_account_data(
     LAYOUT_SESSION_PROGRESS.RESOLVING_REFERENCES.message,
     LAYOUT_SESSION_PROGRESS.RESOLVING_REFERENCES.percentage,
   );
-  await dependencies.sync_store.sync_now(PULL_DIRECTION);
+  await run_with_timeout(
+    dependencies.sync_store.sync_now(PULL_DIRECTION),
+    SESSION_OPERATION_TIMEOUT_MS.ACCOUNT_PULL,
+  );
   return create_success_result(true);
 }
 
@@ -85,15 +91,23 @@ async function finalize_login_sync(
     LAYOUT_SESSION_PROGRESS.ALMOST_READY.percentage,
   );
   dependencies.start_background_sync();
-  await dependencies.delay(400);
+  dependencies.start_realtime_sync();
+  await dependencies.delay(FINALIZE_DELAY_MS);
   dependencies.initial_sync_store.update_progress(
     LAYOUT_SESSION_PROGRESS.LOADING_PROFILE.message,
     LAYOUT_SESSION_PROGRESS.LOADING_PROFILE.percentage,
   );
   dependencies.auth_store.reset_initialized_state();
   await dependencies.auth_store.initialize();
-  await dependencies.initial_sync_store.complete_sync();
-  await dependencies.delay(500);
+  const completion = await dependencies.initial_sync_store.complete_sync();
+  if (!completion.success)
+    return stop_login_sync_for_retry(
+      dependencies,
+      SESSION_SYNC_RETRY_KIND.SESSION_NOT_SAVED,
+      completion.error,
+      create_inactive_sync_progress_subscription(),
+    );
+  await dependencies.delay(COMPLETE_DELAY_MS);
   console.log("[Layout] Verified user login sync complete", {
     event: LAYOUT_SESSION_EVENT.LOGIN_SYNC_COMPLETE,
   });
@@ -116,13 +130,8 @@ export async function sync_verified_user_login_session(
   if (is_login_sync_already_running(dependencies))
     return create_success_result(false);
   dependencies.initial_sync_store.start_sync();
-  const local_change_guard =
-    await evaluate_login_local_change_guard(dependencies);
-  if (!allows_login_data_wipe(local_change_guard))
-    return abort_login_to_protect_local_changes(
-      dependencies,
-      local_change_guard,
-    );
+  dependencies.dismiss_sync_retry();
+  await log_discarded_pending_changes(dependencies);
   dependencies.initial_sync_store.update_progress(
     LAYOUT_SESSION_PROGRESS.STOPPING_BACKGROUND.message,
     LAYOUT_SESSION_PROGRESS.STOPPING_BACKGROUND.percentage,

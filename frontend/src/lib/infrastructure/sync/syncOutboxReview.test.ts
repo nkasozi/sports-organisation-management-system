@@ -110,6 +110,7 @@ describe("sync outbox review", () => {
         table_name: "teams",
         local_id: "team_a",
         server_version: 6,
+        server_sequence: 0,
         record_state: "deleted",
       },
     ]);

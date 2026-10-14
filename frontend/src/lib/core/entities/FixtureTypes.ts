@@ -65,6 +65,10 @@ export interface Fixture extends BaseEntity {
   clock_status?: FixtureClockStatus;
   clock_elapsed_seconds?: number;
   clock_started_at?: IsoDateTimeString;
+  clock_added_seconds?: number;
+  clock_break_started_at?: IsoDateTimeString;
+  shootout_home_score?: number;
+  shootout_away_score?: number;
   match_day: number;
   notes: string;
   stage_id: EntityId;

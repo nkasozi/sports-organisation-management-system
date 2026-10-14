@@ -1,7 +1,7 @@
 import { get } from "svelte/store";
 
 import type { Organization } from "../../core/entities/Organization";
-import { build_record_owners_for_player } from "../../core/interfaces/ports";
+import { build_record_owners_for_profile } from "../../core/interfaces/ports";
 import type { OrganizationSettingsUseCasesPort } from "../../core/interfaces/ports/internal/usecases/OrganizationSettingsUseCasesPort";
 import type { GameEventLogUseCases } from "../../core/usecases/GameEventLogUseCases";
 import { create_game_event_log_use_cases } from "../../core/usecases/GameEventLogUseCases";
@@ -81,9 +81,11 @@ function read_identification_actor(): IdentificationActor {
   return {
     status: IdentificationActorStatus.AVAILABLE,
     role: profile.role,
-    owners: build_record_owners_for_player(
-      profile.player_id ?? NO_LINKED_PLAYER_ID,
-    ),
+    owners: build_record_owners_for_profile({
+      role: profile.role,
+      team_id: profile.team_id,
+      player_id: profile.player_id ?? NO_LINKED_PLAYER_ID,
+    }),
   };
 }
 

@@ -1,9 +1,13 @@
 <script lang="ts">
-    import { LOGOUT_WARNING_MODAL_STATE } from "$lib/presentation/logic/logoutWarningModalLogic";
+    import {
+        LOGOUT_WARNING_MODAL_STATE,
+        LOGOUT_WARNING_TEXT,
+    } from "$lib/presentation/logic/logoutWarningModalLogic";
 
     export let modal_state:
         | typeof LOGOUT_WARNING_MODAL_STATE.CHECKING
         | typeof LOGOUT_WARNING_MODAL_STATE.SYNCING;
+    export let on_stop_syncing: () => boolean;
 </script>
 
 <div
@@ -29,6 +33,13 @@
             <p class="text-accent-600 dark:text-accent-400 text-center">
                 Uploading your changes before signing out...
             </p>
+            <button
+                type="button"
+                class="mt-4 rounded-lg border border-accent-300 px-4 py-2 text-sm font-medium text-accent-700 hover:bg-accent-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-theme-primary-500 dark:border-accent-600 dark:text-accent-200 dark:hover:bg-accent-700"
+                on:click={on_stop_syncing}
+            >
+                {LOGOUT_WARNING_TEXT.STOP_SYNCING}
+            </button>
         {:else}
             <p
                 id="logout-progress-title"

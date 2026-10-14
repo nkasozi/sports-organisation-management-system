@@ -50,3 +50,36 @@ export function filter_organization_owned_records<
       return [];
   }
 }
+
+function is_shared_organization_id(organization_id: string): boolean {
+  return (
+    organization_id === GLOBAL_ORGANIZATION_ID ||
+    organization_id === UNSCOPED_ORGANIZATION_ID
+  );
+}
+
+export function is_global_table_record_visible(
+  record: Record<string, unknown>,
+  caller_scope: CallerScope,
+): boolean {
+  const organization_id = read_organization_id(record);
+  switch (caller_scope.kind) {
+    case CallerScopeKind.GLOBAL:
+      return true;
+    case CallerScopeKind.ORGANIZATION:
+      return (
+        is_shared_organization_id(organization_id) ||
+        organization_id === caller_scope.organization_id
+      );
+    case CallerScopeKind.NONE:
+      return is_shared_organization_id(organization_id);
+  }
+}
+
+export function filter_global_table_records<
+  TRecord extends Record<string, unknown>,
+>(records: TRecord[], caller_scope: CallerScope): TRecord[] {
+  return records.filter((record) =>
+    is_global_table_record_visible(record, caller_scope),
+  );
+}

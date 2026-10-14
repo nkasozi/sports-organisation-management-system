@@ -5,7 +5,11 @@ import type {
   FixtureLineup,
   UpdateFixtureLineupInput,
 } from "../entities/FixtureLineup";
-import type { FixtureLineupRepository } from "../interfaces/ports";
+import type { FixtureStatusValue } from "../entities/StatusConstants";
+import type {
+  FixtureLineupRepository,
+  FixtureRepository,
+} from "../interfaces/ports";
 import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult, Result } from "../types/Result";
 import { create_success_result } from "../types/Result";
@@ -25,6 +29,7 @@ import {
   type LineupEditAction,
   type LineupStatusTransitionAction,
 } from "./FixtureLineupConstants";
+import { find_lineup_fixture_status } from "./FixtureLineupFixtureLookup";
 import {
   decide_lineup_edit,
   decide_lineup_transition,
@@ -43,7 +48,7 @@ export function fail_missing_lineup_id(): Result<never> {
   );
 }
 
-function settle_decision<TAllowed>(
+export function settle_decision<TAllowed>(
   decision: LineupDecision<TAllowed>,
   lineup_id: LineupId,
   action: LineupAction,
@@ -77,16 +82,38 @@ async function find_lineup(
   });
 }
 
+export type LineupRepositories = {
+  lineup_repository: FixtureLineupRepository;
+  fixture_repository: FixtureRepository;
+};
+
+export async function find_lineup_with_fixture_status(
+  repositories: LineupRepositories,
+  id: LineupId,
+): AsyncResult<{ lineup: FixtureLineup; fixture_status: FixtureStatusValue }> {
+  if (is_blank_identifier(id)) return fail_missing_lineup_id();
+  const lineup_result = await find_lineup(repositories.lineup_repository, id);
+  if (!lineup_result.success) return lineup_result;
+  const status_result = await find_lineup_fixture_status(
+    repositories.fixture_repository,
+    lineup_result.data,
+  );
+  if (!status_result.success) return status_result;
+  return create_success_result({
+    lineup: lineup_result.data,
+    fixture_status: status_result.data,
+  });
+}
+
 export async function find_unlocked_lineup(
-  repository: FixtureLineupRepository,
+  repositories: LineupRepositories,
   id: LineupId,
   action: LineupEditAction,
 ): AsyncResult<FixtureLineup> {
-  if (is_blank_identifier(id)) return fail_missing_lineup_id();
-  const lineup_result = await find_lineup(repository, id);
-  if (!lineup_result.success) return lineup_result;
+  const found = await find_lineup_with_fixture_status(repositories, id);
+  if (!found.success) return found;
   return settle_decision(
-    decide_lineup_edit(lineup_result.data, action),
+    decide_lineup_edit(found.data.lineup, action, found.data.fixture_status),
     id,
     action,
   );
@@ -124,7 +151,7 @@ export async function create_unique_lineup(
   );
 }
 
-async function apply_lineup_update(
+export async function apply_lineup_update(
   repository: FixtureLineupRepository,
   id: LineupId,
   old_lineup: FixtureLineup,

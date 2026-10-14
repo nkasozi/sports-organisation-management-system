@@ -135,6 +135,7 @@ describe("liveGameDetailPagePeriodActions", () => {
       new_period: "second_half",
       new_period_label: "Second Half",
       minute: 45,
+      period_sequence: ["first_half", "half_time", "second_half"],
       fixture_use_cases: {},
     });
     expect(result).toEqual({

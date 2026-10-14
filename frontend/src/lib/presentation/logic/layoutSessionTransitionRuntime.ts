@@ -1,4 +1,12 @@
-import { sign_out } from "$lib/adapters/iam/clerkAuthService";
+import {
+  get_clerk_reachability,
+  initialize_clerk,
+  release_clerk_session_gate,
+  sign_out,
+  suppress_clerk_session_until_signed_out,
+} from "$lib/adapters/iam/clerkAuthService";
+import { CLERK_REACHABILITY_STATUS } from "$lib/adapters/iam/clerkReachability";
+import { start_realtime_sync_for_signed_in_session } from "$lib/adapters/initialization/appInitializer";
 import {
   get_unsynced_local_change_count,
   start_background_sync,
@@ -39,6 +47,11 @@ import {
 export function complete_root_layout_pending_clerk_sign_out(): Promise<PendingClerkSignOutOutcome> {
   return complete_pending_clerk_sign_out({
     has_pending_clerk_sign_out,
+    suppress_clerk_session: suppress_clerk_session_until_signed_out,
+    release_clerk_session_gate,
+    initialize_clerk,
+    is_clerk_reachable: () =>
+      get_clerk_reachability().status === CLERK_REACHABILITY_STATUS.CONFIRMED,
     sign_out,
     clear_pending_clerk_sign_out,
   });
@@ -55,6 +68,8 @@ function create_session_ended_policy_dependencies(): SessionEndedPolicyDependenc
         start_background_sync,
       }),
     show_session_ended_notice: session_ended_notice_store.show,
+    show_session_ended_notice_without_count:
+      session_ended_notice_store.show_without_count,
     show_session_notice: session_sync_notice_store.show,
   };
 }
@@ -83,6 +98,7 @@ export function handle_root_layout_user_signed_in(
       handle_verified_user_page_reload_session({
         auth_store,
         start_background_sync,
+        start_realtime_sync: start_realtime_sync_for_signed_in_session,
         trigger_full_sync_on_page_reload,
       }),
     run_login_sync: () =>

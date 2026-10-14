@@ -35,6 +35,7 @@ export type {
 export {
   build_authorization_list_filter,
   build_record_owners_for_player,
+  build_record_owners_for_profile,
   check_data_permission,
   check_entity_permission,
   check_entity_permission_in_any_scope,

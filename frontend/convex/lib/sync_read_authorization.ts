@@ -6,6 +6,10 @@ import {
   load_caller_ownership,
   resolve_ownership_role_kind,
 } from "./caller_ownership";
+import {
+  filter_global_table_records,
+  resolve_caller_scope,
+} from "./caller_scope";
 import { check_entity_permission, DataAction } from "./permission_checks";
 import {
   apply_role_read_policy,
@@ -71,7 +75,11 @@ export async function authorize_records_for_reader<
   ctx: { db: QueryCtx["db"] },
   command: ReadAuthorizationCommand<TRecord>,
 ): Promise<TRecord[]> {
-  if (is_global_table(command.table_name)) return command.records;
+  if (is_global_table(command.table_name))
+    return filter_global_table_records(
+      command.records,
+      resolve_caller_scope(command.caller),
+    );
   if (!can_caller_read_table(command.caller, command.table_name))
     return select_records_without_read_permission(command);
   const scoped_records = await filter_records_for_caller(ctx, command);

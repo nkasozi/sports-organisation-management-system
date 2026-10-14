@@ -30,6 +30,10 @@ vi.mock("./authOfflineVerifiedSessionRuntime", () => ({
     auth_initialize_mocks.restore_offline_verified_session,
 }));
 
+vi.mock("./authOfflineVerifiedIdentityRuntime", () => ({
+  remember_verified_identity_for_profile: async () => true,
+}));
+
 vi.mock("./authHelpers", async () =>
   (
     await import("./authInitialize.test_support")

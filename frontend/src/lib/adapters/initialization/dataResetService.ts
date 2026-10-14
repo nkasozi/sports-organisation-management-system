@@ -6,6 +6,7 @@ import {
   sync_change_tracking_gate,
   UntrackedWriteReason,
 } from "$lib/adapters/repositories/syncOutbox/syncChangeTrackingGate";
+import { create_recreate_base_version } from "$lib/adapters/repositories/syncOutbox/syncOutboxTypes";
 import { run_untracked_write_scope } from "$lib/adapters/repositories/syncOutbox/untrackedWriteScope";
 import type { UntrackedWriteScope } from "$lib/adapters/repositories/syncOutbox/untrackedWriteScopeToken";
 import type { AsyncResult } from "$lib/core/types/Result";
@@ -21,9 +22,12 @@ import {
   resume_remote_change_subscriptions,
   set_pulling_from_remote,
   start_background_sync,
-  stop_background_sync,
 } from "$lib/infrastructure/sync/backgroundSyncService";
 import { clear_all_demo_data_in_convex } from "$lib/infrastructure/sync/convexSyncService";
+import {
+  resume_in_flight_sync_work,
+  stop_background_sync_for_maintenance,
+} from "$lib/infrastructure/sync/syncSessionQuiesce";
 import { clear_session_sync_flag } from "$lib/presentation/stores/initialSyncStore";
 import { sync_store } from "$lib/presentation/stores/syncStore";
 
@@ -119,7 +123,7 @@ async function resume_sync_and_push_when_signed_in(
   }
   start_background_sync();
   report(ResetProgress.PUSHING);
-  await enqueue_all_local_records_for_push();
+  await enqueue_all_local_records_for_push(create_recreate_base_version());
   const push_result = await sync_store.sync_now(PUSH_SYNC_DIRECTION);
   if (!push_result.success)
     console.error("[DataReset] Reseeded data could not be pushed", {
@@ -136,25 +140,21 @@ async function rebuild_after_server_clear(
   await clear_session_sync_flag();
   const rebuilt = await rebuild_local_data_without_tracking(report);
   report(ResetProgress.FINISHING);
-  set_pulling_from_remote(false);
-  if (!rebuilt) {
+  if (!rebuilt)
     console.error("[DataReset] Local rebuild failed; nothing was pushed", {
       event: "data_reset_local_rebuild_failed",
     });
-    return false;
-  }
-  return resume_sync_and_push_when_signed_in(report);
+  return rebuilt;
 }
 
 async function run_reset_steps(
   report: (step: ResetProgressStep) => boolean,
 ): Promise<boolean> {
   const cleared = await clear_server_data_when_signed_in(report);
-  if (!cleared) {
-    set_pulling_from_remote(false);
-    return false;
-  }
-  return rebuild_after_server_clear(report);
+  const rebuilt = cleared && (await rebuild_after_server_clear(report));
+  set_pulling_from_remote(false);
+  resume_in_flight_sync_work();
+  return rebuilt && (await resume_sync_and_push_when_signed_in(report));
 }
 
 export async function reset_all_data(
@@ -163,7 +163,7 @@ export async function reset_all_data(
   if (typeof window === BROWSER_GLOBAL_TYPE_UNDEFINED) return false;
   const report = create_progress_reporter(on_progress);
   report(ResetProgress.STOPPING_SYNC);
-  stop_background_sync();
+  await stop_background_sync_for_maintenance();
   pause_remote_change_subscriptions();
   set_pulling_from_remote(true);
   const succeeded = await run_reset_steps(report);

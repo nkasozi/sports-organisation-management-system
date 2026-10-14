@@ -12,6 +12,11 @@ import {
 
 import { outbox_table } from "./syncOutboxRepository";
 import {
+  discard_change_for_absent_server_copy,
+  type ServerAbsence,
+  ServerAbsenceReason,
+} from "./syncOutboxReviewAbsentDiscard";
+import {
   load_server_copy,
   ServerCopyStatus,
 } from "./syncOutboxReviewServerCopy";
@@ -35,7 +40,7 @@ const NO_LONGER_WAITING_ERROR =
 const SERVER_COPY_NOT_VISIBLE_ERROR =
   "The saved copy of this record is not available to your account, so your change was kept. Retry it or ask an administrator for access.";
 
-export interface DiscardRejectedDependencies extends RemoteApplyDependencies {
+interface DiscardRejectedDependencies extends RemoteApplyDependencies {
   convex_client: ConvexClient;
 }
 
@@ -137,6 +142,25 @@ async function restore_server_copy(
   return create_success_result(true);
 }
 
+function discard_for_absence(
+  dependencies: RemoteApplyDependencies,
+  entry: SyncOutboxEntry,
+  absence: ServerAbsence,
+): AsyncResult<boolean> {
+  switch (absence.reason) {
+    case ServerAbsenceReason.UNREPORTED:
+      return discard_never_synced_change(dependencies, entry);
+    case ServerAbsenceReason.NEVER_EXISTED:
+    case ServerAbsenceReason.NOT_VISIBLE:
+    case ServerAbsenceReason.DELETED:
+      return discard_change_for_absent_server_copy(
+        dependencies,
+        entry,
+        absence,
+      );
+  }
+}
+
 export async function discard_rejected_change(
   dependencies: DiscardRejectedDependencies,
   table_name: string,
@@ -156,7 +180,11 @@ export async function discard_rejected_change(
   if (!server_copy.success) return server_copy;
   switch (server_copy.data.status) {
     case ServerCopyStatus.NOT_FOUND:
-      return discard_never_synced_change(dependencies, waiting.data);
+      return discard_for_absence(
+        dependencies,
+        waiting.data,
+        server_copy.data.absence,
+      );
     case ServerCopyStatus.FOUND:
       return restore_server_copy(
         dependencies,

@@ -76,6 +76,7 @@ export function apply_live_game_detail_bundle(
     away_team: bundle.away_team,
     competition: bundle.competition,
     sport: bundle.sport,
+    stage: bundle.stage,
     venue: bundle.venue,
     organization_name: bundle.organization_name,
     assigned_officials_data: bundle.assigned_officials_data,
@@ -84,6 +85,8 @@ export function apply_live_game_detail_bundle(
     home_lineup_id: bundle.home_lineup_id,
     away_lineup_id: bundle.away_lineup_id,
     game_clock_seconds: bundle.game_clock_seconds,
+    extra_time_added_seconds: bundle.extra_time_added_seconds,
+    break_elapsed_seconds: bundle.break_elapsed_seconds,
   };
 }
 

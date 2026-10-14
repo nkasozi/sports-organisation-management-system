@@ -1,6 +1,7 @@
 import type {
   CreateFixtureLineupInput,
   FixtureLineup,
+  LineupPlayer,
   UpdateFixtureLineupInput,
 } from "../../../../entities/FixtureLineup";
 import type { ScalarValueInput } from "../../../../types/DomainScalars";
@@ -39,4 +40,8 @@ export interface FixtureLineupUseCasesPort extends BaseUseCasesPort<
   lock_lineup(
     id: ScalarValueInput<FixtureLineup["id"]>,
   ): AsyncResult<FixtureLineup>;
+  record_live_player_times(command: {
+    lineup_id: ScalarValueInput<FixtureLineup["id"]>;
+    selected_players: LineupPlayer[];
+  }): AsyncResult<FixtureLineup>;
 }

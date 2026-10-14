@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { SEED_SYSTEM_USER_IDS } from "$lib/infrastructure/utils/seed/seedIds";
+
 import {
   create_default_anonymous_state,
   try_restore_anonymous_session,
@@ -100,6 +102,8 @@ vi.mock("./profileLoader", () => ({
   load_profiles_from_repository: load_profiles_from_repository_mock,
 }));
 
+const DEMO_PROFILE_ID = SEED_SYSTEM_USER_IDS.ORG_ADMIN_UGANDA_HOCKEY;
+
 describe("authInitializationHelpers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -111,7 +115,7 @@ describe("authInitializationHelpers", () => {
   });
 
   it("restores anonymous sessions when the saved token matches an available profile", async () => {
-    const restored_token = create_auth_token();
+    const restored_token = create_auth_token(DEMO_PROFILE_ID);
 
     verify_token_mock.mockResolvedValueOnce({
       success: true,
@@ -123,7 +127,9 @@ describe("authInitializationHelpers", () => {
     load_sidebar_menu_for_role_mock.mockResolvedValueOnce([
       { group_name: "General", items: [] },
     ]);
-    const available_profiles = [create_profile()] as UserProfile[];
+    const available_profiles = [
+      create_profile({ id: DEMO_PROFILE_ID }),
+    ] as UserProfile[];
 
     await expect(
       try_restore_anonymous_session(available_profiles, "a.b.signature"),

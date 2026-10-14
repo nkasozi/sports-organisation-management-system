@@ -15,6 +15,7 @@ import { auth_store } from "$lib/presentation/stores/auth";
 
 import { ensure_route_access } from "./authGuard";
 import { ROOT_ROUTE_PATH } from "./authGuardConstants";
+import { is_route_allowed_for_role_locally } from "./authGuardLocalRouteAccess";
 import { evaluate_cached_route_access } from "./authGuardRouteAccessCache";
 import {
   format_route_as_page_name,
@@ -25,6 +26,7 @@ import {
   type BeforeNavigationGuardDependencies,
   type CompletedNavigationGuardDependencies,
   guard_completed_navigation,
+  reveal_page_after_initial_route_decision,
   should_cancel_navigation,
 } from "./layoutNavigationGuard";
 import { PRESENCE_STATUS } from "./presenceStatus";
@@ -106,6 +108,7 @@ function create_before_navigation_guard_dependencies(
     is_app_ready,
     read_current_role,
     evaluate_cached_route_access,
+    evaluate_local_route_access: is_route_allowed_for_role_locally,
     record_denial: record_navigation_denial,
   };
 }
@@ -116,11 +119,19 @@ function create_completed_navigation_guard_dependencies(
   return { is_app_ready, ensure_route_access };
 }
 
-export function guard_root_layout_initial_route(
-  pathname: string,
-): Promise<boolean> {
+function guard_root_layout_initial_route(pathname: string): Promise<boolean> {
   return guard_completed_navigation(
     create_completed_navigation_guard_dependencies(() => true),
+    pathname,
+  );
+}
+
+export function reveal_root_layout_after_initial_route(
+  pathname: string,
+  reveal_page: () => boolean,
+): Promise<boolean> {
+  return reveal_page_after_initial_route_decision(
+    { guard_initial_route: guard_root_layout_initial_route, reveal_page },
     pathname,
   );
 }

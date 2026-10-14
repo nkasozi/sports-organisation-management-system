@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 import { create_fixture_lineup_use_cases } from "./FixtureLineupUseCases";
+import { create_fixture_repository_with_status } from "./FixtureLineupUseCases.test_support";
 
 const mocks = vi.hoisted(() => ({ emit_entity_updated: vi.fn() }));
 
@@ -60,7 +61,10 @@ function use_cases_for(existing: unknown): {
   const repository = create_repository(existing);
   return {
     repository,
-    use_cases: create_fixture_lineup_use_cases(repository as never),
+    use_cases: create_fixture_lineup_use_cases(
+      repository as never,
+      create_fixture_repository_with_status("scheduled"),
+    ),
   };
 }
 

@@ -6,7 +6,9 @@ import {
 } from "../../../../convex/lib/auth_middleware";
 
 function create_mock_context(
-  identity: { subject: string; email?: string } | undefined,
+  identity:
+    | { subject: string; email?: string; emailVerified?: boolean }
+    | undefined,
   system_user: Record<string, unknown> | undefined = undefined,
 ): ConvexContext {
   const mock_context = {
@@ -47,7 +49,7 @@ describe("require_auth uniform failure responses (R38)", () => {
 
   it("returns generic access denied when user not found in system", async () => {
     const context = create_mock_context(
-      { subject: "user_123", email: "test@example.com" },
+      { subject: "user_123", email: "test@example.com", emailVerified: true },
       void 0,
     );
     const result = await require_auth(context);
@@ -59,7 +61,7 @@ describe("require_auth uniform failure responses (R38)", () => {
 
   it("returns generic access denied when user account is inactive", async () => {
     const context = create_mock_context(
-      { subject: "user_123", email: "test@example.com" },
+      { subject: "user_123", email: "test@example.com", emailVerified: true },
       {
         _id: "user_1",
         email: "test@example.com",
@@ -83,7 +85,7 @@ describe("require_auth uniform failure responses (R38)", () => {
       organization_id: "org_1",
     };
     const context = create_mock_context(
-      { subject: "user_123", email: "test@example.com" },
+      { subject: "user_123", email: "test@example.com", emailVerified: true },
       active_user,
     );
     const result = await require_auth(context);

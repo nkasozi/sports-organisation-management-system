@@ -19,6 +19,7 @@ import {
   generate_conflict_id,
   get_entity_display_name,
 } from "$lib/infrastructure/sync/conflictTypes";
+import { ConflictRemoteDataStatus } from "$lib/infrastructure/sync/syncConflictVisibility";
 import type { ConflictFromServer } from "$lib/infrastructure/sync/syncTypes";
 
 import type { ConflictStoreState } from "./conflictStoreHelpers";
@@ -77,14 +78,34 @@ function audit_detected_conflict(conflict: ScalarInput<ConflictRecord>): void {
   });
 }
 
+function has_visible_server_copy(
+  table_name: string,
+  conflict: ConflictFromServer,
+): boolean {
+  switch (conflict.remote_data_status) {
+    case ConflictRemoteDataStatus.VISIBLE:
+      return true;
+    case ConflictRemoteDataStatus.HIDDEN:
+      console.warn("[ConflictStore] Hidden server copy sent to sync review", {
+        event: "conflict_hidden_remote_sent_to_review",
+        table_name,
+        local_id: conflict.local_id,
+      });
+      return false;
+  }
+}
+
 export function add_conflicts_from_sync_response(
   context: ConflictStoreContext,
   table_name: string,
   conflicts: ConflictFromServer[],
 ): boolean {
-  if (conflicts.length === 0) return false;
+  const visible_conflicts = conflicts.filter((conflict) =>
+    has_visible_server_copy(table_name, conflict),
+  );
+  if (visible_conflicts.length === 0) return false;
 
-  const new_conflicts: ScalarInput<ConflictRecord>[] = conflicts.map(
+  const new_conflicts: ScalarInput<ConflictRecord>[] = visible_conflicts.map(
     (conflict) => build_conflict_record_from_server(table_name, conflict),
   );
 

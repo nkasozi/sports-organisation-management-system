@@ -76,7 +76,7 @@ export function create_clerk_auth_service_module_mock(): Record<
       is_signed_in: true,
       user_state: {
         status: "present",
-        user: { email_address: "admin@test.com" },
+        user: { id: "clerk-test-user", email_address: "admin@test.com" },
       },
       session_id_state: {
         status: "present",

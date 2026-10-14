@@ -101,7 +101,7 @@
                     {overall_stats.goals_for}
                 </div>
                 <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Goals For
+                    Scored For
                 </div>
             </div>
             <div
@@ -113,7 +113,7 @@
                     {overall_stats.goals_against}
                 </div>
                 <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Goals Against
+                    Scored Against
                 </div>
             </div>
             <div

@@ -54,6 +54,38 @@ interface VersionedUpsertCommand {
 
 const NO_PREVIOUS_VERSION = 0;
 const VERSION_INCREMENT = 1;
+export const PRUNED_DELETION_TIMESTAMP = "";
+
+const NEW_RECORD_INSERT: VersionedUpsertDecision = {
+  kind: VersionedUpsertKind.INSERT,
+  next_version: NO_PREVIOUS_VERSION + VERSION_INCREMENT,
+};
+
+function read_previously_known_version(
+  base_version: Option<BaseVersion>,
+): Option<number> {
+  if (base_version.status === OptionStatus.NONE) return base_version;
+  const base = base_version.value;
+  return base.kind === BaseVersionKind.KNOWN &&
+    base.version > NO_PREVIOUS_VERSION
+    ? { status: OptionStatus.SOME, value: base.version }
+    : { status: OptionStatus.NONE };
+}
+
+function decide_untombstoned_absent_upsert(
+  base_version: Option<BaseVersion>,
+): VersionedUpsertDecision {
+  const known_version = read_previously_known_version(base_version);
+  return known_version.status === OptionStatus.SOME
+    ? {
+        kind: VersionedUpsertKind.DELETED_REMOTELY,
+        remote_deletion: {
+          version: known_version.value,
+          deleted_at: PRUNED_DELETION_TIMESTAMP,
+        },
+      }
+    : NEW_RECORD_INSERT;
+}
 
 function is_explicit_recreate(base_version: Option<BaseVersion>): boolean {
   return (
@@ -67,10 +99,7 @@ function decide_absent_record_upsert(
   base_version: Option<BaseVersion>,
 ): VersionedUpsertDecision {
   if (remote_deletion.status === OptionStatus.NONE)
-    return {
-      kind: VersionedUpsertKind.INSERT,
-      next_version: NO_PREVIOUS_VERSION + VERSION_INCREMENT,
-    };
+    return decide_untombstoned_absent_upsert(base_version);
   return is_explicit_recreate(base_version)
     ? {
         kind: VersionedUpsertKind.INSERT,

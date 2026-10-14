@@ -57,3 +57,8 @@ export function read_browser_network_online(): boolean {
   if (typeof navigator === BROWSER_GLOBAL_TYPE_UNDEFINED) return false;
   return navigator.onLine;
 }
+
+export function is_browser_known_offline(): boolean {
+  if (typeof navigator === BROWSER_GLOBAL_TYPE_UNDEFINED) return false;
+  return navigator.onLine === false;
+}

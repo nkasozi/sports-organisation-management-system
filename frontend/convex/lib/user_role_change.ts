@@ -8,6 +8,7 @@ import {
   type Option,
   OptionStatus,
 } from "./option";
+import { refresh_ownership_dependents } from "./ownership_refresh";
 import {
   find_role_reference_rejection,
   type RoleReferenceField,
@@ -156,16 +157,25 @@ export async function apply_user_role_change(
 ): Promise<boolean> {
   const target_user = command.target_user;
   const organization_id = resolve_target_organization(command);
+  const previous_user = { ...target_user };
+  const ownership_patch = {
+    role: command.request.role,
+    organization_id,
+    ...build_supplied_reference_patch(command.request.references),
+  };
   await ctx.db.patch(target_user._id, {
     ...(await create_versioned_change_fields(ctx, {
       table_name: SYSTEM_USERS_SYNC_TABLE,
       changed_records: [target_user, { organization_id }],
       previous_version: target_user.version,
     })),
-    role: command.request.role,
-    organization_id,
-    ...build_supplied_reference_patch(command.request.references),
+    ...ownership_patch,
     updated_at: new Date().toISOString(),
+  });
+  await refresh_ownership_dependents(ctx, {
+    table_name: SYSTEM_USERS_SYNC_TABLE,
+    previous_record: create_some_option(previous_user),
+    next_record: create_some_option(ownership_patch),
   });
   return true;
 }

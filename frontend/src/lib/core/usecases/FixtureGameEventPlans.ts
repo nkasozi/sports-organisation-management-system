@@ -1,4 +1,9 @@
-import type { Fixture, GameEvent, GamePeriod } from "../entities/Fixture";
+import type {
+  Fixture,
+  GameEvent,
+  GamePeriod,
+  UpdateFixtureInput,
+} from "../entities/Fixture";
 import { read_score_award_points } from "../entities/GameEventStoredFacts";
 import type { ScoreAward } from "../entities/SportEventCatalogConstants";
 import { FIXTURE_STATUS, GAME_PERIOD } from "../entities/StatusConstants";
@@ -39,14 +44,32 @@ function stamp_recorded_event_facts(
   event: GameEvent,
   score_award: ScoreAward,
 ): GameEvent {
-  const period_fields = fixture.current_period
-    ? { period_id: fixture.current_period }
-    : {};
+  const period_fields =
+    event.period_id || !fixture.current_period
+      ? {}
+      : { period_id: fixture.current_period };
   return {
     ...event,
     ...period_fields,
     points_awarded: read_score_award_points(score_award),
   };
+}
+
+type ScoreDelta = { home: number; away: number };
+
+function build_score_updates(
+  fixture: Fixture,
+  delta: ScoreDelta,
+): UpdateFixtureInput {
+  return fixture.current_period === GAME_PERIOD.PENALTY_SHOOTOUT
+    ? {
+        shootout_home_score: (fixture.shootout_home_score ?? 0) + delta.home,
+        shootout_away_score: (fixture.shootout_away_score ?? 0) + delta.away,
+      }
+    : {
+        home_team_score: (fixture.home_team_score || 0) + delta.home,
+        away_team_score: (fixture.away_team_score || 0) + delta.away,
+      };
 }
 
 export function create_recorded_event_plan(
@@ -60,20 +83,8 @@ export function create_recorded_event_plan(
       ...(fixture.game_events || []),
       stamp_recorded_event_facts(fixture, event, score_award),
     ],
-    home_team_score: (fixture.home_team_score || 0) + delta.home,
-    away_team_score: (fixture.away_team_score || 0) + delta.away,
+    ...build_score_updates(fixture, delta),
     current_minute: resolve_forward_minute(fixture, event.minute),
-  });
-}
-
-export function create_period_plan(
-  fixture: Fixture,
-  period: GamePeriod,
-  minute: number,
-): FixtureUpdatePlan {
-  return plan_from_updates({
-    current_period: period,
-    current_minute: resolve_forward_minute(fixture, minute),
   });
 }
 

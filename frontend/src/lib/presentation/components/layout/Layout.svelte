@@ -5,18 +5,12 @@
         "layout_conflict_resolution_dismissed";
     import { onMount } from "svelte";
 
-    import type { ScalarInput } from "$lib/core/types/DomainScalars";
-    import type {
-        ConflictRecord,
-        ConflictResolutionAction,
-    } from "$lib/infrastructure/sync/conflictTypes";
     import Footer from "$lib/presentation/components/layout/Footer.svelte";
     import Header from "$lib/presentation/components/layout/Header.svelte";
     import LayoutStatusBanner from "$lib/presentation/components/layout/LayoutStatusBanner.svelte";
     import Sidebar from "$lib/presentation/components/layout/Sidebar.svelte";
     import MergeConflictScreen from "$lib/presentation/components/MergeConflictScreen.svelte";
     import ThemeProvider from "$lib/presentation/components/theme/ThemeProvider.svelte";
-    import { sync_store } from "$lib/presentation/stores/syncStore";
     import {
         get_theme_classes,
         theme_store,
@@ -65,21 +59,6 @@
         sidebar_open = false;
     }
 
-    async function handle_conflict_resolve(
-        event: CustomEvent<{
-            conflict: ScalarInput<ConflictRecord>;
-            action: ConflictResolutionAction;
-            merged_data?: Record<string, unknown>;
-        }>,
-    ): Promise<void> {
-        const { conflict, action, merged_data } = event.detail;
-        await sync_store.resolve_conflict_and_sync(
-            conflict,
-            action,
-            merged_data,
-        );
-    }
-
     function handle_conflict_dismiss(): void {
         console.info("[Layout] Conflict resolution dismissed", {
             event: LAYOUT_CONFLICT_DISMISSED_EVENT,
@@ -119,10 +98,7 @@
             ></div>
         {/if}
 
-        <MergeConflictScreen
-            on:resolve={handle_conflict_resolve}
-            on:dismiss={handle_conflict_dismiss}
-        />
+        <MergeConflictScreen on:dismiss={handle_conflict_dismiss} />
     </div>
 </ThemeProvider>
 

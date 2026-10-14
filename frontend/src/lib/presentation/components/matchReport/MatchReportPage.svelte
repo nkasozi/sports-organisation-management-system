@@ -16,9 +16,11 @@
     } from "$lib/presentation/logic/matchReportPageState";
     import { apply_match_report_refresh_data } from "$lib/presentation/logic/matchReportPageTransitions";
     import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
+    import { build_public_organization_scope } from "$lib/presentation/logic/publicDataOrganizationScope";
     import type { ToastType } from "$lib/presentation/logic/toastConfig";
     import { is_public_viewer } from "$lib/presentation/stores/auth";
     import { branding_store } from "$lib/presentation/stores/branding";
+    import { public_organization_store } from "$lib/presentation/stores/publicOrganization";
 
     import {
         download_match_report_for_page,
@@ -156,6 +158,9 @@
         }
         const public_data_result = await fetch_public_data_from_convex(
             MATCH_REPORT_PAGE_TEXT.public_data_scope,
+            build_public_organization_scope(
+                get(public_organization_store).organization_id,
+            ),
         );
         if (!public_data_result.success)
             console.warn("[MatchReport] Public data refresh skipped", {

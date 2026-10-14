@@ -18,6 +18,8 @@ import {
 } from "./lib/security_test_fixtures.test_support";
 import { batch_upsert } from "./sync_batch_mutation";
 
+const STORED_USER_VERSION = 1;
+
 interface BatchResult {
   success: boolean;
   results: Array<{ local_id: string; success: boolean; action: string }>;
@@ -73,7 +75,7 @@ describe("batch_upsert tenant isolation and privilege guards", () => {
             role: "super_admin",
             organization_id: GLOBAL_SCOPE_ID,
           },
-          version: 9,
+          version: STORED_USER_VERSION,
         },
       ],
     );
@@ -95,7 +97,7 @@ describe("batch_upsert tenant isolation and privilege guards", () => {
             role: "super_admin",
             organization_id: ORGANIZATION_A_ID,
           },
-          version: 9,
+          version: STORED_USER_VERSION,
         },
       ],
     );

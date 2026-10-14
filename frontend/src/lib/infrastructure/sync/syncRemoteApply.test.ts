@@ -9,10 +9,7 @@ import {
   create_fake_sync_database,
   type FakeSyncDatabase,
 } from "./syncFakeDatabase.test_support";
-import {
-  apply_remote_change_page,
-  convert_server_record_to_remote_change,
-} from "./syncRemoteApply";
+import { apply_remote_change_page } from "./syncRemoteApply";
 import {
   apply_resolved_remote_record,
   ResolvedApplyOutcome,
@@ -44,26 +41,6 @@ const PENDING_ENTRY = {
   status: "pending",
 };
 
-describe("convert_server_record_to_remote_change", () => {
-  it("strips server bookkeeping and keys the record by its local id", () => {
-    expect(
-      convert_server_record_to_remote_change({
-        _id: "convex_id",
-        _creationTime: 1,
-        local_id: "team_a",
-        synced_at: "2024-01-01T00:00:00.000Z",
-        version: 4,
-        sync_sequence: 9,
-        name: "Lions",
-      }),
-    ).toEqual({
-      local_id: "team_a",
-      server_version: 4,
-      local_data: { id: "team_a", name: "Lions" },
-    });
-  });
-});
-
 describe("apply_remote_change_page", () => {
   it("applies records and tombstones, records versions and advances the cursor", async () => {
     const { fake, dependencies } = create_dependencies();
@@ -74,10 +51,13 @@ describe("apply_remote_change_page", () => {
         {
           local_id: "team_a",
           server_version: 2,
+          server_sequence: 11,
           local_data: { id: "team_a", name: "Lions" },
         },
       ],
-      deletions: [{ local_id: "team_gone", server_version: 3 }],
+      deletions: [
+        { local_id: "team_gone", server_version: 3, server_sequence: 12 },
+      ],
       next_cursor: 12,
     });
     expect(summary).toEqual({ applied_count: 2, deferred_local_ids: [] });
@@ -87,12 +67,14 @@ describe("apply_remote_change_page", () => {
         table_name: "teams",
         local_id: "team_a",
         server_version: 2,
+        server_sequence: 11,
         record_state: "live",
       },
       {
         table_name: "teams",
         local_id: "team_gone",
         server_version: 3,
+        server_sequence: 12,
         record_state: "deleted",
       },
     ]);
@@ -111,6 +93,7 @@ describe("apply_remote_change_page", () => {
         {
           local_id: "team_dirty",
           server_version: 5,
+          server_sequence: 0,
           local_data: { id: "team_dirty", name: "Theirs" },
         },
       ],
@@ -156,6 +139,7 @@ describe("apply_resolved_remote_record", () => {
       {
         local_id: "team_dirty",
         server_version: 8,
+        server_sequence: 0,
         local_data: { id: "team_dirty", name: "Resolved" },
       },
       {
@@ -182,6 +166,7 @@ describe("apply_resolved_remote_record", () => {
       {
         local_id: "team_dirty",
         server_version: 8,
+        server_sequence: 0,
         local_data: { id: "team_dirty", name: "Resolved" },
       },
       { kind: ResolvedRecordGuardKind.CONFLICTED_ENTRY },

@@ -27,6 +27,7 @@ function build_server_conflict(
     local_data,
     local_version: 1,
     remote_data: { name: "Remote" },
+    remote_data_status: "visible",
     remote_version: 2,
     remote_updated_at: "2025-02-01T00:00:00.000Z",
     remote_updated_by: create_unknown_conflict_field_value(),
@@ -169,5 +170,28 @@ describe("conflict_store", () => {
     expect(
       conflict_store.get_resolved_data_for_action(conflict, "keep_remote"),
     ).toEqual({ name: "Remote" });
+  });
+
+  it("keeps conflicts with a hidden server copy off the field merge screen", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const added = conflict_store.add_conflicts_from_sync_response("teams", [
+      {
+        ...build_server_conflict("team-hidden", { name: "Local" }),
+        remote_data: {},
+        remote_data_status: "hidden",
+      },
+    ]);
+
+    expect(added).toBe(false);
+    expect(get(conflict_store).pending_conflicts).toEqual([]);
+    expect(get(conflict_store).show_merge_screen).toBe(false);
+    expect(console.warn).toHaveBeenCalledWith(
+      "[ConflictStore] Hidden server copy sent to sync review",
+      {
+        event: "conflict_hidden_remote_sent_to_review",
+        table_name: "teams",
+        local_id: "team-hidden",
+      },
+    );
   });
 });

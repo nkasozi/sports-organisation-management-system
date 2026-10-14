@@ -27,6 +27,9 @@ export const FIXTURE_EVENT = {
   TEAM_NAMES_UNAVAILABLE: "fixture_team_names_unavailable",
   TRANSITION_REJECTED: "fixture_transition_rejected",
   EVENT_ALREADY_RECORDED: "fixture_game_event_already_recorded",
+  EDIT_REJECTED: "fixture_edit_rejected",
+  CREATE_STATUS_REJECTED: "fixture_create_status_rejected",
+  PERIOD_CHANGE_REJECTED: "fixture_period_change_rejected",
 } as const;
 
 export const FIXTURE_MESSAGE = {
@@ -38,6 +41,8 @@ export const FIXTURE_MESSAGE = {
   TEAMS_TOO_FEW: "At least 2 teams are required",
   START_DATE_REQUIRED: "Start date is required",
   NEGATIVE_SCORE: "Scores cannot be negative",
+  CREATE_MUST_BE_SCHEDULED:
+    "New fixtures are always created as scheduled. Start the game from the live game screen.",
 } as const;
 
 export function build_unmapped_rounds_message(rounds: number[]): string {

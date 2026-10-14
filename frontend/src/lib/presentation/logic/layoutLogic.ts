@@ -41,7 +41,8 @@ export function is_route_guard_exempt(path: string): boolean {
     ROUTE_GUARD_EXEMPT_EXACT_PATHS.has(path) ||
     path.startsWith(APP_ROUTE_PATH.SIGN_IN) ||
     path.startsWith(APP_ROUTE_PATH.API_PREFIX) ||
-    get_is_public_content_page(path)
+    get_is_public_content_page(path) ||
+    get_is_public_profile_page(path)
   );
 }
 

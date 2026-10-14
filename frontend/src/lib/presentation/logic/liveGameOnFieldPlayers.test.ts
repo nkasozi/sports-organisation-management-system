@@ -4,6 +4,14 @@ import {
   derive_on_field_players,
   validate_substitution,
 } from "./liveGameOnFieldPlayers";
+import { build_card_severity_rules } from "./liveGamePlayerAvailability";
+import { OPEN_SUBSTITUTION_RULES } from "./liveGameSubstitutionRules";
+
+const FOOTBALL_CARD_RULES = build_card_severity_rules([
+  { id: "yellow_card", severity: "warning" },
+  { id: "second_yellow", severity: "ejection" },
+  { id: "red_card", severity: "ejection" },
+]);
 
 function player(id: string, overrides: Record<string, unknown> = {}): never {
   return {
@@ -39,12 +47,25 @@ function event(
   } as never;
 }
 
+const OPEN_CONTEXT = {
+  availability: {
+    on_field_ids: new Set<string>(),
+    ejected_ids: new Set<string>(),
+    suspended_ids: new Set<string>(),
+    substituted_off_ids: new Set<string>(),
+    substitutions_used: 0,
+  },
+  rules: OPEN_SUBSTITUTION_RULES,
+};
+
 const PLAYERS = [player("a"), player("b"), bench("c"), bench("d")];
 
 describe("derive_on_field_players", () => {
   it("starts with the starters", () => {
     expect(
-      derive_on_field_players(PLAYERS, [], "home").map((entry) => entry.id),
+      derive_on_field_players(PLAYERS, [], "home", FOOTBALL_CARD_RULES).map(
+        (entry) => entry.id,
+      ),
     ).toEqual(["a", "b"]);
   });
 
@@ -53,6 +74,7 @@ describe("derive_on_field_players", () => {
       [player("a"), player("b"), bench("c"), bench("d")],
       [event("substitution", 60, "c Player", "a Player")],
       "home",
+      FOOTBALL_CARD_RULES,
     );
     expect(on_field.map((entry) => entry.id)).toEqual(["b", "c"]);
   });
@@ -65,6 +87,7 @@ describe("derive_on_field_players", () => {
         event("second_yellow", 30, "b Player"),
       ],
       "home",
+      FOOTBALL_CARD_RULES,
     );
     expect(on_field).toEqual([]);
   });
@@ -74,6 +97,7 @@ describe("derive_on_field_players", () => {
       PLAYERS,
       [event("red_card", 20, "a Player", "", "away")],
       "home",
+      FOOTBALL_CARD_RULES,
     );
     expect(on_field.map((entry) => entry.id)).toEqual(["a", "b"]);
   });
@@ -89,6 +113,7 @@ describe("validate_substitution", () => {
         player_on_id: "c",
         player_off_id: "a",
         max_players_on_field: 2,
+        ...OPEN_CONTEXT,
       }).success,
     ).toBe(true);
   });
@@ -104,6 +129,7 @@ describe("validate_substitution", () => {
         player_on_id,
         player_off_id,
         max_players_on_field: 2,
+        ...OPEN_CONTEXT,
       }).success,
     ).toBe(false);
   });
@@ -115,6 +141,7 @@ describe("validate_substitution", () => {
         player_on_id: "c",
         player_off_id: "",
         max_players_on_field: 2,
+        ...OPEN_CONTEXT,
       }).success,
     ).toBe(false);
   });
@@ -126,6 +153,7 @@ describe("validate_substitution", () => {
         player_on_id: "c",
         player_off_id: "",
         max_players_on_field: 2,
+        ...OPEN_CONTEXT,
       }).success,
     ).toBe(true);
   });

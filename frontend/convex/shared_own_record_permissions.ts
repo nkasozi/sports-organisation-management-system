@@ -1,10 +1,18 @@
 import { SHARED_ENTITY_CATEGORY_MAP } from "./shared_entity_category_map";
-import type { SharedEntityType } from "./shared_entity_types";
+import {
+  SHARED_ENTITY_ROLE_GRANTS,
+  SHARED_TEAM_OWN_RECORD_GRANTS,
+  type SharedEntityRoleGrant,
+} from "./shared_entity_role_grants";
 import {
   SHARED_ROLE_PERMISSIONS,
   type SharedCrudPermissions,
-  type SharedUserRole,
 } from "./shared_permission_definitions";
+
+export {
+  is_record_owned_by_shared_owners,
+  type SharedTeamRecordOwners,
+} from "./shared_record_ownership";
 
 export const SharedPermissionScope = {
   ALL_RECORDS: "all_records",
@@ -25,23 +33,7 @@ export const SharedCrudAction = {
 type SharedCrudActionValue =
   (typeof SharedCrudAction)[keyof typeof SharedCrudAction];
 
-export interface SharedRecordOwners {
-  player_ids: ReadonlySet<string>;
-}
-
-interface SharedOwnRecordGrant {
-  role: SharedUserRole;
-  entity_type: SharedEntityType;
-  permissions: SharedCrudPermissions;
-}
-
-interface SharedHolderOwnershipRule {
-  entity_type: SharedEntityType;
-  holder_type_field: string;
-  holder_id_field: string;
-  holder_type: string;
-  owner_set: keyof SharedRecordOwners;
-}
+type SharedOwnRecordGrant = SharedEntityRoleGrant;
 
 const OWN_RECORD_FULL_PERMISSIONS: SharedCrudPermissions = {
   can_create: true,
@@ -56,21 +48,11 @@ const SHARED_OWN_RECORD_GRANTS: readonly SharedOwnRecordGrant[] = [
     entity_type: "identification",
     permissions: OWN_RECORD_FULL_PERMISSIONS,
   },
-];
-
-const SHARED_OWNERSHIP_RULES: readonly SharedHolderOwnershipRule[] = [
-  {
-    entity_type: "identification",
-    holder_type_field: "holder_type",
-    holder_id_field: "holder_id",
-    holder_type: "player",
-    owner_set: "player_ids",
-  },
+  ...SHARED_TEAM_OWN_RECORD_GRANTS,
 ];
 
 const ENTITY_TYPE_SEPARATOR_PATTERN = /[\s_-]/g;
 const EMPTY_TEXT = "";
-const STRING_TYPE_NAME = "string";
 
 function normalize_entity_type(entity_type: string): string {
   return entity_type
@@ -112,16 +94,15 @@ function is_category_action_permitted(
   return is_action_permitted(SHARED_ROLE_PERMISSIONS[role][category], action);
 }
 
-function is_own_record_action_granted(
-  role: string,
-  entity_type: string,
-  action: SharedCrudActionValue,
+function is_grant_action_permitted(
+  grants: readonly SharedEntityRoleGrant[],
+  check: { role: string; entity_type: string; action: SharedCrudActionValue },
 ): boolean {
-  return SHARED_OWN_RECORD_GRANTS.some(
+  return grants.some(
     (grant) =>
-      grant.role === role &&
-      grant.entity_type === entity_type &&
-      is_action_permitted(grant.permissions, action),
+      grant.role === check.role &&
+      grant.entity_type === check.entity_type &&
+      is_action_permitted(grant.permissions, check.action),
   );
 }
 
@@ -131,43 +112,22 @@ export function resolve_shared_entity_permission_scope(
   action: SharedCrudActionValue,
 ): SharedPermissionScopeValue {
   const normalized_entity_type = normalize_entity_type(entity_type);
-  if (is_own_record_action_granted(role, normalized_entity_type, action))
+  if (
+    is_grant_action_permitted(SHARED_OWN_RECORD_GRANTS, {
+      role,
+      entity_type: normalized_entity_type,
+      action,
+    })
+  )
     return SharedPermissionScope.OWN_RECORDS;
-  return is_category_action_permitted(role, normalized_entity_type, action)
+  const is_permitted =
+    is_category_action_permitted(role, normalized_entity_type, action) ||
+    is_grant_action_permitted(SHARED_ENTITY_ROLE_GRANTS, {
+      role,
+      entity_type: normalized_entity_type,
+      action,
+    });
+  return is_permitted
     ? SharedPermissionScope.ALL_RECORDS
     : SharedPermissionScope.NONE;
-}
-
-function read_trimmed_text(
-  record: Readonly<Record<string, unknown>>,
-  field_name: string,
-): string {
-  const value = record[field_name];
-  return typeof value === STRING_TYPE_NAME ? String(value).trim() : EMPTY_TEXT;
-}
-
-function is_held_by_owner(
-  rule: SharedHolderOwnershipRule,
-  record: Readonly<Record<string, unknown>>,
-  owners: SharedRecordOwners,
-): boolean {
-  const holder_id = read_trimmed_text(record, rule.holder_id_field);
-  return (
-    read_trimmed_text(record, rule.holder_type_field) === rule.holder_type &&
-    holder_id.length > 0 &&
-    owners[rule.owner_set].has(holder_id)
-  );
-}
-
-export function is_record_owned_by_shared_owners(
-  entity_type: string,
-  record: Readonly<Record<string, unknown>>,
-  owners: SharedRecordOwners,
-): boolean {
-  const normalized_entity_type = normalize_entity_type(entity_type);
-  return SHARED_OWNERSHIP_RULES.some(
-    (rule) =>
-      rule.entity_type === normalized_entity_type &&
-      is_held_by_owner(rule, record, owners),
-  );
 }

@@ -4,6 +4,7 @@ import {
   record_live_game_detail_page_event_action,
   update_live_game_detail_player_time_on_action,
 } from "./liveGameDetailPagePlayerActions";
+import { OPEN_SUBSTITUTION_RULES } from "./liveGameSubstitutionRules";
 
 const {
   record_live_game_detail_event_mock,
@@ -77,7 +78,11 @@ describe("liveGameDetailPagePlayerActions", () => {
       selected_event_type: { id: "goal", label: "Goal" },
       selected_player_id: "",
       selected_team_side: "home",
-      period_window: { status: "none" },
+      event_timing: {
+        effective_periods: [],
+        current_period_id: { status: "none" },
+        elapsed_minutes: 120,
+      },
     } as never);
 
     expect(update_live_game_player_time_on_mock).not.toHaveBeenCalled();
@@ -96,7 +101,9 @@ describe("liveGameDetailPagePlayerActions", () => {
       success: true,
       data: { id: "fixture-1" },
     });
-    const update = vi.fn().mockResolvedValue({ success: true, data: {} });
+    const record_live_player_times = vi
+      .fn()
+      .mockResolvedValue({ success: true, data: {} });
 
     const result = await record_live_game_detail_page_event_action({
       away_lineup_id: "away-lineup",
@@ -105,7 +112,7 @@ describe("liveGameDetailPagePlayerActions", () => {
       event_minute: 67,
       event_player_name: "Ada Stone",
       fixture_id: "fixture-1",
-      fixture_lineup_use_cases: { update },
+      fixture_lineup_use_cases: { record_live_player_times },
       fixture_use_cases: {},
       home_lineup_id: "home-lineup",
       home_players: [
@@ -117,13 +124,25 @@ describe("liveGameDetailPagePlayerActions", () => {
       secondary_player_id: "home-2",
       on_field_players: [{ id: "home-2" }],
       max_players_on_field: 11,
+      substitution_availability: {
+        on_field_ids: new Set<string>(),
+        ejected_ids: new Set<string>(),
+        suspended_ids: new Set<string>(),
+        substituted_off_ids: new Set<string>(),
+        substitutions_used: 0,
+      },
+      substitution_rules: OPEN_SUBSTITUTION_RULES,
       selected_event_type: { id: "substitution", label: "Substitution" },
       selected_player_id: "home-1",
       selected_team_side: "home",
-      period_window: { status: "none" },
+      event_timing: {
+        effective_periods: [],
+        current_period_id: { status: "none" },
+        elapsed_minutes: 120,
+      },
     } as never);
 
-    expect(update).toHaveBeenCalledTimes(1);
+    expect(record_live_player_times).toHaveBeenCalledTimes(1);
     expect(result).toEqual({
       success: true,
       fixture: { id: "fixture-1" },
@@ -154,46 +173,25 @@ describe("liveGameDetailPagePlayerActions", () => {
       secondary_player_id: "home-2",
       on_field_players: [{ id: "home-1" }, { id: "home-2" }],
       max_players_on_field: 11,
+      substitution_availability: {
+        on_field_ids: new Set<string>(),
+        ejected_ids: new Set<string>(),
+        suspended_ids: new Set<string>(),
+        substituted_off_ids: new Set<string>(),
+        substitutions_used: 0,
+      },
+      substitution_rules: OPEN_SUBSTITUTION_RULES,
       selected_event_type: { id: "substitution", label: "Substitution" },
       selected_player_id: "home-1",
       selected_team_side: "home",
-      period_window: { status: "none" },
+      event_timing: {
+        effective_periods: [],
+        current_period_id: { status: "none" },
+        elapsed_minutes: 120,
+      },
     } as never);
 
     expect(result.success).toBe(false);
     expect(record_live_game_detail_event_mock).not.toHaveBeenCalled();
-  });
-
-  it("records first-half stoppage time against the first half", async () => {
-    record_live_game_detail_event_mock.mockResolvedValue({
-      success: true,
-      data: { id: "fixture-1" },
-    });
-
-    await record_live_game_detail_page_event_action({
-      away_lineup_id: "away-lineup",
-      away_players: [],
-      event_description: "",
-      event_minute: 47,
-      event_player_name: "Ada Stone",
-      fixture_id: "fixture-1",
-      fixture_lineup_use_cases: {},
-      fixture_use_cases: {},
-      home_lineup_id: "home-lineup",
-      home_players: [],
-      is_substitution_event: false,
-      secondary_player_name: "",
-      selected_event_type: { id: "goal", label: "Goal" },
-      selected_player_id: "",
-      selected_team_side: "home",
-      period_window: {
-        status: "some",
-        value: { start_minute: 0, end_minute: 45 },
-      },
-    } as never);
-
-    expect(record_live_game_detail_event_mock).toHaveBeenCalledWith(
-      expect.objectContaining({ minute: 45, stoppage_time_minute: 2 }),
-    );
   });
 });

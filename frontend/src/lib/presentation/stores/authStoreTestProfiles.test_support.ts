@@ -1,3 +1,5 @@
+import { SEED_SYSTEM_USER_IDS } from "$lib/infrastructure/utils/seed/seedIds";
+
 import type { UserProfile } from "./auth";
 
 const ORGANISATION_ID = "org_1";
@@ -5,7 +7,7 @@ const ORGANISATION_NAME = "Test Organisation";
 const ALL_SCOPE = "*";
 
 const SUPER_ADMIN_PROFILE = {
-  id: "test-super-admin",
+  id: SEED_SYSTEM_USER_IDS.SYSTEM_ADMINISTRATOR,
   display_name: "Super Admin",
   email: "admin@test.com",
   role: "super_admin",
@@ -15,7 +17,7 @@ const SUPER_ADMIN_PROFILE = {
 };
 
 const ORG_ADMIN_PROFILE = {
-  id: "test-org-admin",
+  id: SEED_SYSTEM_USER_IDS.ORG_ADMIN_UGANDA_HOCKEY,
   display_name: "Organisation Admin",
   email: "orgadmin@test.com",
   role: "org_admin",
@@ -25,7 +27,7 @@ const ORG_ADMIN_PROFILE = {
 };
 
 const OFFICIALS_MANAGER_PROFILE = {
-  id: "test-officials-manager",
+  id: SEED_SYSTEM_USER_IDS.OFFICIALS_MANAGER_UGANDA_HOCKEY,
   display_name: "Officials Manager",
   email: "officials@test.com",
   role: "officials_manager",
@@ -35,7 +37,7 @@ const OFFICIALS_MANAGER_PROFILE = {
 };
 
 const TEAM_MANAGER_PROFILE = {
-  id: "test-team-manager",
+  id: SEED_SYSTEM_USER_IDS.TEAM_MANAGER_WEATHERHEAD,
   display_name: "Team Manager",
   email: "manager@test.com",
   role: "team_manager",
@@ -45,7 +47,7 @@ const TEAM_MANAGER_PROFILE = {
 };
 
 const OFFICIAL_PROFILE = {
-  id: "test-official",
+  id: SEED_SYSTEM_USER_IDS.OFFICIAL_MICHAEL_ANDERSON,
   display_name: "Michael Anderson",
   email: "michael@test.com",
   role: "official",
@@ -56,7 +58,7 @@ const OFFICIAL_PROFILE = {
 };
 
 const PLAYER_PROFILE = {
-  id: "test-player",
+  id: SEED_SYSTEM_USER_IDS.PLAYER_DENIS_ONYANGO,
   display_name: "Denis Onyango",
   email: "denis@test.com",
   role: "player",

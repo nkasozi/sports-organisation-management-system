@@ -4,6 +4,13 @@ import {
   derive_dismissed_player_ids,
   derive_on_field_players,
 } from "./liveGameOnFieldPlayers";
+import { build_card_severity_rules } from "./liveGamePlayerAvailability";
+
+const FOOTBALL_CARD_RULES = build_card_severity_rules([
+  { id: "yellow_card", severity: "warning" },
+  { id: "second_yellow", severity: "ejection" },
+  { id: "red_card", severity: "ejection" },
+]);
 
 function player(
   id: string,
@@ -56,6 +63,7 @@ describe("derive_on_field_players with player ids", () => {
         }),
       ],
       "home",
+      FOOTBALL_CARD_RULES,
     );
     expect(on_field.map((entry) => entry.id)).toEqual(["p1", "p3"]);
   });
@@ -73,6 +81,7 @@ describe("derive_on_field_players with player ids", () => {
         }),
       ],
       "home",
+      FOOTBALL_CARD_RULES,
     );
     expect(on_field).toEqual([]);
   });
@@ -90,6 +99,7 @@ describe("derive_on_field_players with player ids", () => {
         }),
       ],
       "home",
+      FOOTBALL_CARD_RULES,
     );
     expect(on_field.map((entry) => entry.id)).toEqual(["p2"]);
   });
@@ -120,6 +130,7 @@ describe("derive_dismissed_player_ids", () => {
         }),
       ],
       "home",
+      FOOTBALL_CARD_RULES,
     );
     expect([...dismissed].sort()).toEqual(["p1", "p3"]);
   });

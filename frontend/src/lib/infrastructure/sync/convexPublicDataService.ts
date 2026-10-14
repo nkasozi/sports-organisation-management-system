@@ -1,23 +1,13 @@
-import { get_database } from "$lib/adapters/repositories/database";
-import { sync_change_tracking_gate } from "$lib/adapters/repositories/syncOutbox/syncChangeTrackingGate";
+import type { Option } from "$lib/core/types/Option";
+import type { Result } from "$lib/core/types/Result";
 
+import type { PublicTableFetchCommand } from "./convexPublicDataTableFetch";
+import { fetch_and_store_public_table } from "./convexPublicDataTableFetch";
 import {
-  get_tables_for_page,
+  get_tables_for_organization_scope,
   type PublicDataPageType,
 } from "./convexPublicDataTables";
 import { get_sync_manager, type TableName } from "./convexSyncService";
-import {
-  apply_remote_snapshot_records,
-  SnapshotRecordScope,
-} from "./syncRemoteApplyRecords";
-
-interface ConvexRecord {
-  _id: string;
-  local_id: string;
-  synced_at: string;
-  version: number;
-  [key: string]: unknown;
-}
 
 type PublicDataFetchResult =
   | {
@@ -32,19 +22,12 @@ type PublicDataFetchResult =
       error: string;
     };
 
-type ConvexQuery = (
-  name: string,
-  args: Record<string, unknown>,
-) => Promise<unknown>;
-
 interface PublicTablesFetchSummary {
   tables_fetched: number;
   total_records: number;
   failed_tables: string[];
 }
 
-const TABLE_FETCH_TIMEOUT_MS = 8000;
-const GET_ALL_RECORDS_QUERY_NAME = "sync:get_all_records";
 const OFFLINE_ERROR = "offline";
 const CONVEX_NOT_AVAILABLE_ERROR = "convex_not_available";
 const UNDEFINED_TYPE_NAME = "undefined";
@@ -58,35 +41,23 @@ const PUBLIC_DATA_EVENT = {
   FETCH_STARTED: "public_data_fetch_started",
 } as const;
 
-async function fetch_and_store_table(
-  convex_query: ConvexQuery,
+function record_table_outcome(
+  summary: PublicTablesFetchSummary,
   table_name: TableName,
-): Promise<number> {
-  const query_promise = convex_query(GET_ALL_RECORDS_QUERY_NAME, {
+  outcome: Result<number>,
+): PublicTablesFetchSummary {
+  if (outcome.success)
+    return {
+      ...summary,
+      tables_fetched: summary.tables_fetched + 1,
+      total_records: summary.total_records + outcome.data,
+    };
+  console.warn("[PublicData] Failed to fetch table", {
+    event: "public_data_fetch_table_failed",
     table_name,
+    error: outcome.error,
   });
-  const timeout_promise = new Promise<never>((_, reject) =>
-    setTimeout(
-      () => reject(new Error(`fetch_timed_out: ${table_name}`)),
-      TABLE_FETCH_TIMEOUT_MS,
-    ),
-  );
-  const remote_records = (await Promise.race([
-    query_promise,
-    timeout_promise,
-  ])) as ConvexRecord[];
-  if (!remote_records || remote_records.length === 0) {
-    return 0;
-  }
-  const database = get_database();
-  await apply_remote_snapshot_records(
-    { database, gate: sync_change_tracking_gate },
-    table_name,
-    remote_records,
-    SnapshotRecordScope.PUBLIC_PROJECTION,
-  );
-
-  return remote_records.length;
+  return { ...summary, failed_tables: [...summary.failed_tables, table_name] };
 }
 
 function build_unfetched_result(error: string): PublicDataFetchResult {
@@ -94,35 +65,20 @@ function build_unfetched_result(error: string): PublicDataFetchResult {
 }
 
 async function fetch_public_tables(
-  convex_query: ConvexQuery,
+  command: PublicTableFetchCommand,
   tables: TableName[],
 ): Promise<PublicTablesFetchSummary> {
-  const summary: PublicTablesFetchSummary = {
+  let summary: PublicTablesFetchSummary = {
     tables_fetched: 0,
     total_records: 0,
     failed_tables: [],
   };
-
-  for (const table_name of tables) {
-    try {
-      const records_count = await fetch_and_store_table(
-        convex_query,
-        table_name,
-      );
-      summary.total_records += records_count;
-      summary.tables_fetched++;
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : String(error);
-      console.warn("[PublicData] Failed to fetch table", {
-        event: "public_data_fetch_table_failed",
-        table_name,
-        error: String(error_message),
-      });
-      summary.failed_tables.push(table_name);
-    }
-  }
-
+  for (const table_name of tables)
+    summary = record_table_outcome(
+      summary,
+      table_name,
+      await fetch_and_store_public_table(command, table_name),
+    );
   return summary;
 }
 
@@ -154,6 +110,7 @@ function build_fetch_result(
 
 export async function fetch_public_data_from_convex(
   page_type: PublicDataPageType,
+  organization_scope: Option<string>,
 ): Promise<PublicDataFetchResult> {
   if (typeof navigator !== UNDEFINED_TYPE_NAME && !navigator.onLine) {
     console.warn("[PublicData] Device is offline, skipping Convex fetch", {
@@ -173,7 +130,10 @@ export async function fetch_public_data_from_convex(
     return build_unfetched_result(CONVEX_NOT_AVAILABLE_ERROR);
   }
 
-  const tables = get_tables_for_page(page_type);
+  const tables = get_tables_for_organization_scope(
+    page_type,
+    organization_scope,
+  );
 
   console.log("[PublicData] Fetching public tables", {
     event: PUBLIC_DATA_EVENT.FETCH_STARTED,
@@ -182,7 +142,7 @@ export async function fetch_public_data_from_convex(
   });
 
   const summary = await fetch_public_tables(
-    convex_client_result.data.query,
+    { convex_query: convex_client_result.data.query, organization_scope },
     tables,
   );
   return build_fetch_result(summary, tables.length);

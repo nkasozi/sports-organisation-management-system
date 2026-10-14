@@ -1,6 +1,10 @@
 import type { QueryCtx } from "../_generated/server";
 import { build_scope_filter, type SystemUserRecord } from "./auth_middleware";
-import { CallerScopeKind, resolve_caller_scope } from "./caller_scope";
+import {
+  CallerScopeKind,
+  is_global_table_record_visible,
+  resolve_caller_scope,
+} from "./caller_scope";
 import { filter_records_for_caller } from "./scoped_record_reader";
 import {
   type ParentOrganizationSnapshot,
@@ -48,7 +52,11 @@ function is_stored_scope_visible(
   table_name: string,
   scope: StoredTombstoneScope,
 ): boolean {
-  if (is_global_table(table_name)) return true;
+  if (is_global_table(table_name))
+    return is_global_table_record_visible(
+      scope.fields,
+      resolve_caller_scope(caller),
+    );
   const parent_organization = scope.parent_organization;
   if (
     parent_organization.kind !==
@@ -86,6 +94,8 @@ export function is_stored_visibility_visible(
         ) &&
         !is_stored_scope_visible(caller, table_name, visibility.current_scope)
       );
+    case TombstoneVisibilityKind.ACCESS_REVIEW:
+      return is_stored_scope_visible(caller, table_name, visibility.scope);
   }
 }
 

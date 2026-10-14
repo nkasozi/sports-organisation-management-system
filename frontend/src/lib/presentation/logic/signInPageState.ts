@@ -28,7 +28,7 @@ export const SIGN_IN_NOTICE_CONTENT_STATUS = {
 const NOTICE_CONTENT_STATUS = SIGN_IN_NOTICE_CONTENT_STATUS;
 const ERROR_PARAM_STATUS = { MISSING: "missing", PRESENT: "present" } as const;
 
-export type SignInErrorCode =
+type SignInErrorCode =
   (typeof SIGN_IN_ERROR_CODE)[keyof typeof SIGN_IN_ERROR_CODE];
 
 export type SignInPageNotice =

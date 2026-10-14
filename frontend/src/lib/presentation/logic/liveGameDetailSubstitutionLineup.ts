@@ -19,7 +19,10 @@ type SubstitutionLineupCommand = {
   home_players: LineupPlayer[];
   away_players: LineupPlayer[];
   change: SubstitutionLineupChange;
-  fixture_lineup_use_cases: Pick<FixtureLineupUseCases, "update">;
+  fixture_lineup_use_cases: Pick<
+    FixtureLineupUseCases,
+    "record_live_player_times"
+  >;
 };
 
 type SubstitutionLineupResult = {
@@ -76,9 +79,11 @@ export async function save_live_game_substitution_lineup(
     is_home ? command.home_players : command.away_players,
     command.change,
   );
-  const result = await command.fixture_lineup_use_cases.update(lineup_id, {
-    selected_players: updated_players,
-  });
+  const result =
+    await command.fixture_lineup_use_cases.record_live_player_times({
+      lineup_id,
+      selected_players: updated_players,
+    });
   if (result.success) return build_result(command, updated_players, "");
   console.warn(SUBSTITUTION_LINEUP_LOG_SCOPE, {
     event: SUBSTITUTION_LINEUP_SAVE_FAILED_EVENT,

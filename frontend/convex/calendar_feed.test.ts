@@ -8,7 +8,16 @@ import {
 } from "./lib/fake_convex_context.test_support";
 
 const YEAR = new Date().getUTCFullYear();
-const FUTURE = `${YEAR + 5}-01-01T00:00:00.000Z`;
+const NOW_MILLISECONDS = Date.now();
+const DAY_MILLISECONDS = 24 * 60 * 60 * 1000;
+const FUTURE = new Date(NOW_MILLISECONDS + 30 * DAY_MILLISECONDS).toISOString();
+const ACTIVE_FEED_OWNER = {
+  local_id: "user_1",
+  email: "owner@example.com",
+  role: "player",
+  organization_id: "org_a",
+  status: "active",
+};
 
 type FeedResult = {
   status: string;
@@ -27,6 +36,7 @@ function token(overrides: Record<string, unknown>): Record<string, unknown> {
     reminder_minutes_before: 15,
     is_active: true,
     expires_at: FUTURE,
+    _creationTime: NOW_MILLISECONDS - DAY_MILLISECONDS,
     ...overrides,
   };
 }
@@ -49,10 +59,12 @@ function activity(
 
 async function read_feed(
   stored_token: Record<string, unknown>,
+  feed_owner: Record<string, unknown> = ACTIVE_FEED_OWNER,
 ): Promise<FeedResult> {
   const context = create_fake_convex_context({
     identity: ANONYMOUS_IDENTITY,
     tables: {
+      system_users: [feed_owner],
       calendar_tokens: [stored_token],
       organizations: [{ local_id: "org_a", name: "Org A" }],
       player_team_memberships: [
@@ -64,6 +76,9 @@ async function read_feed(
         activity("a_other_org", {
           organization_id: "org_b",
           team_ids: ["team_1"],
+        }),
+        activity("a_last_year", {
+          start_datetime: `${YEAR - 1}-06-01T10:00:00.000Z`,
         }),
       ],
     },
@@ -131,5 +146,37 @@ describe("get_calendar_feed_by_token", () => {
     expect(result.feed?.events[0]).not.toHaveProperty("notes");
     expect(result.feed).not.toHaveProperty("user_id");
     expect(result.feed).not.toHaveProperty("token");
+  });
+
+  it("rejects tokens whose owner is missing, inactive or in another organization", async () => {
+    expect((await read_feed(token({ user_id: "ghost" }))).status).toBe(
+      "not_found",
+    );
+    expect(
+      (await read_feed(token({}), { ...ACTIVE_FEED_OWNER, status: "inactive" }))
+        .status,
+    ).toBe("not_found");
+    expect(
+      (
+        await read_feed(token({}), {
+          ...ACTIVE_FEED_OWNER,
+          organization_id: "org_b",
+        })
+      ).status,
+    ).toBe("not_found");
+  });
+
+  it("treats tokens without an expiry or beyond the maximum lifetime as expired", async () => {
+    expect((await read_feed(token({ expires_at: "" }))).status).toBe("expired");
+    const beyond_lifetime = new Date(
+      NOW_MILLISECONDS + 400 * DAY_MILLISECONDS,
+    ).toISOString();
+    expect(
+      (await read_feed(token({ expires_at: beyond_lifetime }))).status,
+    ).toBe("expired");
+  });
+
+  it("only serves activities from the current year", async () => {
+    expect(event_ids(await read_feed(token({})))).not.toContain("a_last_year");
   });
 });

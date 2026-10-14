@@ -1,6 +1,17 @@
 import { get_database } from "$lib/adapters/repositories/database";
 import { sync_change_tracking_gate } from "$lib/adapters/repositories/syncOutbox/syncChangeTrackingGate";
+import { create_none_option } from "$lib/core/types/Option";
+import {
+  type AsyncResult,
+  create_failure_result,
+  create_success_result,
+  type Result,
+} from "$lib/core/types/Result";
 
+import {
+  type ConvexRecordQuery,
+  read_all_record_pages,
+} from "./convexRecordPages";
 import {
   get_sync_manager,
   TABLE_NAMES,
@@ -21,41 +32,37 @@ interface ConvexSeedResult {
   failed_tables: string[];
 }
 
-interface ConvexRecord {
-  _id: string;
-  local_id: string;
-  synced_at: string;
-  version: number;
-  [key: string]: unknown;
-}
-
 type ProgressCallback = (message: string, percentage: number) => void;
 
-async function fetch_and_store_single_table(
-  convex_query: (
-    name: string,
-    args: Record<string, unknown>,
-  ) => Promise<unknown>,
+async function store_table_snapshot(
   table_name: TableName,
-): Promise<number> {
-  const remote_records = (await convex_query("sync:get_all_records", {
-    table_name,
-  })) as ConvexRecord[];
-
-  if (!remote_records || remote_records.length === 0) {
-    return 0;
+  records: Array<Record<string, unknown>>,
+): AsyncResult<number> {
+  try {
+    await apply_remote_snapshot_records(
+      { database: get_database(), gate: sync_change_tracking_gate },
+      table_name,
+      records,
+      SnapshotRecordScope.PUBLIC_PROJECTION,
+    );
+    return create_success_result(records.length);
+  } catch (error) {
+    return create_failure_result(String(error));
   }
+}
 
-  const database = get_database();
-
-  await apply_remote_snapshot_records(
-    { database, gate: sync_change_tracking_gate },
+async function fetch_and_store_single_table(
+  convex_query: ConvexRecordQuery,
+  table_name: TableName,
+): AsyncResult<number> {
+  const remote_records = await read_all_record_pages({
+    convex_query,
     table_name,
-    remote_records,
-    SnapshotRecordScope.PUBLIC_PROJECTION,
-  );
-
-  return remote_records.length;
+    organization_scope: create_none_option(),
+  });
+  if (!remote_records.success) return remote_records;
+  if (remote_records.data.length === 0) return create_success_result(0);
+  return store_table_snapshot(table_name, remote_records.data);
 }
 
 function is_convex_client_available(): boolean {
@@ -66,11 +73,6 @@ function is_convex_client_available(): boolean {
 const SEEDING_PROGRESS_START_PERCENT = 20;
 const SEEDING_PROGRESS_SPAN_PERCENT = 60;
 const MAX_FAILED_TABLE_RATIO = 0.2;
-
-type ConvexQuery = (
-  name: string,
-  args: Record<string, unknown>,
-) => Promise<unknown>;
 
 interface SeedTablesSummary {
   tables_fetched: number;
@@ -88,11 +90,30 @@ function build_unavailable_seed_result(): ConvexSeedResult {
   };
 }
 
+function record_table_outcome(
+  summary: SeedTablesSummary,
+  table_name: TableName,
+  outcome: Result<number>,
+): SeedTablesSummary {
+  if (outcome.success)
+    return {
+      ...summary,
+      tables_fetched: summary.tables_fetched + 1,
+      total_records: summary.total_records + outcome.data,
+    };
+  console.warn("[ConvexSeeding] Failed to fetch table", {
+    event: "convex_seeding_fetch_table_failed",
+    table_name,
+    error: outcome.error,
+  });
+  return { ...summary, failed_tables: [...summary.failed_tables, table_name] };
+}
+
 async function seed_tables_sequentially(
-  convex_query: ConvexQuery,
+  convex_query: ConvexRecordQuery,
   on_progress: ProgressCallback,
 ): Promise<SeedTablesSummary> {
-  const summary: SeedTablesSummary = {
+  let summary: SeedTablesSummary = {
     tables_fetched: 0,
     total_records: 0,
     failed_tables: [],
@@ -107,23 +128,11 @@ async function seed_tables_sequentially(
       );
     on_progress(`Pulling ${table_name} from server...`, progress_percent);
 
-    try {
-      const records_count = await fetch_and_store_single_table(
-        convex_query,
-        table_name,
-      );
-      summary.total_records += records_count;
-      summary.tables_fetched++;
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : String(error);
-      console.warn("[ConvexSeeding] Failed to fetch table", {
-        event: "convex_seeding_fetch_table_failed",
-        table_name,
-        error: String(error_message),
-      });
-      summary.failed_tables.push(table_name);
-    }
+    summary = record_table_outcome(
+      summary,
+      table_name,
+      await fetch_and_store_single_table(convex_query, table_name),
+    );
   }
 
   return summary;

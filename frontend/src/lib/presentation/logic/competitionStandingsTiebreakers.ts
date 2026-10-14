@@ -7,12 +7,38 @@ import { TIE_BREAKER } from "$lib/core/entities/CompetitionFormatTypes";
 import type { Fixture } from "$lib/core/entities/Fixture";
 
 import type { TeamStanding } from "./competitionStageResults";
+import {
+  build_drawing_of_lots_seed,
+  count_team_fair_play_points,
+  DEFAULT_FAIR_PLAY_CARD_WEIGHTS,
+  draw_team_lot,
+  type FairPlayCardWeights,
+} from "./competitionStandingsFairPlay";
 import { compute_mini_league } from "./competitionStandingsMiniLeague";
+import {
+  compare_scores_descending,
+  split_into_equal_runs,
+} from "./competitionStandingsOrdering";
 
 type TiebreakerContext = {
   completed_fixtures: Fixture[];
   points_config: PointsConfig;
+  card_weights: FairPlayCardWeights;
+  lot_seed: string;
 };
+
+function build_context(
+  completed_fixtures: Fixture[],
+  points_config: PointsConfig,
+  card_weights: FairPlayCardWeights,
+): TiebreakerContext {
+  return {
+    completed_fixtures,
+    points_config,
+    card_weights,
+    lot_seed: build_drawing_of_lots_seed(completed_fixtures),
+  };
+}
 
 type ScoredStanding = { standing: TeamStanding; score: number[] };
 
@@ -59,9 +85,17 @@ function score_standing(
       return [standing.goals_for];
     case TIE_BREAKER.AWAY_GOALS:
       return [count_away_goals(standing.team_id, context.completed_fixtures)];
-    case TIE_BREAKER.HEAD_TO_HEAD:
     case TIE_BREAKER.FAIR_PLAY:
+      return [
+        -count_team_fair_play_points(
+          standing.team_id,
+          context.completed_fixtures,
+          context.card_weights,
+        ),
+      ];
     case TIE_BREAKER.DRAW:
+      return [draw_team_lot(context.lot_seed, standing.team_id)];
+    case TIE_BREAKER.HEAD_TO_HEAD:
     case TIE_BREAKER.PLAYOFF:
       return NEUTRAL_SCORE;
   }
@@ -80,27 +114,8 @@ function score_group(
       }));
 }
 
-function compare_scores_descending(left: number[], right: number[]): number {
-  for (let index = 0; index < Math.max(left.length, right.length); index++) {
-    const difference = (right[index] ?? 0) - (left[index] ?? 0);
-    if (difference !== 0) return difference;
-  }
-  return 0;
-}
-
-function split_into_equal_runs<Entry>(
-  sorted_entries: Entry[],
-  are_equal: (left: Entry, right: Entry) => boolean,
-): Entry[][] {
-  return sorted_entries.reduce((runs: Entry[][], entry: Entry) => {
-    const last_run = runs[runs.length - 1];
-    if (last_run && are_equal(last_run[0], entry)) {
-      last_run.push(entry);
-      return runs;
-    }
-    runs.push([entry]);
-    return runs;
-  }, []);
+function flag_playoff_group(group: TeamStanding[]): TeamStanding[] {
+  return group.map((standing) => ({ ...standing, requires_playoff: true }));
 }
 
 function resolve_tied_group(
@@ -110,6 +125,12 @@ function resolve_tied_group(
 ): TeamStanding[] {
   if (group.length <= 1 || tie_breakers.length === 0) return group;
   const [current_tiebreaker, ...remaining_tiebreakers] = tie_breakers;
+  if (current_tiebreaker === TIE_BREAKER.PLAYOFF)
+    return resolve_tied_group(
+      flag_playoff_group(group),
+      remaining_tiebreakers,
+      context,
+    );
   const sorted = score_group(group, current_tiebreaker, context).sort(
     (left, right) => compare_scores_descending(left.score, right.score),
   );
@@ -130,8 +151,14 @@ export function apply_single_tiebreaker(
   right: TeamStanding,
   completed_fixtures: Fixture[],
   tiebreaker: TieBreaker,
+  points_config: PointsConfig,
+  card_weights: FairPlayCardWeights = DEFAULT_FAIR_PLAY_CARD_WEIGHTS,
 ): number {
-  const context = { completed_fixtures, points_config: DEFAULT_POINTS_CONFIG };
+  const context = build_context(
+    completed_fixtures,
+    points_config,
+    card_weights,
+  );
   const [left_scored, right_scored] = score_group(
     [left, right],
     tiebreaker,
@@ -145,8 +172,13 @@ export function sort_standings_by_tiebreakers(
   completed_fixtures: Fixture[],
   tie_breakers: TieBreaker[],
   points_config: PointsConfig = DEFAULT_POINTS_CONFIG,
+  card_weights: FairPlayCardWeights = DEFAULT_FAIR_PLAY_CARD_WEIGHTS,
 ): TeamStanding[] {
-  const context = { completed_fixtures, points_config };
+  const context = build_context(
+    completed_fixtures,
+    points_config,
+    card_weights,
+  );
   const sorted_by_points = [...standings].sort(
     (left, right) => right.points - left.points,
   );

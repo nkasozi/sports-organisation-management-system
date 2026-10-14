@@ -1,5 +1,12 @@
 import type { AsyncResult, Result } from "$lib/core/types/Result";
 
+import {
+  run_with_timeout,
+  SESSION_OPERATION_TIMEOUT_MS,
+  TIMED_OPERATION_STATUS,
+  type TimedOperationOutcome,
+} from "./layoutSessionTimeouts";
+
 export const LOGOUT_WARNING_MODAL_STATE = {
   CHECKING: "checking",
   SYNCING: "syncing",
@@ -11,6 +18,7 @@ export const LOGOUT_WARNING_MODAL_STATE = {
 export const LOGOUT_DISCARD_REASON = {
   OFFLINE: "offline",
   SYNC_FAILED: "sync_failed",
+  SYNC_STOPPED: "sync_stopped",
 } as const;
 
 type LogoutDiscardReason =
@@ -55,6 +63,7 @@ export const LOGOUT_WARNING_TEXT = {
   COUNT_UNAVAILABLE_MESSAGE:
     "We could not check this device for changes that still need to sync. Signing out now may permanently delete them from this device.",
   COUNT_UNAVAILABLE_CONFIRM: "Sign out anyway",
+  STOP_SYNCING: "Stop syncing",
 } as const;
 
 export function build_logout_discard_message(
@@ -89,23 +98,73 @@ function build_view_from_count(
   };
 }
 
+interface LogoutSyncStopControl {
+  stopped: Promise<typeof LOGOUT_DISCARD_REASON.SYNC_STOPPED>;
+  stop(): boolean;
+}
+
+type FlushOutcome = TimedOperationOutcome<Result<{ skipped_offline: boolean }>>;
+
+export function create_logout_sync_stop_control(): LogoutSyncStopControl {
+  const resolver = { stop: (): boolean => false };
+  const stopped = new Promise<typeof LOGOUT_DISCARD_REASON.SYNC_STOPPED>(
+    (resolve) => {
+      resolver.stop = (): boolean => {
+        resolve(LOGOUT_DISCARD_REASON.SYNC_STOPPED);
+        return true;
+      };
+    },
+  );
+  return { stopped, stop: () => resolver.stop() };
+}
+
+function resolve_discard_reason(
+  flush_outcome: FlushOutcome,
+): LogoutDiscardReason {
+  if (flush_outcome.status !== TIMED_OPERATION_STATUS.COMPLETED)
+    return LOGOUT_DISCARD_REASON.SYNC_FAILED;
+  const flush_result = flush_outcome.value;
+  return flush_result.success && flush_result.data.skipped_offline
+    ? LOGOUT_DISCARD_REASON.OFFLINE
+    : LOGOUT_DISCARD_REASON.SYNC_FAILED;
+}
+
 async function sync_before_logout(
   sync_port: LogoutWarningSyncPort,
+  stop_control: LogoutSyncStopControl,
 ): Promise<LogoutWarningModalView> {
-  const flush_result = await sync_port.flush_pending_changes();
+  const outcome = await Promise.race([
+    run_with_timeout(
+      sync_port.flush_pending_changes(),
+      SESSION_OPERATION_TIMEOUT_MS.LOGOUT_SYNC,
+    ),
+    stop_control.stopped,
+  ]);
   const reason =
-    flush_result.success && flush_result.data.skipped_offline
-      ? LOGOUT_DISCARD_REASON.OFFLINE
-      : LOGOUT_DISCARD_REASON.SYNC_FAILED;
+    outcome === LOGOUT_DISCARD_REASON.SYNC_STOPPED
+      ? outcome
+      : resolve_discard_reason(outcome);
   return build_view_from_count(
     await sync_port.get_unsynced_local_change_count(),
     reason,
   );
 }
 
-export async function evaluate_logout_request(
+export function evaluate_logout_request(
   sync_port: LogoutWarningSyncPort,
   on_syncing: () => boolean,
+): Promise<LogoutWarningModalView> {
+  return evaluate_logout_request_with_stop(
+    sync_port,
+    on_syncing,
+    create_logout_sync_stop_control(),
+  );
+}
+
+export async function evaluate_logout_request_with_stop(
+  sync_port: LogoutWarningSyncPort,
+  on_syncing: () => boolean,
+  stop_control: LogoutSyncStopControl,
 ): Promise<LogoutWarningModalView> {
   const count_result = await sync_port.get_unsynced_local_change_count();
   if (!count_result.success || count_result.data === 0)
@@ -113,5 +172,5 @@ export async function evaluate_logout_request(
   if (!sync_port.is_online())
     return build_view_from_count(count_result, LOGOUT_DISCARD_REASON.OFFLINE);
   on_syncing();
-  return sync_before_logout(sync_port);
+  return sync_before_logout(sync_port, stop_control);
 }

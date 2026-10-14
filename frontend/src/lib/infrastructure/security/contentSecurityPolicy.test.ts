@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   build_content_security_policy_directives,
+  CSP_DEPLOYMENT_MODE,
   resolve_clerk_frontend_api_origin,
 } from "./contentSecurityPolicy.js";
 
@@ -113,5 +114,74 @@ describe("build_content_security_policy_directives", () => {
     expect(with_malformed_proxy["script-src"]).not.toContain(
       "javascript:alert(1)",
     );
+  });
+
+  it("allows the configured Convex deployment over https and wss", () => {
+    const directives = build_content_security_policy_directives({
+      PUBLIC_CONVEX_URL: "https://convex.sportsync.example/",
+    });
+
+    expect(directives["connect-src"]).toEqual(
+      expect.arrayContaining([
+        "https://convex.sportsync.example",
+        "wss://convex.sportsync.example",
+      ]),
+    );
+  });
+
+  it("ignores a Convex url that is not https", () => {
+    const directives = build_content_security_policy_directives({
+      PUBLIC_CONVEX_URL: "http://convex.sportsync.example",
+    });
+
+    expect(directives["connect-src"]).not.toContain(
+      "http://convex.sportsync.example",
+    );
+    expect(directives["connect-src"]).not.toContain(
+      "ws://convex.sportsync.example",
+    );
+  });
+
+  it("keeps Clerk development wildcards out of production scripts", () => {
+    const directives = build_content_security_policy_directives(
+      { PUBLIC_CLERK_PUBLISHABLE_KEY: LIVE_PUBLISHABLE_KEY },
+      CSP_DEPLOYMENT_MODE.PRODUCTION,
+    );
+
+    expect(directives["script-src"]).toContain(
+      "https://clerk.sportsync.example",
+    );
+    expect(directives["script-src"]).not.toContain(
+      "https://*.clerk.accounts.dev",
+    );
+    expect(directives["script-src"]).not.toContain("https://*.clerk.com");
+  });
+
+  it("treats a missing deployment mode as production", () => {
+    const directives = build_content_security_policy_directives({});
+
+    expect(directives["script-src"]).not.toContain(
+      "https://*.clerk.accounts.dev",
+    );
+  });
+
+  it("allows Clerk development wildcards only in development", () => {
+    const directives = build_content_security_policy_directives(
+      {},
+      CSP_DEPLOYMENT_MODE.DEVELOPMENT,
+    );
+
+    expect(directives["script-src"]).toEqual(
+      expect.arrayContaining([
+        "https://*.clerk.accounts.dev",
+        "https://*.clerk.com",
+      ]),
+    );
+  });
+
+  it("lets the same-origin service worker register", () => {
+    const directives = build_content_security_policy_directives({});
+
+    expect(directives["worker-src"]).toContain("self");
   });
 });

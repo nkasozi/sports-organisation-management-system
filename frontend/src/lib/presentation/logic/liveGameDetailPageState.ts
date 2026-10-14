@@ -1,4 +1,5 @@
 import type { Competition } from "$lib/core/entities/Competition";
+import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
 import {
   type Fixture,
   type GamePeriod,
@@ -17,6 +18,7 @@ export interface LiveGameDetailPageState {
   away_team?: Team;
   competition?: Competition;
   sport?: Sport;
+  stage?: CompetitionStage;
   venue?: Venue;
   organization_name: string;
   assigned_officials_data: Array<{

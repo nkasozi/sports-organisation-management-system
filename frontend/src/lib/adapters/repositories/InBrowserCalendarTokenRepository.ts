@@ -7,6 +7,7 @@ import type {
   UpdateCalendarTokenInput,
 } from "../../core/entities/CalendarToken";
 import { compute_calendar_token_expiry } from "../../core/entities/CalendarToken";
+import { cap_calendar_token_expiry } from "../../core/entities/CalendarTokenLifetime";
 import type {
   CalendarTokenFilter,
   CalendarTokenRepository,
@@ -63,7 +64,7 @@ function describe_token_failure(
   );
 }
 
-class InBrowserCalendarTokenRepository
+export class InBrowserCalendarTokenRepository
   extends InBrowserBaseRepository<
     CalendarToken,
     CreateCalendarTokenInput,
@@ -98,10 +99,14 @@ class InBrowserCalendarTokenRepository
     entity: CalendarToken,
     updates: UpdateCalendarTokenInput,
   ): CalendarToken {
+    const updated = { ...entity, ...updates } as CalendarToken;
     return {
-      ...entity,
-      ...updates,
-    } as CalendarToken;
+      ...updated,
+      expires_at: cap_calendar_token_expiry({
+        expires_at: updated.expires_at,
+        lifetime_started_at: entity.created_at,
+      }),
+    };
   }
 
   protected apply_entity_filter(

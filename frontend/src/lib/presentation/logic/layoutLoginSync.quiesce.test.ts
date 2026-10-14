@@ -12,9 +12,9 @@ vi.mock("./layoutLogic", () => ({
 describe("layoutLoginSync background sync teardown", () => {
   it("waits for in-flight sync work to settle before wiping the local database", async () => {
     const { dependencies, sync_now } = create_login_sync_test_dependencies();
-    dependencies.fetch_current_user_profile_from_convex.mockResolvedValueOnce({
-      success: true,
-      data: { organization_id: "organization-1", team_id: "team-1" },
+    dependencies.look_up_current_user_profile.mockResolvedValueOnce({
+      status: "found",
+      profile: { organization_id: "organization-1", team_id: "team-1" },
     });
     sync_now
       .mockResolvedValueOnce({ success: true, errors: [] })

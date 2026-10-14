@@ -135,7 +135,7 @@ describe("initialize_app_data", () => {
 
     await expect(pending_result).resolves.toBe("success");
     expect(mocks.run_seeding_with_strategy).toHaveBeenCalledWith(
-      "convex_mandatory",
+      "skip_seeding",
       false,
     );
   });

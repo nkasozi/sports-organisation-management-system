@@ -4,6 +4,7 @@ import type {
   SystemUserRecord,
 } from "./auth_middleware";
 import { ConvexErrorCode, log_convex_failure } from "./convex_errors";
+import { normalize_email_address } from "./email_normalization";
 import {
   SYSTEM_USER_EMAIL_INDEX_NAME,
   SYSTEM_USERS_TABLE_NAME,
@@ -29,7 +30,7 @@ export async function load_active_system_user_by_email(
   const system_user_result = await ctx.db
     .query(SYSTEM_USERS_TABLE_NAME)
     .withIndex(SYSTEM_USER_EMAIL_INDEX_NAME, (query) =>
-      query.eq("email", email.toLowerCase()),
+      query.eq("email", normalize_email_address(email)),
     )
     .first();
   if (!is_system_user_record(system_user_result))

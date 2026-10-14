@@ -1,8 +1,13 @@
 import type {
   FixtureLineup,
+  LineupPlayer,
   UpdateFixtureLineupInput,
 } from "../entities/FixtureLineup";
-import { LINEUP_STATUS } from "../entities/StatusConstants";
+import {
+  FIXTURE_STATUS,
+  type FixtureStatusValue,
+  LINEUP_STATUS,
+} from "../entities/StatusConstants";
 import {
   build_empty_lineup_message,
   build_locked_lineup_message,
@@ -83,7 +88,7 @@ export function decide_lineup_transition(
   }
 }
 
-export function decide_lineup_edit(
+function decide_lineup_status_edit(
   lineup: FixtureLineup,
   action: LineupEditAction,
 ): LineupDecision<FixtureLineup> {
@@ -93,5 +98,65 @@ export function decide_lineup_edit(
     case LINEUP_STATUS.DRAFT:
     case LINEUP_STATUS.SUBMITTED:
       return allow(lineup);
+  }
+}
+
+export function decide_lineup_edit(
+  lineup: FixtureLineup,
+  action: LineupEditAction,
+  fixture_status: FixtureStatusValue,
+): LineupDecision<FixtureLineup> {
+  switch (fixture_status) {
+    case FIXTURE_STATUS.SCHEDULED:
+      return decide_lineup_status_edit(lineup, action);
+    case FIXTURE_STATUS.IN_PROGRESS:
+    case FIXTURE_STATUS.COMPLETED:
+    case FIXTURE_STATUS.POSTPONED:
+    case FIXTURE_STATUS.CANCELLED:
+    default:
+      return reject(FIXTURE_LINEUP_MESSAGE.GAME_ALREADY_STARTED);
+  }
+}
+
+type ComparablePlayer = Omit<LineupPlayer, "time_on" | "time_off">;
+
+function to_comparable_player(player: LineupPlayer): string {
+  const { time_on: _time_on, time_off: _time_off, ...rest } = player;
+  const comparable: ComparablePlayer = rest;
+  return JSON.stringify(
+    Object.keys(comparable)
+      .sort()
+      .map((key) => [key, comparable[key as keyof ComparablePlayer]]),
+  );
+}
+
+function only_player_times_changed(
+  lineup: FixtureLineup,
+  selected_players: LineupPlayer[],
+): boolean {
+  const stored = lineup.selected_players.map(to_comparable_player).sort();
+  const submitted = selected_players.map(to_comparable_player).sort();
+  return (
+    stored.length === submitted.length &&
+    stored.every((player, index) => player === submitted[index])
+  );
+}
+
+export function decide_live_player_times(
+  lineup: FixtureLineup,
+  fixture_status: FixtureStatusValue,
+  selected_players: LineupPlayer[],
+): LineupDecision<UpdateFixtureLineupInput> {
+  switch (fixture_status) {
+    case FIXTURE_STATUS.SCHEDULED:
+    case FIXTURE_STATUS.IN_PROGRESS:
+      return only_player_times_changed(lineup, selected_players)
+        ? allow({ selected_players })
+        : reject(FIXTURE_LINEUP_MESSAGE.LIVE_TIMES_ONLY);
+    case FIXTURE_STATUS.COMPLETED:
+    case FIXTURE_STATUS.POSTPONED:
+    case FIXTURE_STATUS.CANCELLED:
+    default:
+      return reject(FIXTURE_LINEUP_MESSAGE.LIVE_TIMES_NOT_ALLOWED);
   }
 }

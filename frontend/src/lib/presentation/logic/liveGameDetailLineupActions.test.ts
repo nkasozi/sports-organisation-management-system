@@ -20,8 +20,8 @@ import { create_lineup_player } from "./liveGameDetailLineupActions.test_support
 describe("liveGameDetailLineupActions", () => {
   it("updates only the selected player time-on value and persists the revised lineup", async () => {
     const fixture_lineup_use_cases = {
-      update: vi.fn().mockResolvedValue({ success: true }),
-    } as Pick<FixtureLineupUseCases, "update">;
+      record_live_player_times: vi.fn().mockResolvedValue({ success: true }),
+    } as Pick<FixtureLineupUseCases, "record_live_player_times">;
 
     const result = await update_live_game_player_time_on(
       "lineup-1",
@@ -34,7 +34,10 @@ describe("liveGameDetailLineupActions", () => {
       fixture_lineup_use_cases as FixtureLineupUseCases,
     );
 
-    expect(fixture_lineup_use_cases.update).toHaveBeenCalledWith("lineup-1", {
+    expect(
+      fixture_lineup_use_cases.record_live_player_times,
+    ).toHaveBeenCalledWith({
+      lineup_id: "lineup-1",
       selected_players: [
         create_lineup_player({ id: "player-1", time_on: "present_at_start" }),
         create_lineup_player({ id: "player-2", time_on: "55" }),

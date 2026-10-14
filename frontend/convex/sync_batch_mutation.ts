@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 
 import { mutation } from "./_generated/server";
+import { select_clearable_fields } from "./lib/cleared_fields";
 import {
   ConvexErrorCode,
   type ConvexFailure,
@@ -17,9 +18,11 @@ import {
   BatchFollowUpKind,
   type BatchRecordConflict,
   type BatchRecordDeletedRemotely,
+  type BatchRecordInput,
   type BatchRecordOutcome,
   type BatchRecordResult,
 } from "./lib/sync_batch_record_types";
+import type { AllowedSyncTable } from "./lib/sync_table_catalog";
 import { validate_table_name } from "./lib/sync_validation";
 import {
   base_version_validator,
@@ -99,6 +102,28 @@ function collect_outcome(
   }
 }
 
+function to_batch_record_input(
+  table_name: AllowedSyncTable,
+  record: {
+    local_id: string;
+    data: Record<string, unknown>;
+    version: number;
+    base_version?: BaseVersion;
+    cleared_fields?: string[];
+  },
+): BatchRecordInput {
+  return {
+    local_id: record.local_id,
+    data: record.data,
+    version: record.version,
+    cleared_fields: select_clearable_fields(
+      table_name,
+      record.cleared_fields ?? [],
+    ),
+    base: to_batch_base_version(record.base_version),
+  };
+}
+
 export const batch_upsert = mutation({
   args: {
     table_name: v.string(),
@@ -108,6 +133,7 @@ export const batch_upsert = mutation({
         data: v.any(),
         version: v.number(),
         base_version: v.optional(base_version_validator),
+        cleared_fields: v.optional(v.array(v.string())),
       }),
     ),
     detect_conflicts: v.optional(v.boolean()),
@@ -135,12 +161,7 @@ export const batch_upsert = mutation({
       const outcome = await process_batch_record(ctx, {
         table_name: table_validation.data,
         caller: authorization.data,
-        record: {
-          local_id: record.local_id,
-          data: record.data,
-          version: record.version,
-          base: to_batch_base_version(record.base_version),
-        },
+        record: to_batch_record_input(table_validation.data, record),
       });
       collection = collect_outcome(collection, outcome);
     }

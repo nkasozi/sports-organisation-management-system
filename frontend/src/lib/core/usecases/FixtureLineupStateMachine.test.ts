@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { FixtureLineup } from "../entities/FixtureLineup";
-import { LINEUP_STATUS } from "../entities/StatusConstants";
+import { FIXTURE_STATUS, LINEUP_STATUS } from "../entities/StatusConstants";
 import { LINEUP_ACTION } from "./FixtureLineupConstants";
 import {
   decide_lineup_edit,
@@ -75,16 +75,33 @@ describe("FixtureLineupStateMachine", () => {
     ).toEqual({ kind: LINEUP_DECISION.REJECTED, reason });
   });
 
-  it("only blocks edits of locked lineups", () => {
+  it("only blocks edits of locked lineups while the fixture is scheduled", () => {
     expect(
-      decide_lineup_edit(lineup(LINEUP_STATUS.LOCKED), LINEUP_ACTION.DELETE),
+      decide_lineup_edit(
+        lineup(LINEUP_STATUS.LOCKED),
+        LINEUP_ACTION.DELETE,
+        FIXTURE_STATUS.SCHEDULED,
+      ),
     ).toEqual({
       kind: LINEUP_DECISION.REJECTED,
       reason: "Cannot delete a locked lineup",
     });
     expect(
-      decide_lineup_edit(lineup(LINEUP_STATUS.SUBMITTED), LINEUP_ACTION.UPDATE)
-        .kind,
+      decide_lineup_edit(
+        lineup(LINEUP_STATUS.SUBMITTED),
+        LINEUP_ACTION.UPDATE,
+        FIXTURE_STATUS.SCHEDULED,
+      ).kind,
     ).toBe(LINEUP_DECISION.ALLOWED);
+  });
+
+  it("blocks edits of any lineup once the fixture has started", () => {
+    expect(
+      decide_lineup_edit(
+        lineup(LINEUP_STATUS.DRAFT),
+        LINEUP_ACTION.UPDATE,
+        FIXTURE_STATUS.IN_PROGRESS,
+      ).kind,
+    ).toBe(LINEUP_DECISION.REJECTED);
   });
 });

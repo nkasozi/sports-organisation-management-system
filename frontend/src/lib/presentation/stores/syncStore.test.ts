@@ -26,6 +26,12 @@ vi.mock("$lib/presentation/stores/conflictStore", async () =>
     sync_store_mocks,
   ),
 );
+vi.mock("./syncStoreConflictOutcomeInstance", () => ({
+  conflict_outcome_dependencies: {
+    mark_resolved: vi.fn(() => true),
+  },
+  has_pending_conflicts_in_store: vi.fn(() => false),
+}));
 vi.mock("./syncStoreResolveConflict", () => ({
   execute_conflict_resolution: sync_store_mocks.execute_conflict_resolution,
 }));
@@ -112,7 +118,8 @@ describe("syncStore", () => {
       data: { mutation: vi.fn(), query: vi.fn() },
     });
     sync_store_mocks.execute_conflict_resolution.mockResolvedValue({
-      success: true,
+      kind: "resolved",
+      server_version: 3,
     });
 
     const { sync_store } = await import("./syncStore");
@@ -123,7 +130,7 @@ describe("syncStore", () => {
       "keep_remote",
     );
 
-    expect(result).toEqual({ success: true });
+    expect(result).toEqual({ status: "resolved" });
     expect(sync_store_mocks.execute_conflict_resolution).toHaveBeenCalled();
     expect(get(sync_store).has_pending_conflicts).toBe(false);
   });

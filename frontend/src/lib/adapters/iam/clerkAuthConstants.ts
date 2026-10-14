@@ -3,6 +3,8 @@ export const CONVEX_TOKEN_TEMPLATE = "convex";
 export const CLERK_MESSAGE = {
   NOT_INITIALIZED: "Clerk not initialized",
   NO_SESSION: "No Clerk session available",
+  SESSION_SIGNING_OUT:
+    "This device is finishing a sign-out, so your account is not available yet.",
   TOKEN_UNAVAILABLE: "Clerk session token unavailable",
   TOKEN_REQUEST_FAILED: "Failed to get Clerk session token",
   LOAD_TIMED_OUT: "ClerkProvider did not load Clerk in time",
@@ -25,6 +27,10 @@ export const CLERK_LOG_EVENT = {
   SIGN_OUT_REJECTED: "clerk_sign_out_rejected",
   SIGN_OUT_FAILED: "clerk_sign_out_failed",
   SIGNED_OUT: "clerk_signed_out",
+  RETRY_STARTED: "clerk_initialization_retry_started",
+  SESSION_SUPPRESSED: "clerk_session_suppressed_pending_sign_out",
+  SESSION_GATE_RELEASED: "clerk_session_gate_released",
+  TOKEN_SUPPRESSED: "clerk_token_suppressed_pending_sign_out",
 } as const;
 
 export const CLERK_ERROR_CODE = {
@@ -32,6 +38,7 @@ export const CLERK_ERROR_CODE = {
   PUBLISHABLE_KEY_MISSING: "clerk_publishable_key_missing",
   LOAD_TIMED_OUT: "clerk_load_timed_out",
   INITIALIZATION_THREW: "clerk_initialization_threw",
+  BROWSER_OFFLINE: "clerk_browser_offline",
 } as const;
 
 export type ClerkErrorCode =

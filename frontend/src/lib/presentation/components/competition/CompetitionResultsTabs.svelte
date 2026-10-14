@@ -52,7 +52,7 @@
             class={get_tab_classes(COMPETITION_RESULTS_TAB.STATS)}
             on:click={() => (active_tab = COMPETITION_RESULTS_TAB.STATS)}
         >
-            <span class="hidden sm:inline">⚽ </span> Stats
+            <span class="hidden sm:inline">📈 </span> Stats
         </button>
     </nav>
 </div>

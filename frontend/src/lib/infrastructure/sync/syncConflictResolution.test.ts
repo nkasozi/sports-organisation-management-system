@@ -102,6 +102,7 @@ describe("syncConflictResolution", () => {
       {
         local_id: "team-1",
         server_version: 6,
+        server_sequence: 0,
         local_data: { name: "Updated Team", id: "team-1" },
       },
       { kind: "conflicted_entry" },

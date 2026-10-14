@@ -17,6 +17,8 @@ export const ALWAYS_ALLOWED_ROUTE_BASES: Set<string> = new Set([
   "/match-report",
   "/competition-results",
   "/calendar",
+  "/profile",
+  "/team-profile",
 ]);
 
 export function is_route_in_accessible_set(

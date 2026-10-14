@@ -23,6 +23,7 @@ interface BatchResult {
   success: boolean;
   results: Array<{ local_id: string; success: boolean; action: string }>;
   has_conflicts: boolean;
+  conflicts: Array<{ remote_data: Record<string, unknown> }>;
 }
 
 function create_context_for(
@@ -61,6 +62,8 @@ function find_user(
   );
 }
 
+const STORED_RECORD_VERSION = 1;
+
 describe("batch_upsert tenant guards", () => {
   it("blocks demoting a super admin through sync", async () => {
     const { context, result } = await run_batch(
@@ -74,7 +77,7 @@ describe("batch_upsert tenant guards", () => {
             role: "player",
             organization_id: ORGANIZATION_A_ID,
           },
-          version: 9,
+          version: STORED_RECORD_VERSION,
         },
       ],
     );
@@ -113,8 +116,12 @@ describe("batch_upsert tenant guards", () => {
       [
         {
           local_id: "team_b",
-          data: build_team_record("team_b", ORGANIZATION_A_ID, 7),
-          version: 7,
+          data: build_team_record(
+            "team_b",
+            ORGANIZATION_A_ID,
+            STORED_RECORD_VERSION,
+          ),
+          version: STORED_RECORD_VERSION,
         },
       ],
       [build_team_record("team_b", ORGANIZATION_B_ID, 1)],
@@ -128,6 +135,26 @@ describe("batch_upsert tenant guards", () => {
     );
     expect(get_scheduled_event_types(context)).toContain(
       SecurityEventType.ORG_SCOPE_VIOLATION,
+    );
+  });
+
+  it("returns a stale cross-organization write as a conflict without the foreign record", async () => {
+    const { context, result } = await run_batch(
+      ORGANIZATION_A_ADMIN_EMAIL,
+      "teams",
+      [
+        {
+          local_id: "team_b",
+          data: build_team_record("team_b", ORGANIZATION_A_ID, 7),
+          version: 7,
+        },
+      ],
+      [build_team_record("team_b", ORGANIZATION_B_ID, 1)],
+    );
+    expect(result.results[0].action).toBe("conflict_detected");
+    expect(result.conflicts[0].remote_data).toEqual({});
+    expect(find_table_rows(context, "teams")[0].organization_id).toBe(
+      ORGANIZATION_B_ID,
     );
   });
 });

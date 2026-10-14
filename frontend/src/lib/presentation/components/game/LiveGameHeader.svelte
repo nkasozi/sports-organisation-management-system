@@ -160,7 +160,12 @@
                             >{/if}<button
                             class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-[0.175rem] text-sm font-medium"
                             on:click={on_end}>🏁 End Game</button
-                        >{:else if is_awaiting_full_time}<button
+                        >{:else if is_awaiting_full_time}{#if period_button_config.status === OptionStatus.SOME}<button
+                                class="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded-[0.175rem] text-sm font-medium"
+                                on:click={on_period_action}
+                                >{period_button_config.value.icon}
+                                {period_button_config.value.label}</button
+                            >{/if}<button
                             class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-[0.175rem] text-sm font-medium"
                             on:click={on_end}>🏁 End Game</button
                         >{/if}{/if}{#if is_game_completed}<button

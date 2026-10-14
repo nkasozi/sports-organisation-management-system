@@ -4,9 +4,15 @@ import {
   create_success_result,
 } from "$lib/core/types/Result";
 import type { ConvexUserProfile } from "$lib/presentation/stores/authTypes";
+import { SESSION_SYNC_RETRY_KIND } from "$lib/presentation/stores/sessionSyncRetryNotice";
 
 import { should_pull_org_from_server } from "./layoutLogic";
-import type { LayoutLoginSyncDependencies } from "./layoutLoginSyncPorts";
+import { stop_login_sync_for_retry } from "./layoutLoginSyncFailure";
+import {
+  type LayoutLoginSyncDependencies,
+  LOGIN_PROFILE_LOOKUP_STATUS,
+} from "./layoutLoginSyncPorts";
+import { create_inactive_sync_progress_subscription } from "./layoutLoginSyncProgress";
 import { sign_out_after_failed_login } from "./layoutLoginSyncSignOut";
 import { APP_ROUTE_PATH } from "./layoutRouteConstants";
 import {
@@ -14,6 +20,10 @@ import {
   LAYOUT_SESSION_MESSAGE,
   LAYOUT_SESSION_PROGRESS,
 } from "./layoutSessionConstants";
+import {
+  run_with_timeout,
+  SESSION_OPERATION_TIMEOUT_MS,
+} from "./layoutSessionTimeouts";
 
 const ORGANIZATIONS_TABLE = "organizations";
 const TEAMS_TABLE = "teams";
@@ -47,6 +57,19 @@ function normalize_login_sync_profile(
   };
 }
 
+async function sign_out_unregistered_user(
+  dependencies: LayoutLoginSyncDependencies,
+  error: string,
+): Promise<Result<LoginSyncProfile>> {
+  console.warn("[Layout] No server profile found for signed-in user", {
+    event: LAYOUT_SESSION_EVENT.LOGIN_PROFILE_NOT_FOUND,
+    error,
+  });
+  dependencies.initial_sync_store.reset();
+  await sign_out_after_failed_login(dependencies, APP_ROUTE_PATH.UNAUTHORIZED);
+  return create_failure_result(LAYOUT_SESSION_MESSAGE.NO_PROFILE_FOUND);
+}
+
 export async function look_up_login_sync_profile(
   dependencies: LayoutLoginSyncDependencies,
 ): Promise<Result<LoginSyncProfile>> {
@@ -54,19 +77,22 @@ export async function look_up_login_sync_profile(
     LAYOUT_SESSION_PROGRESS.LOOKING_UP_PROFILE.message,
     LAYOUT_SESSION_PROGRESS.LOOKING_UP_PROFILE.percentage,
   );
-  const profile_result =
-    await dependencies.fetch_current_user_profile_from_convex();
-  if (profile_result.success)
-    return create_success_result(
-      normalize_login_sync_profile(profile_result.data),
-    );
-  console.warn("[Layout] No Convex profile found for signed-in user", {
-    event: LAYOUT_SESSION_EVENT.LOGIN_PROFILE_NOT_FOUND,
-    error: profile_result.error,
-  });
-  dependencies.initial_sync_store.reset();
-  await sign_out_after_failed_login(dependencies, APP_ROUTE_PATH.UNAUTHORIZED);
-  return create_failure_result(LAYOUT_SESSION_MESSAGE.NO_PROFILE_FOUND);
+  const lookup = await dependencies.look_up_current_user_profile();
+  switch (lookup.status) {
+    case LOGIN_PROFILE_LOOKUP_STATUS.FOUND:
+      return create_success_result(
+        normalize_login_sync_profile(lookup.profile),
+      );
+    case LOGIN_PROFILE_LOOKUP_STATUS.NOT_FOUND:
+      return sign_out_unregistered_user(dependencies, lookup.error);
+    case LOGIN_PROFILE_LOOKUP_STATUS.UNAVAILABLE:
+      return stop_login_sync_for_retry(
+        dependencies,
+        SESSION_SYNC_RETRY_KIND.PROFILE_UNAVAILABLE,
+        LAYOUT_SESSION_MESSAGE.PROFILE_UNAVAILABLE,
+        create_inactive_sync_progress_subscription(),
+      );
+  }
 }
 
 async function pull_profile_scope_records(
@@ -82,9 +108,12 @@ async function pull_profile_scope_records(
       LAYOUT_SESSION_PROGRESS.LOADING_ORGANIZATION.message,
       LAYOUT_SESSION_PROGRESS.LOADING_ORGANIZATION.percentage,
     );
-    await dependencies.pull_user_scoped_record_from_convex(
-      ORGANIZATIONS_TABLE,
-      organization_id.value,
+    await run_with_timeout(
+      dependencies.pull_user_scoped_record_from_convex(
+        ORGANIZATIONS_TABLE,
+        organization_id.value,
+      ),
+      SESSION_OPERATION_TIMEOUT_MS.SCOPED_RECORD_PULL,
     );
   }
   if (team_id.status !== IDENTIFIER_STATUS.PRESENT) return true;
@@ -92,9 +121,12 @@ async function pull_profile_scope_records(
     LAYOUT_SESSION_PROGRESS.LOADING_TEAM.message,
     LAYOUT_SESSION_PROGRESS.LOADING_TEAM.percentage,
   );
-  await dependencies.pull_user_scoped_record_from_convex(
-    TEAMS_TABLE,
-    team_id.value,
+  await run_with_timeout(
+    dependencies.pull_user_scoped_record_from_convex(
+      TEAMS_TABLE,
+      team_id.value,
+    ),
+    SESSION_OPERATION_TIMEOUT_MS.SCOPED_RECORD_PULL,
   );
   return true;
 }

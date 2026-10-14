@@ -12,6 +12,7 @@ import {
 
 import { mark_outbox_entry_rejected } from "./syncOutboxEntryUpdates";
 import { outbox_table } from "./syncOutboxRepository";
+import { requeue_rejected_change } from "./syncOutboxReview";
 import type { RejectedOutboxRecord } from "./syncPushOutcomes";
 import { role_can_push_operation } from "./syncTableNames";
 
@@ -49,21 +50,73 @@ async function park_entries(
   return parked;
 }
 
+function is_parked_for_permission(entry: SyncOutboxEntry): boolean {
+  return (
+    entry.status === SyncOutboxEntryStatus.REJECTED &&
+    entry.rejection_code === PERMISSION_DENIED_REJECTION.code
+  );
+}
+
+async function requeue_newly_permitted_entries(
+  database: SportSyncDatabase,
+  role: UserRole,
+  correlation_id: string,
+): Promise<number> {
+  const rejected = await outbox_table(database)
+    .where(STATUS_INDEX)
+    .equals(SyncOutboxEntryStatus.REJECTED)
+    .toArray();
+  const permitted = rejected.filter(
+    (entry) =>
+      is_parked_for_permission(entry) &&
+      role_can_push_operation(role, entry.table_name, entry.operation),
+  );
+  let requeued_count = 0;
+  for (const entry of permitted)
+    if (
+      (
+        await requeue_rejected_change(
+          database,
+          entry.table_name,
+          entry.local_id,
+        )
+      ).success
+    )
+      requeued_count += 1;
+  if (requeued_count > 0)
+    console.log("[Sync] Requeued changes the account may now push", {
+      event: "sync_outbox_permitted_changes_requeued",
+      correlation_id,
+      requeued_count,
+    });
+  return requeued_count;
+}
+
+async function park_unpermitted_pending_entries(
+  database: SportSyncDatabase,
+  role: UserRole,
+): Promise<RejectedOutboxRecord[]> {
+  const pending = await outbox_table(database)
+    .where(STATUS_INDEX)
+    .equals(SyncOutboxEntryStatus.PENDING)
+    .toArray();
+  return park_entries(
+    database,
+    pending.filter(
+      (entry) =>
+        !role_can_push_operation(role, entry.table_name, entry.operation),
+    ),
+  );
+}
+
 export async function reject_unpermitted_pending_entries(
   database: SportSyncDatabase,
   role: UserRole,
   correlation_id: string,
 ): AsyncResult<RejectedOutboxRecord[]> {
   try {
-    const pending = await outbox_table(database)
-      .where(STATUS_INDEX)
-      .equals(SyncOutboxEntryStatus.PENDING)
-      .toArray();
-    const unpermitted = pending.filter(
-      (entry) =>
-        !role_can_push_operation(role, entry.table_name, entry.operation),
-    );
-    const parked = await park_entries(database, unpermitted);
+    await requeue_newly_permitted_entries(database, role, correlation_id);
+    const parked = await park_unpermitted_pending_entries(database, role);
     if (parked.length > 0)
       console.warn("[Sync] Parked changes this account may not push", {
         event: "sync_outbox_unpermitted_changes_rejected",

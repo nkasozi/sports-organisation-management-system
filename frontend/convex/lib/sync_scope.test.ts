@@ -75,7 +75,7 @@ describe("sync_scope", () => {
     ).toEqual([]);
   });
 
-  it("applies the team scope only to records that carry a team", () => {
+  it("keeps every organization record for a team scoped reader", () => {
     const caller = create_system_user_record({ team_id: "team_1" });
     const own_team = { local_id: "team_1", organization_id: ORGANIZATION_ID };
     const own_staff = {
@@ -91,7 +91,7 @@ describe("sync_scope", () => {
         TEAMS_TABLE_NAME,
         build_scope_filter(caller, TEAM_ENTITY_TYPE),
       ),
-    ).toEqual([own_team, own_staff]);
+    ).toEqual([own_team, own_staff, other_staff]);
   });
 
   it("keeps only matching records within organization scope", () => {
