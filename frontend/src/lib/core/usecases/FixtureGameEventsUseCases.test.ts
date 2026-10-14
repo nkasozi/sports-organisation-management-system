@@ -5,6 +5,7 @@ import {
   NO_SCORE_AWARD,
 } from "../entities/SportEventCatalog";
 import { create_fixture_game_events } from "./FixtureGameEventsUseCases";
+import { create_period_command } from "./FixtureUseCases.test_support";
 
 const LEGACY_SCORING = create_score_award_resolver([]);
 
@@ -48,47 +49,18 @@ describe("create_fixture_game_events", () => {
     mocks.emit_entity_updated.mockReset();
   });
 
-  it("updates scores and emits a fixture update event", async () => {
-    const repository = create_repository();
-
-    expect(
-      (
-        await create_fixture_game_events(
-          repository as never,
-        ).update_fixture_score("fx1", 4, 5)
-      ).success,
-    ).toBe(true);
-
-    expect(repository.update).toHaveBeenCalledWith("fx1", {
-      home_team_score: 4,
-      away_team_score: 5,
-    });
-    expect(mocks.emit_entity_updated).toHaveBeenCalledWith(
-      "fixture",
-      "fx1",
-      "Arena - Round 3",
-      FIXTURE,
-      expect.objectContaining({ home_team_score: 4 }),
-      ["home_team_score", "away_team_score"],
-    );
-  });
-
-  it("updates scores without emitting when the previous fixture is unknown", async () => {
+  it("refuses live changes when the fixture cannot be found", async () => {
     const repository = create_repository(MISSING);
     const use_cases = create_fixture_game_events(repository as never);
 
-    expect((await use_cases.update_fixture_score("fx1", 1, 1)).success).toBe(
-      true,
-    );
     expect((await use_cases.start_fixture("fx1", "first_half")).success).toBe(
       false,
     );
     expect(
-      (await use_cases.update_period("fx1", "second_half" as never, 46))
-        .success,
+      (await use_cases.update_period("fx1", create_period_command())).success,
     ).toBe(false);
 
-    expect(repository.update).toHaveBeenCalledTimes(1);
+    expect(repository.update).not.toHaveBeenCalled();
     expect(mocks.emit_entity_updated).not.toHaveBeenCalled();
   });
 

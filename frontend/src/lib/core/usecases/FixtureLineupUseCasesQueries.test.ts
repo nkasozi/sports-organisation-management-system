@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { FixtureLineupRepository } from "../interfaces/ports";
 import { create_fixture_lineup_use_cases } from "./FixtureLineupUseCases";
 import {
+  create_fixture_repository_with_status,
   create_mock_repository,
   create_test_lineup,
 } from "./FixtureLineupUseCases.test_support";
@@ -13,7 +14,10 @@ describe("FixtureLineupUseCases", () => {
 
   beforeEach(() => {
     mock_repository = create_mock_repository();
-    use_cases = create_fixture_lineup_use_cases(mock_repository);
+    use_cases = create_fixture_lineup_use_cases(
+      mock_repository,
+      create_fixture_repository_with_status("scheduled"),
+    );
   });
 
   describe("delete", () => {

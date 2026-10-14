@@ -24,7 +24,7 @@ function create_first_time_anonymous_dependencies(
     initial_sync_store: {
       start_sync: vi.fn(),
       update_progress: vi.fn(),
-      complete_sync: vi.fn(async () => {}),
+      complete_sync: vi.fn(async () => ({ success: true, data: true })),
       reset: vi.fn(),
     },
     auth_store: {

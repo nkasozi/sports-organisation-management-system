@@ -43,9 +43,9 @@ export async function update_live_game_player_time_on(
   const updated_players = players.map((player) =>
     player.id === player_id ? { ...player, time_on: new_time_on } : player,
   );
-  const update_result = await fixture_lineup_use_cases.update(lineup_id, {
-    selected_players: updated_players,
-  });
+  const update_result = await fixture_lineup_use_cases.record_live_player_times(
+    { lineup_id, selected_players: updated_players },
+  );
   return update_result.success
     ? { success: true, updated_players }
     : {

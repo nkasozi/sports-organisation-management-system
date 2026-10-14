@@ -1,7 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { NO_SCORE_AWARD } from "$lib/core/entities/SportEventCatalog";
-
 import { confirm_live_game_period_action } from "./liveGameDetailPagePeriodActions";
 import { build_period_button_config } from "./liveGameDetailPeriodState";
 
@@ -41,10 +39,12 @@ function create_fixture_use_cases(): {
 } {
   return {
     record_game_event: vi.fn().mockResolvedValue({ success: true, data: {} }),
-    update_period: vi.fn(async (fixture_id: string, period: string) => ({
-      success: true,
-      data: { id: fixture_id, current_period: period },
-    })),
+    update_period: vi.fn(
+      async (fixture_id: string, command: { next_period: string }) => ({
+        success: true,
+        data: { id: fixture_id, current_period: command.next_period },
+      }),
+    ),
   };
 }
 
@@ -74,8 +74,11 @@ describe("ending a period follows the sport's own period sequence", () => {
     expect(result.success).toBe(true);
     expect(fixture_use_cases.update_period).toHaveBeenCalledWith(
       "fixture-1",
-      "break_1",
-      15,
+      expect.objectContaining({
+        expected_current_period: "first_quarter",
+        next_period: "break_1",
+        minute: 15,
+      }),
     );
     expect(fixture_use_cases.update_period).toHaveBeenCalledTimes(1);
   });
@@ -101,10 +104,13 @@ describe("ending a period follows the sport's own period sequence", () => {
       playing_periods: HOCKEY_PERIODS,
     });
 
-    expect(fixture_use_cases.record_game_event).toHaveBeenCalledWith(
+    expect(fixture_use_cases.update_period).toHaveBeenCalledWith(
       "fixture-1",
-      expect.objectContaining({ description: "1st Quarter ended" }),
-      NO_SCORE_AWARD,
+      expect.objectContaining({
+        period_event: expect.objectContaining({
+          description: "1st Quarter ended",
+        }),
+      }),
     );
   });
 
@@ -126,10 +132,14 @@ describe("ending a period follows the sport's own period sequence", () => {
       playing_periods: HOCKEY_PERIODS,
     });
 
-    expect(fixture_use_cases.record_game_event).toHaveBeenCalledWith(
+    expect(fixture_use_cases.update_period).toHaveBeenCalledWith(
       "fixture-1",
-      expect.objectContaining({ description: "2nd Quarter started" }),
-      NO_SCORE_AWARD,
+      expect.objectContaining({
+        period_event: expect.objectContaining({
+          description: "2nd Quarter started",
+        }),
+      }),
     );
+    expect(fixture_use_cases.record_game_event).not.toHaveBeenCalled();
   });
 });

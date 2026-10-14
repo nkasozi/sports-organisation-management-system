@@ -5,7 +5,10 @@ import type {
   FixtureLineup,
   LineupPlayer,
 } from "../entities/FixtureLineup";
-import type { FixtureLineupRepository } from "../interfaces/ports";
+import type {
+  FixtureLineupRepository,
+  FixtureRepository,
+} from "../interfaces/ports";
 import type { ScalarInput } from "../types/DomainScalars";
 
 export function create_mock_repository(): FixtureLineupRepository {
@@ -71,4 +74,15 @@ export function create_valid_input(
     notes: "",
     ...overrides,
   } as CreateFixtureLineupInput;
+}
+
+export function create_fixture_repository_with_status(
+  status: string,
+): FixtureRepository {
+  return {
+    find_by_id: vi.fn().mockResolvedValue({
+      success: true,
+      data: { id: "fixture-123", status },
+    }),
+  } as unknown as FixtureRepository;
 }

@@ -1,4 +1,7 @@
-import { strip_convex_fields } from "../sync_record_helpers";
+import {
+  type CallerVisibleRecord,
+  RemoteDataStatus,
+} from "./caller_record_projection";
 import {
   BatchFollowUpKind,
   type BatchRecordInput,
@@ -15,10 +18,8 @@ const REMOTE_UPDATE_TIME_FIELD_NAMES = ["updated_at", "synced_at"];
 const UPDATED_BY_FIELD_NAME = "updated_by";
 const UNKNOWN_REMOTE_UPDATE_TIME = "";
 
-function read_remote_author(
-  existing_record: Record<string, unknown>,
-): RemoteAuthor {
-  const updated_by = existing_record[UPDATED_BY_FIELD_NAME];
+function read_remote_author(visible_record: CallerVisibleRecord): RemoteAuthor {
+  const updated_by = visible_record.remote_data[UPDATED_BY_FIELD_NAME];
   return is_string(updated_by)
     ? { kind: RemoteAuthorKind.KNOWN, updated_by }
     : { kind: RemoteAuthorKind.UNKNOWN };
@@ -37,7 +38,10 @@ function read_remote_updated_at(
 export function build_conflict_outcome(
   record: BatchRecordInput,
   existing_record: Record<string, unknown>,
+  visible_record: CallerVisibleRecord,
 ): BatchRecordOutcome {
+  const is_visible =
+    visible_record.remote_data_status === RemoteDataStatus.VISIBLE;
   const remote_version = read_record_version(existing_record);
   return {
     result: {
@@ -52,10 +56,13 @@ export function build_conflict_outcome(
         local_id: record.local_id,
         local_data: record.data,
         local_version: record.version,
-        remote_data: strip_convex_fields(existing_record),
+        remote_data: visible_record.remote_data,
+        remote_data_status: visible_record.remote_data_status,
         remote_version,
-        remote_updated_at: read_remote_updated_at(existing_record),
-        remote_updated_by: read_remote_author(existing_record),
+        remote_updated_at: is_visible
+          ? read_remote_updated_at(existing_record)
+          : UNKNOWN_REMOTE_UPDATE_TIME,
+        remote_updated_by: read_remote_author(visible_record),
       },
     },
   };

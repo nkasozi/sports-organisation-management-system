@@ -3,7 +3,6 @@ import {
   is_record_owned_by_shared_owners,
   SharedPermissionScope,
 } from "../shared_own_record_permissions";
-import { is_verification_change_permitted } from "../shared_verification_policy";
 import type { SystemUserRecord } from "./auth_middleware";
 import {
   type CallerOwnership,
@@ -36,6 +35,11 @@ import {
   SyncWriteRejection,
   type SyncWriteRejectionValue,
 } from "./sync_write_decision";
+import {
+  find_team_manager_membership_rejection,
+  is_team_manager_created_player_write,
+} from "./team_manager_write_scope";
+import { blocks_verification_change } from "./verification_reset";
 
 interface ScopedWriteCommand {
   table_name: AllowedSyncTable;
@@ -50,11 +54,6 @@ const SELF_SCOPED_ROLE_KINDS: readonly OwnershipRoleKindValue[] = [
   OwnershipRoleKind.OFFICIAL,
 ];
 const OWNER_ONLY_TABLES = new Set<string>(["calendar_tokens"]);
-const VERIFIABLE_TABLES = new Set<string>([
-  "identifications",
-  "qualifications",
-]);
-const EMPTY_RECORD: Readonly<Record<string, unknown>> = {};
 const PLAYERS_TABLE_NAME = "players";
 
 function resolve_write_action(
@@ -100,20 +99,6 @@ function list_records_to_own(
   return [...existing, merged];
 }
 
-function blocks_verification_change(command: ScopedWriteCommand): boolean {
-  if (!VERIFIABLE_TABLES.has(command.table_name)) return false;
-  if (command.incoming_record.status === OptionStatus.NONE) return false;
-  const existing_record =
-    command.existing_record.status === OptionStatus.SOME
-      ? command.existing_record.value
-      : EMPTY_RECORD;
-  return !is_verification_change_permitted(
-    command.caller.role,
-    command.incoming_record.value,
-    existing_record,
-  );
-}
-
 function check_self_scope(
   command: ScopedWriteCommand & { table_name: SelfScopedTable },
   ownership: CallerOwnership,
@@ -137,14 +122,19 @@ async function check_own_record_scope(
     create_database_ownership_loader(ctx),
     command.caller,
   );
-  const all_owned = list_records_to_own(command).every((record) =>
+  const records_to_own = list_records_to_own(command);
+  const all_owned = records_to_own.every((record) =>
     is_record_owned_by_shared_owners(entity_type, record, ownership),
   );
-  return all_owned
-    ? create_none_option()
-    : create_some_option<SyncWriteRejectionValue>(
-        SyncWriteRejection.OUTSIDE_CALLER_SCOPE,
-      );
+  if (!all_owned)
+    return create_some_option<SyncWriteRejectionValue>(
+      SyncWriteRejection.OUTSIDE_CALLER_SCOPE,
+    );
+  return find_team_manager_membership_rejection(
+    ctx,
+    { ...command, records_to_own },
+    ownership,
+  );
 }
 
 async function check_category_scope(
@@ -162,6 +152,12 @@ async function check_category_scope(
     create_database_ownership_loader(ctx),
     command.caller,
   );
+  const is_created_player_write = await is_team_manager_created_player_write(
+    ctx,
+    { ...command, records_to_own: list_records_to_own(command) },
+    ownership,
+  );
+  if (is_created_player_write) return create_none_option();
   return check_self_scope({ ...command, table_name }, ownership);
 }
 

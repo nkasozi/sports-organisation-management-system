@@ -8,7 +8,7 @@ import {
 } from "./syncManager";
 import { pull_user_scoped_record_from_convex as pull_scoped_impl } from "./syncSystemUserOps";
 
-export { resolve_conflict } from "./syncConflictResolution";
+export { resolve_conflict_with_outcome } from "./syncConflictResolution";
 export {
   get_last_sync_timestamp,
   reset_sync_metadata,

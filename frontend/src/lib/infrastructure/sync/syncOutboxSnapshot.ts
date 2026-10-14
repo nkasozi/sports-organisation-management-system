@@ -1,11 +1,17 @@
-import type { SportSyncDatabase } from "$lib/adapters/repositories/database";
+import {
+  get_database,
+  type SportSyncDatabase,
+} from "$lib/adapters/repositories/database";
 import { build_pending_outbox_entry } from "$lib/adapters/repositories/syncOutbox/syncOutboxEntryBuilder";
 import {
   build_sync_outbox_key,
   SYNC_OUTBOX_TABLE_NAME,
+  type SyncBaseVersion,
   SyncOutboxOperation,
 } from "$lib/adapters/repositories/syncOutbox/syncOutboxTypes";
 import { create_none_option } from "$lib/core/types/Option";
+
+import { TABLE_NAMES } from "./syncTypes";
 
 const READ_WRITE_MODE = "rw";
 
@@ -14,6 +20,7 @@ interface EnqueueLocalSnapshotCommand {
   table_names: readonly string[];
   generate_change_token(): string;
   now_iso(): string;
+  base_version: SyncBaseVersion;
 }
 
 async function enqueue_table_snapshot(
@@ -29,8 +36,8 @@ async function enqueue_table_snapshot(
   );
   const missing_ids = local_ids.filter((_id, index) => !existing[index]);
   await outbox.bulkPut(
-    missing_ids.map((local_id) =>
-      build_pending_outbox_entry({
+    missing_ids.map((local_id) => ({
+      ...build_pending_outbox_entry({
         table_name,
         local_id,
         operation: SyncOutboxOperation.UPSERT,
@@ -39,7 +46,8 @@ async function enqueue_table_snapshot(
         change_token: command.generate_change_token(),
         enqueued_at: command.now_iso(),
       }),
-    ),
+      base_version: command.base_version,
+    })),
   );
   return missing_ids.length;
 }
@@ -57,4 +65,16 @@ export async function enqueue_local_snapshot(
       return enqueued_count;
     },
   );
+}
+
+export async function enqueue_all_local_records_for_push(
+  base_version: SyncBaseVersion,
+): Promise<number> {
+  return enqueue_local_snapshot({
+    database: get_database(),
+    table_names: TABLE_NAMES,
+    generate_change_token: () => crypto.randomUUID(),
+    now_iso: () => new Date().toISOString(),
+    base_version,
+  });
 }

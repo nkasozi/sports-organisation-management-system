@@ -18,6 +18,7 @@ import {
   load_available_profiles,
   wait_for_clerk,
 } from "./authInitializationHelpers";
+import { remember_verified_identity_for_profile } from "./authOfflineVerifiedIdentityRuntime";
 import { restore_offline_verified_session_from_device } from "./authOfflineVerifiedSessionRuntime";
 import {
   initialize_public_viewer_only_session,
@@ -34,6 +35,7 @@ import type { AuthState, UserProfile } from "./authTypes";
 import {
   DEVICE_SESSION_STATUS,
   type DeviceSessionState,
+  type VerifiedSessionSyncState,
 } from "./deviceSessionState";
 import { resolve_current_device_session } from "./initialSyncStore";
 
@@ -59,6 +61,7 @@ async function initialize_signed_in_session(
   );
   if (!session_result.success)
     return create_failure_result(session_result.error);
+  await remember_verified_identity_for_profile(session_result.data.profile);
   return apply_resolved_session(
     session_result.data,
     context.available_profiles,
@@ -68,10 +71,12 @@ async function initialize_signed_in_session(
 
 async function initialize_offline_verified_session(
   context: AuthInitializationContext,
+  verified_sync: VerifiedSessionSyncState,
 ): Promise<Result<true>> {
   const session_result = await restore_offline_verified_session_from_device({
     available_profiles: context.available_profiles,
     saved_token_state: context.saved_token_state,
+    verified_sync,
   });
   if (!session_result.success)
     return initialize_public_viewer_only_session(
@@ -94,7 +99,10 @@ function initialize_for_device_session(
     case DEVICE_SESSION_STATUS.SIGNED_IN:
       return initialize_signed_in_session(context);
     case DEVICE_SESSION_STATUS.OFFLINE_VERIFIED:
-      return initialize_offline_verified_session(context);
+      return initialize_offline_verified_session(
+        context,
+        device_session.verified_sync,
+      );
     case DEVICE_SESSION_STATUS.SESSION_ENDED:
       return initialize_public_viewer_only_session(
         PUBLIC_VIEWER_ONLY_SESSION_DEPENDENCIES,

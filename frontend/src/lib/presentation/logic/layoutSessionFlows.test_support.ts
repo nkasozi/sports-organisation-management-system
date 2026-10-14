@@ -27,7 +27,7 @@ function create_initial_sync_store_mock(
   return {
     start_sync: vi.fn(),
     update_progress: vi.fn(),
-    complete_sync: vi.fn(async () => {}),
+    complete_sync: vi.fn(async () => ({ success: true, data: true })),
     reset: vi.fn(),
     get_state: vi.fn(() => ({ is_syncing })),
   };
@@ -40,7 +40,7 @@ function create_auth_store_mock(): AuthStoreMock {
   };
 }
 
-export function create_sync_store_mock(sync_result: {
+function create_sync_store_mock(sync_result: {
   success: boolean;
   errors: Array<{ error: string }>;
 }): SyncStoreMock {
@@ -89,10 +89,7 @@ export function create_login_dependencies(
     reset_database: vi.fn(async () => {}),
     reset_sync_metadata: vi.fn(async () => {}),
     reset_all_data: vi.fn(async () => {}),
-    fetch_current_user_profile_from_convex: vi.fn(async () => ({
-      success: true,
-      data: { organization_id: "org_1", team_id: "team_1" },
-    })),
+    start_realtime_sync: vi.fn(() => true),
     set_pulling_from_remote: vi.fn(),
     write_convex_user_to_local_dexie: vi.fn(async () => {}),
     pull_user_scoped_record_from_convex: vi.fn(async () => {}),
@@ -109,7 +106,6 @@ export function create_login_dependencies(
       success: true,
       data: 0,
     })),
-    confirm_discard_unsynced_local_changes: vi.fn(async () => false),
     ...overrides,
   };
 }

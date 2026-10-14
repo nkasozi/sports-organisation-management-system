@@ -1,17 +1,15 @@
 import type { SyncOutboxEntry } from "$lib/adapters/repositories/syncOutbox/syncOutboxTypes";
 import {
-  create_none_option,
-  create_some_option,
-  type Option,
-} from "$lib/core/types/Option";
-import {
   type AsyncResult,
   create_success_result,
 } from "$lib/core/types/Result";
 
+import { collect_hidden_conflict_ids } from "./syncConflictVisibility";
 import {
-  is_delete_conflict_without_known_base,
-  park_delete_for_review,
+  DELETE_REVIEW_PARKING,
+  HIDDEN_DELETE_REVIEW_PARKING,
+  is_delete_conflict,
+  park_change_for_review,
 } from "./syncPushDeleteReview";
 import {
   build_rejected_record,
@@ -33,11 +31,7 @@ const BATCH_DELETE_MUTATION_NAME = "sync:batch_delete";
 
 interface DeleteBatchResponse {
   results: ServerRecordResult[];
-  conflicts: Array<{
-    local_id: string;
-    remote_data: Record<string, unknown>;
-    remote_version: number;
-  }>;
+  conflicts: unknown;
 }
 
 function chunk_entries(entries: SyncOutboxEntry[]): SyncOutboxEntry[][] {
@@ -72,75 +66,42 @@ async function settle_one_delete(
   command: PushTableOutboxCommand,
   entry: SyncOutboxEntry,
   result: ServerRecordResult,
-  remote_copy: Option<Record<string, unknown>>,
-): AsyncResult<PushTableOutboxSummary> {
+  hidden_conflict_ids: ReadonlySet<string>,
+): Promise<PushTableOutboxSummary> {
   const summary = create_empty_push_summary();
-  if (is_delete_conflict_without_known_base(entry, result))
-    return create_success_result({
+  if (is_delete_conflict(result))
+    return {
       ...summary,
-      rejected: [await park_delete_for_review(command, entry, result)],
-    });
-  const outcome = await settle_delete_result(
-    command,
-    entry,
-    result,
-    remote_copy,
-  );
-  if (!outcome.success) return log_delete_failure(command, entry, outcome);
-  if (outcome.data === PushOutcomeKind.SUPERSEDED_BY_REMOTE)
-    console.warn("[Sync:Push] Local delete lost to a newer remote update", {
-      event: "sync_delete_superseded_by_remote_update",
-      correlation_id: command.correlation_id,
-      table_name: command.table_name,
-      local_id: entry.local_id,
-    });
-  return create_success_result(
-    add_delete_outcome(summary, entry, result, outcome.data),
-  );
+      rejected: await park_change_for_review(
+        command,
+        entry,
+        result,
+        hidden_conflict_ids.has(entry.local_id)
+          ? HIDDEN_DELETE_REVIEW_PARKING
+          : DELETE_REVIEW_PARKING,
+      ),
+    };
+  const outcome = await settle_delete_result(command, entry, result);
+  return add_delete_outcome(summary, entry, result, outcome);
 }
 
 async function settle_delete_batch(
   command: PushTableOutboxCommand,
   chunk: SyncOutboxEntry[],
   response: DeleteBatchResponse,
-): AsyncResult<PushTableOutboxSummary> {
+): Promise<PushTableOutboxSummary> {
   const entries_by_id = new Map(chunk.map((entry) => [entry.local_id, entry]));
-  const remote_copies = new Map(
-    response.conflicts.map((conflict) => [
-      conflict.local_id,
-      conflict.remote_data,
-    ]),
-  );
+  const hidden_conflict_ids = collect_hidden_conflict_ids(response.conflicts);
   let summary = create_empty_push_summary();
   for (const result of response.results) {
     const entry = entries_by_id.get(result.local_id);
     if (!entry) continue;
-    const remote_copy = remote_copies.get(result.local_id);
-    const settled = await settle_one_delete(
-      command,
-      entry,
-      result,
-      remote_copy ? create_some_option(remote_copy) : create_none_option(),
+    summary = merge_push_summaries(
+      summary,
+      await settle_one_delete(command, entry, result, hidden_conflict_ids),
     );
-    if (!settled.success) return settled;
-    summary = merge_push_summaries(summary, settled.data);
   }
-  return create_success_result(summary);
-}
-
-function log_delete_failure(
-  command: PushTableOutboxCommand,
-  entry: SyncOutboxEntry,
-  failure: { success: false; error: string },
-): { success: false; error: string } {
-  console.error("[Sync:Push] Delete result could not be settled", {
-    event: "sync_delete_settle_failed",
-    correlation_id: command.correlation_id,
-    table_name: command.table_name,
-    local_id: entry.local_id,
-    error: failure.error,
-  });
-  return failure;
+  return summary;
 }
 
 export async function push_outbox_deletes(
@@ -161,13 +122,10 @@ export async function push_outbox_deletes(
       },
     );
     if (!response.success) return response;
-    const chunk_summary = await settle_delete_batch(
-      command,
-      chunk,
-      response.data,
+    summary = merge_push_summaries(
+      summary,
+      await settle_delete_batch(command, chunk, response.data),
     );
-    if (!chunk_summary.success) return chunk_summary;
-    summary = merge_push_summaries(summary, chunk_summary.data);
   }
   return create_success_result(summary);
 }

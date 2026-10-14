@@ -3,6 +3,7 @@ import { vi } from "vitest";
 import type { CreateFixtureInput, Fixture } from "../entities/Fixture";
 import type { FixtureRepository } from "../interfaces/ports";
 import type { ScalarInput } from "../types/DomainScalars";
+import type { PeriodTransitionCommand } from "./FixturePeriodTransition";
 
 export function create_mock_repository(): FixtureRepository {
   return {
@@ -73,4 +74,26 @@ export function create_valid_input(
     notes: "",
     ...overrides,
   } as CreateFixtureInput;
+}
+
+export function create_period_command(
+  next_period: string = "second_half",
+): PeriodTransitionCommand {
+  return {
+    expected_current_period: "first_half",
+    next_period,
+    minute: 45,
+    period_sequence: ["first_half", "second_half"],
+    period_event: {
+      id: "period-event-1",
+      event_type: "period_start",
+      minute: 45,
+      stoppage_time_minute: 0,
+      team_side: "match",
+      player_name: "",
+      secondary_player_name: "",
+      description: "",
+      recorded_at: "2024-06-15T15:45:00.000Z",
+    } as never,
+  };
 }

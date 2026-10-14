@@ -55,7 +55,9 @@ export function create_startup_command(
     resolve_current_device_session: vi.fn(async () => ({
       status: "anonymous",
     })),
-    complete_pending_clerk_sign_out: vi.fn(async () => "none_pending"),
+    complete_pending_clerk_sign_out: vi.fn(
+      record("pending_sign_out", "none_pending"),
+    ),
     initialize_app_data: vi.fn(record("init", "success")),
     is_signed_in: vi.fn(() => true),
     session_handlers: create_session_handlers(),

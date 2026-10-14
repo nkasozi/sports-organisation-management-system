@@ -4,6 +4,7 @@ export const DYNAMIC_ENTITY_LIST_EVENT = {
   LOAD_FAILED: "dynamic_entity_list_load_failed",
   FILTER_OPTIONS_UNAVAILABLE: "dynamic_entity_list_filter_options_unavailable",
   DELETE_FAILED: "dynamic_entity_list_delete_failed",
+  READ_ACCESS_CHECK_FAILED: "dynamic_entity_list_read_access_check_failed",
 } as const;
 
 export const DYNAMIC_ENTITY_LIST_MESSAGE = {
@@ -19,4 +20,10 @@ export function build_dynamic_entity_list_access_denied_message(
   display_name: string,
 ): string {
   return `Access denied: Your role does not have permission to view ${display_name} data.`;
+}
+
+export function build_dynamic_entity_list_access_unverified_message(
+  display_name: string,
+): string {
+  return `We couldn't confirm you can view ${display_name} right now. Please try again.`;
 }

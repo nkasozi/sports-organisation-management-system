@@ -1,4 +1,5 @@
 import type { Competition } from "$lib/core/entities/Competition";
+import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
 import type { Fixture, GameEvent } from "$lib/core/entities/Fixture";
 import {
   get_default_time_on_for_player,
@@ -11,6 +12,7 @@ import type { Venue } from "$lib/core/entities/Venue";
 
 import { TEAM_SIDE } from "./gameEventConstants";
 import { derive_on_field_players } from "./liveGameOnFieldPlayers";
+import type { CardSeverityRules } from "./liveGamePlayerAvailability";
 
 export interface LiveGameDetailBundle {
   fixture: Fixture;
@@ -18,6 +20,7 @@ export interface LiveGameDetailBundle {
   away_team?: Team;
   competition?: Competition;
   sport?: Sport;
+  stage?: CompetitionStage;
   organization_name: string;
   venue?: Venue;
   assigned_officials_data: Array<{ official: Official; role_name: string }>;
@@ -26,6 +29,8 @@ export interface LiveGameDetailBundle {
   home_lineup_id: string;
   away_lineup_id: string;
   game_clock_seconds: number;
+  extra_time_added_seconds: number;
+  break_elapsed_seconds: number;
 }
 
 export function normalize_lineup_players(
@@ -81,11 +86,13 @@ export function build_players_on_field_options(
   home_players: LineupPlayer[],
   away_players: LineupPlayer[],
   game_events: GameEvent[],
+  card_rules: CardSeverityRules,
 ): Array<{ value: string; label: string }> {
   const players = derive_on_field_players(
     team_side === TEAM_SIDE.HOME ? home_players : away_players,
     game_events,
     team_side,
+    card_rules,
   );
   return players.map((player) => ({
     value: player.id,

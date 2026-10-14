@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   build_session_ended_notice_message,
+  build_session_ended_notice_message_without_count,
   create_session_ended_notice_store,
   SESSION_ENDED_NOTICE_STATUS,
 } from "./sessionEndedNotice";
@@ -12,12 +13,24 @@ describe("session ended notice", () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
   });
 
-  it("tells the user how many unsaved changes are waiting to sync", () => {
+  it("tells the user how many unsynced changes will be lost", () => {
     expect(build_session_ended_notice_message(3)).toBe(
-      "Your session ended. Sign in again to sync 3 unsaved changes, or sign out to discard them.",
+      "Your session has ended. 3 unsynced changes will be lost.",
     );
     expect(build_session_ended_notice_message(1)).toBe(
-      "Your session ended. Sign in again to sync 1 unsaved change, or sign out to discard it.",
+      "Your session has ended. 1 unsynced change will be lost.",
+    );
+  });
+
+  it("warns without a number when the changes could not be counted", () => {
+    const store = create_session_ended_notice_store();
+
+    expect(store.show_without_count()).toBe(true);
+    expect(get(store)).toEqual({
+      status: SESSION_ENDED_NOTICE_STATUS.VISIBLE_COUNT_UNKNOWN,
+    });
+    expect(build_session_ended_notice_message_without_count()).toBe(
+      "Your session has ended. Any unsynced changes on this device will be lost.",
     );
   });
 

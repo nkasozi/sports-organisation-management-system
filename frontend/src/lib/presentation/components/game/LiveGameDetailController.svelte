@@ -5,6 +5,7 @@
     import { goto } from "$app/navigation";
     import { page } from "$app/stores";
     import {
+        get_competition_stage_use_cases,
         get_competition_use_cases,
         get_fixture_lineup_use_cases,
         get_fixture_use_cases,
@@ -54,6 +55,7 @@
         sport_use_cases: get_sport_use_cases(),
         venue_use_cases: get_venue_use_cases(),
         official_use_cases: get_official_use_cases(),
+        competition_stage_use_cases: get_competition_stage_use_cases(),
     };
     const action_dependencies: LiveGameDetailPageActionDependencies = {
         ...data_dependencies,

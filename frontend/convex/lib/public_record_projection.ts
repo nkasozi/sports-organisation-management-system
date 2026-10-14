@@ -64,7 +64,11 @@ const PLAYER_PROJECTION: PublicProjection = {
     "profile_image_url",
     "status",
   ],
-  private_fields: [...PERSON_CONTACT_FIELDS, "medical_notes"],
+  private_fields: [
+    ...PERSON_CONTACT_FIELDS,
+    "medical_notes",
+    "created_by_user_id",
+  ],
 };
 
 const OFFICIAL_PROJECTION: PublicProjection = {

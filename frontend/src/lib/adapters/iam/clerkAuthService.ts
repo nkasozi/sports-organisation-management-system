@@ -1,9 +1,13 @@
 import type { Clerk } from "@clerk/clerk-js";
-import { derived, type Readable, writable } from "svelte/store";
 
 import { browser } from "$app/environment";
 import { PUBLIC_CLERK_PUBLISHABLE_KEY } from "$env/static/public";
-import { OptionStatus } from "$lib/core/types/Option";
+import {
+  create_none_option,
+  create_some_option,
+  type Option,
+  OptionStatus,
+} from "$lib/core/types/Option";
 import type { Result } from "$lib/core/types/Result";
 import {
   create_failure_result,
@@ -11,21 +15,17 @@ import {
 } from "$lib/core/types/Result";
 
 import {
+  type ClerkActivationPort,
+  load_and_activate_clerk,
+  mark_clerk_lifecycle_unavailable,
+} from "./clerkActivation";
+import {
   CLERK_ERROR_CODE,
   CLERK_LOG_EVENT,
   CLERK_MESSAGE,
   type ClerkErrorCode,
 } from "./clerkAuthConstants";
-import {
-  type ClerkSessionState,
-  INITIAL_CLERK_STATE,
-  LOADED_SIGNED_OUT_CLERK_STATE,
-} from "./clerkAuthTypes";
-import {
-  type ClerkLoadOutcome,
-  log_initialization_skipped,
-  wait_for_loaded_clerk,
-} from "./clerkInstanceLoader";
+import { log_initialization_skipped } from "./clerkInstanceLoader";
 import {
   CLERK_LIFECYCLE_EVENT,
   CLERK_LIFECYCLE_STATUS,
@@ -36,25 +36,29 @@ import {
 } from "./clerkLifecycleState";
 import {
   type ClerkReachability,
+  is_browser_known_offline,
   read_browser_network_online,
   resolve_clerk_reachability,
 } from "./clerkReachability";
+import { expire_clerk_session_cookies } from "./clerkSessionCookie";
+import {
+  CLERK_SESSION_GATE_STATUS,
+  request_clerk_provider_reload,
+} from "./clerkSessionGate";
+import {
+  is_clerk_session_gate_open,
+  publish_clerk_state,
+  reset_published_clerk_state,
+  set_clerk_session_gate,
+} from "./clerkSessionPublisher";
 import { build_clerk_session_state } from "./clerkSessionStateBuilders";
 import { request_clerk_session_token } from "./clerkSessionToken";
 import { sign_out_of_clerk } from "./clerkSignOut";
-import {
-  change_navigation_state,
-  type ClerkStoreDelivery,
-  type ClerkStoreDeliveryStep,
-  deliver_clerk_state,
-  LIVE_CLERK_STORE_DELIVERY,
-} from "./clerkStoreDelivery";
 export type { ClerkUser } from "./clerkAuthTypes";
-
-const clerk_store = writable<ClerkSessionState>(INITIAL_CLERK_STATE);
+export { clerk_provider_generation } from "./clerkSessionGate";
 
 let clerk_lifecycle_state: ClerkLifecycleState = INITIAL_CLERK_LIFECYCLE_STATE;
-let clerk_store_delivery: ClerkStoreDelivery = LIVE_CLERK_STORE_DELIVERY;
+let initialization_in_flight: Option<Promise<boolean>> = create_none_option();
 
 function apply_lifecycle_event(
   event: ClerkLifecycleEvent,
@@ -66,71 +70,36 @@ function apply_lifecycle_event(
   return clerk_lifecycle_state;
 }
 
-function apply_delivery_step(step: ClerkStoreDeliveryStep): boolean {
-  clerk_store_delivery = step.delivery;
-  if (step.state_to_publish.status !== OptionStatus.SOME) return false;
-  clerk_store.set(step.state_to_publish.value);
-  return true;
-}
-
-export function set_navigating(navigating: boolean): void {
-  apply_delivery_step(
-    change_navigation_state(clerk_store_delivery, navigating),
-  );
-}
-
-function publish_clerk_state_next_frame(new_state: ClerkSessionState): void {
-  requestAnimationFrame(() => {
-    apply_delivery_step(deliver_clerk_state(clerk_store_delivery, new_state));
-  });
-}
-
 function sync_clerk_state(): boolean {
   if (clerk_lifecycle_state.status !== CLERK_LIFECYCLE_STATUS.READY)
     return false;
-  publish_clerk_state_next_frame(
+  return publish_clerk_state(
     build_clerk_session_state(clerk_lifecycle_state.clerk),
   );
-  return true;
 }
+
+const activation_port: ClerkActivationPort = {
+  apply_lifecycle_event,
+  sync_clerk_state,
+};
 
 function mark_clerk_unavailable(error_code: ClerkErrorCode): false {
-  apply_lifecycle_event({
-    type: CLERK_LIFECYCLE_EVENT.CLERK_UNAVAILABLE,
-    error_code,
-  });
-  publish_clerk_state_next_frame(LOADED_SIGNED_OUT_CLERK_STATE);
-  return false;
+  return mark_clerk_lifecycle_unavailable(activation_port, error_code);
 }
 
-function activate_clerk_instance(load_outcome: ClerkLoadOutcome): true {
-  const clerk = load_outcome.clerk;
-  apply_lifecycle_event({ type: CLERK_LIFECYCLE_EVENT.CLERK_ACTIVATED, clerk });
-  clerk_store.set(build_clerk_session_state(clerk));
-  clerk.addListener(() => {
-    sync_clerk_state();
+function start_clerk_initialization(): Promise<boolean> {
+  if (initialization_in_flight.status === OptionStatus.SOME)
+    return initialization_in_flight.value;
+  apply_lifecycle_event({ type: CLERK_LIFECYCLE_EVENT.INITIALIZATION_STARTED });
+  if (is_browser_known_offline())
+    return Promise.resolve(
+      mark_clerk_unavailable(CLERK_ERROR_CODE.BROWSER_OFFLINE),
+    );
+  const pending = load_and_activate_clerk(activation_port).finally(() => {
+    initialization_in_flight = create_none_option();
   });
-  console.log("[Clerk] Initialized via ClerkProvider", {
-    event: CLERK_LOG_EVENT.INITIALIZED,
-    load_status: load_outcome.status,
-  });
-  return true;
-}
-
-async function load_and_activate_clerk(): Promise<boolean> {
-  try {
-    const clerk_result = await wait_for_loaded_clerk();
-    if (!clerk_result.success)
-      return mark_clerk_unavailable(CLERK_ERROR_CODE.LOAD_TIMED_OUT);
-    return activate_clerk_instance(clerk_result.data);
-  } catch (error) {
-    console.error("[Clerk] Failed to initialize", {
-      event: CLERK_LOG_EVENT.INITIALIZATION_FAILED,
-      error_code: CLERK_ERROR_CODE.INITIALIZATION_THREW,
-      error: String(error),
-    });
-    return mark_clerk_unavailable(CLERK_ERROR_CODE.INITIALIZATION_THREW);
-  }
+  initialization_in_flight = create_some_option(pending);
+  return pending;
 }
 
 export async function initialize_clerk(): Promise<boolean> {
@@ -140,16 +109,44 @@ export async function initialize_clerk(): Promise<boolean> {
     log_initialization_skipped(CLERK_ERROR_CODE.PUBLISHABLE_KEY_MISSING);
     return mark_clerk_unavailable(CLERK_ERROR_CODE.PUBLISHABLE_KEY_MISSING);
   }
-  const state = apply_lifecycle_event({
-    type: CLERK_LIFECYCLE_EVENT.INITIALIZATION_STARTED,
-  });
-  if (state.status === CLERK_LIFECYCLE_STATUS.READY) {
-    console.log("[Clerk] Already initialized", {
-      event: CLERK_LOG_EVENT.ALREADY_INITIALIZED,
-    });
-    return true;
+  switch (clerk_lifecycle_state.status) {
+    case CLERK_LIFECYCLE_STATUS.READY:
+      return true;
+    case CLERK_LIFECYCLE_STATUS.UNAVAILABLE:
+      return false;
+    case CLERK_LIFECYCLE_STATUS.UNINITIALIZED:
+    case CLERK_LIFECYCLE_STATUS.INITIALIZING:
+      return start_clerk_initialization();
   }
-  return load_and_activate_clerk();
+}
+
+export function retry_clerk_initialization(): Promise<boolean> {
+  if (clerk_lifecycle_state.status === CLERK_LIFECYCLE_STATUS.READY)
+    return Promise.resolve(true);
+  if (is_browser_known_offline()) return Promise.resolve(false);
+  console.log("[Clerk] Retrying initialization", {
+    event: CLERK_LOG_EVENT.RETRY_STARTED,
+  });
+  apply_lifecycle_event({ type: CLERK_LIFECYCLE_EVENT.RETRY_REQUESTED });
+  if (!window.Clerk) request_clerk_provider_reload();
+  return initialize_clerk();
+}
+
+export function suppress_clerk_session_until_signed_out(): boolean {
+  console.warn("[Clerk] Session hidden until sign-out completes", {
+    event: CLERK_LOG_EVENT.SESSION_SUPPRESSED,
+  });
+  return set_clerk_session_gate(
+    CLERK_SESSION_GATE_STATUS.SUPPRESSED_UNTIL_SIGNED_OUT,
+  );
+}
+
+export function release_clerk_session_gate(): boolean {
+  console.log("[Clerk] Session gate released", {
+    event: CLERK_LOG_EVENT.SESSION_GATE_RELEASED,
+  });
+  set_clerk_session_gate(CLERK_SESSION_GATE_STATUS.OPEN);
+  return sync_clerk_state();
 }
 
 export function get_clerk(): Result<Clerk> {
@@ -166,10 +163,17 @@ export function get_clerk_reachability(): ClerkReachability {
 }
 
 export async function get_session_token(): Promise<Result<string>> {
+  if (!is_clerk_session_gate_open()) {
+    console.warn("[Clerk] Token withheld until sign-out completes", {
+      event: CLERK_LOG_EVENT.TOKEN_SUPPRESSED,
+    });
+    return create_failure_result(CLERK_MESSAGE.SESSION_SIGNING_OUT);
+  }
   return request_clerk_session_token(get_clerk());
 }
 
 export async function sign_out(): Promise<Result<true>> {
+  expire_clerk_session_cookies();
   const clerk_result = get_clerk();
   if (!clerk_result.success) {
     console.error("[Clerk] Sign out requested before initialization", {
@@ -182,17 +186,13 @@ export async function sign_out(): Promise<Result<true>> {
 
 export function destroy_clerk(): void {
   apply_lifecycle_event({ type: CLERK_LIFECYCLE_EVENT.DESTROYED });
-  clerk_store.set(INITIAL_CLERK_STATE);
+  initialization_in_flight = create_none_option();
+  reset_published_clerk_state();
 }
 
-export const clerk_session: Readable<ClerkSessionState> = {
-  subscribe: clerk_store.subscribe,
-};
-export const is_clerk_loaded: Readable<boolean> = derived(
-  clerk_store,
-  ($state) => $state.is_loaded,
-);
-export const is_signed_in: Readable<boolean> = derived(
-  clerk_store,
-  ($state) => $state.is_signed_in,
-);
+export {
+  clerk_session,
+  is_clerk_loaded,
+  is_signed_in,
+  set_navigating,
+} from "./clerkSessionPublisher";

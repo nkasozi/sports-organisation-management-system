@@ -93,9 +93,16 @@ describe("batch_upsert after a remote delete", () => {
 
   it("still inserts a record that never existed", async () => {
     const context = create_context([], []);
-    const result = await push_team(context, { kind: "known", version: 5 });
+    const result = await push_team(context, { kind: "unknown" });
     expect(result.results[0].action).toBe("created");
     expect(result.deleted_remotely).toEqual([]);
+  });
+
+  it("reports a remote deletion instead of resurrecting a record whose tombstone was pruned", async () => {
+    const context = create_context([], []);
+    const result = await push_team(context, { kind: "known", version: 5 });
+    expect(result.results[0].action).toBe("deleted_remotely");
+    expect(find_table_rows(context, "teams")).toEqual([]);
   });
 });
 

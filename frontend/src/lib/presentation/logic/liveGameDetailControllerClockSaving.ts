@@ -29,7 +29,11 @@ export async function save_live_game_detail_clock_state(
     game_clock_seconds: page_state.game_clock_seconds,
     is_clock_running: page_state.is_clock_running,
     is_current_period_playing: is_current_period_playing(context),
-    now: context.now(),
+    now: page_state.is_clock_running
+      ? new Date(context.sync_holder.synced_at_milliseconds)
+      : context.now(),
+    break_elapsed_seconds: page_state.break_elapsed_seconds,
+    extra_time_added_seconds: page_state.extra_time_added_seconds,
   });
 }
 

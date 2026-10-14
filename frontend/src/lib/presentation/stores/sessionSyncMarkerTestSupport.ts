@@ -26,6 +26,9 @@ export function set_clerk_reachability(status: string): boolean {
   return true;
 }
 export const mock_app_settings_store: Record<string, string> = {};
+export const mock_app_settings_write_failure: { enabled: boolean } = {
+  enabled: false,
+};
 export const mock_initialize_clerk = vi.fn(async () => true);
 
 export function build_legacy_verified_session_sync_marker(
@@ -82,6 +85,7 @@ export function reset_session_sync_test_state(): boolean {
     (key) => delete mock_app_settings_store[key],
   );
   mock_initialize_clerk.mockClear();
+  mock_app_settings_write_failure.enabled = false;
   set_clerk_reachability("confirmed");
   return set_signed_out_clerk_session_state();
 }
@@ -119,6 +123,8 @@ export function create_app_settings_container_mock(): {
       get_setting: (key: string) =>
         Promise.resolve(mock_app_settings_store[key] ?? ""),
       set_setting: (key: string, value: string) => {
+        if (mock_app_settings_write_failure.enabled)
+          return Promise.reject(new Error("QuotaExceededError"));
         mock_app_settings_store[key] = value;
         return Promise.resolve();
       },

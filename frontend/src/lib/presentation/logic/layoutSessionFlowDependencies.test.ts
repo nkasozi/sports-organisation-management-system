@@ -8,7 +8,7 @@ describe("layoutSessionFlowDependencies", () => {
     const initial_sync_store = {
       start_sync: vi.fn(),
       update_progress: vi.fn(),
-      complete_sync: vi.fn(async () => {}),
+      complete_sync: vi.fn(async () => ({ success: true, data: true })),
       reset: vi.fn(),
     };
     const command = {
@@ -20,7 +20,7 @@ describe("layoutSessionFlowDependencies", () => {
       start_background_sync: vi.fn(),
       reset_database: vi.fn(),
       reset_sync_metadata: vi.fn(),
-      fetch_current_user_profile_from_convex: vi.fn(),
+      look_up_current_user_profile: vi.fn(),
       set_pulling_from_remote: vi.fn(),
       write_convex_user_to_local_dexie: vi.fn(),
       pull_user_scoped_record_from_convex: vi.fn(),

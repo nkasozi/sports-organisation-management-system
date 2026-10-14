@@ -1,4 +1,3 @@
-import { fetch_public_data_from_convex } from "$lib/infrastructure/sync/convexPublicDataService";
 import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
 import { ensure_auth_profile } from "./authGuard";
@@ -15,6 +14,10 @@ import {
   load_competitions_for_results_organization,
 } from "./competitionResultsPageState";
 import { COMPETITION_RESULTS_BUNDLE_LOAD_STATUS } from "./competitionResultsPageTypes";
+import {
+  load_competition_results_public_data,
+  refresh_competition_results_public_data,
+} from "./competitionResultsPublicData";
 
 const LOADING_STATE_ERROR = "error";
 
@@ -79,6 +82,10 @@ export async function handle_competition_results_organization_change(
     await sync_selected_public_organization(command, selected_organization_id);
   }
   command.set_fixtures_loading(true);
+  await refresh_competition_results_public_data(
+    command,
+    selected_organization_id,
+  );
   const result = await load_competitions_for_results_organization(
     competition_results_page_dependencies,
     selected_organization_id,
@@ -139,7 +146,9 @@ async function load_initialized_competition_results_page(
       saved_organization_id: command.get_saved_organization_id(),
       sync_public_organization: command.sync_public_organization,
       load_public_data: () =>
-        fetch_public_data_from_convex("competition_results"),
+        load_competition_results_public_data(
+          url_params.org_id || command.get_saved_organization_id(),
+        ),
     });
     apply_initialized_competition_results_page(command, initialized_page);
   } catch (error) {

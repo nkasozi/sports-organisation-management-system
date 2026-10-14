@@ -7,6 +7,7 @@ import {
   record_live_game_detail_page_event_action,
   update_live_game_detail_player_time_on_action,
 } from "./liveGameDetailPageActions";
+import { OPEN_SUBSTITUTION_RULES } from "./liveGameSubstitutionRules";
 
 describe("liveGameDetailPageActions", () => {
   it("updates the selected player time-on status through the shell export", async () => {
@@ -15,7 +16,9 @@ describe("liveGameDetailPageActions", () => {
         away_lineup_id: "away-lineup",
         away_players: [{ id: "away-1", time_on: "present_at_start" }] as never,
         fixture_lineup_use_cases: {
-          update: vi.fn().mockResolvedValue({ success: true }),
+          record_live_player_times: vi
+            .fn()
+            .mockResolvedValue({ success: true }),
         } as never,
         home_lineup_id: "home-lineup",
         home_players: [{ id: "home-1", time_on: "present_at_start" }] as never,
@@ -53,7 +56,19 @@ describe("liveGameDetailPageActions", () => {
         secondary_player_id: "",
         on_field_players: [],
         max_players_on_field: 11,
-        period_window: create_none_option(),
+        substitution_availability: {
+          on_field_ids: new Set<string>(),
+          ejected_ids: new Set<string>(),
+          suspended_ids: new Set<string>(),
+          substituted_off_ids: new Set<string>(),
+          substitutions_used: 0,
+        },
+        substitution_rules: OPEN_SUBSTITUTION_RULES,
+        event_timing: {
+          effective_periods: [],
+          current_period_id: create_none_option(),
+          elapsed_minutes: 120,
+        },
         selected_event_type: { id: "goal", label: "Goal" } as never,
         selected_player_id: "",
         selected_team_side: "home",

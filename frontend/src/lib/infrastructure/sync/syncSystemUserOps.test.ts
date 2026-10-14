@@ -129,6 +129,7 @@ describe("syncSystemUserOps", () => {
         table_name: "teams",
         local_id: "team-1",
         server_version: 4,
+        server_sequence: 0,
         record_state: "live",
       },
     ]);

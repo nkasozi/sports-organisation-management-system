@@ -2,6 +2,10 @@ import { STAGE_TYPE } from "$lib/core/entities/StatusConstants";
 
 export const COMPETITION_STATS_ALL_TEAMS_FILTER = "all";
 
+export const STANDING_PLAYOFF_LABEL = "Playoff";
+export const STANDING_PLAYOFF_TITLE =
+  "Still level after every tiebreaker. A playoff decides this position.";
+
 export const STANDING_FORM_RESULT = {
   WIN: "W",
   DRAW: "D",

@@ -1,5 +1,6 @@
 import type { QueryCtx } from "../_generated/server";
 import { strip_convex_fields } from "../sync_record_helpers";
+import { drop_access_reviews_still_readable } from "./access_review_visibility";
 import type { SystemUserRecord } from "./auth_middleware";
 import { type ConvexFailure, NO_ERROR_MESSAGE } from "./convex_errors";
 import { merge_change_feed_page } from "./sync_change_feed";
@@ -94,10 +95,14 @@ async function project_visible_tombstones(
   tombstones: SyncTombstone[],
 ): Promise<PulledTombstone[]> {
   if (!can_caller_read_table(caller, table_name)) return [];
-  const visible_tombstones = await filter_visible_tombstones(ctx, {
+  const visible_tombstones = await drop_access_reviews_still_readable(ctx, {
     caller,
     table_name,
-    tombstones,
+    tombstones: await filter_visible_tombstones(ctx, {
+      caller,
+      table_name,
+      tombstones,
+    }),
   });
   return visible_tombstones.map((tombstone) => ({
     local_id: tombstone.local_id,

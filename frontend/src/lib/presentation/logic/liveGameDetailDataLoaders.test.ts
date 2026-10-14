@@ -16,6 +16,7 @@ function create_dependencies(): LiveGameDetailDataDependencies {
     sport_use_cases: { get_by_id: vi.fn() },
     venue_use_cases: { list: vi.fn() },
     official_use_cases: { get_by_id: vi.fn() },
+    competition_stage_use_cases: { get_by_id: vi.fn() },
   } as unknown as LiveGameDetailDataDependencies;
 }
 
@@ -65,6 +66,24 @@ describe("liveGameDetailDataLoaders", () => {
     });
   });
 
+  it("loads the fixture's competition stage so overtime rules can tell knockout games apart", async () => {
+    const dependencies = create_dependencies();
+    vi.mocked(
+      dependencies.competition_stage_use_cases.get_by_id,
+    ).mockResolvedValue({
+      success: true,
+      data: { id: "stage-1", stage_type: "knockout_stage" },
+    } as never);
+    const context = await load_live_game_detail_competition_context(
+      { competition_id: "", stage_id: "stage-1" } as LoaderFixture,
+      dependencies,
+    );
+    expect(context.stage).toEqual({
+      status: "some",
+      value: { id: "stage-1", stage_type: "knockout_stage" },
+    });
+  });
+
   it("skips organization and sport lookups when the competition is missing", async () => {
     const dependencies = create_dependencies();
 
@@ -77,6 +96,7 @@ describe("liveGameDetailDataLoaders", () => {
       competition: { status: "none" },
       organization: { status: "none" },
       sport: { status: "none" },
+      stage: { status: "none" },
     });
     expect(dependencies.competition_use_cases.get_by_id).not.toHaveBeenCalled();
     expect(

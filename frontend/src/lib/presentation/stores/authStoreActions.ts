@@ -27,6 +27,10 @@ import {
   create_present_auth_token_state,
   type UserProfile,
 } from "./authTypes";
+import {
+  is_demo_switch_permitted,
+  select_profiles_for_session,
+} from "./demoProfileSelection";
 import { load_profiles_from_repository } from "./profileLoader";
 
 export interface AuthStoreContext {
@@ -78,9 +82,11 @@ export async function refresh_auth_profiles(
     organization_repository,
     get_team_repository(),
   );
-  const refreshed_profiles = build_profiles_with_public_viewer(loaded_profiles);
-
   const state = context.read_state();
+  const refreshed_profiles = select_profiles_for_session(
+    state,
+    build_profiles_with_public_viewer(loaded_profiles),
+  );
   const previous_count = state.available_profiles.length;
   const refreshed_current_profile_state = build_refreshed_current_profile_state(
     state.current_profile,
@@ -136,9 +142,10 @@ export async function switch_auth_profile(
   context: AuthStoreContext,
   profile_id: AuthState["available_profiles"][number]["id"],
 ): Promise<boolean> {
-  const target_profile = context
-    .read_state()
-    .available_profiles.find((p) => p.id === profile_id);
+  const state = context.read_state();
+  const target_profile = state.available_profiles.find(
+    (p) => p.id === profile_id,
+  );
 
   if (!target_profile) {
     console.error("[AuthStore] Profile to switch to was not found", {
@@ -147,6 +154,7 @@ export async function switch_auth_profile(
     });
     return false;
   }
+  if (!is_demo_switch_permitted(state, target_profile)) return false;
 
   const token_result = await generate_token_for_profile(target_profile);
   if (!token_result.success) {

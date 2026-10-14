@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { create_default_football_periods } from "$lib/core/entities/SportDefaults";
+
 import { build_match_report_data } from "./MatchReportBuilder";
 import {
   make_basic_context,
@@ -25,7 +27,10 @@ describe("build_match_report_data", () => {
         }),
       ],
     });
-    const ctx = make_basic_context({ fixture });
+    const ctx = make_basic_context({
+      fixture,
+      periods: create_default_football_periods(),
+    });
     const report = build_match_report_data(ctx);
     const first_half = report.score_by_period.find(
       (p) => p.period_name === "First Half",
@@ -44,7 +49,10 @@ describe("build_match_report_data", () => {
         }),
       ],
     });
-    const ctx = make_basic_context({ fixture });
+    const ctx = make_basic_context({
+      fixture,
+      periods: create_default_football_periods(),
+    });
     const report = build_match_report_data(ctx);
     const first_half = report.score_by_period.find(
       (p) => p.period_name === "First Half",

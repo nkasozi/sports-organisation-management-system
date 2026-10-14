@@ -1,4 +1,5 @@
 import type { SystemUserRecord } from "./auth_middleware";
+import type { RemoteDataStatusValue } from "./caller_record_projection";
 import type { AllowedSyncTable } from "./sync_table_catalog";
 import type { BaseVersion } from "./sync_versioning";
 
@@ -16,16 +17,21 @@ export type BatchBaseVersion =
 export interface BatchRecordInput {
   local_id: string;
   data: Record<string, unknown>;
+  cleared_fields: string[];
   version: number;
   base: BatchBaseVersion;
 }
 
-export interface BatchRecordResult {
+interface BatchRecordResultFields {
   local_id: string;
   success: boolean;
   action: string;
   server_version: number;
 }
+
+export type BatchRecordResult =
+  | BatchRecordResultFields
+  | (BatchRecordResultFields & { record: Record<string, unknown> });
 
 export const RemoteAuthorKind = {
   KNOWN: "known",
@@ -41,6 +47,7 @@ export interface BatchRecordConflict {
   local_data: Record<string, unknown>;
   local_version: number;
   remote_data: Record<string, unknown>;
+  remote_data_status: RemoteDataStatusValue;
   remote_version: number;
   remote_updated_at: string;
   remote_updated_by: RemoteAuthor;

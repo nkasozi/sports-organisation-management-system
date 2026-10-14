@@ -21,6 +21,12 @@ vi.mock("$lib/presentation/logic/gameManageActions", () => ({
   start_game_session: start_game_session_mock,
 }));
 
+vi.mock("./liveGameLineupLock", () => ({
+  lock_fixture_lineups_after_start: vi
+    .fn()
+    .mockResolvedValue({ locked_count: 0, failed_count: 0 }),
+}));
+
 vi.mock("$lib/presentation/logic/liveGameDetailActions", () => ({
   ensure_live_game_lineups_before_start:
     ensure_live_game_lineups_before_start_mock,

@@ -9,6 +9,7 @@ import type { SyncResult } from "$lib/infrastructure/sync/syncTypes";
 
 import {
   build_rejected_change_item,
+  build_remote_deletion_item,
   collect_sync_result_items,
   mark_failed,
   mark_resolved,
@@ -102,6 +103,9 @@ interface SyncReviewStore {
     decision: SyncReviewDecisionValue,
   ): Promise<boolean>;
   add_from_sync_result(result: SyncResult): boolean;
+  add_remote_deletion(
+    deletion: SyncResult["deleted_remotely"][number],
+  ): boolean;
   restore_from_outbox(): Promise<number>;
   show(): boolean;
   dismiss(): boolean;
@@ -154,6 +158,12 @@ export function create_sync_review_store(
       const items = collect_sync_result_items(result);
       update((state) => merge_review_items(state, items));
       return items.length > 0;
+    },
+    add_remote_deletion: (deletion): boolean => {
+      update((state) =>
+        merge_review_items(state, [build_remote_deletion_item(deletion)]),
+      );
+      return true;
     },
     show: (): boolean => {
       update((state) => ({ ...state, is_visible: state.items.length > 0 }));

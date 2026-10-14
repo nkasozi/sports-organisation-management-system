@@ -8,6 +8,9 @@ export const FixtureLifecycleCommand = {
   RECORD_EVENT: "record_event",
   CHANGE_PERIOD: "change_period",
   END: "end",
+  POSTPONE: "postpone",
+  CANCEL: "cancel",
+  RESCHEDULE: "reschedule",
 } as const;
 
 export type FixtureLifecycleCommandValue =
@@ -32,6 +35,9 @@ const FIXTURE_LIFECYCLE_MESSAGE = {
     "This game is not in progress, so live changes can't be recorded. Start the game first.",
   CANNOT_END:
     "This game can only be ended while it is in progress. Start the game first.",
+  CANNOT_POSTPONE: "Only a scheduled game can be postponed.",
+  CANNOT_CANCEL: "Only a scheduled or postponed game can be cancelled.",
+  CANNOT_RESCHEDULE: "Only a postponed game can be moved back to scheduled.",
 } as const;
 
 function allow(next_status: FixtureStatusValue): FixtureLifecycleDecision {
@@ -83,6 +89,33 @@ function decide_end(status: FixtureStatusValue): FixtureLifecycleDecision {
   }
 }
 
+function decide_postpone(status: FixtureStatusValue): FixtureLifecycleDecision {
+  return status === FIXTURE_STATUS.SCHEDULED
+    ? allow(FIXTURE_STATUS.POSTPONED)
+    : reject(FIXTURE_LIFECYCLE_MESSAGE.CANNOT_POSTPONE);
+}
+
+function decide_cancel(status: FixtureStatusValue): FixtureLifecycleDecision {
+  switch (status) {
+    case FIXTURE_STATUS.SCHEDULED:
+    case FIXTURE_STATUS.POSTPONED:
+      return allow(FIXTURE_STATUS.CANCELLED);
+    case FIXTURE_STATUS.IN_PROGRESS:
+    case FIXTURE_STATUS.COMPLETED:
+    case FIXTURE_STATUS.CANCELLED:
+    default:
+      return reject(FIXTURE_LIFECYCLE_MESSAGE.CANNOT_CANCEL);
+  }
+}
+
+function decide_reschedule(
+  status: FixtureStatusValue,
+): FixtureLifecycleDecision {
+  return status === FIXTURE_STATUS.POSTPONED
+    ? allow(FIXTURE_STATUS.SCHEDULED)
+    : reject(FIXTURE_LIFECYCLE_MESSAGE.CANNOT_RESCHEDULE);
+}
+
 export function decide_fixture_lifecycle_transition(
   status: FixtureStatusValue,
   command: FixtureLifecycleCommandValue,
@@ -95,5 +128,11 @@ export function decide_fixture_lifecycle_transition(
       return decide_live_change(status);
     case FixtureLifecycleCommand.END:
       return decide_end(status);
+    case FixtureLifecycleCommand.POSTPONE:
+      return decide_postpone(status);
+    case FixtureLifecycleCommand.CANCEL:
+      return decide_cancel(status);
+    case FixtureLifecycleCommand.RESCHEDULE:
+      return decide_reschedule(status);
   }
 }

@@ -29,6 +29,10 @@ function forward_sync_progress(
   return true;
 }
 
+export function create_inactive_sync_progress_subscription(): SyncProgressSubscriptionState {
+  return { status: SUBSCRIPTION_STATUS.INACTIVE };
+}
+
 export function subscribe_to_login_sync_progress(
   dependencies: LayoutLoginSyncDependencies,
 ): SyncProgressSubscriptionState {

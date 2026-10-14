@@ -1,9 +1,9 @@
 import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
+import { create_none_option, OptionStatus } from "$lib/core/types/Option";
 import {
   build_period_button_config,
   check_is_playing_period,
   get_current_period_duration_seconds,
-  get_effective_periods_for,
   get_period_start_seconds,
   get_playing_periods,
   get_sport_period_display_name,
@@ -17,6 +17,8 @@ import {
   derive_optional_fixture_match_phase,
   LIVE_MATCH_PHASE,
 } from "./liveGameMatchPhase";
+import { derive_live_overtime_periods } from "./liveGameOvertimePeriods";
+import { format_shootout_tally } from "./liveGameOvertimePlan";
 
 type LiveGameDetailClockState = Pick<
   LiveGameDetailDerivedState,
@@ -78,14 +80,20 @@ function build_current_period_label(
   context: PeriodContext,
   page_state: LiveGameDetailPageState,
 ): string {
-  if (context.current_period_id)
-    return get_sport_period_display_name(
-      context.current_period_id,
-      context.effective_periods,
-    );
-  return page_state.fixture?.status === FIXTURE_STATUS.COMPLETED
-    ? FULL_TIME_LABEL
-    : page_state.fixture?.scheduled_time || "";
+  const label = context.current_period_id
+    ? get_sport_period_display_name(
+        context.current_period_id,
+        context.effective_periods,
+      )
+    : page_state.fixture?.status === FIXTURE_STATUS.COMPLETED
+      ? FULL_TIME_LABEL
+      : page_state.fixture?.scheduled_time || "";
+  const shootout_tally = page_state.fixture
+    ? format_shootout_tally(page_state.fixture)
+    : create_none_option<string>();
+  return shootout_tally.status === OptionStatus.SOME
+    ? `${label} ${shootout_tally.value}`
+    : label;
 }
 
 function format_clock_display(remaining_seconds: number): string {
@@ -102,10 +110,8 @@ function format_clock_display(remaining_seconds: number): string {
 function build_period_context(
   page_state: LiveGameDetailPageState,
 ): PeriodContext {
-  const effective_periods = get_effective_periods_for(
-    page_state.sport,
-    page_state.competition,
-  );
+  const effective_periods =
+    derive_live_overtime_periods(page_state).effective_periods;
   const current_period_id = page_state.fixture?.current_period ?? void 0;
   return {
     effective_periods,
@@ -116,6 +122,22 @@ function build_period_context(
       effective_periods,
     ),
   };
+}
+
+function resolve_period_button_config(
+  page_state: LiveGameDetailPageState,
+  is_in_progress: boolean,
+  context: PeriodContext,
+): LiveGameDetailDerivedState["period_button_config"] {
+  const overtime_button =
+    derive_live_overtime_periods(page_state).overtime_button;
+  if (overtime_button.status === OptionStatus.SOME)
+    return overtime_button.value;
+  return build_period_button_config(
+    page_state.fixture?.current_period,
+    is_in_progress,
+    context.effective_periods,
+  );
 }
 
 export function derive_live_game_detail_clock_state(
@@ -139,10 +161,10 @@ export function derive_live_game_detail_clock_state(
     ),
     remaining_seconds_in_period,
     clock_display: format_clock_display(remaining_seconds_in_period),
-    period_button_config: build_period_button_config(
-      page_state.fixture?.current_period,
+    period_button_config: resolve_period_button_config(
+      page_state,
       is_in_progress,
-      context.effective_periods,
+      context,
     ),
     show_extra_time_button:
       is_in_progress &&

@@ -6,17 +6,18 @@ import { create_unknown_conflict_field_value } from "$lib/infrastructure/sync/co
 import { execute_conflict_resolution } from "./syncStoreResolveConflict";
 
 const sync_conflict_resolution_mocks = vi.hoisted(() => ({
-  resolve_conflict: vi.fn(),
+  resolve_conflict_with_outcome: vi.fn(),
 }));
 
 vi.mock("$lib/infrastructure/sync/convexSyncService", () => ({
-  resolve_conflict: sync_conflict_resolution_mocks.resolve_conflict,
+  resolve_conflict_with_outcome:
+    sync_conflict_resolution_mocks.resolve_conflict_with_outcome,
 }));
 
 describe("syncStoreResolveConflict", () => {
   afterEach(() => {
     vi.useRealTimers();
-    sync_conflict_resolution_mocks.resolve_conflict.mockReset();
+    sync_conflict_resolution_mocks.resolve_conflict_with_outcome.mockReset();
   });
 
   it("fails fast when the Convex client is not configured", async () => {
@@ -40,19 +41,21 @@ describe("syncStoreResolveConflict", () => {
         },
         "keep_local",
       ),
-    ).toEqual({ success: false, error: "Convex client not configured" });
+    ).toEqual({ kind: "failed", error: "Convex client not configured" });
     expect(
-      sync_conflict_resolution_mocks.resolve_conflict,
+      sync_conflict_resolution_mocks.resolve_conflict_with_outcome,
     ).not.toHaveBeenCalled();
   });
 
   it("sends local data with a fresh timestamp when keeping the local version", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2024-05-01T10:00:00.000Z"));
-    sync_conflict_resolution_mocks.resolve_conflict.mockResolvedValue({
-      success: true,
-      data: true,
-    });
+    sync_conflict_resolution_mocks.resolve_conflict_with_outcome.mockResolvedValue(
+      {
+        kind: "resolved",
+        server_version: 3,
+      },
+    );
     const convex_client = {
       mutation: vi.fn(),
       query: vi.fn(),
@@ -77,10 +80,10 @@ describe("syncStoreResolveConflict", () => {
       },
       "keep_local",
     );
-    expect(resolution.success).toBe(true);
+    expect(resolution.kind).toBe("resolved");
 
     expect(
-      sync_conflict_resolution_mocks.resolve_conflict,
+      sync_conflict_resolution_mocks.resolve_conflict_with_outcome,
     ).toHaveBeenCalledWith(convex_client, {
       table_name: "teams",
       local_id: "team-1",
@@ -94,10 +97,12 @@ describe("syncStoreResolveConflict", () => {
   });
 
   it("uses remote data or merged data depending on the chosen action", async () => {
-    sync_conflict_resolution_mocks.resolve_conflict.mockResolvedValue({
-      success: true,
-      data: true,
-    });
+    sync_conflict_resolution_mocks.resolve_conflict_with_outcome.mockResolvedValue(
+      {
+        kind: "resolved",
+        server_version: 3,
+      },
+    );
     const convex_client = {
       mutation: vi.fn(),
       query: vi.fn(),
@@ -123,9 +128,9 @@ describe("syncStoreResolveConflict", () => {
       conflict,
       "keep_remote",
     );
-    expect(resolution.success).toBe(true);
+    expect(resolution.kind).toBe("resolved");
     expect(
-      sync_conflict_resolution_mocks.resolve_conflict,
+      sync_conflict_resolution_mocks.resolve_conflict_with_outcome,
     ).toHaveBeenNthCalledWith(1, convex_client, {
       table_name: "teams",
       local_id: "team-2",
@@ -143,9 +148,9 @@ describe("syncStoreResolveConflict", () => {
         captain: "A. Example",
       },
     );
-    expect(merge_resolution.success).toBe(true);
+    expect(merge_resolution.kind).toBe("resolved");
     expect(
-      sync_conflict_resolution_mocks.resolve_conflict,
+      sync_conflict_resolution_mocks.resolve_conflict_with_outcome,
     ).toHaveBeenNthCalledWith(2, convex_client, {
       table_name: "teams",
       local_id: "team-2",

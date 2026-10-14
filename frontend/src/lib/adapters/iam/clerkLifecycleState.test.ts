@@ -44,7 +44,7 @@ describe("clerk lifecycle state machine", () => {
     ).toBe(ready);
   });
 
-  it("records why clerk is unavailable and allows a retry", () => {
+  it("remembers why clerk is unavailable until a retry is requested", () => {
     const unavailable = transition_clerk_lifecycle(
       INITIAL_CLERK_LIFECYCLE_STATE,
       {
@@ -60,8 +60,13 @@ describe("clerk lifecycle state machine", () => {
     expect(
       transition_clerk_lifecycle(unavailable, {
         type: CLERK_LIFECYCLE_EVENT.INITIALIZATION_STARTED,
-      }).status,
-    ).toBe(CLERK_LIFECYCLE_STATUS.INITIALIZING);
+      }),
+    ).toBe(unavailable);
+    expect(
+      transition_clerk_lifecycle(unavailable, {
+        type: CLERK_LIFECYCLE_EVENT.RETRY_REQUESTED,
+      }),
+    ).toBe(INITIAL_CLERK_LIFECYCLE_STATE);
     expect(
       transition_clerk_lifecycle(unavailable, {
         type: CLERK_LIFECYCLE_EVENT.DESTROYED,

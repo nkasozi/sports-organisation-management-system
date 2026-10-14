@@ -70,8 +70,10 @@ export function get_fixture_details_setup_use_cases(): FixtureDetailsSetupUseCas
 }
 
 export function get_fixture_lineup_use_cases(): FixtureLineupUseCases {
+  const container = get_repository_container();
   return create_fixture_lineup_use_cases(
-    get_repository_container().fixture_lineup_repository,
+    container.fixture_lineup_repository,
+    container.fixture_repository,
   );
 }
 

@@ -1,5 +1,12 @@
 import type { SyncOutboxEntry } from "$lib/adapters/repositories/syncOutbox/syncOutboxTypes";
 
+import { collect_hidden_conflict_ids } from "./syncConflictVisibility";
+import { refresh_record_deferred_during_push } from "./syncPushDeferredRefresh";
+import {
+  HIDDEN_UPSERT_REVIEW_PARKING,
+  is_delete_conflict,
+  park_change_for_review,
+} from "./syncPushDeleteReview";
 import {
   build_rejected_record,
   PushOutcomeKind,
@@ -89,39 +96,101 @@ function log_deleted_remotely(
   return true;
 }
 
+async function follow_up_confirmed_upsert(
+  command: PushTableOutboxCommand,
+  entry: SyncOutboxEntry,
+  result: ServerRecordResult,
+): Promise<boolean> {
+  if (skipped_upsert_hides_server_changes(entry, result))
+    return request_table_repull(command, entry);
+  return refresh_record_deferred_during_push(command, entry, result);
+}
+
+interface UpsertSettlementContext {
+  command: PushTableOutboxCommand;
+  deletions: Map<string, ServerDeletedRemotely>;
+  hidden_conflict_ids: ReadonlySet<string>;
+}
+
+function is_hidden_conflict_result(
+  context: UpsertSettlementContext,
+  result: ServerRecordResult,
+): boolean {
+  return (
+    is_delete_conflict(result) &&
+    context.hidden_conflict_ids.has(result.local_id)
+  );
+}
+
+async function settle_one_upsert(
+  context: UpsertSettlementContext,
+  loaded: LoadedOutboxRecord,
+  result: ServerRecordResult,
+  summary: PushTableOutboxSummary,
+): Promise<PushTableOutboxSummary> {
+  const { command } = context;
+  if (is_hidden_conflict_result(context, result))
+    return {
+      ...summary,
+      rejected: [
+        ...summary.rejected,
+        ...(await park_change_for_review(
+          command,
+          loaded.entry,
+          result,
+          HIDDEN_UPSERT_REVIEW_PARKING,
+        )),
+      ],
+    };
+  const outcome = await settle_upsert_result(command, loaded.entry, result);
+  if (outcome === PushOutcomeKind.CONFIRMED)
+    await follow_up_confirmed_upsert(command, loaded.entry, result);
+  if (outcome === PushOutcomeKind.DELETED_REMOTELY)
+    log_deleted_remotely(command, loaded.entry);
+  return add_upsert_outcome(
+    summary,
+    loaded,
+    result,
+    outcome,
+    context.deletions,
+  );
+}
+
 export async function settle_upsert_batch_response(
   command: PushTableOutboxCommand,
   loaded_by_id: Map<string, LoadedOutboxRecord>,
   response: UpsertBatchResponse,
   summary: PushTableOutboxSummary,
 ): Promise<PushTableOutboxSummary> {
-  const deletions = new Map(
-    response.deleted_remotely.map((deletion) => [deletion.local_id, deletion]),
-  );
+  const context: UpsertSettlementContext = {
+    command,
+    deletions: new Map(
+      response.deleted_remotely.map((deletion) => [
+        deletion.local_id,
+        deletion,
+      ]),
+    ),
+    hidden_conflict_ids: collect_hidden_conflict_ids(response.conflicts),
+  };
   let next_summary: PushTableOutboxSummary = {
     ...summary,
     conflicts: [
       ...summary.conflicts,
-      ...response.conflicts.map(normalize_conflict_from_server),
+      ...response.conflicts
+        .filter(
+          (conflict) => !context.hidden_conflict_ids.has(conflict.local_id),
+        )
+        .map(normalize_conflict_from_server),
     ],
   };
   for (const result of response.results) {
     const loaded = loaded_by_id.get(result.local_id);
     if (!loaded) continue;
-    const outcome = await settle_upsert_result(command, loaded.entry, result);
-    if (
-      outcome === PushOutcomeKind.CONFIRMED &&
-      skipped_upsert_hides_server_changes(loaded.entry, result)
-    )
-      await request_table_repull(command, loaded.entry);
-    if (outcome === PushOutcomeKind.DELETED_REMOTELY)
-      log_deleted_remotely(command, loaded.entry);
-    next_summary = add_upsert_outcome(
-      next_summary,
+    next_summary = await settle_one_upsert(
+      context,
       loaded,
       result,
-      outcome,
-      deletions,
+      next_summary,
     );
   }
   return next_summary;

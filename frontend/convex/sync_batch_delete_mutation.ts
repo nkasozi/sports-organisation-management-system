@@ -1,6 +1,11 @@
 import { v } from "convex/values";
 
 import { mutation, type MutationCtx } from "./_generated/server";
+import type { SystemUserRecord } from "./lib/auth_middleware";
+import {
+  build_caller_visible_record,
+  type RemoteDataStatusValue,
+} from "./lib/caller_record_projection";
 import {
   type ConvexErrorCodeValue,
   type ConvexFailure,
@@ -10,6 +15,7 @@ import {
 import {
   create_none_option,
   create_some_option,
+  type Option,
   OptionStatus,
 } from "./lib/option";
 import {
@@ -17,6 +23,7 @@ import {
   BatchOperation,
 } from "./lib/sync_batch_authorization";
 import { NO_SERVER_VERSION } from "./lib/sync_batch_record_types";
+import type { AllowedSyncTable } from "./lib/sync_table_catalog";
 import { validate_table_name } from "./lib/sync_validation";
 import { apply_versioned_delete } from "./lib/sync_versioned_delete";
 import {
@@ -43,6 +50,7 @@ interface BatchDeleteResult {
 interface BatchDeleteConflict {
   local_id: string;
   remote_data: Record<string, unknown>;
+  remote_data_status: RemoteDataStatusValue;
   remote_version: number;
 }
 
@@ -79,6 +87,31 @@ function build_rejected_delete_outcome(
   };
 }
 
+async function build_delete_conflicts(
+  ctx: MutationCtx,
+  command: {
+    caller: SystemUserRecord;
+    table_name: AllowedSyncTable;
+    local_id: string;
+    remote_record: Option<Record<string, unknown>>;
+    remote_version: number;
+  },
+): Promise<BatchDeleteConflict[]> {
+  if (command.remote_record.status === OptionStatus.NONE) return [];
+  const visible_record = await build_caller_visible_record(ctx, {
+    caller: command.caller,
+    table_name: command.table_name,
+    record: command.remote_record.value,
+  });
+  return [
+    {
+      local_id: command.local_id,
+      ...visible_record,
+      remote_version: command.remote_version,
+    },
+  ];
+}
+
 async function delete_single_record(
   ctx: MutationCtx,
   table_name: string,
@@ -107,16 +140,13 @@ async function delete_single_record(
       error: NO_ERROR_MESSAGE,
       error_code: NO_ERROR_CODE,
     },
-    conflicts:
-      outcome.remote_record.status === OptionStatus.SOME
-        ? [
-            {
-              local_id: record.local_id,
-              remote_data: outcome.remote_record.value,
-              remote_version: outcome.server_version,
-            },
-          ]
-        : [],
+    conflicts: await build_delete_conflicts(ctx, {
+      caller: prepared.caller,
+      table_name: prepared.table_name,
+      local_id: record.local_id,
+      remote_record: outcome.remote_record,
+      remote_version: outcome.server_version,
+    }),
   };
 }
 

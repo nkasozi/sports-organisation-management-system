@@ -15,16 +15,18 @@ const IN_PROGRESS_FIXTURE = {
 } as never;
 
 function create_use_cases(result: object): {
-  save_clock_state: Mock<
-    ClockPersistCommand["fixture_use_cases"]["save_clock_state"]
+  save_clock_snapshot: Mock<
+    ClockPersistCommand["fixture_use_cases"]["save_clock_snapshot"]
   >;
 } {
   return {
-    save_clock_state: vi
-      .fn<ClockPersistCommand["fixture_use_cases"]["save_clock_state"]>()
+    save_clock_snapshot: vi
+      .fn<ClockPersistCommand["fixture_use_cases"]["save_clock_snapshot"]>()
       .mockResolvedValue(result as never),
   };
 }
+
+const NO_EXTRAS = { break_elapsed_seconds: 0, extra_time_added_seconds: 0 };
 
 describe("persist_live_game_clock_state", () => {
   it("saves a running clock while a playing period is under way", async () => {
@@ -36,19 +38,24 @@ describe("persist_live_game_clock_state", () => {
       is_clock_running: true,
       is_current_period_playing: true,
       now: NOW,
+      ...NO_EXTRAS,
     });
     expect(outcome).toEqual({ status: CLOCK_PERSIST_OUTCOME.SAVED });
-    expect(fixture_use_cases.save_clock_state).toHaveBeenCalledWith(
+    expect(fixture_use_cases.save_clock_snapshot).toHaveBeenCalledWith(
       "fixture-1",
       {
-        status: "running",
-        elapsed_seconds: 754,
-        started_at: "2024-06-01T10:00:00.000Z",
+        game_clock: {
+          status: "running",
+          elapsed_seconds: 754,
+          started_at: "2024-06-01T10:00:00.000Z",
+        },
+        added_seconds: 0,
+        break_clock: { status: "not_on_break" },
       },
     );
   });
 
-  it("saves a stopped clock when paused or during a break", async () => {
+  it("saves a stopped game clock and the running break during a break", async () => {
     const fixture_use_cases = create_use_cases({ success: true, data: {} });
     await persist_live_game_clock_state({
       fixture_use_cases,
@@ -57,10 +64,19 @@ describe("persist_live_game_clock_state", () => {
       is_clock_running: true,
       is_current_period_playing: false,
       now: NOW,
+      break_elapsed_seconds: 90,
+      extra_time_added_seconds: 60,
     });
-    expect(fixture_use_cases.save_clock_state).toHaveBeenCalledWith(
+    expect(fixture_use_cases.save_clock_snapshot).toHaveBeenCalledWith(
       "fixture-1",
-      { status: "stopped", elapsed_seconds: 2700 },
+      {
+        game_clock: { status: "stopped", elapsed_seconds: 2700 },
+        added_seconds: 60,
+        break_clock: {
+          status: "on_break",
+          started_at: "2024-06-01T09:58:30.000Z",
+        },
+      },
     );
   });
 
@@ -73,9 +89,10 @@ describe("persist_live_game_clock_state", () => {
       is_clock_running: false,
       is_current_period_playing: false,
       now: NOW,
+      ...NO_EXTRAS,
     });
     expect(outcome).toEqual({ status: CLOCK_PERSIST_OUTCOME.SKIPPED });
-    expect(fixture_use_cases.save_clock_state).not.toHaveBeenCalled();
+    expect(fixture_use_cases.save_clock_snapshot).not.toHaveBeenCalled();
   });
 
   it("reports a failure when the clock cannot be saved", async () => {
@@ -87,6 +104,7 @@ describe("persist_live_game_clock_state", () => {
       is_clock_running: false,
       is_current_period_playing: true,
       now: NOW,
+      ...NO_EXTRAS,
     });
     expect(outcome).toEqual({ status: CLOCK_PERSIST_OUTCOME.FAILED });
   });

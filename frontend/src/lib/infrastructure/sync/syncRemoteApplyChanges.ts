@@ -1,6 +1,7 @@
 import {
   build_live_version_row,
   build_tombstone_version_row,
+  IncomingChangeKind,
   IncomingVersionRule,
   type IncomingVersionRuleValue,
 } from "./syncRecordVersionRows";
@@ -31,7 +32,16 @@ export async function select_applicable_changes(
   page: RemoteChangeSet,
   rule: IncomingVersionRuleValue = IncomingVersionRule.CHANGE_FEED,
 ): Promise<ApplicableChanges> {
-  const changes = [...page.records, ...page.deletions];
+  const changes = [
+    ...page.records.map((record) => ({
+      ...record,
+      change_kind: IncomingChangeKind.RECORD,
+    })),
+    ...page.deletions.map((deletion) => ({
+      ...deletion,
+      change_kind: IncomingChangeKind.DELETION,
+    })),
+  ];
   const dirty = await find_dirty_local_ids(
     tables.outbox,
     page.table_name,
@@ -66,6 +76,7 @@ export async function write_applicable_changes(
         table_name,
         record.local_id,
         record.server_version,
+        record.server_sequence,
       ),
     ),
   );
@@ -78,6 +89,7 @@ export async function write_applicable_changes(
         table_name,
         deletion.local_id,
         deletion.server_version,
+        deletion.server_sequence,
       ),
     ),
   );

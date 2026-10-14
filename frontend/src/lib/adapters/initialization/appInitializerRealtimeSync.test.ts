@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { initialize_app_data, reset_initialization } from "./appInitializer";
+import {
+  initialize_app_data,
+  reset_initialization,
+  start_realtime_sync_for_signed_in_session,
+} from "./appInitializer";
 import {
   app_initializer_mocks as mocks,
   app_initializer_test_state as state,
@@ -124,6 +128,23 @@ describe("initialize_app_data real-time sync wiring", () => {
     expect(mocks.configure_remote_subscriber).toHaveBeenCalledWith(
       state.realtime_adapter,
     );
+  });
+
+  it("starts real-time sync later when the user signs in after start-up", async () => {
+    await initialize_app_data(OPTIONS);
+    expect(mocks.start_realtime_sync).not.toHaveBeenCalled();
+    state.is_signed_in.set(true);
+
+    expect(start_realtime_sync_for_signed_in_session()).toBe(true);
+    expect(start_realtime_sync_for_signed_in_session()).toBe(false);
+    expect(mocks.start_realtime_sync).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not start real-time sync for a signed-out device", async () => {
+    await initialize_app_data(OPTIONS);
+
+    expect(start_realtime_sync_for_signed_in_session()).toBe(false);
+    expect(mocks.start_realtime_sync).not.toHaveBeenCalled();
   });
 
   it("refreshes branding and the sync interval when organization settings are pulled", async () => {

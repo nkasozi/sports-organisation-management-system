@@ -7,6 +7,7 @@ import type {
   UpdateFixtureInput,
 } from "../../../../entities/Fixture";
 import type { FixtureClockState } from "../../../../entities/FixtureClock";
+import type { FixtureClockSnapshot } from "../../../../entities/FixtureClockSnapshot";
 import type { ScoreAward } from "../../../../entities/SportEventCatalogConstants";
 import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
@@ -43,11 +44,6 @@ export interface FixtureUseCasesPort extends BaseUseCasesPort<
   generate_fixtures(
     config: FixtureGenerationConfig,
   ): PaginatedAsyncResult<Fixture>;
-  update_fixture_score(
-    id: ScalarValueInput<Fixture["id"]>,
-    home_score: number,
-    away_score: number,
-  ): AsyncResult<Fixture>;
   start_fixture(
     id: ScalarValueInput<Fixture["id"]>,
     first_period: GamePeriod,
@@ -59,12 +55,21 @@ export interface FixtureUseCasesPort extends BaseUseCasesPort<
   ): AsyncResult<Fixture>;
   update_period(
     id: ScalarValueInput<Fixture["id"]>,
-    period: GamePeriod,
-    minute: ScalarValueInput<Fixture["current_minute"]>,
+    command: {
+      expected_current_period: GamePeriod;
+      next_period: GamePeriod;
+      minute: number;
+      period_sequence: GamePeriod[];
+      period_event: GameEvent;
+    },
   ): AsyncResult<Fixture>;
   end_fixture(id: ScalarValueInput<Fixture["id"]>): AsyncResult<Fixture>;
   save_clock_state(
     id: ScalarValueInput<Fixture["id"]>,
     clock_state: FixtureClockState,
+  ): AsyncResult<Fixture>;
+  save_clock_snapshot(
+    id: ScalarValueInput<Fixture["id"]>,
+    snapshot: FixtureClockSnapshot,
   ): AsyncResult<Fixture>;
 }

@@ -7,6 +7,7 @@ export const LINEUP_ACTION = {
   LOCK: "lock",
   UPDATE: "update",
   DELETE: "delete",
+  RECORD_LIVE_TIMES: "record_live_times",
 } as const;
 
 export type LineupAction = (typeof LINEUP_ACTION)[keyof typeof LINEUP_ACTION];
@@ -31,6 +32,8 @@ export const FIXTURE_LINEUP_EVENT = {
   CREATE_FAILED: "fixture_lineup_create_failed",
   UPDATE_FAILED: "fixture_lineup_update_failed",
   DELETE_FAILED: "fixture_lineup_delete_failed",
+  FIXTURE_LOOKUP_FAILED: "fixture_lineup_fixture_lookup_failed",
+  LIVE_TIMES_REJECTED: "fixture_lineup_live_times_rejected",
 } as const;
 
 export const FIXTURE_LINEUP_MESSAGE = {
@@ -41,6 +44,14 @@ export const FIXTURE_LINEUP_MESSAGE = {
   ALREADY_EXISTS: "A lineup already exists for this team in this fixture",
   ALREADY_SUBMITTED: "Lineup is already submitted",
   ALREADY_LOCKED: "Lineup is already locked",
+  GAME_ALREADY_STARTED:
+    "This lineup can't be changed because the game is no longer scheduled. Record substitutions from the live game screen instead.",
+  LIVE_TIMES_NOT_ALLOWED:
+    "Player times can only be recorded while the game is scheduled or in progress.",
+  LIVE_TIMES_ONLY:
+    "During a game only player on and off times can change. Players, numbers and positions stay as submitted.",
+  FIXTURE_LOOKUP_FAILED:
+    "We couldn't check this lineup's game. Please refresh and try again.",
 } as const;
 
 export function build_locked_lineup_message(action: LineupAction): string {

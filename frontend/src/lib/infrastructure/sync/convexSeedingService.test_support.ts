@@ -111,7 +111,19 @@ export function create_mock_convex_records(
   }));
 }
 
-export function use_convex_query(
+function wrap_records_in_single_page(response: unknown): unknown {
+  return Array.isArray(response)
+    ? {
+        success: true,
+        error: "",
+        records: response,
+        next_cursor: "",
+        has_more: false,
+      }
+    : response;
+}
+
+export function use_raw_convex_query(
   query_implementation: ConvexQueryImplementation,
 ): boolean {
   seeding_test_state.convex_client_result = {
@@ -122,6 +134,14 @@ export function use_convex_query(
     } as unknown as ConvexClient,
   };
   return true;
+}
+
+export function use_convex_query(
+  query_implementation: ConvexQueryImplementation,
+): boolean {
+  return use_raw_convex_query(async (name, args) =>
+    wrap_records_in_single_page(await query_implementation(name, args)),
+  );
 }
 
 export function reset_seeding_test_state(): boolean {

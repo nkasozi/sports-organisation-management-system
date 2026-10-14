@@ -29,6 +29,7 @@ function build_page(
       {
         local_id: "team_remote",
         server_version: version,
+        server_sequence: 0,
         local_data: { id: "team_remote", name },
       },
     ],
@@ -69,7 +70,12 @@ describe("remote apply on a real Dexie database", () => {
       ...valid_page,
       records: [
         ...valid_page.records,
-        { local_id: "team_broken", server_version: 1, local_data: {} },
+        {
+          local_id: "team_broken",
+          server_version: 1,
+          server_sequence: 0,
+          local_data: {},
+        },
       ],
     };
 

@@ -4,8 +4,14 @@ import {
   FIXTURE_CLOCK_STATUS,
   read_fixture_clock_state,
 } from "$lib/core/entities/FixtureClock";
+import {
+  BREAK_CLOCK_STATUS,
+  type BreakClockState,
+  type FixtureClockSnapshot,
+} from "$lib/core/entities/FixtureClockSnapshot";
 import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
 import type { FixtureUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/FixtureUseCasesPort";
+import type { IsoDateTimeString } from "$lib/core/types/DomainScalars";
 import { OptionStatus } from "$lib/core/types/Option";
 
 export const CLOCK_PERSIST_OUTCOME = {
@@ -19,30 +25,57 @@ export type ClockPersistOutcome = {
 };
 
 export type ClockPersistCommand = {
-  fixture_use_cases: Pick<FixtureUseCasesPort, "save_clock_state">;
+  fixture_use_cases: Pick<FixtureUseCasesPort, "save_clock_snapshot">;
   fixture: Fixture;
   game_clock_seconds: number;
   is_clock_running: boolean;
   is_current_period_playing: boolean;
   now: Date;
+  break_elapsed_seconds: number;
+  extra_time_added_seconds: number;
 };
 
+const MILLISECONDS_PER_SECOND = 1000;
 const CLOCK_PERSIST_LOG_SCOPE = "[LiveGameDetail] Clock state save failed";
 const CLOCK_PERSIST_FAILED_EVENT = "live_game_clock_state_save_failed";
+
+function build_break_clock(command: ClockPersistCommand): BreakClockState {
+  const is_break_running =
+    command.is_clock_running && !command.is_current_period_playing;
+  if (!is_break_running) return { status: BREAK_CLOCK_STATUS.NOT_ON_BREAK };
+  const started_at_milliseconds =
+    command.now.getTime() -
+    command.break_elapsed_seconds * MILLISECONDS_PER_SECOND;
+  return {
+    status: BREAK_CLOCK_STATUS.ON_BREAK,
+    started_at: new Date(
+      started_at_milliseconds,
+    ).toISOString() as IsoDateTimeString,
+  };
+}
+
+function build_clock_snapshot(
+  command: ClockPersistCommand,
+): FixtureClockSnapshot {
+  return {
+    game_clock: build_fixture_clock_state(
+      command.is_clock_running && command.is_current_period_playing,
+      command.game_clock_seconds,
+      command.now,
+    ),
+    added_seconds: command.extra_time_added_seconds,
+    break_clock: build_break_clock(command),
+  };
+}
 
 export async function persist_live_game_clock_state(
   command: ClockPersistCommand,
 ): Promise<ClockPersistOutcome> {
   if (command.fixture.status !== FIXTURE_STATUS.IN_PROGRESS)
     return { status: CLOCK_PERSIST_OUTCOME.SKIPPED };
-  const clock_state = build_fixture_clock_state(
-    command.is_clock_running && command.is_current_period_playing,
-    command.game_clock_seconds,
-    command.now,
-  );
-  const result = await command.fixture_use_cases.save_clock_state(
+  const result = await command.fixture_use_cases.save_clock_snapshot(
     command.fixture.id,
-    clock_state,
+    build_clock_snapshot(command),
   );
   if (result.success) return { status: CLOCK_PERSIST_OUTCOME.SAVED };
   console.error(CLOCK_PERSIST_LOG_SCOPE, {

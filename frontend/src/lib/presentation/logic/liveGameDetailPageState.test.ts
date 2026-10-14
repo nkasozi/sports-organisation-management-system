@@ -135,6 +135,8 @@ describe("liveGameDetailPageState", () => {
         home_lineup_id: "home-lineup",
         away_lineup_id: "away-lineup",
         game_clock_seconds: 2280,
+        extra_time_added_seconds: 0,
+        break_elapsed_seconds: 0,
       } as never,
     );
     const event_state = open_live_game_detail_event_state({

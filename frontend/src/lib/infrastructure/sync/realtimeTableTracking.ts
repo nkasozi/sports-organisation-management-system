@@ -27,14 +27,26 @@ function read_marker_sequence(result: unknown): number {
     : NO_SEQUENCE;
 }
 
+function is_still_tracked(
+  table_name: string,
+  state: TableTrackingState,
+  tracking: Map<string, TableTrackingState>,
+): boolean {
+  return tracking.get(table_name) === state;
+}
+
 async function pull_until_caught_up(
   table_name: string,
   state: TableTrackingState,
+  tracking: Map<string, TableTrackingState>,
   deps: RealtimeSyncDependencies,
 ): Promise<boolean> {
   state.pull_status = PullStatus.PULLING;
   try {
-    while (state.remote_latest_sequence > state.pulled_through_sequence) {
+    while (
+      is_still_tracked(table_name, state, tracking) &&
+      state.remote_latest_sequence > state.pulled_through_sequence
+    ) {
       const target_sequence = state.remote_latest_sequence;
       state.pull_count++;
       const pull_result = await deps.pull_table(table_name);
@@ -82,7 +94,7 @@ export function create_table_change_handler(
       table_name,
       remote_latest_sequence: state.remote_latest_sequence,
     });
-    void pull_until_caught_up(table_name, state, deps);
+    void pull_until_caught_up(table_name, state, tracking, deps);
     return true;
   };
 }

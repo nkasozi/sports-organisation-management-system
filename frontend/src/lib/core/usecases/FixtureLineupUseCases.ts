@@ -1,6 +1,7 @@
 import type {
   FixtureLineupRepository,
   FixtureLineupUseCasesPort,
+  FixtureRepository,
 } from "../interfaces/ports";
 import type { Result } from "../types/Result";
 import {
@@ -15,10 +16,12 @@ import {
   FIXTURE_LINEUP_MESSAGE,
   LINEUP_ACTION,
 } from "./FixtureLineupConstants";
+import { record_live_player_times } from "./FixtureLineupLiveTimes";
 import {
   create_unique_lineup,
   fail_missing_lineup_id,
   find_unlocked_lineup,
+  type LineupRepositories,
   transition_lineup,
 } from "./FixtureLineupTransitions";
 
@@ -105,15 +108,14 @@ function create_lineup_queries(
   };
 }
 
-export function create_fixture_lineup_use_cases(
-  repository: FixtureLineupRepository,
-): FixtureLineupUseCases {
+function create_guarded_lineup_edits(
+  repositories: LineupRepositories,
+): Pick<FixtureLineupUseCases, "update" | "delete"> {
+  const repository = repositories.lineup_repository;
   return {
-    ...create_lineup_queries(repository),
-    create: (input) => create_unique_lineup(repository, input),
     async update(id, input) {
       const lineup_result = await find_unlocked_lineup(
-        repository,
+        repositories,
         id,
         LINEUP_ACTION.UPDATE,
       );
@@ -125,7 +127,7 @@ export function create_fixture_lineup_use_cases(
     },
     async delete(id) {
       const lineup_result = await find_unlocked_lineup(
-        repository,
+        repositories,
         id,
         LINEUP_ACTION.DELETE,
       );
@@ -135,8 +137,25 @@ export function create_fixture_lineup_use_cases(
         log_target(FIXTURE_LINEUP_EVENT.DELETE_FAILED, { lineup_id: id }),
       );
     },
+  };
+}
+
+export function create_fixture_lineup_use_cases(
+  repository: FixtureLineupRepository,
+  fixture_repository: FixtureRepository,
+): FixtureLineupUseCases {
+  const repositories: LineupRepositories = {
+    lineup_repository: repository,
+    fixture_repository,
+  };
+  return {
+    ...create_lineup_queries(repository),
+    ...create_guarded_lineup_edits(repositories),
+    create: (input) => create_unique_lineup(repository, input),
     submit_lineup: (id) =>
       transition_lineup(repository, id, LINEUP_ACTION.SUBMIT),
     lock_lineup: (id) => transition_lineup(repository, id, LINEUP_ACTION.LOCK),
+    record_live_player_times: (command) =>
+      record_live_player_times(repositories, command),
   };
 }

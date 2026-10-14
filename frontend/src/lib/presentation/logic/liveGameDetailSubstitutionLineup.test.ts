@@ -43,7 +43,9 @@ describe("apply_substitution_to_lineup", () => {
 
 describe("save_live_game_substitution_lineup", () => {
   it("saves both player changes to the team's lineup in one update", async () => {
-    const update = vi.fn().mockResolvedValue({ success: true, data: {} });
+    const record_live_player_times = vi
+      .fn()
+      .mockResolvedValue({ success: true, data: {} });
     const result = await save_live_game_substitution_lineup({
       team_side: "home",
       home_lineup_id: "home-lineup",
@@ -51,11 +53,12 @@ describe("save_live_game_substitution_lineup", () => {
       home_players: HOME_PLAYERS,
       away_players: [],
       change: { player_on_id: "p2", player_off_id: "p1", minute: "63" },
-      fixture_lineup_use_cases: { update } as never,
+      fixture_lineup_use_cases: { record_live_player_times } as never,
     });
 
-    expect(update).toHaveBeenCalledTimes(1);
-    expect(update).toHaveBeenCalledWith("home-lineup", {
+    expect(record_live_player_times).toHaveBeenCalledTimes(1);
+    expect(record_live_player_times).toHaveBeenCalledWith({
+      lineup_id: "home-lineup",
       selected_players: expect.arrayContaining([
         { id: "p1", time_on: "present_at_start", time_off: "63" },
         { id: "p2", time_on: "63" },
@@ -75,7 +78,9 @@ describe("save_live_game_substitution_lineup", () => {
       away_players: HOME_PLAYERS,
       change: { player_on_id: "p2", player_off_id: "p1", minute: "63" },
       fixture_lineup_use_cases: {
-        update: vi.fn().mockResolvedValue({ success: false, error: "offline" }),
+        record_live_player_times: vi
+          .fn()
+          .mockResolvedValue({ success: false, error: "offline" }),
       } as never,
     });
 

@@ -10,11 +10,15 @@ import { get_system_user_repository } from "$lib/adapters/repositories/InBrowser
 import { get_team_repository } from "$lib/adapters/repositories/InBrowserTeamRepository";
 import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
+import { try_restore_anonymous_session as restore_anonymous_session_from_profiles } from "./authAnonymousSessionRestore";
 import {
   build_profiles_with_public_viewer,
   load_sidebar_menu_for_role,
 } from "./authHelpers";
-import type { ClerkEmailState } from "./authInitializationContracts";
+import type {
+  ClerkEmailState,
+  RestoredAnonymousSessionState,
+} from "./authInitializationContracts";
 import {
   AUTH_STORE_LOG_EVENTS,
   PUBLIC_VIEWER_PROFILE_ID,
@@ -28,9 +32,9 @@ import {
   create_present_auth_profile_state,
   type UserProfile,
 } from "./authTypes";
+import { select_demo_profiles } from "./demoProfileSelection";
 import { load_profiles_from_repository } from "./profileLoader";
 
-export { try_restore_anonymous_session } from "./authAnonymousSessionRestore";
 export { try_restore_signed_in_session } from "./authSignedInSessionRestore";
 
 export async function wait_for_clerk(): Promise<boolean> {
@@ -71,9 +75,20 @@ function resolve_public_viewer_profile_state(
   return create_missing_auth_profile_state();
 }
 
-export async function create_default_anonymous_state(
+export function try_restore_anonymous_session(
   available_profiles: UserProfile[],
+  saved_token_raw: string,
+): Promise<RestoredAnonymousSessionState> {
+  return restore_anonymous_session_from_profiles(
+    select_demo_profiles(available_profiles),
+    saved_token_raw,
+  );
+}
+
+export async function create_default_anonymous_state(
+  loaded_profiles: UserProfile[],
 ): Promise<AuthState> {
+  const available_profiles = select_demo_profiles(loaded_profiles);
   console.log("[AuthStore] User not signed in, defaulting to public viewer", {
     event: AUTH_STORE_LOG_EVENTS.DEFAULTED_TO_PUBLIC_VIEWER,
   });

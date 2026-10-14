@@ -156,7 +156,7 @@ export async function confirm_live_game_detail_extra_time(
       current_page_state.extra_time_added_seconds + result.seconds_added,
     extra_minutes_to_add: DEFAULT_EXTRA_MINUTES_TO_ADD,
   }));
-  if (!command.get_page_state().is_clock_running) command.start_clock();
+  command.start_clock();
   show_live_game_detail_toast(
     command.set_toast_state,
     result.toast_message,

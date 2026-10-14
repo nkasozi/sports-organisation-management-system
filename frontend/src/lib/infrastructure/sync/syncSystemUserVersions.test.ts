@@ -31,6 +31,7 @@ describe("write_convex_user_to_local_dexie server versions", () => {
         table_name: "system_users",
         local_id: "usr_1",
         server_version: 7,
+        server_sequence: 0,
         record_state: "live",
       },
     ]);

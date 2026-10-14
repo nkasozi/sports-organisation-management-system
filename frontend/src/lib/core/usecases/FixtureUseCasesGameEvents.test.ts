@@ -6,6 +6,7 @@ import type { FixtureRepository } from "../interfaces/ports";
 import { create_fixture_use_cases } from "./FixtureUseCases";
 import {
   create_mock_repository,
+  create_period_command,
   create_test_fixture,
 } from "./FixtureUseCases.test_support";
 
@@ -131,7 +132,10 @@ describe("FixtureUseCases", () => {
     it("should update period", async () => {
       vi.mocked(mock_repository.find_by_id).mockResolvedValue({
         success: true,
-        data: create_test_fixture({ status: "in_progress" }),
+        data: create_test_fixture({
+          status: "in_progress",
+          current_period: "first_half",
+        }),
       });
       vi.mocked(mock_repository.update).mockResolvedValue({
         success: true,
@@ -140,15 +144,14 @@ describe("FixtureUseCases", () => {
 
       const result = await use_cases.update_period(
         "fixture-123",
-        "second_half",
-        45,
+        create_period_command(),
       );
 
       expect(result.success).toBe(true);
     });
 
     it("should fail for empty id", async () => {
-      const result = await use_cases.update_period("", "second_half", 45);
+      const result = await use_cases.update_period("", create_period_command());
 
       expect(result.success).toBe(false);
     });

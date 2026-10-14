@@ -1,6 +1,8 @@
 import type { GameEvent } from "$lib/core/entities/Fixture";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
 import { get_time_on_display } from "$lib/core/entities/FixtureLineup";
+import { parse_local_calendar_date } from "$lib/core/entities/LocalCalendarDate";
+import { OptionStatus } from "$lib/core/types/Option";
 
 import {
   MATCH_REPORT_EMPTY_TIME_ON,
@@ -135,7 +137,11 @@ export function build_match_player_entry(
 }
 
 export function format_report_date(date_string: string): string {
-  const date = new Date(date_string);
+  const parsed_date = parse_local_calendar_date(date_string);
+  const date =
+    parsed_date.status === OptionStatus.SOME
+      ? parsed_date.value
+      : new Date(date_string);
   return `${date.getDate()} ${date.toLocaleString("en-US", { month: "short" }).toUpperCase()} ${date.getFullYear()}`;
 }
 

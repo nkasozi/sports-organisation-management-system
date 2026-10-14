@@ -1,3 +1,6 @@
+import { parse_local_calendar_date } from "$lib/core/entities/LocalCalendarDate";
+import { OptionStatus } from "$lib/core/types/Option";
+
 import {
   DASHBOARD_STATUS_CLASS_BY_STATUS,
   DashboardDisplayLabel,
@@ -41,7 +44,11 @@ export function format_fixture_date(
   scheduled_date: string,
   scheduled_time: string,
 ): string {
-  const fixture_date = new Date(scheduled_date);
+  const parsed_date = parse_local_calendar_date(scheduled_date);
+  const fixture_date =
+    parsed_date.status === OptionStatus.SOME
+      ? parsed_date.value
+      : new Date(scheduled_date);
   const today = new Date();
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);

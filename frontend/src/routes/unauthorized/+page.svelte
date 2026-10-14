@@ -2,12 +2,11 @@
     import { goto } from "$app/navigation";
     import { page } from "$app/stores";
     import { sign_out_and_tear_down_device } from "$lib/presentation/logic/logoutDeviceTeardownRuntime";
+    import { resolve_unauthorized_reason_message } from "$lib/presentation/logic/unauthorizedReason";
 
     import {
         INITIAL_UNAUTHORIZED_SIGN_OUT_STATE,
         run_unauthorized_sign_out,
-        UNAUTHORIZED_MESSAGE_QUERY_PARAMETER,
-        UNAUTHORIZED_PAGE_MESSAGES,
         UNAUTHORIZED_PAGE_PATHS,
         UNAUTHORIZED_SIGN_OUT_STATUS,
         type UnauthorizedSignOutState,
@@ -16,9 +15,9 @@
     let sign_out_state: UnauthorizedSignOutState =
         INITIAL_UNAUTHORIZED_SIGN_OUT_STATE;
 
-    $: error_message =
-        $page.url.searchParams.get(UNAUTHORIZED_MESSAGE_QUERY_PARAMETER) ||
-        UNAUTHORIZED_PAGE_MESSAGES.DEFAULT_DENIAL;
+    $: error_message = resolve_unauthorized_reason_message(
+        $page.url.searchParams,
+    );
 
     async function handle_sign_out(): Promise<boolean> {
         sign_out_state = await run_unauthorized_sign_out({

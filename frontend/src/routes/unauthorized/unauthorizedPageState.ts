@@ -7,7 +7,6 @@ export const UNAUTHORIZED_SIGN_OUT_STATUS = {
 } as const;
 
 export const UNAUTHORIZED_PAGE_MESSAGES = {
-  DEFAULT_DENIAL: "You don't have access to this system.",
   SIGN_OUT_FAILED:
     "We couldn't sign you out. Please check your connection and try again.",
 } as const;
@@ -16,8 +15,6 @@ export const UNAUTHORIZED_PAGE_PATHS = {
   HOME: "/",
   CONTACT: "/contact",
 } as const;
-
-export const UNAUTHORIZED_MESSAGE_QUERY_PARAMETER = "message";
 
 const UNAUTHORIZED_SIGN_OUT_FAILED_EVENT = "unauthorized_page_sign_out_failed";
 

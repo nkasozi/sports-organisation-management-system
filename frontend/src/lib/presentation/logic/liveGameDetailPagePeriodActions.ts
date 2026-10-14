@@ -42,6 +42,12 @@ type ConfirmPeriodResult =
 
 const SECONDS_PER_MINUTE = 60;
 
+function to_period_sequence(
+  effective_periods: SportGamePeriod[],
+): Fixture["current_period"][] {
+  return effective_periods.map((period) => period.id);
+}
+
 function should_run_break_clock(
   fixture: Fixture,
   effective_periods: SportGamePeriod[],
@@ -63,6 +69,7 @@ async function end_current_live_game_period(
         command.effective_periods,
       ),
     },
+    period_sequence: to_period_sequence(command.effective_periods),
     fixture_use_cases: command.fixture_use_cases,
   });
   if (!end_result.success)
@@ -100,6 +107,7 @@ async function start_next_live_game_period(
       command.effective_periods,
     ),
     minute: Math.floor(next_game_clock_seconds / SECONDS_PER_MINUTE),
+    period_sequence: to_period_sequence(command.effective_periods),
     fixture_use_cases: command.fixture_use_cases,
   });
   return change_result.success
@@ -107,7 +115,7 @@ async function start_next_live_game_period(
         success: true,
         fixture: change_result.data,
         game_clock_seconds: next_game_clock_seconds,
-        should_start_clock: true,
+        should_start_clock: next_period !== GAME_PERIOD.PENALTY_SHOOTOUT,
         toast_message: `${get_sport_period_display_name(next_period, command.effective_periods)} started!`,
       }
     : build_game_action_failure({

@@ -30,6 +30,26 @@ const ALLOWED_TRANSITIONS = [
     FIXTURE_STATUS.IN_PROGRESS,
     FIXTURE_STATUS.COMPLETED,
   ],
+  [
+    FixtureLifecycleCommand.POSTPONE,
+    FIXTURE_STATUS.SCHEDULED,
+    FIXTURE_STATUS.POSTPONED,
+  ],
+  [
+    FixtureLifecycleCommand.CANCEL,
+    FIXTURE_STATUS.SCHEDULED,
+    FIXTURE_STATUS.CANCELLED,
+  ],
+  [
+    FixtureLifecycleCommand.CANCEL,
+    FIXTURE_STATUS.POSTPONED,
+    FIXTURE_STATUS.CANCELLED,
+  ],
+  [
+    FixtureLifecycleCommand.RESCHEDULE,
+    FIXTURE_STATUS.POSTPONED,
+    FIXTURE_STATUS.SCHEDULED,
+  ],
 ] as const;
 
 describe("decide_fixture_lifecycle_transition", () => {

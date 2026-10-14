@@ -16,11 +16,11 @@ interface LiveGameDetailClockStateStore {
 interface LiveGameDetailClockHandlerOverrides {
   goto?: Mock;
   raw_token?: string;
-  save_clock_state?: Mock;
+  save_clock_snapshot?: Mock;
   now?: () => Date;
 }
 
-const CLOCK_TEST_NOW = new Date("2024-06-01T10:00:00.000Z");
+export const CLOCK_TEST_NOW = new Date("2024-06-01T10:00:00.000Z");
 
 export function create_state_store(): LiveGameDetailClockStateStore {
   let page_state = create_live_game_detail_page_state();
@@ -38,16 +38,13 @@ export function create_clock_handlers(
   overrides: LiveGameDetailClockHandlerOverrides = {},
 ): ReturnType<typeof create_live_game_detail_clock_handlers> {
   const raw_token = overrides.raw_token ?? "";
-  const save_clock_state =
-    overrides.save_clock_state ??
+  const save_clock_snapshot =
+    overrides.save_clock_snapshot ??
     vi.fn().mockResolvedValue({ success: true, data: {} });
   return create_live_game_detail_clock_handlers(
     {
       data_dependencies: {
-        fixture_use_cases: {
-          save_clock_state,
-          update_period: vi.fn().mockResolvedValue({ success: true, data: {} }),
-        },
+        fixture_use_cases: { save_clock_snapshot },
       } as never,
       fixture_id: () => "fixture-1",
       get_event_state: vi.fn(),
@@ -56,6 +53,6 @@ export function create_clock_handlers(
       raw_token: () => raw_token,
       set_page_state: state_store.set_page_state,
     },
-    overrides.now ?? (() => CLOCK_TEST_NOW),
+    overrides.now ?? (() => new Date()),
   );
 }

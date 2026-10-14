@@ -52,6 +52,7 @@ describe("auth_store persistence", () => {
 
   it("saves profile id to localStorage on switch", async () => {
     expect((await auth_store.initialize()).success).toBe(true);
+    auth_store.mark_as_demo_session();
     const profiles = get(auth_store).available_profiles;
 
     await auth_store.switch_profile(profiles[0].id);
@@ -63,6 +64,7 @@ describe("auth_store persistence", () => {
 
   it("saves token to localStorage on switch", async () => {
     expect((await auth_store.initialize()).success).toBe(true);
+    auth_store.mark_as_demo_session();
     const profiles = get(auth_store).available_profiles;
 
     await auth_store.switch_profile(profiles[0].id);
@@ -72,6 +74,7 @@ describe("auth_store persistence", () => {
 
   it("clears localStorage on logout", async () => {
     expect((await auth_store.initialize()).success).toBe(true);
+    auth_store.mark_as_demo_session();
     const profiles = get(auth_store).available_profiles;
     await auth_store.switch_profile(profiles[0].id);
 

@@ -59,13 +59,24 @@ describe("filter_records_by_organization_scope", () => {
     expect(filtered).not.toContain(organization_b_record);
   });
 
-  it("returns all records for global tables regardless of org", () => {
+  it("returns global rows plus the caller's own organization rows for global tables", () => {
     const caller = build_mock_system_user({ organization_id: "org_a" });
     const filtered = filter_records_by_organization_scope(
       all_records,
       caller,
       "sports",
       { organization_id: "org_a" },
+    );
+    expect(filtered).toEqual([organization_a_record, global_record]);
+  });
+
+  it("returns every global table row to a super admin", () => {
+    const caller = build_mock_system_user({ organization_id: "*" });
+    const filtered = filter_records_by_organization_scope(
+      all_records,
+      caller,
+      "sports",
+      {},
     );
     expect(filtered).toHaveLength(3);
   });
@@ -86,7 +97,7 @@ describe("filter_records_by_organization_scope", () => {
     expect(filtered[0].local_id).toBe("org_a");
   });
 
-  it("applies team_id filtering when scope has team_id", () => {
+  it("keeps every own-organization row for a team scoped reader", () => {
     const records_with_teams = [
       { local_id: "r1", organization_id: "org_a", team_id: "team_1" },
       { local_id: "r2", organization_id: "org_a", team_id: "team_2" },
@@ -102,7 +113,6 @@ describe("filter_records_by_organization_scope", () => {
       "players",
       { organization_id: "org_a", team_id: "team_1" },
     );
-    expect(filtered).toHaveLength(1);
-    expect(filtered[0].local_id).toBe("r1");
+    expect(filtered.map((record) => record.local_id)).toEqual(["r1", "r2"]);
   });
 });

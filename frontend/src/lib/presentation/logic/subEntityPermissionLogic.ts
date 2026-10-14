@@ -1,6 +1,6 @@
 import type { DataAction } from "$lib/core/interfaces/ports";
 import {
-  build_record_owners_for_player,
+  build_record_owners_for_profile,
   get_entity_level_disabled_operations,
   is_entity_action_permitted_for_record,
   normalize_to_entity_type,
@@ -43,9 +43,11 @@ function list_denied_functionalities(
   sub_filter: SubEntityFilter,
 ): CrudFunctionality[] {
   const record = build_parent_scoped_record(sub_filter);
-  const owners = build_record_owners_for_player(
-    profile.player_id ?? NO_LINKED_PLAYER_ID,
-  );
+  const owners = build_record_owners_for_profile({
+    role: profile.role,
+    team_id: profile.team_id,
+    player_id: profile.player_id ?? NO_LINKED_PLAYER_ID,
+  });
   return SUB_ENTITY_CRUD_ACTIONS.filter(
     (entry) =>
       !is_entity_action_permitted_for_record({

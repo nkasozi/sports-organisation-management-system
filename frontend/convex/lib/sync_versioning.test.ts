@@ -30,7 +30,7 @@ describe("decide_versioned_upsert", () => {
       decide_versioned_upsert({
         existing_record: create_none_option(),
         remote_deletion: create_none_option(),
-        base_version: KNOWN_BASE_SIX,
+        base_version: UNKNOWN_BASE,
         incoming_data: { name: "Lions" },
         legacy_incoming_version: 1,
       }),

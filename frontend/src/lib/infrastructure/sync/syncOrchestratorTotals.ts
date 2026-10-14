@@ -55,8 +55,7 @@ export function build_sync_result(
   start_time: number,
   total_tables: number,
 ): SyncResult {
-  const sync_succeeded =
-    totals.errors.length === 0 && totals.all_conflicts.length === 0;
+  const sync_succeeded = totals.errors.length === 0;
   const duration_ms = Date.now() - start_time;
   log_sync_summary({ ...totals, sync_succeeded, duration_ms, total_tables });
   return {

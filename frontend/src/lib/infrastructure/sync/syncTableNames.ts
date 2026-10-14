@@ -1,6 +1,6 @@
 import type { SharedEntityType } from "$convex/shared_permission_definitions";
 import type { UserRole } from "$lib/core/interfaces/ports";
-import { check_entity_permission } from "$lib/core/interfaces/ports";
+import { check_entity_permission_in_any_scope } from "$lib/core/interfaces/ports";
 
 export const TABLE_NAMES = [
   "organizations",
@@ -98,11 +98,11 @@ export function role_can_push_operation(
   switch (operation) {
     case PushOperation.UPSERT:
       return (
-        check_entity_permission(role, entity_type, "create") ||
-        check_entity_permission(role, entity_type, "update")
+        check_entity_permission_in_any_scope(role, entity_type, "create") ||
+        check_entity_permission_in_any_scope(role, entity_type, "update")
       );
     case PushOperation.DELETE:
-      return check_entity_permission(role, entity_type, "delete");
+      return check_entity_permission_in_any_scope(role, entity_type, "delete");
   }
 }
 

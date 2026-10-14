@@ -2,6 +2,7 @@ import { describe, expect, it, type Mock, vi } from "vitest";
 
 import { NO_SCORE_AWARD } from "../entities/SportEventCatalog";
 import { create_fixture_game_events } from "./FixtureGameEventsUseCases";
+import { create_period_command } from "./FixtureUseCases.test_support";
 
 vi.mock("$lib/infrastructure/events/EventBus", () => ({
   EventBus: { emit_entity_updated: vi.fn() },
@@ -93,7 +94,7 @@ describe("fixture game event status guards", () => {
       const use_cases = create_fixture_game_events(store as never);
       expect((await use_cases.end_fixture("fx1")).success).toBe(false);
       expect(
-        (await use_cases.update_period("fx1", "second_half", 45)).success,
+        (await use_cases.update_period("fx1", create_period_command())).success,
       ).toBe(false);
       expect(store.update).not.toHaveBeenCalled();
     },

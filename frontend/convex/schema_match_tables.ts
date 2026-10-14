@@ -38,6 +38,7 @@ export const schema_match_tables = {
     emergency_contact_phone: v.optional(v.string()),
     medical_notes: v.optional(v.string()),
     status: v.optional(v.string()),
+    created_by_user_id: v.optional(v.string()),
     ...timestamp_fields,
   })
     .index("by_local_id", ["local_id"])
@@ -95,6 +96,10 @@ export const schema_match_tables = {
     clock_status: v.optional(fixture_clock_status_validator),
     clock_elapsed_seconds: v.optional(v.number()),
     clock_started_at: v.optional(v.string()),
+    clock_added_seconds: v.optional(v.number()),
+    clock_break_started_at: v.optional(v.string()),
+    shootout_home_score: v.optional(v.number()),
+    shootout_away_score: v.optional(v.number()),
     match_day: v.optional(v.number()),
     notes: v.optional(v.string()),
     status: v.optional(v.string()),

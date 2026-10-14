@@ -153,5 +153,6 @@ export const schema_relation_tables = {
     .index(ORGANIZATION_LOCAL_ID_INDEX_NAME, [
       ...ORGANIZATION_LOCAL_ID_INDEX_FIELDS,
     ])
-    .index("by_scheduled_date", ["scheduled_date"]),
+    .index("by_scheduled_date", ["scheduled_date"])
+    .index("by_organization_start", ["organization_id", "start_datetime"]),
 };

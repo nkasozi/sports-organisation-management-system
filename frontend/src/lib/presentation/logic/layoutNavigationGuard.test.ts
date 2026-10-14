@@ -11,6 +11,7 @@ interface BeforeNavigationDependenciesUnderTest {
     | { status: "some"; value: string }
     | { status: "none" };
   evaluate_cached_route_access: (pathname: string, role: string) => string;
+  evaluate_local_route_access: (pathname: string, role: string) => boolean;
   record_denial: Mock;
 }
 
@@ -21,12 +22,14 @@ function create_before_navigation_dependencies(
       | { status: "some"; value: string }
       | { status: "none" };
     evaluate_cached_route_access: (pathname: string, role: string) => string;
+    evaluate_local_route_access: (pathname: string, role: string) => boolean;
   }> = {},
 ): BeforeNavigationDependenciesUnderTest {
   return {
     is_app_ready: () => true,
     read_current_role: () => ({ status: "some", value: "player" }) as const,
     evaluate_cached_route_access: vi.fn(() => "denied"),
+    evaluate_local_route_access: vi.fn(() => true),
     record_denial: vi.fn(() => true),
     ...overrides,
   };
@@ -52,17 +55,62 @@ describe("should_cancel_navigation", () => {
     );
   });
 
-  it.each(["allowed", "unknown"])(
-    "lets the navigation proceed when cached access is %s",
-    (cached_access: string) => {
+  it("lets the navigation proceed when cached access is allowed", () => {
+    const dependencies = create_before_navigation_dependencies({
+      evaluate_cached_route_access: vi.fn(() => "allowed"),
+      evaluate_local_route_access: vi.fn(() => false),
+    });
+
+    expect(should_cancel_navigation(dependencies as never, "/teams")).toBe(
+      false,
+    );
+    expect(dependencies.record_denial).not.toHaveBeenCalled();
+  });
+
+  it("computes access locally when the cached decision is unknown and lets an allowed route proceed", () => {
+    const evaluate_local_route_access = vi.fn(() => true);
+    const dependencies = create_before_navigation_dependencies({
+      evaluate_cached_route_access: vi.fn(() => "unknown"),
+      evaluate_local_route_access,
+    });
+
+    expect(should_cancel_navigation(dependencies as never, "/teams")).toBe(
+      false,
+    );
+    expect(evaluate_local_route_access).toHaveBeenCalledWith(
+      "/teams",
+      "player",
+    );
+    expect(dependencies.record_denial).not.toHaveBeenCalled();
+  });
+
+  it("cancels the navigation when the cached decision is unknown and the local role permissions deny it", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const dependencies = create_before_navigation_dependencies({
+      evaluate_cached_route_access: vi.fn(() => "unknown"),
+      evaluate_local_route_access: vi.fn(() => false),
+    });
+
+    expect(should_cancel_navigation(dependencies as never, "/audit-logs")).toBe(
+      true,
+    );
+    expect(dependencies.record_denial).toHaveBeenCalledWith(
+      "/audit-logs",
+      "player",
+    );
+  });
+
+  it.each(["/profile/ada-lovelace", "/team-profile/kampala-lions"])(
+    "never cancels navigation to the public profile page %s",
+    (pathname: string) => {
       const dependencies = create_before_navigation_dependencies({
-        evaluate_cached_route_access: vi.fn(() => cached_access),
+        read_current_role: () => ({ status: "some", value: "public_viewer" }),
+        evaluate_local_route_access: vi.fn(() => false),
       });
 
-      expect(should_cancel_navigation(dependencies as never, "/teams")).toBe(
+      expect(should_cancel_navigation(dependencies as never, pathname)).toBe(
         false,
       );
-      expect(dependencies.record_denial).not.toHaveBeenCalled();
     },
   );
 

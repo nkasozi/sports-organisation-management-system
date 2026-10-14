@@ -76,12 +76,20 @@ describe("liveGameDetailPageSessionActions", () => {
       },
     });
 
+    const lock_lineup = vi.fn().mockResolvedValue({ success: true });
+    const get_lineups_for_fixture = vi.fn().mockResolvedValue({
+      success: true,
+      data: [
+        { id: "home-lineup", fixture_id: "fixture-2", status: "submitted" },
+        { id: "away-lineup", fixture_id: "fixture-2", status: "submitted" },
+      ],
+    });
     const result = await start_live_game_detail_action({
       allow_auto_submission: true,
       away_players: [],
       away_team: { name: "Tigers" },
       fixture: { id: "fixture-1" },
-      fixture_lineup_use_cases: {},
+      fixture_lineup_use_cases: { get_lineups_for_fixture, lock_lineup },
       fixture_use_cases: { update_period },
       home_players: [],
       home_team: { name: "Lions" },
@@ -98,6 +106,8 @@ describe("liveGameDetailPageSessionActions", () => {
       "second_half",
     );
     expect(update_period).not.toHaveBeenCalled();
+    expect(get_lineups_for_fixture).toHaveBeenCalledWith("fixture-2");
+    expect(lock_lineup.mock.calls).toEqual([["home-lineup"], ["away-lineup"]]);
     expect(result).toEqual({
       success: true,
       fixture: {

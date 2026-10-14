@@ -9,7 +9,7 @@ import {
 
 const MISSING_EMAIL_ADDRESS = "";
 
-export function read_primary_email_address(
+function read_primary_email_address(
   clerk_user: NonNullable<Clerk["user"]>,
 ): string {
   return clerk_user.primaryEmailAddress?.emailAddress ?? MISSING_EMAIL_ADDRESS;

@@ -50,3 +50,8 @@ export async function clear_auth_storage(): Promise<void> {
   await get_app_settings_storage().remove_setting(AUTH_STORAGE_KEY);
   await get_app_settings_storage().remove_setting(PROFILE_STORAGE_KEY);
 }
+
+export async function clear_saved_token(): Promise<boolean> {
+  await get_app_settings_storage().remove_setting(AUTH_STORAGE_KEY);
+  return true;
+}

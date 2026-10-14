@@ -19,6 +19,7 @@ import type {
   FixtureUseCases,
   LiveGameDetailPageActionDependencies,
 } from "./liveGameDetailPageActionTypes";
+import { lock_fixture_lineups_after_start } from "./liveGameLineupLock";
 
 type StartLiveGameCommand = {
   allow_auto_submission: boolean;
@@ -96,6 +97,10 @@ export async function start_live_game_detail_action(
       technical_error: start_result.error,
       user_message: GAME_ACTION_USER_MESSAGE.START_GAME_FAILED,
     });
+  await lock_fixture_lineups_after_start(
+    start_result.data.id,
+    command.fixture_lineup_use_cases,
+  );
   return {
     success: true,
     fixture: start_result.data,

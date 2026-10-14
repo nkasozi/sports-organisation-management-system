@@ -65,6 +65,7 @@ describe("competitionResultsPageControllerRuntime", () => {
     ensure_auth_profile_mock.mockReset();
     extract_competition_results_url_params_mock.mockReset();
     fetch_public_data_from_convex_mock.mockReset();
+    fetch_public_data_from_convex_mock.mockResolvedValue({ success: true });
     find_competition_results_organization_mock.mockReset();
     initialize_competition_results_page_mock.mockReset();
     load_competition_results_bundle_mock.mockReset();
@@ -127,5 +128,34 @@ describe("competitionResultsPageControllerRuntime", () => {
       fixture_count: 3,
       load_state: { status: "loaded" },
     });
+  });
+
+  it("pulls the newly selected organization's public data on the public page", async () => {
+    const { command } = create_command();
+    extract_competition_results_url_params_mock.mockReturnValueOnce({
+      org_id: "",
+      competition_id: "",
+    });
+    find_competition_results_organization_mock.mockReturnValueOnce({
+      status: "absent",
+    });
+    fetch_public_data_from_convex_mock.mockResolvedValueOnce({
+      success: false,
+    });
+    load_competitions_for_results_organization_mock.mockResolvedValueOnce({
+      competitions: [],
+      selected_competition_id: "",
+      bundle: { fixture_count: 0, load_state: { status: "loaded" } },
+    });
+
+    await create_competition_results_page_controller_runtime(
+      command as never,
+    ).handle_organization_change();
+
+    expect(fetch_public_data_from_convex_mock).toHaveBeenCalledWith(
+      "competition_results",
+      { status: "some", value: "organization-1" },
+    );
+    expect(command.set_is_using_cached_data).toHaveBeenCalledWith(true);
   });
 });

@@ -102,6 +102,7 @@ describe("liveGameDetailEventActions", () => {
       event_description: "",
       secondary_player_name: "Ben Flint",
       secondary_player_id: "player-off",
+      period: { status: "some", value: "second_half" },
       fixture_use_cases: fixture_use_cases as FixtureUseCases,
     });
 
@@ -111,6 +112,7 @@ describe("liveGameDetailEventActions", () => {
       expect.objectContaining({
         player_id: "player-on",
         secondary_player_id: "player-off",
+        period_id: "second_half",
       }),
       NO_SCORE_AWARD,
     );

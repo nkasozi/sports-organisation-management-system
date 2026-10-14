@@ -28,5 +28,6 @@ export {
   get_changes_since,
   get_record_by_local_id,
 } from "./sync_read_queries";
+export { get_records_page } from "./sync_record_page_queries";
 export { backfill_sync_sequences_batch } from "./sync_sequence_backfill";
 export { prune_expired_tombstones_batch } from "./sync_tombstone_pruning";

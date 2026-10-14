@@ -1,9 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
 
-    import type { ScalarInput } from "$lib/core/types/DomainScalars";
     import {
-        type ConflictRecord,
         type ConflictResolutionAction,
         ConflictResolutionActionKind,
         type FieldDifference,
@@ -11,6 +9,7 @@
     import MergeConflictDifferences from "$lib/presentation/components/mergeConflict/MergeConflictDifferences.svelte";
     import MergeConflictFooter from "$lib/presentation/components/mergeConflict/MergeConflictFooter.svelte";
     import MergeConflictHeader from "$lib/presentation/components/mergeConflict/MergeConflictHeader.svelte";
+    import MergeConflictResolutionNotice from "$lib/presentation/components/mergeConflict/MergeConflictResolutionNotice.svelte";
     import MergeConflictResolutionOptions from "$lib/presentation/components/mergeConflict/MergeConflictResolutionOptions.svelte";
     import MergeConflictSummary from "$lib/presentation/components/mergeConflict/MergeConflictSummary.svelte";
     import SyncReviewPanel from "$lib/presentation/components/mergeConflict/SyncReviewPanel.svelte";
@@ -33,22 +32,24 @@
         type CurrentConflictState,
         CurrentConflictStatus,
     } from "$lib/presentation/stores/conflictStoreHelpers";
+    import {
+        build_resolution_notice,
+        HIDDEN_RESOLUTION_NOTICE,
+        is_attention_needed,
+        type ResolutionNotice,
+        resolve_conflicts_in_order,
+    } from "$lib/presentation/stores/conflictStoreResolutionFlow";
     import { sync_review_store } from "$lib/presentation/stores/conflictStoreSyncReviewInstance";
     import type {
         SyncReviewDecisionValue,
         SyncReviewItem,
     } from "$lib/presentation/stores/conflictStoreSyncReviewTypes";
+    import { sync_store } from "$lib/presentation/stores/syncStore";
+    import type { ConflictResolutionFeedback } from "$lib/presentation/stores/syncStoreConflictOutcome";
 
-    type EditableConflictRecord = ScalarInput<ConflictRecord>;
-
-    const dispatch = createEventDispatcher<{
-        dismiss: void;
-        resolve: {
-            action: ConflictResolutionAction;
-            conflict: EditableConflictRecord;
-            merged_data?: Record<string, unknown>;
-        };
-    }>();
+    const dispatch = createEventDispatcher<{ dismiss: void }>();
+    let resolution_notice: ResolutionNotice = HIDDEN_RESOLUTION_NOTICE;
+    let is_resolving = false;
 
     let custom_merge_values: Record<string, unknown> = {};
     let selected_action: ConflictResolutionAction =
@@ -59,7 +60,19 @@
 
     $: current_conflict_state = $current_conflict;
 
-    function handle_resolve_current(): void {
+    function advance_after_resolution(): void {
+        selected_action = ConflictResolutionActionKind.KEEP_LOCAL;
+        custom_merge_values = {};
+        if (!conflict_store.move_to_next_conflict()) dispatch("dismiss");
+    }
+
+    function apply_feedback(feedback: ConflictResolutionFeedback): void {
+        resolution_notice = build_resolution_notice(feedback);
+        if (!is_attention_needed(feedback)) advance_after_resolution();
+    }
+
+    async function handle_resolve_current(): Promise<void> {
+        if (is_resolving) return;
         if (current_conflict_state.status !== CurrentConflictStatus.PRESENT)
             return;
         const conflict = current_conflict_state.conflict;
@@ -70,15 +83,14 @@
                       custom_merge_values,
                   )
                 : void 0;
-        dispatch("resolve", {
-            action: selected_action,
+        is_resolving = true;
+        const feedback = await sync_store.resolve_conflict_and_sync(
             conflict,
-            merged_data: resolved_data,
-        });
-        conflict_store.resolve_current_conflict(selected_action, resolved_data);
-        if (!conflict_store.move_to_next_conflict()) dispatch("dismiss");
-        selected_action = "keep_local";
-        custom_merge_values = {};
+            selected_action,
+            resolved_data,
+        );
+        is_resolving = false;
+        apply_feedback(feedback);
     }
 
     function handle_select_field_value(
@@ -100,21 +112,22 @@
         dispatch("dismiss");
     }
 
-    function resolve_all(action: ConflictResolutionAction): void {
-        for (const conflict of $pending_conflicts) {
-            dispatch("resolve", { action, conflict });
-            conflict_store.resolve_conflict(conflict.id, action);
-        }
+    async function resolve_all(
+        action: ConflictResolutionAction,
+    ): Promise<void> {
+        if (is_resolving) return;
+        is_resolving = true;
+        const feedback = await resolve_conflicts_in_order(
+            (conflict, chosen_action) =>
+                sync_store.resolve_conflict_and_sync(conflict, chosen_action),
+            [...$pending_conflicts],
+            action,
+        );
+        is_resolving = false;
+        resolution_notice = build_resolution_notice(feedback);
+        if (is_attention_needed(feedback)) return;
         conflict_store.dismiss_merge_screen();
         dispatch("dismiss");
-    }
-
-    function handle_resolve_all_keep_local(): void {
-        resolve_all(ConflictResolutionActionKind.KEEP_LOCAL);
-    }
-
-    function handle_resolve_all_keep_remote(): void {
-        resolve_all(ConflictResolutionActionKind.KEEP_REMOTE);
     }
 
     function handle_review_decision(
@@ -140,6 +153,7 @@
                     on_dismiss={handle_dismiss}
                 />
                 <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                    <MergeConflictResolutionNotice notice={resolution_notice} />
                     <MergeConflictSummary
                         conflict={current_conflict_state.conflict}
                         format_timestamp={format_merge_conflict_timestamp}
@@ -160,9 +174,15 @@
                 </div>
                 <MergeConflictFooter
                     on_dismiss={handle_dismiss}
-                    on_keep_all_local={handle_resolve_all_keep_local}
-                    on_keep_all_remote={handle_resolve_all_keep_remote}
-                    on_resolve_current={handle_resolve_current}
+                    on_keep_all_local={() =>
+                        void resolve_all(
+                            ConflictResolutionActionKind.KEEP_LOCAL,
+                        )}
+                    on_keep_all_remote={() =>
+                        void resolve_all(
+                            ConflictResolutionActionKind.KEEP_REMOTE,
+                        )}
+                    on_resolve_current={() => void handle_resolve_current()}
                 />
             </div>
         </div>

@@ -4,14 +4,21 @@ const CLERK_PUBLISHABLE_KEY_PATTERN = /^pk_(test|live)_([A-Za-z0-9+/]+={0,2})$/;
 const CLERK_FRONTEND_API_TERMINATOR = "$";
 const HOSTNAME_PATTERN = /^[a-z0-9-]+(\.[a-z0-9-]+)+$/i;
 const HTTPS_PROTOCOL = "https:";
+const SECURE_WEBSOCKET_PROTOCOL = "wss:";
 const BASE64_GROUP_LENGTH = 4;
 const INVALID_BASE64_REMAINDER = 1;
 
-const CLERK_SOURCES = Object.freeze([
+export const CSP_DEPLOYMENT_MODE = Object.freeze({
+  DEVELOPMENT: "development",
+  PRODUCTION: "production",
+});
+
+const CLERK_DEVELOPMENT_SOURCES = Object.freeze([
   "https://clerk.com",
   "https://*.clerk.com",
   "https://*.clerk.accounts.dev",
 ]);
+const NO_SOURCES = Object.freeze([]);
 const CLERK_BOT_PROTECTION_SOURCE = "https://challenges.cloudflare.com";
 const CLERK_TELEMETRY_SOURCE = "https://clerk-telemetry.com";
 const CLERK_IMAGE_SOURCE = "https://img.clerk.com";
@@ -73,14 +80,39 @@ function collect_configured_clerk_origins(public_environment) {
   );
 }
 
+function collect_configured_convex_origins(public_environment) {
+  const convex_origin = resolve_https_origin(
+    public_environment.PUBLIC_CONVEX_URL,
+  );
+  if (convex_origin.status === OPTION_STATUS.NONE) return [];
+  const websocket_origin = convex_origin.value.replace(
+    HTTPS_PROTOCOL,
+    SECURE_WEBSOCKET_PROTOCOL,
+  );
+  return [convex_origin.value, websocket_origin];
+}
+
+function select_clerk_sources_for_mode(deployment_mode) {
+  switch (deployment_mode) {
+    case CSP_DEPLOYMENT_MODE.DEVELOPMENT:
+      return CLERK_DEVELOPMENT_SOURCES;
+    default:
+      return NO_SOURCES;
+  }
+}
+
 function unique_sources(sources) {
   return [...new Set(sources)];
 }
 
-export function build_content_security_policy_directives(public_environment) {
+export function build_content_security_policy_directives(
+  public_environment,
+  deployment_mode = CSP_DEPLOYMENT_MODE.PRODUCTION,
+) {
+  const environment = public_environment ?? {};
   const clerk_origins = unique_sources([
-    ...CLERK_SOURCES,
-    ...collect_configured_clerk_origins(public_environment ?? {}),
+    ...select_clerk_sources_for_mode(deployment_mode),
+    ...collect_configured_clerk_origins(environment),
   ]);
   return {
     "default-src": ["self"],
@@ -96,6 +128,7 @@ export function build_content_security_policy_directives(public_environment) {
     "connect-src": unique_sources([
       "self",
       ...CONVEX_SOURCES,
+      ...collect_configured_convex_origins(environment),
       ...clerk_origins,
       CLERK_TELEMETRY_SOURCE,
       VERCEL_ANALYTICS_SOURCE,

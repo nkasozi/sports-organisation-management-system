@@ -1,9 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  set_pulling_from_remote,
-  stop_background_sync,
-} from "$lib/infrastructure/sync/backgroundSyncService";
+import { set_pulling_from_remote } from "$lib/infrastructure/sync/backgroundSyncService";
+import { stop_background_sync_for_maintenance } from "$lib/infrastructure/sync/syncSessionQuiesce";
 import { clear_session_sync_flag } from "$lib/presentation/stores/initialSyncStore";
 
 import { reset_all_local_repositories } from "./dataResetRepositoryResets";
@@ -31,6 +29,11 @@ vi.mock("$lib/infrastructure/sync/backgroundSyncService", async () =>
   (
     await import("./dataResetService.test_support")
   ).create_background_sync_mock(),
+);
+vi.mock("$lib/infrastructure/sync/syncSessionQuiesce", async () =>
+  (
+    await import("./dataResetService.test_support")
+  ).create_session_quiesce_mock(),
 );
 vi.mock("$lib/presentation/stores/syncStore", () => ({
   sync_store: { sync_now: vi.fn().mockResolvedValue({ success: true }) },
@@ -66,12 +69,14 @@ describe("reset_all_data flow", () => {
     expect(result).toBe(true);
   });
 
-  it("stops background sync before doing anything else", async () => {
+  it("waits for in-flight sync work to settle before doing anything else", async () => {
     const call_order = [] as string[];
-    vi.mocked(stop_background_sync).mockImplementation(() => {
-      call_order.push("stop");
-      return true;
-    });
+    vi.mocked(stop_background_sync_for_maintenance).mockImplementation(
+      async () => {
+        call_order.push("stop");
+        return 0;
+      },
+    );
     vi.mocked(seed_all_data_if_needed).mockImplementation(async () => {
       call_order.push("seed");
       return { success: true as const, data: true };
@@ -79,7 +84,7 @@ describe("reset_all_data flow", () => {
 
     await reset_all_data(ignore_progress);
 
-    expect(call_order.indexOf("stop")).toBeLessThan(call_order.indexOf("seed"));
+    expect(call_order).toEqual(["stop", "seed"]);
   });
 
   it("sets pulling_from_remote to true before resetting and false after", async () => {

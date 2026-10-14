@@ -1,5 +1,6 @@
 import { get } from "svelte/store";
 
+import { fetch_public_data_from_convex } from "$lib/infrastructure/sync/convexPublicDataService";
 import {
   load_calendar_shell_bundle,
   load_calendar_shell_events,
@@ -12,6 +13,7 @@ import type {
   CalendarPageShellRuntimeContext,
   CalendarShellBundle,
 } from "./calendarPageShellControllerRuntimeTypes";
+import { build_public_organization_scope } from "./publicDataOrganizationScope";
 
 function apply_calendar_shell_bundle(
   context: CalendarPageShellRuntimeContext,
@@ -80,6 +82,21 @@ export async function handle_calendar_shell_filter_change(
   context.set_filter_loading(false);
 }
 
+const CALENDAR_PUBLIC_DATA_PAGE = "calendar";
+
+async function refresh_public_organization_data(
+  context: CalendarPageShellRuntimeContext,
+  organization_id: string,
+): Promise<boolean> {
+  if (!get(is_public_viewer)) return false;
+  const fetch_result = await fetch_public_data_from_convex(
+    CALENDAR_PUBLIC_DATA_PAGE,
+    build_public_organization_scope(organization_id),
+  );
+  context.set_is_using_cached_data(!fetch_result.success);
+  return fetch_result.success;
+}
+
 export async function handle_calendar_shell_organization_change(
   context: CalendarPageShellRuntimeContext,
 ): Promise<void> {
@@ -94,6 +111,7 @@ export async function handle_calendar_shell_organization_change(
     );
   }
   context.set_loading_state("loading");
+  await refresh_public_organization_data(context, selected_organization_id);
   await refresh_calendar_shell_bundle(context);
   context.set_loading_state("success");
 }

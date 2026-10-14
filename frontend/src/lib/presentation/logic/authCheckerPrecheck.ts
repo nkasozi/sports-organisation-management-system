@@ -1,3 +1,8 @@
+import {
+  build_unauthorized_reason_path,
+  UNAUTHORIZED_REASON_CODE,
+} from "./unauthorizedReason";
+
 export const AUTH_CHECKER_PRECHECK = {
   SKIP: "skip",
   MISSING_EMAIL: "missing_email",
@@ -5,9 +10,6 @@ export const AUTH_CHECKER_PRECHECK = {
   VERIFY_ACCESS: "verify_access",
 } as const;
 
-const UNAUTHORIZED_PATH_PREFIX = "/unauthorized?message=";
-const MISSING_EMAIL_MESSAGE =
-  "Your account has no email address. Authentication requires an email. Please contact your administrator.";
 const AUTH_PAGE_PREFIX = "/sign-in";
 const UNAUTHORIZED_PATH = "/unauthorized";
 
@@ -38,11 +40,11 @@ export function decide_auth_checker_precheck(
 }
 
 export function build_missing_email_redirect_path(): string {
-  return `${UNAUTHORIZED_PATH_PREFIX}${encodeURIComponent(MISSING_EMAIL_MESSAGE)}`;
+  return build_unauthorized_reason_path(UNAUTHORIZED_REASON_CODE.MISSING_EMAIL);
 }
 
-export function build_access_denied_redirect_path(message: string): string {
-  return `${UNAUTHORIZED_PATH_PREFIX}${encodeURIComponent(message)}`;
+export function build_access_denied_redirect_path(): string {
+  return build_unauthorized_reason_path(UNAUTHORIZED_REASON_CODE.ACCESS_DENIED);
 }
 
 export function is_auth_checker_exempt_page(pathname: string): boolean {

@@ -39,6 +39,13 @@ export type FixtureGenerationConfig = FixtureVenuePlan & {
   stage_id_per_round: Record<number, CreateFixtureInput["stage_id"]>;
 };
 
+type RoundOrientation = {
+  is_reverse_leg: boolean;
+  is_fixed_team_away: boolean;
+};
+
+const FIXED_TEAM_MATCH_INDEX = 0;
+
 type Pairing = { home_team_id: TeamId; away_team_id: TeamId };
 
 type RoundSchedule = {
@@ -81,8 +88,11 @@ export function generate_round_robin_fixtures(
       scheduled_date: round_dates[round_index],
       venue,
     };
-    const is_reverse_leg = is_reverse_leg_round(round_index, rounds_per_leg);
-    for (const pairing of build_round_pairings(teams, is_reverse_leg)) {
+    const orientation: RoundOrientation = {
+      is_reverse_leg: is_reverse_leg_round(round_index, rounds_per_leg),
+      is_fixed_team_away: (round_index % rounds_per_leg) % 2 === 1,
+    };
+    for (const pairing of build_round_pairings(teams, orientation)) {
       fixtures.push(build_fixture_input(config, schedule, pairing));
     }
     teams = rotate_teams(teams);
@@ -111,15 +121,26 @@ function resolve_venue(
   }
 }
 
+function should_swap_pairing(
+  match_index: number,
+  orientation: RoundOrientation,
+): boolean {
+  const is_fixed_team_swapped =
+    match_index === FIXED_TEAM_MATCH_INDEX && orientation.is_fixed_team_away;
+  return is_fixed_team_swapped !== orientation.is_reverse_leg;
+}
+
 function build_round_pairings(
   teams: FixtureGenerationTeamIdentifier[],
-  is_reverse_leg: boolean,
+  orientation: RoundOrientation,
 ): Pairing[] {
   const half = teams.length / 2;
   return Array.from({ length: half }, (_, match_index) => {
     const first = teams[match_index];
     const second = teams[teams.length - 1 - match_index];
-    return is_reverse_leg ? [second, first] : [first, second];
+    return should_swap_pairing(match_index, orientation)
+      ? [second, first]
+      : [first, second];
   }).flatMap(([home, away]) =>
     home === BYE_TEAM_IDENTIFIER || away === BYE_TEAM_IDENTIFIER
       ? []

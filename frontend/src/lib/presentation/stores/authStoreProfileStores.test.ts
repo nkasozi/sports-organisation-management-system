@@ -54,6 +54,7 @@ describe("auth_store integration", () => {
       (key) => delete mock_app_settings_store[key],
     );
     expect((await auth_store.initialize()).success).toBe(true);
+    auth_store.mark_as_demo_session();
   });
 
   afterEach(async () => {

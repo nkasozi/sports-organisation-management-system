@@ -35,8 +35,15 @@ describe("liveGameDetailPageGameActions", () => {
       away_players: [create_lineup_player("away-1")],
       away_team: { name: "Tigers" } as StartCommand["away_team"],
       competition_use_cases: {} as StartCommand["competition_use_cases"],
+      competition_stage_use_cases:
+        {} as StartCommand["competition_stage_use_cases"],
       fixture: { id: "fixture-1" } as StartCommand["fixture"],
-      fixture_lineup_use_cases: {} as StartCommand["fixture_lineup_use_cases"],
+      fixture_lineup_use_cases: {
+        get_lineups_for_fixture: vi
+          .fn()
+          .mockResolvedValue({ success: true, data: [] }),
+        lock_lineup: vi.fn(),
+      } as unknown as StartCommand["fixture_lineup_use_cases"],
       fixture_use_cases: {
         start_fixture: vi
           .fn()

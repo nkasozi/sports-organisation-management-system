@@ -1,4 +1,9 @@
+import { is_global_table } from "$convex/lib/sync_table_catalog";
+import { type Option, OptionStatus } from "$lib/core/types/Option";
+
 import type { TableName } from "./convexSyncService";
+
+const ORGANIZATIONS_TABLE_NAME = "organizations";
 
 export const PublicDataPageKind = {
   COMPETITION_RESULTS: "competition_results",
@@ -65,5 +70,22 @@ export function get_tables_for_page(
       return CALENDAR_TABLES;
     case PublicDataPageKind.MATCH_REPORT:
       return MATCH_REPORT_TABLES;
+  }
+}
+
+function is_organization_independent_table(table_name: TableName): boolean {
+  return table_name === ORGANIZATIONS_TABLE_NAME || is_global_table(table_name);
+}
+
+export function get_tables_for_organization_scope(
+  page_type: PublicDataPageType,
+  organization_scope: Option<string>,
+): TableName[] {
+  const tables = get_tables_for_page(page_type);
+  switch (organization_scope.status) {
+    case OptionStatus.SOME:
+      return tables;
+    case OptionStatus.NONE:
+      return tables.filter(is_organization_independent_table);
   }
 }

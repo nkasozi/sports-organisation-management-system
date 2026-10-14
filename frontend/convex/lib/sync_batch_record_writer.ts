@@ -1,5 +1,12 @@
 import type { MutationCtx } from "../_generated/server";
-import { type Option, OptionStatus } from "./option";
+import { omit_cleared_values } from "./cleared_fields";
+import {
+  create_none_option,
+  create_some_option,
+  type Option,
+  OptionStatus,
+} from "./option";
+import { refresh_ownership_dependents } from "./ownership_refresh";
 import {
   type BatchRecordOutcome,
   build_outcome,
@@ -70,8 +77,16 @@ async function insert_versioned_record(
     command,
     next_version,
   );
-  await ctx.db.insert(command.table_name, record_data as never);
+  await ctx.db.insert(
+    command.table_name,
+    omit_cleared_values(record_data) as never,
+  );
   await remove_sync_tombstone(ctx, command.tombstone);
+  await refresh_ownership_dependents(ctx, {
+    table_name: command.table_name,
+    previous_record: create_none_option(),
+    next_record: create_some_option(record_data),
+  });
   return build_outcome(command.local_id, {
     success: true,
     name: SyncResultAction.CREATED,
@@ -91,17 +106,23 @@ async function update_versioned_record(
     command,
     next_version,
   );
+  const previous_record = { ...command.existing_record.value };
   await record_scope_exit_if_moved(ctx, {
     table_name: command.table_name,
     local_id: command.local_id,
-    previous_record: command.existing_record.value,
-    next_record: record_data,
+    previous_record,
+    next_record: { ...previous_record, ...record_data },
     version: next_version,
   });
   await ctx.db.patch(
     read_document_id(command.existing_record.value),
     record_data as never,
   );
+  await refresh_ownership_dependents(ctx, {
+    table_name: command.table_name,
+    previous_record: create_some_option(previous_record),
+    next_record: create_some_option(record_data),
+  });
   return build_outcome(command.local_id, {
     success: true,
     name: SyncResultAction.UPDATED,

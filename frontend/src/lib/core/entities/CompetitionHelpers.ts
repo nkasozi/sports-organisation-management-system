@@ -1,3 +1,4 @@
+import { OptionStatus } from "../types/Option";
 import {
   COMPETITION_STATUS_DISPLAY,
   COMPETITION_VALIDATION_MESSAGES,
@@ -18,30 +19,35 @@ import {
   collect_validation_errors,
   type FieldCheck,
 } from "./EntityValidation";
+import {
+  compare_local_calendar_dates,
+  format_local_calendar_date_key,
+  is_local_calendar_date_before,
+  read_local_calendar_date_key,
+} from "./LocalCalendarDate";
 import { ENTITY_STATUS } from "./StatusConstants";
-
-const ISO_DATE_TIME_SEPARATOR = "T";
-
-function to_iso_date(date: Date): string {
-  return date.toISOString().split(ISO_DATE_TIME_SEPARATOR)[0];
-}
 
 export function derive_competition_status(
   start_date: CreateCompetitionInput["start_date"],
   end_date: CreateCompetitionInput["end_date"],
   reference_date: Date = new Date(),
 ): CompetitionDerivedStatus {
-  const start = new Date(start_date);
-  const end = new Date(end_date);
-  const today = new Date(to_iso_date(reference_date));
-
-  if (today < start) {
+  const today_key = format_local_calendar_date_key(reference_date);
+  if (is_after_local_day(start_date, today_key)) {
     return COMPETITION_DERIVED_STATUS.UPCOMING;
   }
-  if (today > end) {
+  if (is_local_calendar_date_before(end_date, reference_date)) {
     return COMPETITION_DERIVED_STATUS.COMPLETED;
   }
   return COMPETITION_DERIVED_STATUS.ACTIVE;
+}
+
+function is_after_local_day(date_value: string, today_key: string): boolean {
+  const date_key = read_local_calendar_date_key(date_value);
+  return (
+    date_key.status === OptionStatus.SOME &&
+    compare_local_calendar_dates(date_key.value, today_key) > 0
+  );
 }
 
 export function get_competition_status_display(
@@ -75,9 +81,9 @@ export function create_empty_competition_input(
     squad_generation_strategy: SQUAD_GENERATION_STRATEGY.FIRST_AVAILABLE,
     allow_auto_fixture_details_setup: false,
     lineup_submission_deadline_hours: DEFAULT_COMPETITION_LINEUP_DEADLINE_HOURS,
-    start_date: to_iso_date(next_month),
-    end_date: to_iso_date(two_months_later),
-    registration_deadline: to_iso_date(today),
+    start_date: format_local_calendar_date_key(next_month),
+    end_date: format_local_calendar_date_key(two_months_later),
+    registration_deadline: format_local_calendar_date_key(today),
     max_teams: DEFAULT_COMPETITION_MAX_TEAMS,
     entry_fee: 0,
     prize_pool: 0,

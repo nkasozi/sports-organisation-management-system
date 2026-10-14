@@ -2,13 +2,13 @@ export const LAYOUT_SESSION_EVENT = {
   LOGIN_SYNC_FAILED: "login_sync_failed",
   LOGIN_SYNC_COMPLETE: "verified_user_login_sync_complete",
   LOGIN_SYNC_DUPLICATE_SKIPPED: "sync_duplicate_skipped",
-  LOGIN_SYNC_BLOCKED_UNSYNCED_CHANGES: "login_sync_blocked_unsynced_changes",
   LOGIN_PROFILE_NOT_FOUND: "login_profile_not_found",
   FAILED_LOGIN_TEARDOWN_FAILED: "failed_login_teardown_failed",
   ANONYMOUS_FIRST_TIME_RESET_BLOCKED: "anonymous_first_time_reset_blocked",
   ANONYMOUS_BLOCKED_RESET_RETURNING_SESSION_FAILED:
     "anonymous_blocked_reset_returning_session_failed",
   ANONYMOUS_FIRST_TIME_SETUP_COMPLETE: "anonymous_first_time_setup_complete",
+  ANONYMOUS_MARKER_NOT_SAVED: "anonymous_session_marker_not_saved",
   ANONYMOUS_RETURNING_SESSION_RESTORED: "anonymous_returning_session_restored",
   VERIFIED_USER_PAGE_RELOAD_COMPLETE: "verified_user_page_reload_complete",
 } as const;
@@ -41,9 +41,9 @@ export const LAYOUT_SESSION_PROGRESS = {
 export const LAYOUT_SESSION_MESSAGE = {
   FIRST_TIME_RESET_BLOCKED:
     "Local data reset skipped to protect unsynced local changes",
-  LOGIN_BLOCKED:
-    "Sign-in stopped to protect local changes that have not been synced",
   NO_PROFILE_FOUND: "No profile found for this account.",
   SYNC_FAILED_PREFIX: "Sync failed:",
+  PULL_TIMED_OUT: "Downloading your data took too long.",
+  PROFILE_UNAVAILABLE: "Your profile could not be reached right now.",
   UNKNOWN_SYNC_ERROR: "Unknown sync error",
 } as const;

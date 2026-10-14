@@ -15,11 +15,13 @@ import {
   type SyncEngineRuntime,
 } from "./syncEngineRuntime";
 import type { SyncEngineTimers } from "./syncEngineTimers";
+import { SyncEngineEventType, SyncEngineStatus } from "./syncEngineTypes";
 import { summarize_outbox } from "./syncOutboxRepository";
 import {
   sync_backfill_deferrals,
   sync_run_cancellation,
 } from "./syncRunSignals";
+import { create_signed_in_resume_watcher } from "./syncSignedInResume";
 
 const browser_timers: SyncEngineTimers = {
   set_timeout: (callback, delay_ms) => setTimeout(callback, delay_ms),
@@ -50,3 +52,18 @@ sync_local_change_notifier.set_listener(() => {
   sync_engine_runtime.record_local_change();
   return true;
 });
+
+is_signed_in.subscribe(
+  create_signed_in_resume_watcher({
+    is_engine_running: () =>
+      sync_engine_runtime.get_machine().state.status !==
+      SyncEngineStatus.STOPPED,
+    request_push: () => {
+      sync_engine_runtime.dispatch({
+        type: SyncEngineEventType.PUSH_REQUESTED,
+        next_run_id: crypto.randomUUID(),
+      });
+      return true;
+    },
+  }),
+);

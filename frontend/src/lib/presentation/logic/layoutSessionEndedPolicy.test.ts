@@ -31,6 +31,7 @@ function create_dependencies(
     })),
     lock_to_public_viewer: vi.fn(async () => true),
     show_session_ended_notice: vi.fn(() => true),
+    show_session_ended_notice_without_count: vi.fn(() => true),
     show_session_notice: vi.fn(() => true),
     ...overrides,
   };
@@ -93,9 +94,10 @@ describe("handle_ended_verified_session", () => {
     });
     expect(dependencies.sign_out_and_tear_down_device).not.toHaveBeenCalled();
     expect(dependencies.lock_to_public_viewer).toHaveBeenCalledTimes(1);
-    expect(dependencies.show_session_notice).toHaveBeenCalledWith(
-      "local_changes_check_failed",
-    );
+    expect(
+      dependencies.show_session_ended_notice_without_count,
+    ).toHaveBeenCalledTimes(1);
+    expect(dependencies.show_session_notice).not.toHaveBeenCalled();
   });
 
   it("locks the device and reports a failed teardown", async () => {

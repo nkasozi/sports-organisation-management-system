@@ -7,9 +7,11 @@ import {
   SYNC_CURSORS_TABLE_NAME,
   SYNC_OUTBOX_TABLE_NAME,
   SYNC_RECORD_VERSIONS_TABLE_NAME,
+  UNKNOWN_SERVER_SEQUENCE,
 } from "$lib/adapters/repositories/syncOutbox/syncOutboxTypes";
 import { is_number_value } from "$lib/infrastructure/utils/runtimeTypeGuards";
 
+import { sync_deferred_remote_changes } from "./syncDeferredRemoteChanges";
 import {
   select_applicable_changes,
   write_applicable_changes,
@@ -29,12 +31,14 @@ const SERVER_ONLY_FIELD_NAMES = [
 export interface RemoteRecordChange {
   local_id: string;
   server_version: number;
+  server_sequence: number;
   local_data: Record<string, unknown>;
 }
 
 export interface RemoteDeletion {
   local_id: string;
   server_version: number;
+  server_sequence: number;
 }
 
 interface RemoteChangePage {
@@ -65,10 +69,28 @@ export function convert_server_record_to_remote_change(
     delete local_data[field_name];
   local_data.id = local_id;
   const version = server_record.version;
+  const sequence = server_record.sync_sequence;
   return {
     local_id,
     server_version: is_number_value(version) ? version : UNKNOWN_SERVER_VERSION,
+    server_sequence: is_number_value(sequence)
+      ? sequence
+      : UNKNOWN_SERVER_SEQUENCE,
     local_data,
+  };
+}
+
+export function convert_tombstone_to_remote_deletion(tombstone: {
+  local_id: string;
+  version: number;
+  sync_sequence?: unknown;
+}): RemoteDeletion {
+  return {
+    local_id: tombstone.local_id,
+    server_version: tombstone.version,
+    server_sequence: is_number_value(tombstone.sync_sequence)
+      ? tombstone.sync_sequence
+      : UNKNOWN_SERVER_SEQUENCE,
   };
 }
 
@@ -122,7 +144,7 @@ export async function apply_remote_change_page(
   dependencies: RemoteApplyDependencies,
   page: RemoteChangePage,
 ): Promise<RemoteApplySummary> {
-  return run_remote_apply_transaction(
+  const summary = await run_remote_apply_transaction(
     dependencies,
     page.table_name,
     async (tables) => {
@@ -139,4 +161,9 @@ export async function apply_remote_change_page(
       };
     },
   );
+  sync_deferred_remote_changes.record(
+    page.table_name,
+    summary.deferred_local_ids,
+  );
+  return summary;
 }

@@ -9,6 +9,7 @@ import {
   create_none_option,
   create_some_option,
   type Option,
+  OptionStatus,
 } from "../types/Option";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 import {
@@ -16,6 +17,11 @@ import {
   collect_validation_errors,
   is_blank_text,
 } from "./EntityValidation";
+import {
+  count_local_calendar_days_between,
+  is_local_calendar_date_before,
+  parse_local_calendar_date,
+} from "./LocalCalendarDate";
 import { ENTITY_STATUS } from "./StatusConstants";
 
 const QUALIFICATION_VALIDATION_MESSAGES = {
@@ -69,7 +75,6 @@ export type CreateQualificationInput = Omit<
 export type UpdateQualificationInput = Partial<CreateQualificationInput>;
 
 const ISO_DATE_TIME_SEPARATOR = "T";
-const MILLISECONDS_PER_DAY = 1000 * 60 * 60 * 24;
 
 function to_iso_date(date: Date): string {
   return date.toISOString().split(ISO_DATE_TIME_SEPARATOR)[0];
@@ -129,25 +134,24 @@ export function validate_qualification_input(
 
 export function is_qualification_expired(
   expiry_date: ScalarValueInput<Qualification["expiry_date"]>,
+  reference_date: Date = new Date(),
 ): boolean {
   if (!expiry_date) {
     return false;
   }
-  const expiry = new Date(expiry_date);
-  return expiry < new Date();
+  return is_local_calendar_date_before(String(expiry_date), reference_date);
 }
 
 export function get_days_until_expiry(
   expiry_date: ScalarValueInput<Qualification["expiry_date"]>,
+  reference_date: Date = new Date(),
 ): Option<number> {
   if (!expiry_date) {
     return create_none_option();
   }
-  const expiry = new Date(expiry_date);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  expiry.setHours(0, 0, 0, 0);
-
-  const diff_time = expiry.getTime() - today.getTime();
-  return create_some_option(Math.ceil(diff_time / MILLISECONDS_PER_DAY));
+  const expiry = parse_local_calendar_date(String(expiry_date));
+  if (expiry.status === OptionStatus.NONE) return create_none_option();
+  return create_some_option(
+    count_local_calendar_days_between(reference_date, expiry.value),
+  );
 }

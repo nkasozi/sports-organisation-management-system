@@ -1,3 +1,5 @@
+import { parse_local_calendar_date } from "$lib/core/entities/LocalCalendarDate";
+import { OptionStatus } from "$lib/core/types/Option";
 import {
   is_blank_string_value,
   is_string_value,
@@ -27,8 +29,9 @@ function format_fixture_date_time(
 ): string {
   if (!is_string_value(scheduled_date) || scheduled_date.trim() === "")
     return "";
-  const date = new Date(scheduled_date);
-  if (isNaN(date.getTime())) return "";
+  const parsed_date = parse_local_calendar_date(scheduled_date);
+  if (parsed_date.status === OptionStatus.NONE) return "";
+  const date = parsed_date.value;
   const formatted_date = `${date.getDate()} ${MONTH_NAMES[date.getMonth()]} ${date.getFullYear()}`;
   if (is_string_value(scheduled_time) && scheduled_time.trim() !== "") {
     return `${formatted_date} - ${scheduled_time}`;

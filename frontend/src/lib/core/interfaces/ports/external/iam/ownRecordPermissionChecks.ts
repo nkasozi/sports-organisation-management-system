@@ -3,7 +3,7 @@ import {
   resolve_shared_entity_permission_scope,
   SharedPermissionScope,
   type SharedPermissionScopeValue,
-  type SharedRecordOwners,
+  type SharedTeamRecordOwners,
 } from "$convex/shared_own_record_permissions";
 
 import type { DataAction } from "./AuthorizationPort";
@@ -12,7 +12,20 @@ export const ENTITY_PERMISSION_SCOPE = SharedPermissionScope;
 
 export type EntityPermissionScope = SharedPermissionScopeValue;
 
-export type RecordOwners = SharedRecordOwners;
+export type RecordOwners = SharedTeamRecordOwners;
+
+interface RecordOwnerProfile {
+  role: string;
+  team_id: string;
+  player_id: string;
+}
+
+const TEAM_MANAGER_ROLE = "team_manager";
+
+function build_trimmed_id_set(raw_id: string): ReadonlySet<string> {
+  const trimmed_id = raw_id.trim();
+  return new Set(trimmed_id.length > 0 ? [trimmed_id] : []);
+}
 
 interface RecordPermissionCheck {
   role: string;
@@ -44,11 +57,18 @@ export function check_entity_permission_in_any_scope(
 export function build_record_owners_for_player(
   player_id: string,
 ): RecordOwners {
-  const trimmed_player_id = player_id.trim();
+  return { player_ids: build_trimmed_id_set(player_id), team_ids: new Set() };
+}
+
+export function build_record_owners_for_profile(
+  profile: RecordOwnerProfile,
+): RecordOwners {
   return {
-    player_ids: new Set(
-      trimmed_player_id.length > 0 ? [trimmed_player_id] : [],
-    ),
+    player_ids: build_trimmed_id_set(profile.player_id),
+    team_ids:
+      profile.role === TEAM_MANAGER_ROLE
+        ? build_trimmed_id_set(profile.team_id)
+        : new Set(),
   };
 }
 

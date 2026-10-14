@@ -14,6 +14,7 @@ export interface BeforeNavigationGuardDependencies {
     pathname: string,
     role: UserRole,
   ): CachedRouteAccessStatus;
+  evaluate_local_route_access(pathname: string, role: UserRole): boolean;
   record_denial(pathname: string, role: UserRole): boolean;
 }
 
@@ -31,6 +32,25 @@ function is_navigation_guarded(
   return is_app_ready && !is_route_guard_exempt(pathname);
 }
 
+function is_route_access_denied(
+  dependencies: BeforeNavigationGuardDependencies,
+  pathname: string,
+  role: UserRole,
+): boolean {
+  const cached_access = dependencies.evaluate_cached_route_access(
+    pathname,
+    role,
+  );
+  switch (cached_access) {
+    case CACHED_ROUTE_ACCESS_STATUS.ALLOWED:
+      return false;
+    case CACHED_ROUTE_ACCESS_STATUS.DENIED:
+      return true;
+    case CACHED_ROUTE_ACCESS_STATUS.UNKNOWN:
+      return !dependencies.evaluate_local_route_access(pathname, role);
+  }
+}
+
 export function should_cancel_navigation(
   dependencies: BeforeNavigationGuardDependencies,
   target_pathname: string,
@@ -39,11 +59,8 @@ export function should_cancel_navigation(
     return false;
   const role_option = dependencies.read_current_role();
   if (role_option.status === OptionStatus.NONE) return false;
-  const cached_access = dependencies.evaluate_cached_route_access(
-    target_pathname,
-    role_option.value,
-  );
-  if (cached_access !== CACHED_ROUTE_ACCESS_STATUS.DENIED) return false;
+  if (!is_route_access_denied(dependencies, target_pathname, role_option.value))
+    return false;
   console.warn("[Layout] Navigation blocked for the current role", {
     event: NAVIGATION_CANCELLED_EVENT,
     target_pathname,
@@ -60,4 +77,18 @@ export async function guard_completed_navigation(
   if (!is_navigation_guarded(dependencies.is_app_ready(), pathname))
     return true;
   return dependencies.ensure_route_access(pathname);
+}
+
+interface InitialRouteRevealDependencies {
+  guard_initial_route(pathname: string): Promise<boolean>;
+  reveal_page(): boolean;
+}
+
+export async function reveal_page_after_initial_route_decision(
+  dependencies: InitialRouteRevealDependencies,
+  pathname: string,
+): Promise<boolean> {
+  const access_granted = await dependencies.guard_initial_route(pathname);
+  dependencies.reveal_page();
+  return access_granted;
 }

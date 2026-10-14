@@ -39,10 +39,6 @@ export function derive_live_match_phase(
   }
 }
 
-export function is_live_match_in_play(source: MatchPhaseSource): boolean {
-  return derive_live_match_phase(source) === LIVE_MATCH_PHASE.IN_PLAY;
-}
-
 export function derive_optional_fixture_match_phase(
   fixture: MatchPhaseSource | undefined,
 ): LiveMatchPhase {

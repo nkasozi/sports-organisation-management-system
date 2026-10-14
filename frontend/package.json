@@ -60,8 +60,6 @@
   },
   "knip": {
     "ignoreFiles": [
-      "static/sw-register.js",
-      "static/sw.js",
       "static/theme-init.js",
       "src/lib/tooling/fixtures/**"
     ],

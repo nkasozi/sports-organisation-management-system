@@ -32,9 +32,10 @@ describe("layoutLoginSync workspace and progress", () => {
     profile: Record<string, string>,
   ): ReturnType<typeof create_login_sync_test_dependencies> {
     const arranged = create_login_sync_test_dependencies();
-    arranged.dependencies.fetch_current_user_profile_from_convex.mockResolvedValueOnce(
-      { success: true, data: profile },
-    );
+    arranged.dependencies.look_up_current_user_profile.mockResolvedValueOnce({
+      status: "found",
+      profile,
+    });
     arranged.sync_now.mockResolvedValue({ success: true, errors: [] });
     return arranged;
   }

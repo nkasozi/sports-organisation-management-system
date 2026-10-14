@@ -77,8 +77,11 @@ export type SyncRecordVersionRow = {
   table_name: string;
   local_id: string;
   server_version: number;
+  server_sequence: number;
   record_state: SyncRecordStateValue;
 };
+
+export const UNKNOWN_SERVER_SEQUENCE = 0;
 
 export interface SyncCursor {
   table_name: string;

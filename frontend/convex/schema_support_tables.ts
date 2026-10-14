@@ -53,7 +53,8 @@ export const schema_support_tables = {
     .index("by_local_id", ["local_id"])
     .index("by_entity", ["entity_type", "entity_id"])
     .index("by_timestamp", ["timestamp"])
-    .index("by_organization", ["organization_id"]),
+    .index("by_organization", ["organization_id"])
+    .index("by_organization_timestamp", ["organization_id", "timestamp"]),
   system_users: defineTable({
     ...sync_metadata_fields,
     email: v.string(),
@@ -109,7 +110,8 @@ export const schema_support_tables = {
     ...timestamp_fields,
   })
     .index("by_local_id", ["local_id"])
-    .index("by_sync_sequence", ["sync_sequence"]),
+    .index("by_sync_sequence", ["sync_sequence"])
+    .index("by_holder", ["holder_type", "holder_id"]),
   qualifications: defineTable({
     ...sync_metadata_fields,
     holder_type: v.optional(v.string()),
@@ -132,7 +134,8 @@ export const schema_support_tables = {
     ...timestamp_fields,
   })
     .index("by_local_id", ["local_id"])
-    .index("by_sync_sequence", ["sync_sequence"]),
+    .index("by_sync_sequence", ["sync_sequence"])
+    .index("by_holder", ["holder_type", "holder_id"]),
   game_event_types: defineTable({
     ...sync_metadata_fields,
     organization_id: v.string(),

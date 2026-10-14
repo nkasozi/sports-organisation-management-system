@@ -32,11 +32,11 @@ function pairings(config: FixtureGenerationConfig): string[] {
 }
 
 describe("generate_round_robin_fixtures", () => {
-  it("pairs four teams over three rounds using the circle method", () => {
+  it("pairs four teams over three rounds using the circle method with the fixed team alternating home and away", () => {
     expect(pairings(build_config(["a", "b", "c", "d"]))).toEqual([
       "1:a-d",
       "1:b-c",
-      "2:a-c",
+      "2:c-a",
       "2:d-b",
       "3:a-b",
       "3:c-d",
@@ -46,7 +46,7 @@ describe("generate_round_robin_fixtures", () => {
   it("skips bye pairings for an odd number of teams", () => {
     expect(pairings(build_config(["a", "b", "c"]))).toEqual([
       "1:b-c",
-      "2:a-c",
+      "2:c-a",
       "3:a-b",
     ]);
   });

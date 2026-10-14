@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   AUTH_CHECKER_PRECHECK,
+  build_access_denied_redirect_path,
   build_missing_email_redirect_path,
   decide_auth_checker_precheck,
 } from "./authCheckerPrecheck";
@@ -52,9 +53,17 @@ describe("decide_auth_checker_precheck", () => {
 });
 
 describe("build_missing_email_redirect_path", () => {
-  it("encodes the explanation into the unauthorized page", () => {
-    expect(build_missing_email_redirect_path()).toMatch(
-      /^\/unauthorized\?message=Your%20account%20has%20no%20email/,
+  it("sends only the missing email reason code to the unauthorized page", () => {
+    expect(build_missing_email_redirect_path()).toBe(
+      "/unauthorized?reason=missing_email",
+    );
+  });
+});
+
+describe("build_access_denied_redirect_path", () => {
+  it("sends only the access denied reason code to the unauthorized page", () => {
+    expect(build_access_denied_redirect_path()).toBe(
+      "/unauthorized?reason=access_denied",
     );
   });
 });

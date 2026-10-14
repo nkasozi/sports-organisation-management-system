@@ -20,8 +20,16 @@ describe("authGuardRoutes", () => {
       "/match-report",
       "/competition-results",
       "/calendar",
+      "/profile",
+      "/team-profile",
     ]);
     expect(is_route_in_accessible_set("/calendar/2025", new Set())).toBe(true);
+    expect(is_route_in_accessible_set("/profile/ada-lovelace", new Set())).toBe(
+      true,
+    );
+    expect(
+      is_route_in_accessible_set("/team-profile/kampala-lions", new Set()),
+    ).toBe(true);
     expect(is_route_in_accessible_set("/teams", new Set())).toBe(false);
     expect(is_route_in_accessible_set("/teams/1", new Set(["/teams"]))).toBe(
       true,

@@ -28,7 +28,7 @@ describe("PlayerTeamTransferHistoryUseCases", () => {
   });
 
   describe("confirm_transfer", () => {
-    it("should confirm pending transfer and update membership", async () => {
+    it("should confirm pending transfer, end the old membership and create the new one", async () => {
       const pending_transfer = create_test_transfer({ status: "pending" });
       const existing_membership = create_test_membership({
         player_id: "player-123",
@@ -56,6 +56,14 @@ describe("PlayerTeamTransferHistoryUseCases", () => {
         success: true,
         data: {
           ...existing_membership,
+          status: "ended",
+        } as unknown as PlayerTeamMembership,
+      });
+      vi.mocked(mock_membership_repository.create).mockResolvedValue({
+        success: true,
+        data: {
+          ...existing_membership,
+          id: "membership-new",
           team_id: "team-B",
         } as unknown as PlayerTeamMembership,
       });
@@ -70,10 +78,13 @@ describe("PlayerTeamTransferHistoryUseCases", () => {
       expect(result.success).toBe(true);
       expect(mock_membership_repository.update).toHaveBeenCalledWith(
         "membership-123",
-        {
+        { status: "ended" },
+      );
+      expect(mock_membership_repository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
           team_id: "team-B",
           start_date: "2024-06-01",
-        },
+        }),
       );
       expect(mock_transfer_repository.update).toHaveBeenCalledWith(
         "transfer-123",

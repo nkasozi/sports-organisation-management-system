@@ -41,6 +41,7 @@ describe("sync outbox repository", () => {
         table_name: "teams",
         local_id: "team_a",
         server_version: 3,
+        server_sequence: 0,
         record_state: "live",
       },
     ]);
@@ -72,6 +73,7 @@ describe("sync outbox repository", () => {
         table_name: "teams",
         local_id: "team_a",
         server_version: 3,
+        server_sequence: 0,
         record_state: "deleted",
       },
     ]);
@@ -125,6 +127,7 @@ describe("enqueue_local_snapshot", () => {
       table_names: ["teams"],
       generate_change_token: () => "snapshot_token",
       now_iso: () => "2024-02-01T00:00:00.000Z",
+      base_version: { kind: "unknown" },
     });
     expect(enqueued).toBe(1);
     expect(
@@ -132,6 +135,21 @@ describe("enqueue_local_snapshot", () => {
     ).toEqual([
       ["team_a", "delete"],
       ["team_b", "upsert"],
+    ]);
+  });
+
+  it("stamps snapshot entries with the requested base so cleared ids can be recreated", async () => {
+    const fake = create_fake_sync_database();
+    fake.seed("sports", [{ id: "sport-football-default" }]);
+    await enqueue_local_snapshot({
+      database: fake.database,
+      table_names: ["sports"],
+      generate_change_token: () => "snapshot_token",
+      now_iso: () => "2024-02-01T00:00:00.000Z",
+      base_version: { kind: "recreate" },
+    });
+    expect(fake.rows("sync_outbox").map((row) => row.base_version)).toEqual([
+      { kind: "recreate" },
     ]);
   });
 });

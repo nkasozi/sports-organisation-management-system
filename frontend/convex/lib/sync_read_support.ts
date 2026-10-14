@@ -6,6 +6,7 @@ import {
   type RecordAbsence,
   resolve_missing_record_absence,
 } from "./record_absence";
+import { load_rows_in_caller_scope } from "./scoped_row_loader";
 import { authorize_records_for_reader } from "./sync_read_authorization";
 import type { AllowedSyncTable } from "./sync_validation";
 import { is_string, read_string_or } from "./value_guards";
@@ -59,11 +60,13 @@ export async function load_records_for_caller(
   table_name: AllowedSyncTable,
   caller: SystemUserRecord,
 ): Promise<Array<Record<string, unknown>>> {
-  const all_records: Array<Record<string, unknown>> = await ctx.db
-    .query(table_name)
-    .collect();
+  const scoped_records = await load_rows_in_caller_scope(
+    ctx,
+    table_name,
+    caller,
+  );
   return authorize_records_for_reader(ctx, {
-    records: all_records,
+    records: scoped_records,
     caller,
     table_name,
   });

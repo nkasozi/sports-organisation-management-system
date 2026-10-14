@@ -21,8 +21,28 @@ import {
   LIVE_MATCH_PHASE,
 } from "./liveGameMatchPhase";
 import { derive_dismissed_player_ids } from "./liveGameOnFieldPlayers";
+import { resolve_card_severity_rules } from "./liveGameSportCardRules";
 
 const SUBSTITUTION_EVENT_ID = "substitution";
+
+const EVENT_PLAYER_POOL = {
+  SUBSTITUTE_COMING_ON: "substitute_coming_on",
+  ON_FIELD: "on_field",
+  WHOLE_SQUAD: "whole_squad",
+} as const;
+
+type EventPlayerPool =
+  (typeof EVENT_PLAYER_POOL)[keyof typeof EVENT_PLAYER_POOL];
+
+function resolve_event_player_pool(
+  event_state: LiveGameDetailEventState,
+): EventPlayerPool {
+  if (event_state.selected_event_type?.id === SUBSTITUTION_EVENT_ID)
+    return EVENT_PLAYER_POOL.SUBSTITUTE_COMING_ON;
+  return event_state.selected_event_type?.affects_score
+    ? EVENT_PLAYER_POOL.ON_FIELD
+    : EVENT_PLAYER_POOL.WHOLE_SQUAD;
+}
 
 function sort_game_events(
   page_state: LiveGameDetailPageState,
@@ -55,39 +75,62 @@ type EventPlayerOptions = Pick<
   "player_select_options" | "players_on_field_options" | "is_substitution_event"
 >;
 
+function select_event_player_options(
+  pool: EventPlayerPool,
+  team_player_options: PlayerOption[],
+  players_on_field_options: PlayerOption[],
+  dismissed_player_ids: Set<string>,
+): PlayerOption[] {
+  switch (pool) {
+    case EVENT_PLAYER_POOL.SUBSTITUTE_COMING_ON:
+      return exclude_unavailable_options(
+        team_player_options,
+        players_on_field_options,
+        dismissed_player_ids,
+      );
+    case EVENT_PLAYER_POOL.ON_FIELD:
+      return players_on_field_options;
+    case EVENT_PLAYER_POOL.WHOLE_SQUAD:
+      return team_player_options;
+  }
+}
+
 function derive_event_player_options(
   page_state: LiveGameDetailPageState,
   event_state: LiveGameDetailEventState,
 ): EventPlayerOptions {
-  const { home_players, away_players, fixture } = page_state;
+  const { home_players, away_players, fixture, sport, competition } =
+    page_state;
   const team_side = event_state.selected_team_side;
-  const is_substitution_event =
-    event_state.selected_event_type?.id === SUBSTITUTION_EVENT_ID;
+  const card_rules = resolve_card_severity_rules(sport, competition);
+  const pool = resolve_event_player_pool(event_state);
   const players_on_field_options = build_players_on_field_options(
     team_side,
     home_players,
     away_players,
     fixture?.game_events ?? [],
+    card_rules,
   );
   const team_player_options = build_player_select_options_for_team(
     team_side,
     home_players,
     away_players,
   );
+  const dismissed_player_ids = derive_dismissed_player_ids(
+    team_side === TEAM_SIDE.HOME ? home_players : away_players,
+    fixture?.game_events ?? [],
+    team_side,
+    card_rules,
+  );
   return {
-    player_select_options: is_substitution_event
-      ? exclude_unavailable_options(
-          team_player_options,
-          players_on_field_options,
-          derive_dismissed_player_ids(
-            team_side === TEAM_SIDE.HOME ? home_players : away_players,
-            fixture?.game_events ?? [],
-            team_side,
-          ),
-        )
-      : team_player_options,
+    player_select_options: select_event_player_options(
+      pool,
+      team_player_options,
+      players_on_field_options,
+      dismissed_player_ids,
+    ),
     players_on_field_options,
-    is_substitution_event,
+    is_substitution_event: pool === EVENT_PLAYER_POOL.SUBSTITUTE_COMING_ON,
   };
 }
 

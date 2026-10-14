@@ -13,6 +13,7 @@ import {
   type ScoreAward,
   type ScoreAwardResolver,
 } from "./SportEventCatalog";
+import { GAME_PERIOD } from "./StatusConstants";
 
 const NUMBER_TYPE_NAME = "number";
 const STRING_TYPE_NAME = "string";
@@ -70,6 +71,7 @@ export function resolve_event_score_award(
   event: GameEvent,
   resolve_score: ScoreAwardResolver,
 ): ScoreAward {
+  if (event.period_id === GAME_PERIOD.PENALTY_SHOOTOUT) return NO_SCORE_AWARD;
   const stored_points = read_event_points_awarded(event);
   switch (stored_points.status) {
     case OptionStatus.SOME:

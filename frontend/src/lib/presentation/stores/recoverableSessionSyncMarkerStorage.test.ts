@@ -80,7 +80,7 @@ describe("evaluate_recoverable_session_sync_marker_state", () => {
     reset_session_sync_test_state();
   });
 
-  it("initializes clerk and allows a same-user backup from an earlier session", async () => {
+  it("allows a same-user backup from an earlier session without restarting Clerk", async () => {
     set_signed_in_clerk_session_state("session-2", "user-1");
 
     const result = await evaluate_recoverable_session_sync_marker_state({
@@ -92,7 +92,7 @@ describe("evaluate_recoverable_session_sync_marker_state", () => {
       },
     });
 
-    expect(mock_initialize_clerk).toHaveBeenCalled();
+    expect(mock_initialize_clerk).not.toHaveBeenCalled();
     expect(result).toEqual({
       status: "safe_matching_verified_user",
       session_id: "session-2",

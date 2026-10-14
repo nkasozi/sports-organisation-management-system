@@ -56,6 +56,7 @@ export function derive_competition_results_standings_section(
       command.teams,
       effective_points_config,
       effective_tie_breakers,
+      command.sport_rules.fair_play_card_weights,
     ),
     stage_results_sections: build_competition_stage_results_sections(
       command.competition_stages,
@@ -63,6 +64,7 @@ export function derive_competition_results_standings_section(
       command.teams,
       effective_points_config,
       effective_tie_breakers,
+      command.sport_rules.fair_play_card_weights,
     ),
     competition_stage_map: new Map(
       command.competition_stages.map((stage: CompetitionStage) => [

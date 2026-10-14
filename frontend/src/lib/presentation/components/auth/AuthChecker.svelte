@@ -8,10 +8,10 @@
     import { page } from "$app/stores";
     import { PUBLIC_CONVEX_URL } from "$env/static/public";
     import {
-        get_clerk,
+        clerk_session,
         get_session_token,
     } from "$lib/adapters/iam/clerkAuthService";
-    import { read_primary_email_address } from "$lib/adapters/iam/clerkSessionStateBuilders";
+    import { CLERK_PRESENCE_STATUS } from "$lib/adapters/iam/clerkAuthTypes";
     import {
         AuthCheckerAccessStatus,
         CURRENT_USER_PROFILE_QUERY,
@@ -24,6 +24,9 @@
         decide_auth_checker_precheck,
         is_auth_checker_exempt_page,
     } from "$lib/presentation/logic/authCheckerPrecheck";
+
+    const ACCESS_CHECK_SKIPPED_EVENT = "auth_checker_access_check_skipped";
+    const ACCESS_CHECK_TIMED_OUT_EVENT = "auth_checker_access_check_timed_out";
 
     let authorization_checked = false;
     let is_checking = true;
@@ -44,13 +47,15 @@
 
     function read_clerk_identity(): ClerkIdentitySnapshot {
         if (!browser) return UNAVAILABLE_CLERK_IDENTITY;
-        const clerk_result = get_clerk();
-        if (!clerk_result.success) return UNAVAILABLE_CLERK_IDENTITY;
-        const { session, user } = clerk_result.data;
-        const user_email = user ? read_primary_email_address(user) : "";
+        const clerk_state = get(clerk_session);
+        if (!clerk_state.is_loaded) return UNAVAILABLE_CLERK_IDENTITY;
+        const user_email =
+            clerk_state.user_state.status === CLERK_PRESENCE_STATUS.PRESENT
+                ? clerk_state.user_state.user.email_address
+                : "";
         return {
             clerk_ready: true,
-            is_signed_in: !!session,
+            is_signed_in: clerk_state.is_signed_in,
             has_email: user_email.length > 0,
         };
     }
@@ -72,9 +77,7 @@
             query_current_user_profile: query_profile_with_token,
         });
         if (access_outcome.status === AuthCheckerAccessStatus.DENIED)
-            await goto(
-                build_access_denied_redirect_path(access_outcome.message),
-            );
+            await goto(build_access_denied_redirect_path());
     }
 
     async function check_authorization(): Promise<void> {

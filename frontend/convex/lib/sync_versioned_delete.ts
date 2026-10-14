@@ -6,6 +6,7 @@ import {
   type Option,
   OptionStatus,
 } from "./option";
+import { refresh_ownership_dependents } from "./ownership_refresh";
 import { NO_SERVER_VERSION } from "./sync_batch_record_types";
 import { create_sync_change_stamp } from "./sync_change_stamp";
 import { SyncResultAction } from "./sync_mutation_support";
@@ -51,6 +52,11 @@ async function delete_and_tombstone(
     changed_records: [existing_record],
   });
   await ctx.db.delete(read_document_id(existing_record));
+  await refresh_ownership_dependents(ctx, {
+    table_name: command.table_name,
+    previous_record: create_some_option(existing_record),
+    next_record: create_none_option(),
+  });
   await write_sync_tombstone(ctx, {
     table_name: command.table_name,
     local_id: command.local_id,

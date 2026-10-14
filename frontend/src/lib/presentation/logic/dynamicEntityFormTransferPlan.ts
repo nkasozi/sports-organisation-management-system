@@ -1,8 +1,16 @@
 import type { BaseEntity } from "$lib/core/entities/BaseEntity";
+import type {
+  PlayerTeamTransferHistory,
+  UpdatePlayerTeamTransferHistoryInput,
+} from "$lib/core/entities/PlayerTeamTransferHistory";
 import {
   TRANSFER_STATUS,
   type TransferStatusValue,
 } from "$lib/core/entities/StatusConstants";
+import {
+  decide_transfer_edit,
+  TRANSFER_EDIT_DECISION,
+} from "$lib/core/usecases/TransferEditGuard";
 import {
   decide_transfer_resolution,
   TransferResolution,
@@ -109,6 +117,20 @@ function plan_status_change(
   }
 }
 
+function plan_same_status_edit(
+  input: TransferFormPlanInput,
+  status: TransferStatusValue,
+): TransferFormPlan {
+  if (!input.is_edit_mode) return { kind: TRANSFER_FORM_PLAN.SAVE_ONLY };
+  const decision = decide_transfer_edit(
+    { ...input.entity_data, status } as PlayerTeamTransferHistory,
+    input.form_data as UpdatePlayerTeamTransferHistoryInput,
+  );
+  return decision.kind === TRANSFER_EDIT_DECISION.REJECTED
+    ? block(decision.reason)
+    : { kind: TRANSFER_FORM_PLAN.SAVE_ONLY };
+}
+
 export function plan_transfer_form_submission(
   input: TransferFormPlanInput,
 ): TransferFormPlan {
@@ -126,7 +148,7 @@ export function plan_transfer_form_submission(
   if (!is_transfer_status(previous_status) || !is_transfer_status(next_status))
     return block(TRANSFER_FORM_MESSAGE.UNKNOWN_STATUS);
   if (previous_status === next_status)
-    return { kind: TRANSFER_FORM_PLAN.SAVE_ONLY };
+    return plan_same_status_edit(input, previous_status);
   return plan_status_change(previous_status, next_status, input.is_edit_mode);
 }
 

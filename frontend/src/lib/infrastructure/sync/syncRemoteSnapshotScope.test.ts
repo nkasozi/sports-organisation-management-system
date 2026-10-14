@@ -42,6 +42,7 @@ async function seed_full_team(
       {
         local_id: "team_a",
         server_version: version,
+        server_sequence: 0,
         local_data: FULL_PRIVATE_TEAM,
       },
     ],

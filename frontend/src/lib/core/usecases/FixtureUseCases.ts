@@ -1,6 +1,7 @@
 import type { CreateFixtureInput, Fixture } from "../entities/Fixture";
 import { validate_fixture_input } from "../entities/Fixture";
 import { apply_fixture_input_defaults } from "../entities/FixtureInputDefaults";
+import { FIXTURE_STATUS } from "../entities/StatusConstants";
 import type {
   FixtureRepository,
   FixtureUseCasesPort,
@@ -21,7 +22,11 @@ import {
   create_fixture_enricher,
   type FixtureEnricher,
 } from "./FixtureTeamNames";
-import { FIXTURE_EVENT, FIXTURE_LOG_SCOPE } from "./FixtureUseCaseConstants";
+import {
+  FIXTURE_EVENT,
+  FIXTURE_LOG_SCOPE,
+  FIXTURE_MESSAGE,
+} from "./FixtureUseCaseConstants";
 
 export type FixtureUseCases = FixtureUseCasesPort;
 
@@ -32,6 +37,13 @@ async function create_fixture(
   submitted_input: CreateFixtureInput,
 ): AsyncResult<Fixture> {
   const input = apply_fixture_input_defaults(submitted_input);
+  if (input.status !== FIXTURE_STATUS.SCHEDULED)
+    return fail_validation(
+      log_target(FIXTURE_EVENT.CREATE_STATUS_REJECTED, {
+        requested_status: input.status,
+      }),
+      FIXTURE_MESSAGE.CREATE_MUST_BE_SCHEDULED,
+    );
   const validation_errors = validate_fixture_input(input);
   if (validation_errors.length > 0)
     return fail_validation(

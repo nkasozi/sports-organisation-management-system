@@ -37,6 +37,7 @@ describe("run_root_layout_startup", () => {
 
     expect(outcome).toBe(ROOT_LAYOUT_STARTUP_OUTCOME.READY);
     expect(call_order).toEqual([
+      "pending_sign_out",
       "recovery",
       "stores",
       "subscribe",
@@ -88,5 +89,25 @@ describe("run_root_layout_startup", () => {
       1,
     );
     expect(command.session_handlers.session_ended).not.toHaveBeenCalled();
+  });
+
+  it("finishes a deferred Clerk sign-out before any initialization or seeding", async () => {
+    const { command, call_order } = create_startup_command({
+      is_signed_in: vi.fn(() => false),
+      has_session_been_synced: vi.fn(async () => true),
+    });
+    command.complete_pending_clerk_sign_out.mockImplementation(async () => {
+      call_order.push("pending_sign_out");
+      return "still_pending";
+    });
+
+    await run_root_layout_startup(command as never);
+
+    expect(call_order[0]).toBe("pending_sign_out");
+    expect(call_order.indexOf("pending_sign_out")).toBeLessThan(
+      call_order.indexOf("init"),
+    );
+    expect(command.session_handlers.returning_anonymous).toHaveBeenCalled();
+    expect(command.session_handlers.login_sync).not.toHaveBeenCalled();
   });
 });

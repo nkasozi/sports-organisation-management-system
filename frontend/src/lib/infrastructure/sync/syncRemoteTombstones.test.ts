@@ -38,6 +38,7 @@ async function apply_live_then_tombstone(
       {
         local_id: "team_a",
         server_version: 3,
+        server_sequence: 0,
         local_data: { id: "team_a", name: "Alpha" },
       },
     ],
@@ -47,7 +48,7 @@ async function apply_live_then_tombstone(
   await apply_remote_change_page(dependencies, {
     table_name: "teams",
     records: [],
-    deletions: [{ local_id: "team_a", server_version: 4 }],
+    deletions: [{ local_id: "team_a", server_version: 4, server_sequence: 0 }],
     next_cursor: 11,
   });
 }
@@ -97,6 +98,7 @@ describe("remote deletions leave a local tombstone", () => {
         {
           local_id: "team_a",
           server_version: 3,
+          server_sequence: 0,
           local_data: { id: "team_a", name: "Alpha" },
         },
       ],
@@ -135,6 +137,7 @@ describe("remote deletions leave a local tombstone", () => {
         {
           local_id: "team_a",
           server_version: 3,
+          server_sequence: 0,
           local_data: { id: "team_a", name: "Alpha" },
         },
       ],

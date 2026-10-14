@@ -1,7 +1,12 @@
 import type { BaseEntity, EntityMetadata } from "$lib/core/entities/BaseEntity";
 import type { EntityCrudHandlers } from "$lib/core/types/EntityHandlers";
+import {
+  create_none_option,
+  create_some_option,
+  type Option,
+  OptionStatus,
+} from "$lib/core/types/Option";
 import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
-import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
 import { get_use_cases_for_entity_type } from "$lib/infrastructure/registry/entityUseCasesRegistry";
 import {
   type DynamicEntityListResult,
@@ -9,10 +14,14 @@ import {
 } from "$lib/presentation/logic/dynamicEntityListFilterOptions";
 import {
   build_dynamic_entity_list_access_denied_message,
+  build_dynamic_entity_list_access_unverified_message,
   DYNAMIC_ENTITY_LIST_EVENT,
   DYNAMIC_ENTITY_LIST_MESSAGE,
 } from "$lib/presentation/logic/dynamicEntityListMessages";
-import { normalize_dynamic_form_entity_type } from "$lib/presentation/logic/dynamicFormConstants";
+import {
+  evaluate_dynamic_entity_list_read_access,
+  LIST_READ_ACCESS_STATUS,
+} from "$lib/presentation/logic/dynamicEntityListReadAccess";
 import {
   apply_id_filter_to_entities,
   build_entity_authorization_filter,
@@ -94,17 +103,27 @@ function build_list_load_result(
   };
 }
 
-async function is_dynamic_entity_list_read_denied(
+async function describe_dynamic_entity_list_read_denial(
   command: DynamicEntityListCommand,
-): Promise<boolean> {
-  if (!command.raw_token) return false;
-  const authorization_check =
-    await get_authorization_adapter().check_entity_authorized(
-      command.raw_token,
-      normalize_dynamic_form_entity_type(command.entity_type),
-      "read",
-    );
-  return authorization_check.success && !authorization_check.data.is_authorized;
+): Promise<Option<string>> {
+  const read_access = await evaluate_dynamic_entity_list_read_access(
+    command.raw_token,
+    command.entity_type,
+  );
+  switch (read_access) {
+    case LIST_READ_ACCESS_STATUS.ALLOWED:
+      return create_none_option<string>();
+    case LIST_READ_ACCESS_STATUS.DENIED:
+      return create_some_option(
+        build_dynamic_entity_list_access_denied_message(command.display_name),
+      );
+    case LIST_READ_ACCESS_STATUS.UNVERIFIED:
+      return create_some_option(
+        build_dynamic_entity_list_access_unverified_message(
+          command.display_name,
+        ),
+      );
+  }
 }
 
 async function fetch_dynamic_entity_list_records(
@@ -164,10 +183,9 @@ export async function load_dynamic_entity_list_entities(
       error_message: DYNAMIC_ENTITY_LIST_MESSAGE.PROFILE_MISSING,
     };
   }
-  if (await is_dynamic_entity_list_read_denied(command)) {
-    return build_list_load_failure(
-      build_dynamic_entity_list_access_denied_message(command.display_name),
-    );
+  const read_denial = await describe_dynamic_entity_list_read_denial(command);
+  if (read_denial.status === OptionStatus.SOME) {
+    return build_list_load_failure(read_denial.value);
   }
   const filter = merge_entity_list_filters(
     build_filter_from_sub_entity_config(command.sub_entity_filter),
