@@ -8,6 +8,8 @@
     } from "$lib/presentation/logic/safeUrl";
     import { branding_store } from "$lib/presentation/stores/branding";
 
+    import InstallAppButton from "./InstallAppButton.svelte";
+
     $: has_custom_logo =
         $branding_store.organization_logo_url &&
         $branding_store.organization_logo_url.length > 0;
@@ -114,10 +116,11 @@
             </div>
 
             <div
-                class="flex items-center bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-[0.175rem] px-3 py-2 header-panel {$branding_store.show_panel_borders
+                class="flex items-center gap-3 bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-[0.175rem] px-3 py-2 header-panel {$branding_store.show_panel_borders
                     ? 'border-2 border-white/60'
                     : ''}"
             >
+                <InstallAppButton />
                 <ThemeToggle />
             </div>
         </div>

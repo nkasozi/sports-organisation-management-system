@@ -1,24 +1,36 @@
 {
+  "id": "/",
   "name": "Sport-Sync",
-  "short_name": "SportsOrg",
+  "short_name": "Sport-Sync",
   "description": "Comprehensive sports organization management system for competitions, teams, and players",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#1f2937",
   "theme_color": "#f59e0b",
   "categories": ["sports", "management", "productivity"],
-  "orientation": "portrait-primary",
-  "scope": "/",
   "icons": [
     {
-      "src": "/favicon.svg",
+      "src": "/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/favicon.svg",
+      "src": "/icons/icon-512.png",
       "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     }
