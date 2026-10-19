@@ -12,6 +12,8 @@
     import SessionSyncNoticeBanner from "$lib/presentation/components/layout/SessionSyncNoticeBanner.svelte";
     import SessionSyncRetryPrompt from "$lib/presentation/components/layout/SessionSyncRetryPrompt.svelte";
     import StorageRecoveryPrompt from "$lib/presentation/components/layout/StorageRecoveryPrompt.svelte";
+    import LocalRecordTamperBanner from "$lib/presentation/components/localVault/LocalRecordTamperBanner.svelte";
+    import LocalVaultPrompt from "$lib/presentation/components/localVault/LocalVaultPrompt.svelte";
     import FullScreenOverlay from "$lib/presentation/components/ui/FullScreenOverlay.svelte";
     import {
         get_is_auth_page,
@@ -22,6 +24,8 @@
         STARTUP_STORAGE_RECOVERY_PROMPT_STATUS,
         type StartupStorageRecoveryPromptState,
     } from "$lib/presentation/logic/layoutStorageRecovery";
+    import { local_vault_prompt_store } from "$lib/presentation/logic/localVaultPromptRuntime";
+    import { LOCAL_VAULT_PROMPT_KIND } from "$lib/presentation/logic/localVaultPromptState";
 
     export let show_initial_sync: boolean;
     export let sync_status_message: string;
@@ -37,7 +41,10 @@
     export let on_continue_without_storage_backup: () => void;
     export let on_retry_login_sync: () => Promise<unknown>;
 
+    $: is_local_vault_prompt_visible =
+        $local_vault_prompt_store.kind !== LOCAL_VAULT_PROMPT_KIND.HIDDEN;
     $: is_app_content_ready =
+        !is_local_vault_prompt_visible &&
         !show_initial_sync &&
         storage_recovery_prompt_state.status !==
             STARTUP_STORAGE_RECOVERY_PROMPT_STATUS.VISIBLE &&
@@ -49,6 +56,7 @@
 <SessionSyncNoticeBanner />
 <SessionEndedNoticeBanner />
 <SessionSyncRetryPrompt on_retry={on_retry_login_sync} />
+<LocalRecordTamperBanner on_reload_from_server={on_retry_login_sync} />
 {#key $clerk_provider_generation}
     <ClerkProvider
         signInUrl="/sign-in"
@@ -81,7 +89,9 @@
         {/if}
     </ClerkProvider>
 {/key}
-{#if show_initial_sync}
+{#if is_local_vault_prompt_visible}
+    <LocalVaultPrompt />
+{:else if show_initial_sync}
     <FullScreenOverlay
         title="Syncing Data"
         subtitle="Please wait while we sync your data"

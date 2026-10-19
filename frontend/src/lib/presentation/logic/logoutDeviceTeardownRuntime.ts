@@ -17,6 +17,7 @@ import {
   write_session_sync_marker,
 } from "$lib/presentation/stores/sessionSyncMarker";
 
+import { replace_local_vault_with_device_key } from "./localVaultSessionRuntime";
 import {
   execute_logout_device_teardown,
   LOGOUT_DEVICE_TEARDOWN_STATUS,
@@ -33,6 +34,7 @@ function create_runtime_logout_device_teardown_command(): LogoutDeviceTeardownCo
       await reset_database();
       return true;
     },
+    replace_local_data_key: replace_local_vault_with_device_key,
     clear_session_sync_flag,
     logout_auth_store: () => auth_store.logout(),
     sign_out,

@@ -24,6 +24,7 @@ export function create_startup_command(
 ): {
   command: {
     current_path: string;
+    unlock_local_data: Mock;
     run_startup_storage_recovery: Mock;
     initialize_stores: Mock;
     subscribe_layout_state: Mock;
@@ -45,6 +46,7 @@ export function create_startup_command(
     };
   const command = {
     current_path: "/teams",
+    unlock_local_data: vi.fn(record("unlock")),
     run_startup_storage_recovery: vi.fn(record("recovery")),
     initialize_stores: vi.fn(record("stores")),
     subscribe_layout_state: vi.fn(() => {

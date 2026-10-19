@@ -37,6 +37,7 @@ describe("run_root_layout_startup", () => {
 
     expect(outcome).toBe(ROOT_LAYOUT_STARTUP_OUTCOME.READY);
     expect(call_order).toEqual([
+      "unlock",
       "pending_sign_out",
       "recovery",
       "stores",
@@ -49,6 +50,19 @@ describe("run_root_layout_startup", () => {
       session_already_synced: false,
     });
     expect(command.session_handlers.login_sync).toHaveBeenCalled();
+  });
+
+  it("stops before touching local data when the device data cannot be unlocked", async () => {
+    const { command, call_order } = create_startup_command({
+      unlock_local_data: vi.fn(async () => false),
+    });
+
+    const outcome = await run_root_layout_startup(command as never);
+
+    expect(outcome).toBe(ROOT_LAYOUT_STARTUP_OUTCOME.LOCAL_DATA_UNAVAILABLE);
+    expect(call_order).toEqual([]);
+    expect(command.complete_pending_clerk_sign_out).not.toHaveBeenCalled();
+    expect(command.session_handlers.login_sync).not.toHaveBeenCalled();
   });
 
   it("runs the verified page reload flow for an already synced session", async () => {
@@ -91,7 +105,7 @@ describe("run_root_layout_startup", () => {
     expect(command.session_handlers.session_ended).not.toHaveBeenCalled();
   });
 
-  it("finishes a deferred Clerk sign-out before any initialization or seeding", async () => {
+  it("finishes a deferred Clerk sign-out right after unlocking and before any initialization or seeding", async () => {
     const { command, call_order } = create_startup_command({
       is_signed_in: vi.fn(() => false),
       has_session_been_synced: vi.fn(async () => true),
@@ -103,7 +117,7 @@ describe("run_root_layout_startup", () => {
 
     await run_root_layout_startup(command as never);
 
-    expect(call_order[0]).toBe("pending_sign_out");
+    expect(call_order.slice(0, 2)).toEqual(["unlock", "pending_sign_out"]);
     expect(call_order.indexOf("pending_sign_out")).toBeLessThan(
       call_order.indexOf("init"),
     );

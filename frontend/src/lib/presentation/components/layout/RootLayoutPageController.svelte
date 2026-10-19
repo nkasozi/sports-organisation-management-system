@@ -56,6 +56,8 @@
         STARTUP_STORAGE_RECOVERY_CHOICE,
         type StartupStorageRecoveryPromptState,
     } from "$lib/presentation/logic/layoutStorageRecovery";
+    import { start_local_unlock_session_keeper } from "$lib/presentation/logic/localUnlockSessionKeeperRuntime";
+    import { unlock_local_data_on_startup } from "$lib/presentation/logic/localVaultSessionRuntime";
     import {
         build_sign_in_error_path,
         SIGN_IN_ERROR_CODE,
@@ -81,6 +83,7 @@
         create_hidden_startup_storage_recovery_prompt_state();
     let cleanup_layout_subscriptions: () => void = () => {};
     let stop_session_maintenance: () => void = () => {};
+    let stop_unlock_session_keeper: () => boolean = () => false;
 
     const storage_recovery_choice_gate =
         create_startup_storage_recovery_choice_gate((prompt_state) => {
@@ -138,6 +141,7 @@
         view_state = { ...view_state, current_path: get(page).url.pathname };
         const startup_outcome = await run_root_layout_startup({
             current_path: view_state.current_path,
+            unlock_local_data: unlock_local_data_on_startup,
             run_startup_storage_recovery: run_storage_recovery,
             initialize_stores: initialize_root_layout_stores,
             subscribe_layout_state,
@@ -151,6 +155,12 @@
                 login_sync_dependencies,
             ),
         });
+        if (
+            startup_outcome ===
+            ROOT_LAYOUT_STARTUP_OUTCOME.LOCAL_DATA_UNAVAILABLE
+        )
+            return;
+        stop_unlock_session_keeper = start_local_unlock_session_keeper();
         if (
             startup_outcome === ROOT_LAYOUT_STARTUP_OUTCOME.SERVER_UNAVAILABLE
         ) {
@@ -167,6 +177,7 @@
         stop_session_maintenance = start_root_layout_session_maintenance();
     });
     onDestroy(() => {
+        stop_unlock_session_keeper();
         stop_session_maintenance();
         cleanup_layout_subscriptions();
         reset_initialization();

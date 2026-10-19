@@ -67,19 +67,19 @@ describe("v8 legacy outbox migration", () => {
   });
 
   it("removes the legacy sync metadata key and keeps other settings", async () => {
-    const database = open_real_test_database(await create_legacy_database());
+    const database_name = await create_legacy_database();
+    const database = open_real_test_database(database_name);
     await database.open();
-
-    expect(
-      await database
-        .table("app_settings")
-        .get(LEGACY_SYNC_METADATA_SETTING_KEY),
-    ).toBe(undefined);
-    expect(await database.table("app_settings").get("theme")).toEqual({
-      key: "theme",
-      value: "dark",
-    });
     database.close();
+    const raw_database = new Dexie(database_name);
+    await raw_database.open();
+    const raw_setting_keys = await raw_database
+      .table("app_settings")
+      .toCollection()
+      .primaryKeys();
+
+    expect(raw_setting_keys).toEqual(["theme"]);
+    raw_database.close();
   });
 
   it("does not enqueue anything when the database is created fresh", async () => {

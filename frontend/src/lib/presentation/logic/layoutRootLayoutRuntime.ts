@@ -46,6 +46,10 @@ import {
 } from "./layoutSessionFlows";
 import { handle_root_layout_session_ended } from "./layoutSessionTransitionRuntime";
 import type { StartupStorageRecoveryFlowDependencies } from "./layoutStartupStorageRecoveryFlow";
+import {
+  activate_local_vault,
+  protect_local_data_for_sign_in,
+} from "./localVaultSessionRuntime";
 import { sign_out_and_tear_down_device } from "./logoutDeviceTeardownRuntime";
 
 type StartupStorageRecoveryUiCallbacks = Pick<
@@ -66,6 +70,8 @@ export function create_root_layout_login_sync_dependencies(): LayoutLoginSyncDep
     stop_background_sync: stop_background_sync_and_wait_for_idle,
     start_background_sync: start_background_sync_and_resume,
     reset_database,
+    protect_local_data_for_sign_in,
+    activate_local_vault,
     reset_sync_metadata,
     look_up_current_user_profile: () =>
       look_up_login_profile(fetch_current_user_profile_from_convex),

@@ -41,6 +41,7 @@ import type { TeamStaff } from "../../core/entities/TeamStaff";
 import type { TeamStaffRole } from "../../core/entities/TeamStaffRole";
 import type { Venue } from "../../core/entities/Venue";
 import { define_sport_sync_schema_versions } from "./databaseSchemaVersions";
+import { register_local_record_sealing } from "./localRecordSealing/registerLocalRecordSealingMiddleware";
 import { register_sync_outbox_middleware } from "./syncOutbox/registerSyncOutboxMiddleware";
 import {
   type SyncCursor,
@@ -99,6 +100,7 @@ class SportSyncDatabase extends Dexie {
 
     define_sport_sync_schema_versions(this, TABLE_NAMES);
     register_sync_outbox_middleware(this);
+    register_local_record_sealing(this);
   }
 }
 

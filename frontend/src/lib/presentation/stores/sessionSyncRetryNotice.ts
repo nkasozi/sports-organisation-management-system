@@ -9,6 +9,7 @@ export const SESSION_SYNC_RETRY_KIND = {
   PROFILE_UNAVAILABLE: "profile_unavailable",
   ACCOUNT_DATA_UNAVAILABLE: "account_data_unavailable",
   SESSION_NOT_SAVED: "session_not_saved",
+  DEVICE_PROTECTION_NOT_SAVED: "device_protection_not_saved",
 } as const;
 
 export type SessionSyncRetryKind =
@@ -51,6 +52,11 @@ const SESSION_SYNC_RETRY_CONTENT: Record<
     title: "This device could not save your sign-in",
     message:
       "Your data downloaded, but this device could not remember that you signed in, so it would not be available offline. Please try again.",
+  },
+  [SESSION_SYNC_RETRY_KIND.DEVICE_PROTECTION_NOT_SAVED]: {
+    title: "Your data could not be protected on this device",
+    message:
+      "You are signed in, but this device could not save the lock that keeps your data safe. Please try again.",
   },
 };
 

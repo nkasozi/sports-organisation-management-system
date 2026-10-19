@@ -21,6 +21,8 @@ type LoginSyncTestDependencies = {
   initial_sync_store: InitialSyncStoreMock;
   pull_user_scoped_record_from_convex: Mock;
   reset_database: Mock;
+  protect_local_data_for_sign_in: Mock;
+  activate_local_vault: Mock;
   reset_sync_metadata: Mock;
   set_pulling_from_remote: Mock;
   sign_out_and_tear_down_device: Mock;
@@ -68,6 +70,11 @@ export function create_login_sync_test_dependencies(): {
     initial_sync_store: create_initial_sync_store_mock(),
     pull_user_scoped_record_from_convex: vi.fn(async () => true),
     reset_database: vi.fn(async () => true),
+    protect_local_data_for_sign_in: vi.fn(async () => ({
+      kind: "protected",
+      pending: { data_key: new Uint8Array(32), record: {} },
+    })),
+    activate_local_vault: vi.fn(async () => create_success_result("passkey")),
     reset_sync_metadata: vi.fn(async () => true),
     set_pulling_from_remote: vi.fn(),
     sign_out_and_tear_down_device: vi.fn(

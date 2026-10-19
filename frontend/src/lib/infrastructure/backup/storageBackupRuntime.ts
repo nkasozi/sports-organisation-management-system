@@ -11,6 +11,11 @@ import {
   UntrackedWriteReason,
 } from "../../adapters/repositories/syncOutbox/syncChangeTrackingGate";
 import { get_app_settings_storage } from "../container";
+import { local_data_key_holder } from "../localVault/localDataKeyHolder";
+import {
+  open_local_json,
+  seal_local_json,
+} from "../localVault/localVaultCipher";
 import {
   get_unsynced_local_change_count,
   set_pulling_from_remote,
@@ -33,6 +38,7 @@ import {
   get_navigator_device_backup_directory_access,
 } from "./storageBackupDeviceStorage";
 import { create_storage_backup_dexie_database_port } from "./storageBackupDexieDatabasePort";
+import { create_sealed_device_backup_storage_port } from "./storageBackupSealedDeviceStorage";
 import { PENDING_LOCAL_CHANGE_STATUS } from "./storageBackupStatus";
 
 const APP_INITIALIZED_KEY = "sports_org_app_initialized";
@@ -144,8 +150,15 @@ export function get_storage_backup_coordinator(): StorageBackupCoordinator {
     bootstrap_state_port: create_storage_backup_bootstrap_state_port(
       get_app_settings_storage(),
     ),
-    device_backup_storage_port: create_device_backup_storage_port(
-      get_navigator_device_backup_directory_access,
+    device_backup_storage_port: create_sealed_device_backup_storage_port(
+      create_device_backup_storage_port(
+        get_navigator_device_backup_directory_access,
+      ),
+      {
+        current_data_key: () => local_data_key_holder.current(),
+        seal: seal_local_json,
+        open: open_local_json,
+      },
     ),
     pending_local_change_state_port:
       create_background_sync_pending_local_change_state_port(),
