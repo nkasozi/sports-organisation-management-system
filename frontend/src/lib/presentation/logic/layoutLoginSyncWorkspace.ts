@@ -14,6 +14,7 @@ import {
 } from "./layoutLoginSyncPorts";
 import { create_inactive_sync_progress_subscription } from "./layoutLoginSyncProgress";
 import { sign_out_after_failed_login } from "./layoutLoginSyncSignOut";
+import { protect_and_clear_login_workspace } from "./layoutLoginSyncVaultProtection";
 import { APP_ROUTE_PATH } from "./layoutRouteConstants";
 import {
   LAYOUT_SESSION_EVENT,
@@ -134,17 +135,16 @@ async function pull_profile_scope_records(
 export async function prepare_login_sync_workspace(
   dependencies: LayoutLoginSyncDependencies,
   login_sync_profile: LoginSyncProfile,
-): Promise<boolean> {
+): Promise<Result<boolean>> {
   dependencies.initial_sync_store.update_progress(
     LAYOUT_SESSION_PROGRESS.PREPARING_WORKSPACE.message,
     LAYOUT_SESSION_PROGRESS.PREPARING_WORKSPACE.percentage,
   );
-  dependencies.set_pulling_from_remote(true);
-  dependencies.initial_sync_store.update_progress(
-    LAYOUT_SESSION_PROGRESS.CLEARING_LOCAL_DATA.message,
-    LAYOUT_SESSION_PROGRESS.CLEARING_LOCAL_DATA.percentage,
+  const cleared = await protect_and_clear_login_workspace(
+    dependencies,
+    login_sync_profile.profile,
   );
-  await dependencies.reset_database();
+  if (!cleared.success) return cleared;
   await dependencies.reset_sync_metadata();
   dependencies.initial_sync_store.update_progress(
     LAYOUT_SESSION_PROGRESS.SETTING_UP_ACCOUNT.message,
@@ -159,5 +159,5 @@ export async function prepare_login_sync_workspace(
     LAYOUT_SESSION_PROGRESS.STARTING_DATA_SYNC.percentage,
   );
   dependencies.set_pulling_from_remote(false);
-  return true;
+  return create_success_result(true);
 }

@@ -1,9 +1,15 @@
 import type { AsyncResult, Result } from "$lib/core/types/Result";
+import type {
+  LocalVaultMode,
+  PendingLocalVaultKey,
+} from "$lib/infrastructure/localVault/localVaultContracts";
 import type { SyncResult } from "$lib/infrastructure/sync/syncTypes";
 import type { ConvexUserProfile } from "$lib/presentation/stores/authTypes";
 import type { SessionSyncNoticeKind } from "$lib/presentation/stores/sessionSyncNotice";
 import type { SessionSyncRetryKind } from "$lib/presentation/stores/sessionSyncRetryNotice";
 import type { SyncProgressState } from "$lib/presentation/stores/syncStoreTypes";
+
+import type { LocalVaultProtectionResolution } from "./localVaultPromptGate";
 
 interface InitialSyncStateSnapshot {
   is_syncing: boolean;
@@ -51,6 +57,12 @@ export interface LayoutLoginSyncDependencies {
   start_background_sync(): void;
   start_realtime_sync(): boolean;
   reset_database(): Promise<unknown>;
+  protect_local_data_for_sign_in(
+    owner_label: string,
+  ): Promise<LocalVaultProtectionResolution>;
+  activate_local_vault(
+    pending: PendingLocalVaultKey,
+  ): AsyncResult<LocalVaultMode>;
   reset_sync_metadata(): Promise<unknown>;
   look_up_current_user_profile(): Promise<LoginProfileLookup>;
   set_pulling_from_remote(value: boolean): void;

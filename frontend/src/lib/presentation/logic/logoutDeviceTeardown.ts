@@ -1,3 +1,4 @@
+import type { AsyncResult } from "$lib/core/types/Result";
 import type { DeviceBackupDeleteState } from "$lib/infrastructure/backup/storageBackupContracts";
 import { DEVICE_BACKUP_DELETE_STATUS } from "$lib/infrastructure/backup/storageBackupStatus";
 
@@ -14,6 +15,7 @@ export const LOGOUT_DEVICE_TEARDOWN_STATUS = {
 const LOGOUT_DEVICE_TEARDOWN_STEP = {
   DELETE_DEVICE_BACKUP: "delete_device_backup",
   RESET_LOCAL_DATABASE: "reset_local_database",
+  REPLACE_LOCAL_DATA_KEY: "replace_local_data_key",
   CLEAR_SESSION_SYNC_MARKER: "clear_session_sync_marker",
   CLEAR_AUTH_STORE: "clear_auth_store",
 } as const;
@@ -38,6 +40,7 @@ export interface LogoutDeviceTeardownCommand extends SignedOutLandingCommand {
   cancel_automatic_device_backup_write(): boolean;
   delete_device_backup(): Promise<DeviceBackupDeleteState>;
   reset_local_database(): Promise<boolean>;
+  replace_local_data_key(): AsyncResult<unknown>;
   clear_session_sync_flag(): Promise<unknown>;
   logout_auth_store(): Promise<unknown>;
   reload_into(landing_path: string): boolean;
@@ -87,6 +90,18 @@ async function delete_device_backup_step(
     : COMPLETED_STATE;
 }
 
+async function replace_local_data_key_step(
+  command: LogoutDeviceTeardownCommand,
+): Promise<LogoutDeviceTeardownState> {
+  const replaced = await command.replace_local_data_key();
+  return replaced.success
+    ? COMPLETED_STATE
+    : fail_teardown(
+        LOGOUT_DEVICE_TEARDOWN_STEP.REPLACE_LOCAL_DATA_KEY,
+        replaced.error,
+      );
+}
+
 function build_ordered_teardown_steps(
   command: LogoutDeviceTeardownCommand,
 ): Array<() => Promise<LogoutDeviceTeardownState>> {
@@ -97,6 +112,7 @@ function build_ordered_teardown_steps(
       run_teardown_step(STEP.RESET_LOCAL_DATABASE, () =>
         command.reset_local_database(),
       ),
+    () => replace_local_data_key_step(command),
     () =>
       run_teardown_step(STEP.CLEAR_SESSION_SYNC_MARKER, () =>
         command.clear_session_sync_flag(),

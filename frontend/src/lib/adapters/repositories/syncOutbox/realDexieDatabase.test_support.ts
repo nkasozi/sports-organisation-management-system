@@ -5,6 +5,7 @@ import {
   create_sport_sync_database,
   type SportSyncDatabase,
 } from "../database";
+import { remember_test_local_data_key } from "../localRecordSealing/localRecordSealing.test_support";
 import {
   SYNC_OUTBOX_TABLE_NAME,
   type SyncOutboxEntry,
@@ -12,6 +13,7 @@ import {
 
 Dexie.dependencies.indexedDB = indexedDB;
 Dexie.dependencies.IDBKeyRange = IDBKeyRange;
+remember_test_local_data_key();
 
 const TEST_DATABASE_PREFIX = "sport_sync_test_";
 

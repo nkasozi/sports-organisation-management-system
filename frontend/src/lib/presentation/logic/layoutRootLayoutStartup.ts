@@ -16,6 +16,7 @@ import {
 export const ROOT_LAYOUT_STARTUP_OUTCOME = {
   READY: "ready",
   SERVER_UNAVAILABLE: "server_unavailable",
+  LOCAL_DATA_UNAVAILABLE: "local_data_unavailable",
 } as const;
 
 const REDIRECT_TO_LOGIN_INIT_RESULT = "redirect_to_login";
@@ -35,6 +36,7 @@ export interface RootLayoutSessionHandlers {
 
 interface RootLayoutStartupCommand {
   current_path: string;
+  unlock_local_data(): Promise<boolean>;
   run_startup_storage_recovery(): Promise<unknown>;
   initialize_stores(): Promise<unknown>;
   subscribe_layout_state(): boolean;
@@ -80,6 +82,8 @@ async function has_verified_session_ended(
 export async function run_root_layout_startup(
   command: RootLayoutStartupCommand,
 ): Promise<RootLayoutStartupOutcome> {
+  if (!(await command.unlock_local_data()))
+    return ROOT_LAYOUT_STARTUP_OUTCOME.LOCAL_DATA_UNAVAILABLE;
   const pending_sign_out = await command.complete_pending_clerk_sign_out();
   await command.run_startup_storage_recovery();
   await command.initialize_stores();

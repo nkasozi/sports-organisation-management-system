@@ -139,7 +139,11 @@ export async function sync_verified_user_login_session(
   await dependencies.stop_background_sync();
   const profile_result = await look_up_login_sync_profile(dependencies);
   if (!profile_result.success) return profile_result;
-  await prepare_login_sync_workspace(dependencies, profile_result.data);
+  const workspace_result = await prepare_login_sync_workspace(
+    dependencies,
+    profile_result.data,
+  );
+  if (!workspace_result.success) return workspace_result;
   const pull_result = await pull_account_data(dependencies);
   if (!pull_result.success) return pull_result;
   return finalize_login_sync(dependencies);
