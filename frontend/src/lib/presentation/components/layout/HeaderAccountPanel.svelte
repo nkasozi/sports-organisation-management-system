@@ -4,6 +4,7 @@
 
     import HeaderUserMenuButton from "./HeaderUserMenuButton.svelte";
     import HeaderUserMenuDropdown from "./HeaderUserMenuDropdown.svelte";
+    import InstallAppButton from "./InstallAppButton.svelte";
 
     export let has_profile_picture: boolean = false;
     export let profile_picture_base64: string = "";
@@ -32,6 +33,7 @@
         ? 'border-2 border-white/60'
         : ''}"
 >
+    <InstallAppButton />
     <SyncStatusIndicator />
     <div class="relative">
         <HeaderUserMenuButton
