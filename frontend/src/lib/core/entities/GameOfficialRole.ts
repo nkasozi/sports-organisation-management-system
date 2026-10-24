@@ -1,5 +1,6 @@
 import type { EntityId, Name, ScalarInput } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
+import { DEFAULT_HOCKEY_OFFICIAL_ROLES } from "./GameOfficialRoleHockey";
 import { ENTITY_STATUS } from "./StatusConstants";
 
 export interface GameOfficialRole extends BaseEntity {
@@ -87,6 +88,7 @@ const DEFAULT_FOOTBALL_OFFICIAL_ROLES: ReadonlyArray<
     display_order: 6,
     status: ENTITY_STATUS.ACTIVE,
   },
+  ...DEFAULT_HOCKEY_OFFICIAL_ROLES,
 ];
 
 export function get_default_football_official_roles_with_ids(

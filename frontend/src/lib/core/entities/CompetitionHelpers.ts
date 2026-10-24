@@ -79,7 +79,7 @@ export function create_empty_competition_input(
     team_ids: [],
     allow_auto_squad_submission: false,
     squad_generation_strategy: SQUAD_GENERATION_STRATEGY.FIRST_AVAILABLE,
-    allow_auto_fixture_details_setup: false,
+    allow_auto_fixture_details_setup: true,
     lineup_submission_deadline_hours: DEFAULT_COMPETITION_LINEUP_DEADLINE_HOURS,
     start_date: format_local_calendar_date_key(next_month),
     end_date: format_local_calendar_date_key(two_months_later),

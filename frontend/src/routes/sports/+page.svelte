@@ -3,7 +3,7 @@
 </script>
 
 <svelte:head>
-    <title>Sport - Sports Management</title>
+    <title>Sports - Sports Management</title>
 </svelte:head>
 
 <EntityCrudWrapper entity_type="Sport" />

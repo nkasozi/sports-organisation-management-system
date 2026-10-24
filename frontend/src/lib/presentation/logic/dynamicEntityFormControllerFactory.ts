@@ -1,4 +1,5 @@
 import type { FieldMetadata } from "../../core/entities/BaseEntity";
+import { get_player_team_membership_use_cases } from "../../infrastructure/registry/useCaseFactoriesPeople";
 import { fakeDataGenerator } from "../../infrastructure/utils/FakeDataGenerator";
 import {
   cancel_dynamic_entity_form,
@@ -7,6 +8,10 @@ import {
   initialize_dynamic_entity_form_options,
   submit_dynamic_entity_form_controller,
 } from "./dynamicEntityFormControllerActions";
+import {
+  type ActiveMembershipSource,
+  load_fake_data_exclusions,
+} from "./dynamicEntityFormFakeDataExclusions";
 import { fill_required_foreign_keys } from "./dynamicEntityFormFakeDataForeignKeys";
 import { refine_fake_data_after_choices } from "./dynamicEntityFormFakeDataRefinements";
 import { create_dynamic_form_field_callbacks } from "./dynamicEntityFormFieldCallbacks";
@@ -34,6 +39,10 @@ async function generate_fake_data_with_choices(
     get_form_state: dependencies.get_form_state,
     locked_field_names: dependencies.get_locked_field_names(),
     change_foreign_key: callbacks.handle_foreign_key_change,
+    excluded_option_ids: await load_fake_data_exclusions(
+      dependencies.entity_type,
+      get_player_team_membership_use_cases() as unknown as ActiveMembershipSource,
+    ),
   });
   apply_fake_data_refinements(dependencies, metadata.fields);
 }

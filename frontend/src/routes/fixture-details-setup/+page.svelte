@@ -58,6 +58,10 @@
     });
 </script>
 
+<svelte:head>
+    <title>Fixture Details Setup - Sports Management</title>
+</svelte:head>
+
 {#if is_ready}
     <EntityCrudWrapper
         entity_type="FixtureDetailsSetup"

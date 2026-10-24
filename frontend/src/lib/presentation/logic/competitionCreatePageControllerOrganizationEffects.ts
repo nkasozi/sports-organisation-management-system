@@ -2,6 +2,7 @@ import { is_scope_restricted } from "$lib/core/interfaces/ports";
 import type { CompetitionCreatePageControllerCommand } from "$lib/presentation/logic/competitionCreatePageControllerCommand";
 import { competition_create_dependencies } from "$lib/presentation/logic/competitionCreatePageControllerDependencies";
 import { load_competition_create_organization_state } from "$lib/presentation/logic/competitionCreatePageFlow";
+import { build_sport_rule_overrides } from "$lib/presentation/logic/competitionSportScoringDefaults";
 import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
 export function is_organization_restricted(
@@ -50,6 +51,12 @@ export async function trigger_organization_side_effects(
     organization_state.competition_format_options,
   );
   command.set_selected_sport_state(organization_state.selected_sport_state);
+  command.set_form_data({
+    ...command.get_form_data(),
+    rule_overrides: build_sport_rule_overrides(
+      organization_state.selected_sport_state,
+    ),
+  });
   command.set_is_loading_teams(false);
   command.set_is_loading_formats(false);
 }

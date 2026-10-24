@@ -46,8 +46,6 @@
         type LiveGamesViewState,
     } from "./liveGamesRouteView";
 
-    const fixture_state_dependencies = live_games_page_dependencies;
-
     let organizations: Organization[] = [];
     let selected_organization_id = "",
         action_error_message = "",
@@ -76,7 +74,7 @@
         view_state = settle_live_games_fixture_load(
             await refresh_live_games_page_fixture_state_result({
                 auth_state: get(auth_store),
-                fixture_state_dependencies,
+                fixture_state_dependencies: live_games_page_dependencies,
                 organization_id: selected_organization_id,
             }),
         );
@@ -90,7 +88,7 @@
                 live_games_page_dependencies.authorization_adapter,
             organization_use_cases:
                 live_games_page_dependencies.organization_use_cases,
-            fixture_state_dependencies,
+            fixture_state_dependencies: live_games_page_dependencies,
             search_parameters: new URL(window.location.href).searchParams,
         });
         switch (result.status) {
@@ -114,9 +112,8 @@
                 view_state = settle_live_games_fixture_load(
                     create_success_result(result.fixture_state),
                 );
-                resume_route_start(
-                    result.fixture_state.fixtures,
-                    handle_start_click,
+                resume_route_start(result.fixture_state.fixtures, (fixture) =>
+                    handle_start_click(fixture, true),
                 );
                 return;
         }
@@ -131,7 +128,10 @@
         await refresh_fixture_state();
     }
 
-    async function handle_start_click(fixture: Fixture): Promise<void> {
+    async function handle_start_click(
+        fixture: Fixture,
+        is_already_confirmed = false,
+    ): Promise<void> {
         const confirmation_result = await request_live_games_start_confirmation(
             fixture,
             get(auth_store),
@@ -141,6 +141,7 @@
             return;
         }
         pending_start_fixture_state = confirmation_result.data;
+        if (is_already_confirmed) confirm_start_fixture();
     }
 
     function confirm_start_fixture(): void {
