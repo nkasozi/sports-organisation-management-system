@@ -6,4 +6,4 @@
     <title>Team Staff - Sports Management</title>
 </svelte:head>
 
-<EntityCrudWrapper entity_type="teamstaff" />
+<EntityCrudWrapper entity_type="TeamStaff" />

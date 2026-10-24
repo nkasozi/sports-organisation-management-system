@@ -15,9 +15,9 @@
 </script>
 
 <div
-    class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-gray-200 dark:border-gray-700 pb-4"
+    class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 border-b border-gray-200 dark:border-gray-700 pb-4"
 >
-    <div class="min-w-0">
+    <div class="shrink-0">
         <h2
             class="text-lg sm:text-xl font-semibold text-accent-900 dark:text-accent-100"
         >
@@ -29,7 +29,7 @@
     </div>
 
     <div
-        class="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto"
+        class="flex flex-col sm:flex-row sm:flex-wrap xl:justify-end items-start sm:items-center gap-3 w-full xl:w-auto min-w-0"
     >
         {#if can_change_organizations}
             <select

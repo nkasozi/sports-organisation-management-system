@@ -9,6 +9,10 @@ import {
   type ForeignKeyCandidateState,
   list_foreign_key_candidates,
 } from "./dynamicEntityFormFakeDataCandidates";
+import {
+  type FakeDataExclusions,
+  NO_FAKE_DATA_EXCLUSIONS,
+} from "./dynamicEntityFormFakeDataExclusions";
 
 const FOREIGN_KEY_FIELD_TYPE = "foreign_key";
 const EMPTY_FIELD_VALUE = "";
@@ -18,6 +22,7 @@ interface RequiredForeignKeyFillCommand {
   get_form_state(): ForeignKeyCandidateState;
   locked_field_names: ReadonlySet<string>;
   change_foreign_key(field_name: string, value: string): Promise<void>;
+  excluded_option_ids?: FakeDataExclusions;
 }
 
 interface ForeignKeyChoice {
@@ -33,6 +38,22 @@ function pick_random_option(options: BaseEntity[]): string {
   return String(options[Math.floor(Math.random() * options.length)].id);
 }
 
+function list_fillable_candidates(
+  field: FieldMetadata,
+  command: RequiredForeignKeyFillCommand,
+  state: ForeignKeyCandidateState,
+): BaseEntity[] {
+  const candidates = list_foreign_key_candidates(field, command.fields, state);
+  const excluded =
+    (command.excluded_option_ids ?? NO_FAKE_DATA_EXCLUSIONS)[
+      field.field_name
+    ] ?? new Set<string>();
+  const available = candidates.filter(
+    (option) => !excluded.has(String(option.id)),
+  );
+  return available.length > 0 ? available : candidates;
+}
+
 function is_fillable_foreign_key(
   field: FieldMetadata,
   command: RequiredForeignKeyFillCommand,
@@ -44,7 +65,7 @@ function is_fillable_foreign_key(
     !field.is_read_only &&
     !command.locked_field_names.has(field.field_name) &&
     is_empty_value(state.form_data[field.field_name]) &&
-    list_foreign_key_candidates(field, command.fields, state).length > 0
+    list_fillable_candidates(field, command, state).length > 0
   );
 }
 
@@ -58,9 +79,7 @@ function choose_next_required_foreign_key(
   if (!field) return create_none_option();
   return create_some_option({
     field_name: field.field_name,
-    value: pick_random_option(
-      list_foreign_key_candidates(field, command.fields, state),
-    ),
+    value: pick_random_option(list_fillable_candidates(field, command, state)),
   });
 }
 

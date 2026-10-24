@@ -49,6 +49,7 @@ describe("CompetitionHelpers", () => {
       max_teams: 16,
       status: "active",
       registration_deadline: "2026-04-08",
+      allow_auto_fixture_details_setup: true,
     });
 
     expect(

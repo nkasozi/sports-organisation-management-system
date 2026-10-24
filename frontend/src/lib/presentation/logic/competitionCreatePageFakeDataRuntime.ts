@@ -6,6 +6,7 @@ import {
 import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
 
 import { fill_competition_create_fake_data } from "./competitionCreateFakeData";
+import { select_fake_friendly_formats } from "./competitionCreateFakeFormats";
 import type { CompetitionCreatePageControllerCommand } from "./competitionCreatePageControllerCommand";
 import {
   handle_competition_create_format_change,
@@ -37,7 +38,9 @@ export function handle_competition_create_fill_fake_data(
     set_form_data: command.set_form_data,
     get_organization_options: () => to_options(command.get_organizations()),
     get_competition_format_options: () =>
-      to_options(command.get_competition_formats()),
+      to_options(
+        select_fake_friendly_formats(command.get_competition_formats()),
+      ),
     get_sport_name: () => read_sport_name(command),
     change_organization: (event) =>
       handle_competition_create_organization_change(command, event),

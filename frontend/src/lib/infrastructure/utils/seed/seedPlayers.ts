@@ -1,6 +1,7 @@
 import type { Player } from "../../../core/entities/Player";
 import type { ScalarValueInput } from "../../../core/types/DomainScalars";
 import { generate_current_timestamp } from "./seedIds";
+import { create_base_seed_memberships } from "./seedMemberships";
 import type { PositionIds } from "./seedPlayerIds";
 import { resolve_seed_gender_id_for_first_name } from "./seedPlayerIds";
 import { create_seed_players_group1 } from "./seedPlayersGroup1";
@@ -15,6 +16,7 @@ import { create_seed_players_group9 } from "./seedPlayersGroup9";
 import { create_seed_players_group10 } from "./seedPlayersGroup10";
 import { create_seed_players_group11 } from "./seedPlayersGroup11";
 import { create_seed_players_group12 } from "./seedPlayersGroup12";
+import { create_seed_squad_top_up_players } from "./seedSquadTopUp";
 
 export function create_seed_players(
   positions: PositionIds,
@@ -39,8 +41,16 @@ export function create_seed_players(
     ...create_seed_players_group12(positions, organization_id, now),
   ];
 
-  return players_without_gender.map((player) => ({
-    ...player,
-    gender_id: resolve_seed_gender_id_for_first_name(player.first_name),
-  }));
+  return [
+    ...players_without_gender.map((player) => ({
+      ...player,
+      gender_id: resolve_seed_gender_id_for_first_name(player.first_name),
+    })),
+    ...create_seed_squad_top_up_players(
+      create_base_seed_memberships(),
+      positions,
+      organization_id,
+      now,
+    ),
+  ];
 }
