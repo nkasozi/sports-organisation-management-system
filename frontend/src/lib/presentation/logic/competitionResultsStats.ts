@@ -6,38 +6,26 @@ import {
   type ScoreAwardResolver,
 } from "$lib/core/entities/SportEventCatalog";
 import type { Team } from "$lib/core/entities/Team";
+import { OptionStatus } from "$lib/core/types/Option";
+import { TEAM_SIDE } from "$lib/presentation/logic/gameEventConstants";
+
 import {
-  GAME_EVENT_TYPE,
-  TEAM_SIDE,
-} from "$lib/presentation/logic/gameEventConstants";
-
-export const CARD_SORT_MODE = {
-  TOTAL: "total",
-  YELLOW: "yellow",
-  RED: "red",
-} as const;
-
-export type CardSortMode = (typeof CARD_SORT_MODE)[keyof typeof CARD_SORT_MODE];
+  type CardStatCategory,
+  count_player_card_type,
+  resolve_card_type_for_event,
+} from "./competitionResultsCardStats";
 
 const ALL_TEAMS_FILTER = "all";
 const UNKNOWN_TEAM_NAME = "Unknown";
 const STATS_LEADERBOARD_SIZE = 10;
-const RED_CARD_WEIGHT = 2;
-const YELLOW_CARD_EVENTS: ReadonlySet<string> = new Set([
-  GAME_EVENT_TYPE.YELLOW_CARD,
-]);
-const RED_CARD_EVENTS: ReadonlySet<string> = new Set([
-  GAME_EVENT_TYPE.RED_CARD,
-  GAME_EVENT_TYPE.SECOND_YELLOW,
-]);
+const SINGLE_CARD = 1;
 
 export interface PlayerStats {
   player_name: string;
   team_name: string;
   points: number;
   assists: number;
-  yellow_cards: number;
-  red_cards: number;
+  card_counts: Record<string, number>;
 }
 
 type FixtureGameEvent = NonNullable<Fixture["game_events"]>[number];
@@ -60,8 +48,7 @@ function get_or_create_player_stats(
     team_name: team?.name ?? UNKNOWN_TEAM_NAME,
     points: 0,
     assists: 0,
-    yellow_cards: 0,
-    red_cards: 0,
+    card_counts: {},
   };
   stats_map.set(player_key, created_player_stats);
   return created_player_stats;
@@ -70,22 +57,36 @@ function get_or_create_player_stats(
 function apply_card_to_player_stats(
   player_stats: PlayerStats,
   game_event: FixtureGameEvent,
+  card_categories: readonly CardStatCategory[],
 ): PlayerStats {
-  if (YELLOW_CARD_EVENTS.has(game_event.event_type))
-    player_stats.yellow_cards += 1;
-  if (RED_CARD_EVENTS.has(game_event.event_type)) player_stats.red_cards += 1;
+  const card_type = resolve_card_type_for_event(
+    card_categories,
+    game_event.event_type,
+  );
+  if (card_type.status === OptionStatus.NONE) return player_stats;
+  player_stats.card_counts[card_type.value] =
+    count_player_card_type(player_stats, card_type.value) + SINGLE_CARD;
   return player_stats;
+}
+
+interface PlayerStatsRules {
+  resolve_score: ScoreAwardResolver;
+  card_categories: readonly CardStatCategory[];
 }
 
 function apply_game_event_to_player_stats(
   player_stats: PlayerStats,
   game_event: FixtureGameEvent,
-  resolve_score: ScoreAwardResolver,
+  rules: PlayerStatsRules,
 ): PlayerStats {
-  const award = resolve_event_score_award(game_event, resolve_score);
+  const award = resolve_event_score_award(game_event, rules.resolve_score);
   switch (award.kind) {
     case SCORE_AWARD_KIND.NONE:
-      return apply_card_to_player_stats(player_stats, game_event);
+      return apply_card_to_player_stats(
+        player_stats,
+        game_event,
+        rules.card_categories,
+      );
     case SCORE_AWARD_KIND.CREDIT:
       if (award.credited_side === SCORE_CREDITED_SIDE.ACTING)
         player_stats.points += award.points;
@@ -97,7 +98,9 @@ export function calculate_player_stats(
   fixtures: Fixture[],
   team_map: Map<string, Team>,
   resolve_score: ScoreAwardResolver,
+  card_categories: readonly CardStatCategory[],
 ): PlayerStats[] {
+  const rules: PlayerStatsRules = { resolve_score, card_categories };
   const stats_map = new Map<string, PlayerStats>();
 
   for (const fixture of fixtures) {
@@ -106,7 +109,7 @@ export function calculate_player_stats(
       apply_game_event_to_player_stats(
         get_or_create_player_stats(stats_map, fixture, game_event, team_map),
         game_event,
-        resolve_score,
+        rules,
       );
     }
   }
@@ -136,38 +139,5 @@ export function filter_and_sort_scorers(
         player_stats.team_name === team_filter,
     )
     .sort((left: PlayerStats, right: PlayerStats) => right.points - left.points)
-    .slice(0, STATS_LEADERBOARD_SIZE);
-}
-
-const CARD_SORT_COMPARATORS: Record<
-  CardSortMode,
-  (left: PlayerStats, right: PlayerStats) => number
-> = {
-  [CARD_SORT_MODE.YELLOW]: (left: PlayerStats, right: PlayerStats) =>
-    right.yellow_cards - left.yellow_cards,
-  [CARD_SORT_MODE.RED]: (left: PlayerStats, right: PlayerStats) =>
-    right.red_cards - left.red_cards,
-  [CARD_SORT_MODE.TOTAL]: (left: PlayerStats, right: PlayerStats) =>
-    right.yellow_cards +
-    right.red_cards * RED_CARD_WEIGHT -
-    (left.yellow_cards + left.red_cards * RED_CARD_WEIGHT),
-};
-
-export function filter_and_sort_card_players(
-  stats: PlayerStats[],
-  team_filter: string,
-  sort_mode: CardSortMode,
-): PlayerStats[] {
-  return stats
-    .filter(
-      (player_stats: PlayerStats) =>
-        player_stats.yellow_cards > 0 || player_stats.red_cards > 0,
-    )
-    .filter(
-      (player_stats: PlayerStats) =>
-        team_filter === ALL_TEAMS_FILTER ||
-        player_stats.team_name === team_filter,
-    )
-    .sort(CARD_SORT_COMPARATORS[sort_mode])
     .slice(0, STATS_LEADERBOARD_SIZE);
 }

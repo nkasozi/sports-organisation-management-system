@@ -81,4 +81,21 @@ describe("headerUserMenuDetails", () => {
       },
     ]);
   });
+
+  it("hides the placeholder email for the public viewer profile", () => {
+    expect(
+      build_header_user_menu_details({
+        current_profile_email: "public-viewer@anonymous.invalid",
+        current_user_role_display: "Public Viewer",
+        current_profile_organization_name: "",
+        current_profile_team_id: "",
+        current_profile_team_name: "",
+      }),
+    ).toEqual([
+      {
+        label: "Role",
+        value: "Public Viewer",
+      },
+    ]);
+  });
 });

@@ -7,6 +7,8 @@ import { MEMBERSHIP_STATUS } from "$lib/core/entities/StatusConstants";
 import type { Team } from "$lib/core/entities/Team";
 import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
+const UNASSIGNED_PLAYER_TEAM_STATUS = "unassigned";
+
 export type PlayerAssignmentCurrentTeamState =
   | { status: "unassigned" }
   | { status: "assigned"; team_id: string; team_name: string };
@@ -104,7 +106,10 @@ export function count_selected_players(
     (current_assignment: PlayerAssignment) => current_assignment.selected,
   );
   const selected_assigned_players = assigned_players.filter(
-    (current_assignment: PlayerAssignment) => current_assignment.selected,
+    (current_assignment: PlayerAssignment) =>
+      current_assignment.selected &&
+      current_assignment.current_team_state.status ===
+        UNASSIGNED_PLAYER_TEAM_STATUS,
   );
   return selected_unassigned_players.length + selected_assigned_players.length;
 }
@@ -134,7 +139,10 @@ export function get_selected_player_assignments(
     (current_assignment: PlayerAssignment) => current_assignment.selected,
   );
   const selected_assigned_players = assigned_players.filter(
-    (current_assignment: PlayerAssignment) => current_assignment.selected,
+    (current_assignment: PlayerAssignment) =>
+      current_assignment.selected &&
+      current_assignment.current_team_state.status ===
+        UNASSIGNED_PLAYER_TEAM_STATUS,
   );
   return [...selected_unassigned_players, ...selected_assigned_players];
 }

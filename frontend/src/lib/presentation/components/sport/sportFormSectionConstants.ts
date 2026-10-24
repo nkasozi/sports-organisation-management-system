@@ -31,3 +31,18 @@ export function is_penalty_based_overtime(overtime_type: string): boolean {
     overtime_type === SPORT_OVERTIME_TYPE.SHOOTOUT
   );
 }
+
+const UNLIMITED_SUBSTITUTION_LIMIT = -1;
+
+export const SPORT_SUBSTITUTION_LIMIT_TEXT = {
+  UNLIMITED_EXPLANATION: "-1 means unlimited",
+  CURRENTLY_UNLIMITED: "Currently unlimited (-1 means unlimited)",
+} as const;
+
+export function build_substitution_limit_hint(
+  limit_value: number | string,
+): string {
+  return Number(limit_value) === UNLIMITED_SUBSTITUTION_LIMIT
+    ? SPORT_SUBSTITUTION_LIMIT_TEXT.CURRENTLY_UNLIMITED
+    : SPORT_SUBSTITUTION_LIMIT_TEXT.UNLIMITED_EXPLANATION;
+}

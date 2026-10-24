@@ -5,6 +5,10 @@ import {
   LIST_ENTITY_ID_FIELD_NAME,
   LIST_FOREIGN_KEY_FIELD_TYPE,
 } from "./listConstants";
+import {
+  format_list_number,
+  should_group_list_number,
+} from "./listDisplayValueNumbers";
 import { is_boolean_value } from "./runtimeTypeGuards";
 
 function format_enum_style_string(value: string): string {
@@ -14,11 +18,10 @@ function format_enum_style_string(value: string): string {
     .join(" ");
 }
 
+const CODE_STYLE_VALUE_PATTERN = /^[a-z][a-z0-9]*(_[a-z0-9]+)*$/;
+
 function is_enum_style_string(value: string): boolean {
-  if (value.includes("_")) return true;
-  return (
-    value === value.toLowerCase() && !value.includes(" ") && value.length > 0
-  );
+  return CODE_STYLE_VALUE_PATTERN.test(value);
 }
 
 function find_label_in_options(
@@ -89,6 +92,8 @@ export function get_display_value_for_entity_field(
     return raw_value ? LIST_BOOLEAN_LABEL.TRUE : LIST_BOOLEAN_LABEL.FALSE;
   }
   if (raw_value instanceof Date) return raw_value.toLocaleDateString();
+  if (should_group_list_number(field_name, raw_value))
+    return format_list_number(Number(raw_value));
 
   const string_value = String(raw_value);
   if (is_entity_id_field) return string_value;

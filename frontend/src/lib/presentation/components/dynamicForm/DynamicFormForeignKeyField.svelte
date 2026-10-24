@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { FieldMetadata } from "$lib/core/entities/BaseEntity";
+    import { build_filtered_foreign_key_empty_message } from "$lib/presentation/logic/dynamicFormForeignKeyEmptyState";
     import {
         build_foreign_entity_cta_label,
         build_foreign_entity_route,
@@ -88,7 +89,7 @@
         class="mt-2 p-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100"
     >
         <div class="text-sm">
-            No recently completed {field.display_name.toLowerCase()} found.
+            {build_filtered_foreign_key_empty_message(field.display_name)}
         </div>
     </div>
 {/if}

@@ -17,8 +17,8 @@ import {
   presence_overrides,
   qualification_overrides,
 } from "./fakeDataEntityRecords";
+import { FAKE_DATA_LIST_ENTITY } from "./fakeDataRoleNames";
 import type { FakeDataScenario } from "./fakeDataScenario";
-import { FAKE_DATA_LIST_ENTITY } from "./fakeDataVocabulary";
 
 type OverrideBuilder = (scenario: FakeDataScenario) => FakeDataOverrides;
 

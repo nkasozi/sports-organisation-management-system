@@ -4,6 +4,13 @@
     import type { Organization } from "$lib/core/entities/Organization";
     import type { Team } from "$lib/core/entities/Team";
     import type { CalendarEvent } from "$lib/core/interfaces/ports/internal/usecases/ActivityUseCasesPort";
+    import {
+        type CalendarActivityPermissions,
+        can_user_create_calendar_activities,
+        resolve_calendar_page_subtitle,
+    } from "$lib/presentation/logic/calendarActivityPermissions";
+    import type { CalendarProfileState } from "$lib/presentation/logic/calendarPageData";
+    import { can_user_change_organizations } from "$lib/presentation/logic/calendarPageShellControllerHelpers";
 
     import CalendarPageContent from "./CalendarPageContent.svelte";
 
@@ -21,8 +28,9 @@
     export let filter_competition_id: string;
     export let filter_team_id: string;
     export let filter_loading: boolean;
-    export let can_user_change_organizations: boolean;
-    export let can_user_add_activities: boolean;
+    export let current_auth_profile_state: CalendarProfileState;
+    export let url_org_id: string;
+    export let calendar_permissions: CalendarActivityPermissions;
     export let on_organization_change: () => Promise<void>;
     export let on_open_create_modal: () => void;
     export let on_open_subscribe_modal: () => void;
@@ -35,6 +43,17 @@
         date_string: string,
         time_string: string,
     ) => void;
+
+    $: can_user_change_selected_organization = can_user_change_organizations(
+        current_auth_profile_state,
+        url_org_id,
+    );
+    $: can_user_add_activities = can_user_create_calendar_activities(
+        current_auth_profile_state,
+        calendar_permissions,
+    );
+    $: can_user_add_categories = calendar_permissions.can_create_category;
+    $: page_subtitle = resolve_calendar_page_subtitle(calendar_permissions);
 </script>
 
 <CalendarPageContent
@@ -52,8 +71,10 @@
     {categories}
     {calendar_events}
     {filter_loading}
-    {can_user_change_organizations}
+    can_user_change_organizations={can_user_change_selected_organization}
     {can_user_add_activities}
+    {can_user_add_categories}
+    {page_subtitle}
     {on_organization_change}
     {on_open_create_modal}
     {on_open_subscribe_modal}

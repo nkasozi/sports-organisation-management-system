@@ -5,12 +5,22 @@ import { create_score_award_resolver } from "$lib/core/entities/SportEventCatalo
 import type { Team } from "$lib/core/entities/Team";
 import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
+import { build_card_stat_categories } from "./competitionResultsCardStats";
 import {
   calculate_player_stats,
   derive_stats_available_teams,
-  filter_and_sort_card_players,
   filter_and_sort_scorers,
+  type PlayerStats,
 } from "./competitionResultsStats";
+
+const FOOTBALL_CARD_CATEGORIES = build_card_stat_categories({
+  card_types: [
+    { id: "yellow_card", name: "Yellow Card" },
+    { id: "red_card", name: "Red Card" },
+  ],
+  card_type_colors: [],
+  card_weights: new Map(),
+});
 
 function create_test_team(overrides: Partial<ScalarInput<Team>> = {}): Team {
   return {
@@ -121,6 +131,7 @@ describe("calculate_player_stats", () => {
         fixtures,
         team_map,
         create_score_award_resolver([]),
+        FOOTBALL_CARD_CATEGORIES,
       ),
     ).toEqual([
       {
@@ -128,46 +139,41 @@ describe("calculate_player_stats", () => {
         team_name: "Falcons",
         points: 2,
         assists: 0,
-        yellow_cards: 0,
-        red_cards: 0,
+        card_counts: {},
       },
       {
         player_name: "Jordan",
         team_name: "Wolves",
         points: 0,
         assists: 0,
-        yellow_cards: 1,
-        red_cards: 0,
+        card_counts: { yellow_card: 1 },
       },
     ]);
   });
 });
 
 describe("competition results stats filters", () => {
-  const player_stats = [
+  const player_stats: PlayerStats[] = [
     {
       player_name: "Alex",
       team_name: "Falcons",
       points: 4,
       assists: 0,
-      yellow_cards: 1,
-      red_cards: 0,
+      card_counts: { yellow_card: 1 },
     },
     {
       player_name: "Sam",
       team_name: "Wolves",
       points: 2,
       assists: 0,
-      yellow_cards: 0,
-      red_cards: 1,
+      card_counts: { red_card: 1 },
     },
     {
       player_name: "Jamie",
       team_name: "Falcons",
       points: 0,
       assists: 0,
-      yellow_cards: 3,
-      red_cards: 0,
+      card_counts: { yellow_card: 3 },
     },
   ];
 
@@ -182,19 +188,5 @@ describe("competition results stats filters", () => {
     expect(filter_and_sort_scorers(player_stats, "Falcons")).toEqual([
       player_stats[0],
     ]);
-  });
-
-  it("sorts card players by total cards", () => {
-    expect(filter_and_sort_card_players(player_stats, "all", "total")).toEqual([
-      player_stats[2],
-      player_stats[1],
-      player_stats[0],
-    ]);
-  });
-
-  it("sorts card players by red cards", () => {
-    expect(filter_and_sort_card_players(player_stats, "all", "red")[0]).toBe(
-      player_stats[1],
-    );
   });
 });

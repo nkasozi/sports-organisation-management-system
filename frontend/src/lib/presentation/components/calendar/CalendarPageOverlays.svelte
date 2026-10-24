@@ -24,6 +24,7 @@
     export let on_close_create_modal: () => void;
     export let on_save_activity: () => Promise<void>;
     export let on_delete_activity: () => Promise<void>;
+    export let can_delete_activity: boolean;
     export let on_close_event_details_modal: () => void;
     export let on_close_category_modal: () => void;
     export let on_create_category: (
@@ -42,6 +43,7 @@
     on_close={on_close_create_modal}
     on_save={on_save_activity}
     on_delete={on_delete_activity}
+    {can_delete_activity}
 />
 <CalendarEventDetailsModal
     {selected_event_details}

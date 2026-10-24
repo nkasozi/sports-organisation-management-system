@@ -30,7 +30,7 @@
             <thead class="bg-gray-50 dark:bg-gray-800">
                 <tr>
                     <th
-                        class="sticky left-0 z-10 bg-gray-50 dark:bg-gray-800 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-r border-gray-200 dark:border-gray-700 min-w-[160px]"
+                        class="sticky left-0 z-10 bg-gray-50 dark:bg-gray-800 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-r border-gray-200 dark:border-gray-700 min-w-[160px] md:min-w-[240px]"
                         >Team</th
                     >
                     <th

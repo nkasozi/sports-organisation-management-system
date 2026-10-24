@@ -22,7 +22,9 @@ describe("authGuardRoutes", () => {
       "/calendar",
       "/profile",
       "/team-profile",
+      "/help",
     ]);
+    expect(is_route_in_accessible_set("/help", new Set())).toBe(true);
     expect(is_route_in_accessible_set("/calendar/2025", new Set())).toBe(true);
     expect(is_route_in_accessible_set("/profile/ada-lovelace", new Set())).toBe(
       true,

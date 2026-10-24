@@ -2,11 +2,12 @@
     import type { Competition } from "$lib/core/entities/Competition";
     import type { Fixture } from "$lib/core/entities/Fixture";
     import type { Organization } from "$lib/core/entities/Organization";
-    import type { CompetitionResultsCompetitionFormatState } from "$lib/presentation/logic/competitionResultsPageContracts";
     import type {
         CardSortMode,
+        CardStatCategory,
         PlayerStats,
-    } from "$lib/presentation/logic/competitionResultsStats";
+    } from "$lib/presentation/logic/competitionResultsCardStats";
+    import type { CompetitionResultsCompetitionFormatState } from "$lib/presentation/logic/competitionResultsPageContracts";
     import type {
         CompetitionStageResultsSection,
         TeamStanding,
@@ -25,6 +26,8 @@
         type CompetitionResultsTab,
     } from "./competitionTabConstants";
 
+    type EntityLabelLookup = (entity_id: string) => string;
+    type TeamClickEvent = CustomEvent<{ team_id: string; team_name: string }>;
     export let organizations: Organization[];
     export let selected_organization_id: string;
     export let competitions: Competition[];
@@ -54,6 +57,7 @@
     export let downloading_fixture_id: string;
     export let stats_team_filter: string;
     export let stats_available_teams: string[];
+    export let stats_card_categories: CardStatCategory[];
     export let stats_card_sort: CardSortMode;
     export let stats_filtered_scorers: PlayerStats[];
     export let stats_filtered_card_players: PlayerStats[];
@@ -71,16 +75,12 @@
     export let get_fixture_stage_type: (stage_id: string) => string;
     export let get_team_name: (team_id: string) => string;
     export let get_team_name_extended: (team_id: string) => string;
-    export let get_competition_name_extended: (
-        competition_id: string,
-    ) => string;
+    export let get_competition_name_extended: EntityLabelLookup;
     export let get_team_logo_url: (team_id: string) => string;
     export let on_organization_change: () => Promise<void>;
     export let on_competition_change: () => void;
     export let on_copy_share_link: () => boolean;
-    export let on_team_click: (
-        event: CustomEvent<{ team_id: string; team_name: string }>,
-    ) => void;
+    export let on_team_click: (event: TeamClickEvent) => void;
     export let on_open_match_report: (fixture_id: string) => void;
     export let on_download_all_reports: () => Promise<boolean>;
     export let on_download_match_report: (
@@ -190,6 +190,7 @@
             <CompetitionResultsStatsSection
                 bind:stats_team_filter
                 {stats_available_teams}
+                {stats_card_categories}
                 bind:stats_card_sort
                 {stats_filtered_scorers}
                 {stats_filtered_card_players}

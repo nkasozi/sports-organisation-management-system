@@ -31,7 +31,7 @@ interface FakeDataGeneratorConfig {
   enable_fake_data_generation?: boolean;
 }
 
-type FakeDataGenerationResult =
+export type FakeDataGenerationResult =
   | { success: true; generated_data: Record<string, unknown> }
   | { success: false; error_message: string };
 

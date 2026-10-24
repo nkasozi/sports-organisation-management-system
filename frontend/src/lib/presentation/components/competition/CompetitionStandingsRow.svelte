@@ -54,7 +54,8 @@
                 size="sm"
             />
             <span
-                class="font-medium text-accent-900 dark:text-accent-100 hover:text-primary-600 dark:hover:text-primary-400 truncate max-w-[120px]"
+                class="font-medium text-accent-900 dark:text-accent-100 hover:text-primary-600 dark:hover:text-primary-400 truncate max-w-[120px] md:max-w-none md:overflow-visible md:whitespace-normal md:break-words"
+                title={standing.team_name}
             >
                 {standing.team_name}
             </span>

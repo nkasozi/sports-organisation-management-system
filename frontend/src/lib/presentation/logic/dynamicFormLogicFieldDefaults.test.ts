@@ -13,8 +13,11 @@ describe("dynamicFormLogic", () => {
       expect(get_default_value_for_field_type(field)).toBe("");
     });
 
-    it("returns 0 for number fields", () => {
-      const field = create_field_metadata({ field_type: "number" });
+    it("returns 0 for required number fields", () => {
+      const field = create_field_metadata({
+        field_type: "number",
+        is_required: true,
+      });
       expect(get_default_value_for_field_type(field)).toBe(0);
     });
 
@@ -29,7 +32,7 @@ describe("dynamicFormLogic", () => {
       expect(get_default_value_for_field_type(field)).toBe("");
     });
 
-    it("keeps 0 for an optional number whose rules allow zero", () => {
+    it("leaves an optional number blank even when its rules allow zero", () => {
       const field = create_field_metadata({
         field_type: "number",
         is_required: false,
@@ -37,7 +40,7 @@ describe("dynamicFormLogic", () => {
           { rule_type: "min_value", rule_value: 0, error_message: "x" },
         ],
       });
-      expect(get_default_value_for_field_type(field)).toBe(0);
+      expect(get_default_value_for_field_type(field)).toBe("");
     });
 
     it("returns false for boolean fields", () => {
@@ -62,6 +65,30 @@ describe("dynamicFormLogic", () => {
         enum_values: ["active", "inactive"],
       });
       expect(get_default_value_for_field_type(field)).toBe("active");
+    });
+
+    it("leaves a required enum with a long option list empty so the user chooses", () => {
+      const field = create_field_metadata({
+        field_type: "enum",
+        is_required: true,
+        enum_values: Array.from(
+          { length: 11 },
+          (_, index) => `option_${index}`,
+        ),
+      });
+      expect(get_default_value_for_field_type(field)).toBe("");
+    });
+
+    it("keeps the first value for a required enum with ten options", () => {
+      const field = create_field_metadata({
+        field_type: "enum",
+        is_required: true,
+        enum_values: Array.from(
+          { length: 10 },
+          (_, index) => `option_${index}`,
+        ),
+      });
+      expect(get_default_value_for_field_type(field)).toBe("option_0");
     });
 
     it("returns empty string for non-required enum fields", () => {

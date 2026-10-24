@@ -16,6 +16,8 @@
     export let filter_loading: boolean;
     export let can_user_change_organizations: boolean;
     export let can_user_add_activities: boolean;
+    export let can_user_add_categories: boolean;
+    export let page_subtitle: string;
     export let on_organization_change: () => Promise<void>;
     export let on_open_create_modal: () => void;
     export let on_open_subscribe_modal: () => void;
@@ -34,7 +36,7 @@
             Organization Calendar
         </h2>
         <p class="text-sm text-accent-600 dark:text-accent-400">
-            View and manage activities, competitions, and fixtures
+            {page_subtitle}
         </p>
     </div>
     <div
@@ -153,11 +155,13 @@
             >Filtering...
         </div>
     {/if}
-    <button
-        type="button"
-        class="ml-auto text-sm text-accent-600 dark:text-accent-400 hover:text-accent-900 dark:hover:text-accent-100"
-        on:click={on_open_category_modal}>+ New Category</button
-    >
+    {#if can_user_add_categories}
+        <button
+            type="button"
+            class="ml-auto text-sm text-accent-600 dark:text-accent-400 hover:text-accent-900 dark:hover:text-accent-100"
+            on:click={on_open_category_modal}>+ New Category</button
+        >
+    {/if}
 </div>
 
 <div class="flex flex-wrap gap-2 pb-2">

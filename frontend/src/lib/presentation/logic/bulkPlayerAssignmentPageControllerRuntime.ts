@@ -4,6 +4,12 @@ import {
   save_bulk_player_assignment_page,
 } from "./bulkPlayerAssignmentPageControllerActions";
 import type { PlayerAssignment } from "./bulkPlayerAssignmentPageState";
+import { is_player_assignment_selectable } from "./bulkPlayerAssignmentSelectability";
+
+const BULK_ASSIGNMENT_SELECTION_BLOCKED_MESSAGE =
+  "[BulkPlayerAssignment] Player already active on a team";
+const BULK_ASSIGNMENT_SELECTION_BLOCKED_EVENT =
+  "bulk_player_assignment_selection_blocked";
 
 type BulkPlayerAssignmentPageControllerRuntime = {
   deselect_all: () => void;
@@ -36,6 +42,13 @@ export function create_bulk_player_assignment_page_controller_runtime(
     initialize_page: (): Promise<void> =>
       initialize_bulk_player_assignment_page(command),
     toggle_player_selection: (assignment: PlayerAssignment): void => {
+      if (!is_player_assignment_selectable(assignment)) {
+        console.warn(BULK_ASSIGNMENT_SELECTION_BLOCKED_MESSAGE, {
+          event: BULK_ASSIGNMENT_SELECTION_BLOCKED_EVENT,
+          player_id: assignment.player?.id,
+        });
+        return;
+      }
       assignment.selected = !assignment.selected;
       command.set_all_player_assignments(list_all_page_assignments(command));
     },

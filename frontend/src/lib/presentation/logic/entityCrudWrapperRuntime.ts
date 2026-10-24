@@ -4,6 +4,7 @@ import {
   ENTITY_CRUD_WRAPPER_VIEW,
   type EntityCrudWrapperView,
 } from "./entityCrudWrapperConstants";
+import { normalize_entity_type } from "./entityCrudWrapperLogic";
 
 type EntityCrudWrapperRuntimeCommand = {
   after_save_redirect_url: string;
@@ -11,7 +12,6 @@ type EntityCrudWrapperRuntimeCommand = {
   entity_type: string;
   get_current_view: () => EntityCrudWrapperView;
   goto: (path: string) => Promise<unknown>;
-  normalized_entity_type: string;
   set_current_entity_for_editing: (entity: BaseEntity | undefined) => void;
   set_current_view: (view: EntityCrudWrapperView) => void;
   set_total_entity_count: (count: number) => void;
@@ -61,7 +61,8 @@ function handle_entity_crud_wrapper_create_requested(
     entity_type: command.entity_type,
   });
   const dedicated_route =
-    DEDICATED_CREATE_ROUTES.get(command.normalized_entity_type) ?? "";
+    DEDICATED_CREATE_ROUTES.get(normalize_entity_type(command.entity_type)) ??
+    "";
   if (dedicated_route) {
     void command.goto(dedicated_route);
     return;

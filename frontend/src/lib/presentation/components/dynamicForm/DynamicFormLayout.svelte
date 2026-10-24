@@ -63,7 +63,6 @@
     <DynamicFormTopBanners
         {permission_denied}
         {permission_denied_message}
-        {save_error_message}
         {info_message}
     />
     <form

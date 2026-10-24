@@ -7,14 +7,14 @@
     import type { Fixture } from "$lib/core/entities/Fixture";
     import type { Organization } from "$lib/core/entities/Organization";
     import type { Team } from "$lib/core/entities/Team";
+    import {
+        type CardSortMode,
+        TOTAL_CARD_SORT_MODE,
+    } from "$lib/presentation/logic/competitionResultsCardStats";
     import type {
         CompetitionResultsCompetitionFormatState,
         CompetitionResultsSelectedCompetitionState,
     } from "$lib/presentation/logic/competitionResultsPageContracts";
-    import {
-        CARD_SORT_MODE,
-        type CardSortMode,
-    } from "$lib/presentation/logic/competitionResultsStats";
     import { create_competition_results_workspace_controller_runtime } from "$lib/presentation/logic/competitionResultsWorkspaceControllerRuntime";
     import {
         competition_results_page_size_options,
@@ -62,7 +62,7 @@
         results_page = 1,
         results_per_page = 10,
         stats_team_filter: string = COMPETITION_STATS_ALL_TEAMS_FILTER,
-        stats_card_sort: CardSortMode = CARD_SORT_MODE.TOTAL,
+        stats_card_sort: CardSortMode = TOTAL_CARD_SORT_MODE,
         share_link_copied = false,
         downloading_fixture_id: string = "",
         downloading_all_reports = false,

@@ -124,6 +124,7 @@ describe("context-aware fake data", () => {
         Number(sport.max_players_per_fixture),
       );
       expect(text(sport.code)).toMatch(/^[A-Z]{2,4}$/);
+      expect(text(sport.icon_url)).toMatch(/^\p{Extended_Pictographic}/u);
     }
   });
 

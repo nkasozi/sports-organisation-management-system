@@ -1,6 +1,8 @@
 <script lang="ts">
     import type { PreFlightCheck } from "$lib/core/services/fixtureStartChecks";
     import { CHECK_STATUS } from "$lib/core/services/FixtureStartChecksConstants";
+    import { OptionStatus } from "$lib/core/types/Option";
+    import { get_live_game_check_fix_link } from "$lib/presentation/logic/liveGamesCheckFixLinks";
     import {
         get_live_game_check_class,
         get_live_game_check_container_class,
@@ -10,6 +12,7 @@
     import { LIVE_GAMES_PREFLIGHT_TEXT } from "./liveGamesConstants";
 
     export let checks: PreFlightCheck[] = [];
+    export let fixture_id: string = "";
 </script>
 
 {#if checks.length > 0}
@@ -53,6 +56,15 @@
                                     💡 {check.fix_suggestion}
                                 </p>
                             {/if}
+                            {#each [get_live_game_check_fix_link(check, fixture_id)] as fix_link}
+                                {#if fix_link.status === OptionStatus.SOME}
+                                    <a
+                                        href={fix_link.value.href}
+                                        class="inline-flex items-center mt-2 px-3 py-1.5 text-xs font-medium rounded-[0.175rem] bg-accent-600 text-white hover:bg-accent-700 transition-colors"
+                                        >{fix_link.value.label}</a
+                                    >
+                                {/if}
+                            {/each}
                         </div>
                     </div>
                 {/each}

@@ -58,6 +58,35 @@ describe("build_sport_official_roles", () => {
     });
     expect(roles[1].is_head_official).toBe(false);
   });
+
+  it("keeps table officials such as the scorer and timekeeper off the field", () => {
+    const basketball = {
+      ...NETBALL,
+      official_requirements: [
+        { ...NETBALL.official_requirements[0], role_id: "referee" },
+        { ...NETBALL.official_requirements[1], role_id: "scorer" },
+        {
+          ...NETBALL.official_requirements[1],
+          role_id: "timekeeper",
+          role_name: "Timekeeper",
+        },
+        {
+          ...NETBALL.official_requirements[1],
+          role_id: "Shot Clock Operator",
+          role_name: "Shot Clock Operator",
+        },
+      ],
+    } as unknown as Sport;
+
+    const roles = build_sport_official_roles(basketball, "org_1");
+
+    expect(roles.map((role) => role.is_on_field)).toEqual([
+      true,
+      false,
+      false,
+      false,
+    ]);
+  });
 });
 
 describe("build_sport_event_types", () => {

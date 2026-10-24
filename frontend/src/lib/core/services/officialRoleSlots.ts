@@ -36,6 +36,17 @@ function normalize_role_key(value: string): string {
     .replace(/[\s-]+/g, "_");
 }
 
+export function role_matches_requirement(
+  requirement: Pick<OfficialRequirementSource, "role_id" | "role_name">,
+  role: Pick<OfficialRoleSource, "name" | "code">,
+): boolean {
+  return (
+    normalize_role_key(role.name) ===
+      normalize_role_key(requirement.role_name) ||
+    normalize_role_key(role.code) === normalize_role_key(requirement.role_id)
+  );
+}
+
 function find_matching_role<T extends OfficialRoleSource>(
   requirement: OfficialRequirementSource,
   roles: readonly T[],

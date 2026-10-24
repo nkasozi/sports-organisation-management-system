@@ -17,6 +17,7 @@
         get_team_use_cases,
         get_venue_use_cases,
     } from "$lib/infrastructure/registry/useCaseFactories";
+    import { start_confirmed_live_game_if_requested } from "$lib/presentation/logic/liveGameDetailConfirmedStart";
     import { type LiveGameDetailDataDependencies } from "$lib/presentation/logic/liveGameDetailData";
     import { type LiveGameDetailPageActionDependencies } from "$lib/presentation/logic/liveGameDetailPageActions";
     import {
@@ -116,7 +117,16 @@
     function navigate_back(): void {
         void goto(LIVE_GAME_DETAIL_TEXT.LIVE_GAMES_PATH);
     }
-    onMount(runtime.initialize);
+    onMount(async () => {
+        await runtime.initialize();
+        await start_confirmed_live_game_if_requested({
+            search_parameters: $page.url.searchParams,
+            get_page_state: () => page_state,
+            start_game: runtime.start_game,
+            clear_request: () =>
+                goto($page.url.pathname, { replaceState: true }),
+        });
+    });
 
     onDestroy(runtime.cleanup);
 </script>

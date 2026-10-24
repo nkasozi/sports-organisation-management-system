@@ -24,6 +24,7 @@
         assignments={Array.isArray(value) ? value : []}
         disabled={is_read_only}
         organization_id={form_data["organization_id"] || ""}
+        fixture_id={form_data["fixture_id"] || ""}
         errors={validation_errors}
         on:change={(event) =>
             callbacks.handle_official_assignments_change(

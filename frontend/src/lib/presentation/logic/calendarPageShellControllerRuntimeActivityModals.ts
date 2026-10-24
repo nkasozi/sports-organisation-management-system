@@ -1,3 +1,5 @@
+import type { CalendarEvent } from "$lib/core/interfaces/ports/internal/usecases/ActivityUseCasesPort";
+import { CALENDAR_PERMISSION_DENIED_MESSAGES } from "$lib/presentation/logic/calendarActivityPermissions";
 import {
   create_activity_form_values_for_date,
   create_activity_form_values_for_date_time,
@@ -43,11 +45,28 @@ function can_open_create_activity_modal(
   return false;
 }
 
+export function is_calendar_action_permitted(
+  context: CalendarShellActivityContext,
+  is_permitted: boolean,
+  denied_message: string,
+): boolean {
+  if (is_permitted) return true;
+  context.show_toast(
+    denied_message,
+    CREATE_ACTIVITY_PERMISSION_DENIED_TOAST_TYPE,
+  );
+  return false;
+}
+
 export function can_save_current_calendar_activity(
   context: CalendarShellActivityContext,
 ): boolean {
   if (context.get_editing_activity()) {
-    return true;
+    return is_calendar_action_permitted(
+      context,
+      context.get_calendar_activity_permissions().can_edit_activity,
+      CALENDAR_PERMISSION_DENIED_MESSAGES.EDIT_ACTIVITY,
+    );
   }
 
   if (context.get_can_user_add_activities()) {
@@ -105,6 +124,18 @@ export function handle_calendar_shell_event_click(
     calendar_events: context.get_calendar_events(),
     event_id,
   });
+  const can_edit_activity =
+    context.get_calendar_activity_permissions().can_edit_activity;
+  if (event_selection.activity_form_values && !can_edit_activity) {
+    context.set_selected_event_details(
+      context
+        .get_calendar_events()
+        .find(
+          (calendar_event: CalendarEvent) => calendar_event.id === event_id,
+        ),
+    );
+    return;
+  }
   if (event_selection.activity_form_values) {
     context.set_editing_activity(event_selection.editing_activity);
     context.set_activity_form_values(event_selection.activity_form_values);

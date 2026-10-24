@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { derive_competition_results_workspace_state } from "./competitionResultsWorkspaceState";
 
 const competition_results_workspace_state_mocks = vi.hoisted(() => ({
+  build_card_stat_categories: vi.fn(),
   build_competition_stage_results_sections: vi.fn(),
   calculate_player_stats: vi.fn(),
   calculate_team_standings: vi.fn(),
@@ -26,10 +27,15 @@ vi.mock("$lib/presentation/logic/competitionResultsStats", () => ({
     competition_results_workspace_state_mocks.calculate_player_stats,
   derive_stats_available_teams:
     competition_results_workspace_state_mocks.derive_stats_available_teams,
-  filter_and_sort_card_players:
-    competition_results_workspace_state_mocks.filter_and_sort_card_players,
   filter_and_sort_scorers:
     competition_results_workspace_state_mocks.filter_and_sort_scorers,
+}));
+
+vi.mock("$lib/presentation/logic/competitionResultsCardStats", () => ({
+  build_card_stat_categories:
+    competition_results_workspace_state_mocks.build_card_stat_categories,
+  filter_and_sort_card_players:
+    competition_results_workspace_state_mocks.filter_and_sort_card_players,
 }));
 
 vi.mock("$lib/presentation/logic/competitionResultsTeamFixturesData", () => ({
@@ -70,6 +76,9 @@ describe("competitionResultsWorkspaceState", () => {
     );
     competition_results_workspace_state_mocks.filter_and_sort_card_players.mockReturnValue(
       [{ player_id: "player-2" }],
+    );
+    competition_results_workspace_state_mocks.build_card_stat_categories.mockReturnValue(
+      [{ card_type_id: "technical_foul", label: "Technical Foul" }],
     );
   });
 
@@ -141,6 +150,9 @@ describe("competitionResultsWorkspaceState", () => {
       stats_available_teams: ["Lions"],
       stats_filtered_scorers: [{ player_id: "player-1" }],
       stats_filtered_card_players: [{ player_id: "player-2" }],
+      stats_card_categories: [
+        { card_type_id: "technical_foul", label: "Technical Foul" },
+      ],
       displayed_team_fixtures: [scheduled_fixture, live_fixture],
       sorted_team_fixtures: sorted_team_fixtures,
       team_fixtures_total_pages: 2,

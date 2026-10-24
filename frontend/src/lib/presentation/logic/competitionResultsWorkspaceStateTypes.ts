@@ -2,6 +2,11 @@ import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Team } from "$lib/core/entities/Team";
 import type {
+  CardSortMode,
+  CardStatCategory,
+  filter_and_sort_card_players,
+} from "$lib/presentation/logic/competitionResultsCardStats";
+import type {
   CompetitionResultsCompetitionFormatState,
   CompetitionResultsSelectedCompetitionState,
 } from "$lib/presentation/logic/competitionResultsPageContracts";
@@ -9,11 +14,7 @@ import type {
   derive_effective_points_config,
   derive_effective_tie_breakers,
 } from "$lib/presentation/logic/competitionResultsPageData";
-import type {
-  CardSortMode,
-  filter_and_sort_card_players,
-  filter_and_sort_scorers,
-} from "$lib/presentation/logic/competitionResultsStats";
+import type { filter_and_sort_scorers } from "$lib/presentation/logic/competitionResultsStats";
 import type {
   build_competition_stage_results_sections,
   calculate_team_standings,
@@ -57,6 +58,7 @@ export interface CompetitionResultsWorkspaceStateResult {
   paginated_upcoming: Fixture[];
   results_total_pages: number;
   paginated_completed: Fixture[];
+  stats_card_categories: CardStatCategory[];
   stats_available_teams: string[];
   stats_filtered_scorers: ReturnType<typeof filter_and_sort_scorers>;
   stats_filtered_card_players: ReturnType<typeof filter_and_sort_card_players>;
@@ -88,6 +90,7 @@ export type FixturesSection = Pick<
 
 export type StatsSection = Pick<
   CompetitionResultsWorkspaceStateResult,
+  | "stats_card_categories"
   | "stats_available_teams"
   | "stats_filtered_scorers"
   | "stats_filtered_card_players"

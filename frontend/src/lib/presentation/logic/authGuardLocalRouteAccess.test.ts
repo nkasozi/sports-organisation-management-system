@@ -16,6 +16,21 @@ describe("is_route_allowed_for_role_locally", () => {
     );
   });
 
+  it("allows the help center for every role including the public viewer", () => {
+    const all_roles = [
+      "super_admin",
+      "org_admin",
+      "officials_manager",
+      "team_manager",
+      "official",
+      "player",
+      "public_viewer",
+    ] as const;
+    for (const role of all_roles) {
+      expect(is_route_allowed_for_role_locally("/help", role)).toBe(true);
+    }
+  });
+
   it("allows public routes for an anonymous public viewer", () => {
     expect(
       is_route_allowed_for_role_locally("/calendar", "public_viewer"),

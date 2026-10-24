@@ -7,8 +7,10 @@ import {
 } from "$lib/core/types/Option";
 
 import {
+  FAKE_DATA_FEMALE_FIRST_NAMES,
   FAKE_DATA_FIRST_NAMES,
   FAKE_DATA_LAST_NAMES,
+  FAKE_DATA_MALE_FIRST_NAMES,
 } from "./fakeDataPeopleNames";
 import {
   FAKE_DATA_CITIES,
@@ -34,15 +36,33 @@ const PHONE_GROUP_DIGITS = 3;
 
 export interface FakeDataHints {
   sport_name: Option<string>;
+  gender_name: Option<string>;
 }
 
 export const NO_FAKE_DATA_HINTS: FakeDataHints = {
   sport_name: create_none_option(),
+  gender_name: create_none_option(),
 };
+
+const GENDER_FIRST_NAMES: Readonly<Record<string, readonly string[]>> = {
+  female: FAKE_DATA_FEMALE_FIRST_NAMES,
+  male: FAKE_DATA_MALE_FIRST_NAMES,
+};
+
+function first_names_for_gender(
+  gender_name: Option<string>,
+): readonly string[] {
+  if (gender_name.status !== OptionStatus.SOME) return FAKE_DATA_FIRST_NAMES;
+  return (
+    GENDER_FIRST_NAMES[gender_name.value.trim().toLowerCase()] ??
+    FAKE_DATA_FIRST_NAMES
+  );
+}
 
 const HINTED_SPORT_PLAYERS = 11;
 const HINTED_SPORT_MINUTES = 60;
 const HINTED_SPORT_CODE_LENGTH = 2;
+const HINTED_SPORT_ICON = "🏆";
 
 function resolve_scenario_sport(hints: FakeDataHints): FakeDataSport {
   if (hints.sport_name.status !== OptionStatus.SOME)
@@ -55,6 +75,7 @@ function resolve_scenario_sport(hints: FakeDataHints): FakeDataSport {
     known_sport ?? {
       name: sport_name,
       code: to_code(sport_name, HINTED_SPORT_CODE_LENGTH),
+      icon: HINTED_SPORT_ICON,
       players_on_field: HINTED_SPORT_PLAYERS,
       game_minutes: HINTED_SPORT_MINUTES,
     }
@@ -68,7 +89,9 @@ export function create_fake_data_scenario(
     city: faker.helpers.arrayElement(FAKE_DATA_CITIES),
     sport: resolve_scenario_sport(hints),
     mascot: faker.helpers.arrayElement(FAKE_DATA_TEAM_MASCOTS),
-    first_name: faker.helpers.arrayElement(FAKE_DATA_FIRST_NAMES),
+    first_name: faker.helpers.arrayElement(
+      first_names_for_gender(hints.gender_name),
+    ),
     last_name: faker.helpers.arrayElement(FAKE_DATA_LAST_NAMES),
     today: new Date(),
   };
