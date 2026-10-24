@@ -144,15 +144,17 @@ export function derive_live_game_detail_clock_state(
   page_state: LiveGameDetailPageState,
 ): LiveGameDetailClockState {
   const context = build_period_context(page_state);
-  const is_in_progress =
-    derive_optional_fixture_match_phase(page_state.fixture) ===
-    LIVE_MATCH_PHASE.IN_PLAY;
-  const remaining_seconds_in_period = Math.max(
-    0,
-    compute_current_period_duration(context) +
-      page_state.extra_time_added_seconds -
-      compute_period_elapsed_seconds(context, page_state),
-  );
+  const match_phase = derive_optional_fixture_match_phase(page_state.fixture);
+  const is_in_progress = match_phase === LIVE_MATCH_PHASE.IN_PLAY;
+  const remaining_seconds_in_period =
+    match_phase === LIVE_MATCH_PHASE.AWAITING_FULL_TIME
+      ? 0
+      : Math.max(
+          0,
+          compute_current_period_duration(context) +
+            page_state.extra_time_added_seconds -
+            compute_period_elapsed_seconds(context, page_state),
+        );
   return {
     ...context,
     current_period_label: build_current_period_label(context, page_state),

@@ -72,7 +72,7 @@ export async function has_session_been_synced(): Promise<boolean> {
   );
 }
 
-async function mark_session_synced(): AsyncResult<boolean> {
+export async function mark_session_synced(): AsyncResult<boolean> {
   try {
     await write_session_sync_marker(
       build_session_sync_marker_for_identity(
