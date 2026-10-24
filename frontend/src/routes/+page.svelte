@@ -2,10 +2,6 @@
     import { onMount, tick } from "svelte";
 
     import { goto } from "$app/navigation";
-    import {
-        initialize_app_data,
-        reset_initialization,
-    } from "$lib/adapters/initialization/appInitializer";
     import { reset_all_data } from "$lib/adapters/initialization/dataResetService";
     import {
         ANY_VALUE,
@@ -26,6 +22,10 @@
     import Toast from "$lib/presentation/components/ui/Toast.svelte";
     import { TOAST_TYPE } from "$lib/presentation/components/ui/toastTypes";
     import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
+    import {
+        finish_dashboard_demo_reset,
+        read_demo_profile_id,
+    } from "$lib/presentation/logic/dashboardDemoResetProfile";
     import type { DashboardDependencies } from "$lib/presentation/logic/dashboardPageLogic";
     import { load_dashboard_data } from "$lib/presentation/logic/dashboardPageLogic";
     import { build_dashboard_filters } from "$lib/presentation/logic/dashboardStatsLogic";
@@ -33,7 +33,6 @@
     import { access_denial_store } from "$lib/presentation/stores/accessDenial";
     import { auth_store } from "$lib/presentation/stores/auth";
     import { branding_store } from "$lib/presentation/stores/branding";
-    import { first_time_setup_store } from "$lib/presentation/stores/firstTimeSetup";
 
     import {
         begin_dashboard_load,
@@ -101,6 +100,7 @@
 
     async function handle_reset_data(): Promise<boolean> {
         if (is_resetting) return false;
+        const previous = read_demo_profile_id($auth_store);
         reset_status_message = DASHBOARD_ROUTE_MESSAGES.RESET_STARTED;
         reset_progress = 0;
         is_resetting = true;
@@ -116,14 +116,9 @@
             is_reset_failure_visible = true;
             return false;
         }
-        first_time_setup_store.reset();
-        reset_initialization();
-        await initialize_app_data({
-            current_path: window.location.pathname,
-            session_already_synced: false,
-        });
-        await refresh_dashboard_data();
+        await finish_dashboard_demo_reset(previous, window.location.pathname);
         is_resetting = false;
+        void refresh_dashboard_data();
         return true;
     }
 
