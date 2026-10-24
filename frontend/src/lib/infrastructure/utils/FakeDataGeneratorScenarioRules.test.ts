@@ -10,7 +10,11 @@ import {
   FAKE_DATA_FIRST_NAMES,
   FAKE_DATA_MALE_FIRST_NAMES,
 } from "./fakeDataPeopleNames";
-import { type FakeDataHints, NO_FAKE_DATA_HINTS } from "./fakeDataScenario";
+import {
+  type FakeDataHints,
+  NO_FAKE_DATA_HINTS,
+  to_iso_date,
+} from "./fakeDataScenario";
 
 const REPEAT_COUNT = 40;
 const DAY_MILLISECONDS = 24 * 60 * 60 * 1000;
@@ -47,7 +51,7 @@ function days_between(from_iso: unknown, to_iso: unknown): number {
 }
 
 function today_iso(): string {
-  return new Date().toISOString().slice(0, 10);
+  return to_iso_date(new Date());
 }
 
 const CAPACITY_RANGES: readonly [RegExp, number, number][] = [

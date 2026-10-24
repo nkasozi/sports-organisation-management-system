@@ -1,5 +1,6 @@
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import { OptionStatus } from "../../core/types/Option";
+import { to_iso_date } from "../../infrastructure/utils/fakeDataScenario";
 import {
   find_selected_option_entity,
   type ForeignKeyCandidateState,
@@ -57,7 +58,7 @@ function pick_date_in_competition(
     end_day < start_day
   )
     return EMPTY_TEXT;
-  const today_day = to_day_number(today.toISOString());
+  const today_day = to_day_number(to_iso_date(today));
   const is_running = today_day >= start_day && today_day <= end_day;
   const first_day = is_running ? today_day : start_day;
   const span = end_day - first_day;
