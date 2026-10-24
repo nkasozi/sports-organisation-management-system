@@ -98,7 +98,14 @@ export function create_fake_data_scenario(
 }
 
 export function to_iso_date(date: Date): string {
-  return date.toISOString().slice(0, ISO_DATE_LENGTH);
+  const local_midnight_as_utc = Date.UTC(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+  );
+  return new Date(local_midnight_as_utc)
+    .toISOString()
+    .slice(0, ISO_DATE_LENGTH);
 }
 
 function shift_days(date: Date, days: number): Date {
