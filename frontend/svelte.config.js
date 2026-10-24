@@ -44,6 +44,10 @@ const config = {
     prerender: {
       handleUnseenRoutes: "warn",
     },
+
+    version: {
+      pollInterval: 120000,
+    },
   },
 };
 

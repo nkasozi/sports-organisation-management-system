@@ -9,6 +9,8 @@ export interface ServiceWorkerFetchEvent extends ServiceWorkerExtendableEvent {
 
 export interface ServiceWorkerScope {
   location: { origin: string };
+  clients: { claim(): Promise<void> };
+  skipWaiting(): Promise<void>;
   addEventListener(
     type: "install" | "activate",
     listener: (event: ServiceWorkerExtendableEvent) => void,
