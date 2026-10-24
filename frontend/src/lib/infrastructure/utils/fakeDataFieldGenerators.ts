@@ -1,5 +1,8 @@
 import { faker } from "@faker-js/faker";
 
+import { uganda_phone_number } from "./fakeDataScenario";
+import { FAKE_DATA_NOTES } from "./fakeDataVocabulary";
+
 const SPORT_OPTIONS = [
   "Football",
   "Basketball",
@@ -22,7 +25,7 @@ export function generate_fake_string_value(
 ): string {
   if (field_name.includes("email")) return faker.internet.email();
   if (field_name.includes("phone") || field_name.includes("contact"))
-    return faker.phone.number();
+    return uganda_phone_number();
   if (field_name.includes("first_name") || field_name.includes("firstname"))
     return faker.person.firstName();
   if (field_name.includes("last_name") || field_name.includes("lastname"))
@@ -37,7 +40,9 @@ export function generate_fake_string_value(
   if (field_name.includes("website") || field_name.includes("url"))
     return faker.internet.url();
   if (field_name.includes("description") || field_name.includes("desc"))
-    return faker.lorem.sentences(2);
+    return `Sample ${display_name.toLowerCase()} added for testing.`;
+  if (field_name.includes("note") || field_name.includes("summary"))
+    return faker.helpers.arrayElement(FAKE_DATA_NOTES);
   if (field_name.includes("title")) return faker.lorem.words(3);
   if (field_name.includes("position")) return faker.person.jobTitle();
   if (field_name.includes("venue") || field_name.includes("location"))
@@ -49,7 +54,7 @@ export function generate_fake_string_value(
   if (field_name.includes("specialization"))
     return faker.helpers.arrayElement(SPECIALIZATION_OPTIONS);
   if (field_name.includes("emergency"))
-    return faker.person.fullName() + " - " + faker.phone.number();
+    return faker.person.fullName() + " - " + uganda_phone_number();
   return faker.lorem.words(2);
 }
 

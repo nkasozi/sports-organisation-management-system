@@ -10,6 +10,7 @@ import {
   handle_competition_create_team_toggle,
 } from "$lib/presentation/logic/competitionCreatePageControllerHandlers";
 import { initialize_competition_create_controller } from "$lib/presentation/logic/competitionCreatePageControllerInitialization";
+import { handle_competition_create_fill_fake_data } from "$lib/presentation/logic/competitionCreatePageFakeDataRuntime";
 
 export function create_competition_create_page_controller_runtime(
   command: CompetitionCreatePageControllerCommand,
@@ -17,6 +18,8 @@ export function create_competition_create_page_controller_runtime(
   return {
     handle_auto_squad_submission_toggle: (enabled: boolean): void =>
       handle_competition_create_auto_squad_submission_toggle(command, enabled),
+    handle_fill_fake_data: (): Promise<void> =>
+      handle_competition_create_fill_fake_data(command),
     handle_format_change: (event: CustomEvent<{ value: string }>): void =>
       handle_competition_create_format_change(command, event),
     handle_organization_change: (

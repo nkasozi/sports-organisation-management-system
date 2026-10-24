@@ -118,6 +118,7 @@
         get_current_raw_token_state: () =>
             build_competition_create_raw_token_state(),
         get_form_data: () => form_data,
+        get_selected_sport_state: () => selected_sport_state,
         get_selected_format_state: () => selected_format_state,
         get_selected_team_ids: () => selected_team_ids,
         get_is_team_count_valid: () => is_team_count_valid,
@@ -179,6 +180,7 @@
     {toast_type}
     bind:toast_visible
     on_cancel={() => void goto(COMPETITION_ROUTES.LIST)}
+    on_fill_fake_data={() => void runtime.handle_fill_fake_data()}
     on_organization_change={runtime.handle_organization_change}
     on_format_change={runtime.handle_format_change}
     on_toggle_team={runtime.handle_team_toggle}

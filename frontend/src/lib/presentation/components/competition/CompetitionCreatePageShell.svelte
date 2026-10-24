@@ -30,6 +30,7 @@
     export let toast_type: ToastType = "info";
     export let toast_visible = false;
     export let on_cancel: () => void = () => {};
+    export let on_fill_fake_data: () => void = () => {};
     export let on_format_change: (
         event: CustomEvent<{ value: string }>,
     ) => void = () => {};
@@ -68,6 +69,7 @@
         {is_team_count_valid}
         {is_saving}
         {on_cancel}
+        {on_fill_fake_data}
         {on_organization_change}
         {on_format_change}
         {on_toggle_team}
