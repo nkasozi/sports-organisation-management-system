@@ -32,3 +32,7 @@ export const FAKE_DATA_LOG_EVENT = {
 } as const;
 
 export const FAKE_DATA_DEFAULT_LOCALE = "en";
+
+export const FAKE_DATA_STATUS_FIELD_NAME = "status";
+
+export const FAKE_DATA_ACTIVE_STATUS = "active";

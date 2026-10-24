@@ -14,6 +14,7 @@ export interface CompetitionCreatePageControllerCommand {
   get_current_auth_profile_state: () => CompetitionCreateProfileState;
   get_current_raw_token_state: () => CompetitionCreateRawTokenState;
   get_form_data: () => CreateCompetitionInput;
+  get_selected_sport_state: () => CompetitionCreateSelectedSportState;
   get_selected_format_state: () => CompetitionCreateSelectedFormatState;
   get_selected_team_ids: () => Set<string>;
   get_is_team_count_valid: () => boolean;
@@ -43,6 +44,7 @@ export interface CompetitionCreatePageControllerCommand {
 
 export interface CompetitionCreatePageControllerRuntime {
   handle_auto_squad_submission_toggle: (enabled: boolean) => void;
+  handle_fill_fake_data: () => Promise<void>;
   handle_format_change: (event: CustomEvent<{ value: string }>) => void;
   handle_organization_change: (
     event: CustomEvent<{ value: string }>,

@@ -32,6 +32,7 @@
     export let is_team_count_valid = true;
     export let is_saving = false;
     export let on_cancel: () => void = () => {};
+    export let on_fill_fake_data: () => void = () => {};
     export let on_organization_change: (
         event: CustomEvent<{ value: string }>,
     ) => Promise<void> = async () => {};
@@ -84,7 +85,12 @@
                     bind:rule_overrides={form_data.rule_overrides}
                 />
             {/if}
-            <CompetitionCreateActions {is_saving} {on_cancel} />
+            <CompetitionCreateActions
+                {is_saving}
+                {on_cancel}
+                show_fake_data_button={true}
+                {on_fill_fake_data}
+            />
         </form>
     </div>
 </div>
