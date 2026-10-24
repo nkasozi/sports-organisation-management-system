@@ -153,14 +153,16 @@ function respond_to_fetch(event: ServiceWorkerFetchEvent): boolean {
 worker_scope.addEventListener(
   "install",
   (event: ServiceWorkerExtendableEvent) => {
-    event.waitUntil(precache_build());
+    event.waitUntil(precache_build().then(() => worker_scope.skipWaiting()));
   },
 );
 
 worker_scope.addEventListener(
   "activate",
   (event: ServiceWorkerExtendableEvent) => {
-    event.waitUntil(remove_stale_caches());
+    event.waitUntil(
+      remove_stale_caches().then(() => worker_scope.clients.claim()),
+    );
   },
 );
 
