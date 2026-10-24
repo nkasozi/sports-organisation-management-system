@@ -2,6 +2,7 @@ import type { Fixture } from "$lib/core/entities/Fixture";
 import type { FixtureStatusValue } from "$lib/core/entities/StatusConstants";
 import type { CheckStatus } from "$lib/core/services/fixtureStartChecks";
 
+import { format_fixture_date } from "./dashboardPageDisplayLogic";
 import {
   LIVE_GAME_CHECK_CLASS_BY_STATUS,
   LIVE_GAME_CHECK_CONTAINER_CLASS_BY_STATUS,
@@ -10,8 +11,8 @@ import {
   LIVE_GAME_STATUS_BADGE_CLASS_BY_STATUS,
 } from "./liveGamesViewConstants";
 
-export function format_live_game_date_time(date_time: string): string {
-  return new Date(date_time).toLocaleString();
+export function format_live_game_kickoff(fixture: Fixture): string {
+  return format_fixture_date(fixture.scheduled_date, fixture.scheduled_time);
 }
 
 export function get_live_game_status_badge_class(

@@ -107,16 +107,29 @@ describe("bulkPlayerAssignmentPageControllerRuntime", () => {
     expect(state.unassigned_players[0].selected).toBe(true);
 
     runtime.select_all_unassigned();
-    expect(state.all_player_assignments[0]).toEqual({
+    expect(state.all_player_assignments[0]).toMatchObject({
       id: "assignment-1",
       selected: true,
     });
 
     runtime.deselect_all();
     expect(state.all_player_assignments).toEqual([
-      { id: "assignment-1", selected: false },
-      { id: "assignment-2", selected: false },
+      expect.objectContaining({ id: "assignment-1", selected: false }),
+      expect.objectContaining({ id: "assignment-2", selected: false }),
     ]);
+  });
+
+  it("does not select a player who is already active on another team", () => {
+    const { command, state } = create_bulk_assignment_command();
+    const runtime = create_bulk_player_assignment_page_controller_runtime(
+      command as never,
+    );
+
+    runtime.toggle_player_selection(
+      state.assigned_players_on_other_teams[0] as never,
+    );
+
+    expect(state.assigned_players_on_other_teams[0].selected).toBe(false);
   });
 
   it("shows success and failure save summaries based on the save result", async () => {

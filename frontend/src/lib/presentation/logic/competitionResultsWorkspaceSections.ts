@@ -3,13 +3,16 @@ import type { Fixture } from "$lib/core/entities/Fixture";
 import { create_score_award_resolver } from "$lib/core/entities/SportEventCatalog";
 import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
 import {
+  build_card_stat_categories,
+  filter_and_sort_card_players,
+} from "$lib/presentation/logic/competitionResultsCardStats";
+import {
   derive_effective_points_config,
   derive_effective_tie_breakers,
 } from "$lib/presentation/logic/competitionResultsPageData";
 import {
   calculate_player_stats,
   derive_stats_available_teams,
-  filter_and_sort_card_players,
   filter_and_sort_scorers,
 } from "$lib/presentation/logic/competitionResultsStats";
 import { sort_team_fixtures } from "$lib/presentation/logic/competitionResultsTeamFixturesData";
@@ -127,12 +130,19 @@ export function derive_competition_results_fixtures_section(
 export function derive_competition_results_stats_section(
   command: CompetitionResultsWorkspaceStateCommand,
 ): StatsSection {
+  const stats_card_categories = build_card_stat_categories({
+    card_types: command.sport_rules.event_source.card_types,
+    card_type_colors: command.sport_rules.card_types,
+    card_weights: command.sport_rules.fair_play_card_weights,
+  });
   const player_stats = calculate_player_stats(
     command.fixtures,
     command.team_map,
     create_score_award_resolver(command.sport_rules.event_source.scoring_rules),
+    stats_card_categories,
   );
   return {
+    stats_card_categories,
     stats_available_teams: derive_stats_available_teams(player_stats),
     stats_filtered_scorers: filter_and_sort_scorers(
       player_stats,
@@ -142,6 +152,7 @@ export function derive_competition_results_stats_section(
       player_stats,
       command.stats_team_filter,
       command.stats_card_sort,
+      stats_card_categories,
     ),
   };
 }

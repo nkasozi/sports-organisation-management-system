@@ -38,6 +38,7 @@ describe("calculate_player_stats for points-based sports", () => {
         { event_type: "goal", points_awarded: 1 },
         { event_type: "super_shot", points_awarded: 2 },
       ]),
+      [],
     );
 
     expect(player).toMatchObject({
@@ -63,6 +64,7 @@ describe("calculate_player_stats for points-based sports", () => {
       fixtures as never,
       new Map([["team_1", { name: "Falcons" }]]) as never,
       create_score_award_resolver([{ event_type: "goal", points_awarded: 3 }]),
+      [],
     );
 
     expect(player.points).toBe(1);

@@ -2,6 +2,8 @@
     import type { CreateSportInput } from "$lib/core/entities/Sport";
     import FormField from "$lib/presentation/components/ui/FormField.svelte";
 
+    import { build_substitution_limit_hint } from "./sportFormSectionConstants";
+
     export let form_data: CreateSportInput;
 </script>
 
@@ -15,6 +17,9 @@
             name="max_substitutions_per_game"
             type="number"
             bind:value={form_data.substitution_rules.max_substitutions_per_game}
+            hint={build_substitution_limit_hint(
+                form_data.substitution_rules.max_substitutions_per_game,
+            )}
         />
         <FormField
             label="Max Substitution Windows"
@@ -22,6 +27,9 @@
             type="number"
             bind:value={form_data.substitution_rules.max_substitution_windows}
             placeholder="Use -1 for unlimited windows"
+            hint={build_substitution_limit_hint(
+                form_data.substitution_rules.max_substitution_windows,
+            )}
         />
         <label class="flex items-center gap-3">
             <input

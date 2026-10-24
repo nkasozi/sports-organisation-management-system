@@ -1,5 +1,7 @@
 import { type Mock, vi } from "vitest";
 
+import type { CalendarActivityPermissions } from "./calendarActivityPermissions";
+
 type CalendarShellTestState = {
   organizations: { id: string; name: string }[];
   selected_organization_id: string;
@@ -7,6 +9,7 @@ type CalendarShellTestState = {
 
 function create_calendar_shell_getters(state: CalendarShellTestState): {
   get_activity_form_values: () => never;
+  get_calendar_activity_permissions: () => CalendarActivityPermissions;
   get_calendar_events: () => never;
   get_categories: () => never;
   get_current_auth_profile_state: () => never;
@@ -21,6 +24,12 @@ function create_calendar_shell_getters(state: CalendarShellTestState): {
 } {
   return {
     get_activity_form_values: () => ({ title: "Training" }) as never,
+    get_calendar_activity_permissions: () => ({
+      can_create_activity: true,
+      can_edit_activity: true,
+      can_delete_activity: true,
+      can_create_category: true,
+    }),
     get_calendar_events: () => [{ id: "event-1" }] as never,
     get_categories: () => [{ id: "category-1" }] as never,
     get_current_auth_profile_state: () =>

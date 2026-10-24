@@ -1,4 +1,4 @@
-import { can_user_add_activities } from "$lib/presentation/logic/calendarPageShellControllerHelpers";
+import { can_user_create_calendar_activities } from "$lib/presentation/logic/calendarActivityPermissions";
 
 import { create_calendar_page_shell_controller_activity_actions } from "./calendarPageShellControllerRuntimeActivity";
 import {
@@ -19,7 +19,10 @@ export function create_calendar_page_shell_controller_runtime(
     create_calendar_page_shell_controller_activity_actions({
       ...command,
       get_can_user_add_activities: (): boolean =>
-        can_user_add_activities(command.get_current_auth_profile_state()),
+        can_user_create_calendar_activities(
+          command.get_current_auth_profile_state(),
+          command.get_calendar_activity_permissions(),
+        ),
     });
   return {
     clear_filters: () => clear_calendar_shell_filters(command),

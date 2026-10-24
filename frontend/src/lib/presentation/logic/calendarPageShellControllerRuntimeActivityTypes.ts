@@ -4,6 +4,7 @@ import type { Competition } from "$lib/core/entities/Competition";
 import type { Team } from "$lib/core/entities/Team";
 import type { CalendarEvent } from "$lib/core/interfaces/ports/internal/usecases/ActivityUseCasesPort";
 import type { UseCasesContainer } from "$lib/infrastructure/container";
+import type { CalendarActivityPermissions } from "$lib/presentation/logic/calendarActivityPermissions";
 import type { ActivityFormValues } from "$lib/presentation/logic/calendarPageState";
 
 export type CalendarShellToastType = "success" | "error" | "warning" | "info";
@@ -11,6 +12,7 @@ export type CalendarShellToastType = "success" | "error" | "warning" | "info";
 export interface CalendarShellActivityContext {
   get_activity_form_values: () => ActivityFormValues;
   get_can_user_add_activities: () => boolean;
+  get_calendar_activity_permissions: () => CalendarActivityPermissions;
   get_calendar_events: () => CalendarEvent[];
   get_categories: () => ActivityCategory[];
   get_editing_activity: () => Activity | undefined;

@@ -28,7 +28,7 @@ describe("dynamicFormLogic", () => {
       const result = initialize_form_data_from_metadata(metadata);
 
       expect(result.name).toBe("");
-      expect(result.count).toBe(0);
+      expect(result.count).toBe("");
       expect(result.active).toBe(false);
     });
 

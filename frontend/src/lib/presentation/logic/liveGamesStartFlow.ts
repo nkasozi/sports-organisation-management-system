@@ -3,6 +3,7 @@ import type { PreFlightCheck } from "$lib/core/services/fixtureStartChecks";
 import { check_fixture_can_start } from "$lib/core/services/fixtureStartChecks";
 import { CHECK_STATUS } from "$lib/core/services/FixtureStartChecksConstants";
 
+import { build_confirmed_live_game_url } from "./liveGameDetailConfirmedStart";
 import { handle_missing_fixture_details } from "./liveGamesAutoSetupFlow";
 import {
   type LiveGamesStartFlowDependencies,
@@ -30,8 +31,6 @@ type FixtureStartCheckOutcome =
       data: FixtureStartCheckData;
     }
   | { status: typeof FIXTURE_START_CHECK_OUTCOME.STOPPED };
-
-const LIVE_GAMES_ROUTE_PREFIX = "/live-games/";
 
 async function run_fixture_start_checks(
   fixture: Fixture,
@@ -124,7 +123,7 @@ async function finish_live_game_start(
   });
   await publish_checks(fixture.id, checks, dependencies);
   dependencies.set_is_starting(fixture.id, false);
-  await dependencies.goto(`${LIVE_GAMES_ROUTE_PREFIX}${fixture.id}`);
+  await dependencies.goto(build_confirmed_live_game_url(fixture.id));
 }
 
 export async function start_live_game_fixture(

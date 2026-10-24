@@ -1,4 +1,6 @@
 import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
+import { PUBLIC_VIEWER_TOKEN_EMAIL } from "$lib/presentation/stores/authStoreConstants";
+
 interface HeaderUserMenuDetailRow {
   label: string;
   value: string;
@@ -69,13 +71,21 @@ function format_header_user_menu_team_value(
   return normalized_team_id;
 }
 
+function resolve_visible_header_user_menu_email(
+  current_profile_email: string,
+): string {
+  return current_profile_email.trim() === PUBLIC_VIEWER_TOKEN_EMAIL
+    ? ""
+    : current_profile_email;
+}
+
 export function build_header_user_menu_details(
   command: BuildHeaderUserMenuDetailsCommand,
 ): HeaderUserMenuDetailRow[] {
   const header_user_menu_detail_row_states = [
     create_header_user_menu_detail_row(
       DETAIL_LABEL_EMAIL,
-      command.current_profile_email,
+      resolve_visible_header_user_menu_email(command.current_profile_email),
     ),
     create_header_user_menu_detail_row(
       DETAIL_LABEL_ROLE,

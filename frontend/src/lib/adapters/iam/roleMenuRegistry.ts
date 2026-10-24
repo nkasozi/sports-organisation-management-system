@@ -67,6 +67,7 @@ export function get_default_route_for_role(role: UserRole): string {
 const ALWAYS_ALLOWED_ROUTE_BASES: Set<string> = new Set([
   IAM_ROUTE.HOME,
   IAM_ROUTE.MATCH_REPORT,
+  IAM_ROUTE.HELP,
 ]);
 const ROUTE_ACCESS_GRANTED = { allowed: true, reason: "" } as const;
 

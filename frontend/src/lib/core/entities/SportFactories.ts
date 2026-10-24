@@ -85,7 +85,7 @@ const SPORT_INPUT_RULES: readonly SportInputRule[] = [
   },
   {
     is_broken: (input) =>
-      !input.official_requirements.some((role) => role.is_mandatory),
+      !(input.official_requirements ?? []).some((role) => role.is_mandatory),
     message: "At least one mandatory official role is required",
   },
   {

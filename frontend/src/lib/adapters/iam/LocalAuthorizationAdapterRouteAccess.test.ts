@@ -51,6 +51,23 @@ describe("can_role_access_route", () => {
     }
   });
 
+  it("should always allow access to the help center", () => {
+    const roles = [
+      "super_admin",
+      "org_admin",
+      "officials_manager",
+      "team_manager",
+      "player",
+      "official",
+      "public_viewer",
+    ] as UserRole[];
+
+    for (const role of roles) {
+      const result = can_role_access_route(role, "/help");
+      expect(result.allowed).toBe(true);
+    }
+  });
+
   it("should allow team_manager to access teams route", () => {
     const result = can_role_access_route("team_manager", "/teams");
     expect(result.allowed).toBe(true);

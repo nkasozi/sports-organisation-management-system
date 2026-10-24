@@ -1,4 +1,11 @@
 import {
+  filter_official_roles_for_sport,
+  type OfficialRoleSportScope,
+  type SportScopedOfficialRole,
+} from "$lib/core/services/officialRolesForSport";
+import { type Option, OptionStatus } from "$lib/core/types/Option";
+
+import {
   build_official_options_from_records,
   build_organization_official_filter,
   type OfficialRecord,
@@ -9,6 +16,10 @@ import { is_object_value } from "./runtimeTypeGuards";
 export { compute_available_officials } from "./officialAssignmentLogic";
 
 export type SelectOption = { value: string; label: string };
+
+type OfficialRoleRecord = SportScopedOfficialRole;
+
+const ROLE_PAGE_SIZE = 100;
 
 type OfficialUseCases = {
   list: (
@@ -51,32 +62,39 @@ export async function reload_official_options(command: {
   );
 }
 
-export async function load_assignment_options(command: {
+export async function load_official_role_records(command: {
   organization_id: string;
-  official_use_cases: OfficialUseCases;
   role_use_cases: RoleUseCases;
-}): Promise<{
-  official_options: SelectOption[];
-  role_options: SelectOption[];
-}> {
-  const filter = build_organization_official_filter(command.organization_id);
-  const [officials_result, roles_result] = await Promise.all([
-    command.official_use_cases.list(filter, { page_number: 1, page_size: 500 }),
-    command.role_use_cases.list(filter, { page_number: 1, page_size: 100 }),
-  ]);
-  return {
-    official_options:
-      officials_result.success && officials_result.data
-        ? build_official_options_from_records(
-            normalize_official_records(officials_result.data),
-          )
-        : [],
-    role_options:
-      roles_result.success && roles_result.data
-        ? normalize_items(roles_result.data).map((role) => ({
-            value: role.id,
-            label: role.name,
-          }))
-        : [],
-  };
+}): Promise<OfficialRoleRecord[]> {
+  const roles_result = await command.role_use_cases.list(
+    build_organization_official_filter(command.organization_id),
+    { page_number: 1, page_size: ROLE_PAGE_SIZE },
+  );
+  if (!roles_result.success || !roles_result.data) return [];
+  return normalize_items(roles_result.data) as unknown as OfficialRoleRecord[];
+}
+
+function scope_role_records(
+  records: OfficialRoleRecord[],
+  role_scope: Option<OfficialRoleSportScope>,
+): OfficialRoleRecord[] {
+  switch (role_scope.status) {
+    case OptionStatus.NONE:
+      return records;
+    case OptionStatus.SOME:
+      return filter_official_roles_for_sport({
+        ...role_scope.value,
+        roles: records,
+      });
+  }
+}
+
+export function build_scoped_role_options(
+  records: OfficialRoleRecord[],
+  role_scope: Option<OfficialRoleSportScope>,
+): SelectOption[] {
+  return scope_role_records(records, role_scope).map((role) => ({
+    value: role.id,
+    label: role.name,
+  }));
 }

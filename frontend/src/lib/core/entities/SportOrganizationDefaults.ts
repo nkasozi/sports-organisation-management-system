@@ -18,12 +18,27 @@ import { ENTITY_STATUS } from "./StatusConstants";
 type OrganizationId = CreateGameOfficialRoleInput["organization_id"];
 
 const FIRST_DISPLAY_ORDER = 1;
+const TABLE_OFFICIAL_ROLE_CODES: ReadonlySet<string> = new Set([
+  "SCORER",
+  "SCOREKEEPER",
+  "SCORE_KEEPER",
+  "TIMEKEEPER",
+  "TIME_KEEPER",
+  "SHOT_CLOCK_OPERATOR",
+  "STATISTICIAN",
+  "TABLE_OFFICIAL",
+  "RECORDER",
+]);
 
 function to_role_code(role_id: string): string {
   return role_id
     .trim()
     .toUpperCase()
     .replace(/[\s-]+/g, "_");
+}
+
+function is_table_official(role_code: string): boolean {
+  return TABLE_OFFICIAL_ROLE_CODES.has(role_code);
 }
 
 export function build_sport_official_roles(
@@ -35,7 +50,9 @@ export function build_sport_official_roles(
     code: to_role_code(requirement.role_id),
     description: requirement.description,
     sport_id: sport.id,
-    is_on_field: requirement.is_mandatory,
+    is_on_field:
+      requirement.is_mandatory &&
+      !is_table_official(to_role_code(requirement.role_id)),
     is_head_official: index === 0,
     display_order: index + FIRST_DISPLAY_ORDER,
     status: ENTITY_STATUS.ACTIVE,

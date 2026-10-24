@@ -1,4 +1,5 @@
 <script lang="ts">
+    import ContactMessageForm from "$lib/presentation/components/contact/ContactMessageForm.svelte";
     import { branding_store } from "$lib/presentation/stores/branding";
 </script>
 
@@ -31,70 +32,9 @@
             >
                 Get in Touch
             </h2>
-            <form class="space-y-4">
-                <div>
-                    <label
-                        for="name"
-                        class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
-                    >
-                        Name
-                    </label>
-                    <input
-                        id="name"
-                        type="text"
-                        class="input"
-                        placeholder="Your name"
-                    />
-                </div>
-
-                <div>
-                    <label
-                        for="email"
-                        class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
-                    >
-                        Email
-                    </label>
-                    <input
-                        id="email"
-                        type="email"
-                        class="input"
-                        placeholder="your@email.com"
-                    />
-                </div>
-
-                <div>
-                    <label
-                        for="subject"
-                        class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
-                    >
-                        Subject
-                    </label>
-                    <input
-                        id="subject"
-                        type="text"
-                        class="input"
-                        placeholder="How can we help?"
-                    />
-                </div>
-
-                <div>
-                    <label
-                        for="message"
-                        class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
-                    >
-                        Message
-                    </label>
-                    <textarea
-                        id="message"
-                        class="input min-h-32"
-                        placeholder="Your message..."
-                    ></textarea>
-                </div>
-
-                <button type="submit" class="btn btn-primary-action w-full">
-                    Send Message
-                </button>
-            </form>
+            <ContactMessageForm
+                recipient_email={$branding_store.organization_email}
+            />
         </div>
 
         <div class="space-y-6">

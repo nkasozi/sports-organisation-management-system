@@ -13,6 +13,7 @@
         get_use_cases_container,
         type UseCasesContainer,
     } from "$lib/infrastructure/container";
+    import { build_calendar_activity_permissions } from "$lib/presentation/logic/calendarActivityPermissions";
     import {
         type CalendarDeleteActivityPromptState,
         create_hidden_calendar_delete_activity_prompt_state,
@@ -20,8 +21,6 @@
     import { create_calendar_delete_activity_prompt_actions } from "$lib/presentation/logic/calendarDeleteActivityPromptActions";
     import {
         build_calendar_profile_state,
-        can_user_add_activities,
-        can_user_change_organizations,
         extract_url_org_id,
         type LoadingState,
         resolve_selected_organization_name,
@@ -66,6 +65,9 @@
     $: current_auth_profile_state = build_calendar_profile_state(
         get(auth_store).current_profile,
     );
+    $: calendar_permissions = build_calendar_activity_permissions(
+        get(auth_store).current_profile,
+    );
     $: url_org_id = extract_url_org_id(get(page).url.searchParams);
     $: selected_organization_name = resolve_selected_organization_name(
         organizations,
@@ -83,6 +85,7 @@
 
     const runtime = create_calendar_page_shell_controller_runtime({
         get_activity_form_values: () => activity_form_values,
+        get_calendar_activity_permissions: () => calendar_permissions,
         get_calendar_events: () => calendar_events,
         get_categories: () => categories,
         get_current_auth_profile_state: () => current_auth_profile_state,
@@ -156,13 +159,9 @@
     {categories}
     {calendar_events}
     {filter_loading}
-    can_user_change_organizations={can_user_change_organizations(
-        current_auth_profile_state,
-        url_org_id,
-    )}
-    can_user_add_activities={can_user_add_activities(
-        current_auth_profile_state,
-    )}
+    {current_auth_profile_state}
+    {url_org_id}
+    {calendar_permissions}
     on_organization_change={runtime.handle_organization_change}
     on_open_create_modal={() => runtime.handle_date_click()}
     on_open_subscribe_modal={runtime.open_subscribe_modal}
@@ -176,6 +175,7 @@
 <CalendarPageOverlays
     bind:activity_form_values
     {show_create_modal}
+    can_delete_activity={calendar_permissions.can_delete_activity}
     {editing_activity}
     {categories}
     {selected_event_details}

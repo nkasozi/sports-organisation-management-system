@@ -1,3 +1,5 @@
+import { BULK_PLAYER_ASSIGNMENT_BLOCKED_GUIDANCE } from "$lib/presentation/logic/bulkPlayerAssignmentSelectability";
+
 export const BULK_PLAYER_ASSIGNMENT_PAGE_TEXT = {
   access_denied:
     "Access denied: Your role does not have permission to assign players to teams. Please contact your organization administrator if you believe this is an error.",
@@ -32,8 +34,7 @@ export const BULK_PLAYER_ASSIGNMENT_SECTION_TEXT = {
   unassigned_empty_search: "No unassigned players match your search.",
   unassigned_empty_default: "All players are currently assigned to a team.",
   assigned_title: "Players Already on Other Teams",
-  assigned_description:
-    "Selecting these will create an additional team membership",
+  assigned_description: BULK_PLAYER_ASSIGNMENT_BLOCKED_GUIDANCE,
   assigned_empty_search: "No players on other teams match your search.",
   assigned_empty_default: "No players are currently on other teams.",
   select_team_prompt: "Select a team above to see available players",

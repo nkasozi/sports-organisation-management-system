@@ -2,8 +2,18 @@ import { type Mock, vi } from "vitest";
 
 import { type Option, OptionStatus } from "$lib/core/types/Option";
 
+import type { CalendarActivityPermissions } from "./calendarActivityPermissions";
+
+const FULL_CALENDAR_ACTIVITY_PERMISSIONS: CalendarActivityPermissions = {
+  can_create_activity: true,
+  can_edit_activity: true,
+  can_delete_activity: true,
+  can_create_category: true,
+};
+
 interface CalendarActivityCommandOverrides {
   can_user_add_activities?: boolean;
+  calendar_activity_permissions?: CalendarActivityPermissions;
   editing_activity?: Option<Record<string, unknown>>;
 }
 
@@ -43,6 +53,7 @@ function create_command_getters(
 ): {
   get_activity_form_values: () => never;
   get_can_user_add_activities: () => boolean;
+  get_calendar_activity_permissions: () => CalendarActivityPermissions;
   get_calendar_events: () => never;
   get_categories: () => never;
   get_editing_activity: () => never;
@@ -55,6 +66,9 @@ function create_command_getters(
     get_activity_form_values: () => state.activity_form_values as never,
     get_can_user_add_activities: () =>
       overrides?.can_user_add_activities ?? true,
+    get_calendar_activity_permissions: () =>
+      overrides?.calendar_activity_permissions ??
+      FULL_CALENDAR_ACTIVITY_PERMISSIONS,
     get_calendar_events: () => state.calendar_events as never,
     get_categories: () => state.categories as never,
     get_editing_activity: () => state.editing_activity as never,

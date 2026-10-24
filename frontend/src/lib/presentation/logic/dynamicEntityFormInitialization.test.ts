@@ -66,7 +66,7 @@ describe("dynamicEntityFormInitialization", () => {
 
     expect(result["name"]).toBe("Existing Name");
     expect(result["organization_id"]).toBe("org_1");
-    expect(result["age"]).toBe(0);
+    expect(result["age"]).toBe("");
   });
 
   it("hydrates stage templates for empty competition format forms", () => {

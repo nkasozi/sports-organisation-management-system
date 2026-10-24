@@ -176,7 +176,7 @@ describe("dynamicEntityFormControllerFactory", () => {
     });
   });
 
-  it("cancels correctly and generates fake data through the helper", () => {
+  it("cancels correctly and generates fake data through the helper", async () => {
     build_dynamic_form_fake_data_state_mock.mockReturnValue({
       form_data: { name: "Generated" },
       validation_errors: {},
@@ -189,7 +189,7 @@ describe("dynamicEntityFormControllerFactory", () => {
     inline.controller.handle_cancel();
     expect(inline.on_inline_cancel).toHaveBeenCalled();
 
-    standard.controller.handle_generate_fake_data();
+    await standard.controller.handle_generate_fake_data();
     expect(standard.get_form_state()).toEqual({
       form_data: { name: "Generated" },
       validation_errors: {},

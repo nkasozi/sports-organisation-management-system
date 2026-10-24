@@ -9,6 +9,7 @@ import {
   OptionStatus,
 } from "$lib/core/types/Option";
 import { fakeDataGenerator } from "$lib/infrastructure/utils/FakeDataGenerator";
+import { NO_FAKE_DATA_HINTS } from "$lib/infrastructure/utils/fakeDataScenario";
 import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
 
 const COMPETITION_ENTITY_TYPE = "competition";
@@ -50,7 +51,7 @@ export function build_competition_create_fake_fields(
   const result = fakeDataGenerator.generate_fake_data_for_entity_fields(
     COMPETITION_FAKE_FIELD_METADATA,
     COMPETITION_ENTITY_TYPE,
-    { sport_name },
+    { ...NO_FAKE_DATA_HINTS, sport_name },
   );
   if (!result.success) return form_data;
   const generated = Object.fromEntries(

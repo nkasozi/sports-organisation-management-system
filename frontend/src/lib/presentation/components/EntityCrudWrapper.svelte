@@ -83,7 +83,6 @@
         entity_type,
         get_current_view: () => current_view,
         goto,
-        normalized_entity_type,
         set_current_entity_for_editing: (entity: BaseEntity | undefined) =>
             (current_entity_for_editing = entity),
         set_current_view: (view: EntityCrudView) => (current_view = view),

@@ -5,6 +5,7 @@ import {
   handle_calendar_shell_event_click,
 } from "./calendarPageShellControllerRuntimeActivityModals";
 import {
+  can_create_calendar_category,
   create_calendar_shell_category_from_modal,
   delete_calendar_shell_current_activity,
   save_calendar_shell_current_activity,
@@ -45,7 +46,10 @@ export function create_calendar_page_shell_controller_activity_actions(
     handle_event_click: (event_id: string) =>
       handle_calendar_shell_event_click(command, event_id),
     handle_save_activity: () => save_calendar_shell_current_activity(command),
-    open_category_modal: () => command.set_show_category_modal(true),
+    open_category_modal: () => {
+      if (can_create_calendar_category(command))
+        command.set_show_category_modal(true);
+    },
     open_subscribe_modal: () => command.set_show_subscribe_modal(true),
   };
 }

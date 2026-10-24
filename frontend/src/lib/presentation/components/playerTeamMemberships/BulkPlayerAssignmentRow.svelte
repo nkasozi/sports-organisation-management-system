@@ -6,6 +6,10 @@
     } from "$lib/core/entities/Player";
     import { OptionStatus } from "$lib/core/types/Option";
     import type { PlayerAssignment } from "$lib/presentation/logic/bulkPlayerAssignmentPageState";
+    import {
+        BULK_PLAYER_ASSIGNMENT_BLOCKED_GUIDANCE,
+        is_player_assignment_selectable,
+    } from "$lib/presentation/logic/bulkPlayerAssignmentSelectability";
     import { to_safe_image_source } from "$lib/presentation/logic/safeUrl";
 
     export let assignment: PlayerAssignment;
@@ -13,6 +17,7 @@
     export let status_class: string;
     export let on_toggle_selection: (assignment: PlayerAssignment) => void;
 
+    $: is_selectable = is_player_assignment_selectable(assignment);
     $: safe_avatar_source = to_safe_image_source(
         get_player_avatar(assignment.player),
     );
@@ -23,13 +28,18 @@
 </script>
 
 <div
-    class="p-4 flex items-center gap-4 hover:bg-accent-50 dark:hover:bg-accent-700/50 transition-colors"
+    class="p-4 flex items-center gap-4 transition-colors {is_selectable
+        ? 'hover:bg-accent-50 dark:hover:bg-accent-700/50'
+        : 'opacity-70'}"
+    title={is_selectable ? "" : BULK_PLAYER_ASSIGNMENT_BLOCKED_GUIDANCE}
 >
     <input
         type="checkbox"
-        checked={assignment.selected}
+        checked={assignment.selected && is_selectable}
+        disabled={!is_selectable}
+        aria-label={`Select ${get_player_full_name(assignment.player)}`}
         on:change={() => on_toggle_selection(assignment)}
-        class="w-5 h-5 text-primary-600 rounded border-accent-300"
+        class="w-5 h-5 text-primary-600 rounded border-accent-300 disabled:cursor-not-allowed"
     />
     <img
         src={player_avatar_source}
@@ -42,7 +52,7 @@
         </p>
         <p class={`text-sm ${status_class}`}>{status_text}</p>
     </div>
-    {#if assignment.selected}
+    {#if assignment.selected && is_selectable}
         <div class="flex items-center gap-3">
             <div>
                 <span

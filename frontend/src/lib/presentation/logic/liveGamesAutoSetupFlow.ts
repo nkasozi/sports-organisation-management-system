@@ -5,6 +5,10 @@ import { CHECK_STATUS } from "$lib/core/services/FixtureStartChecksConstants";
 
 import { load_fixture_official_requirements } from "./fixtureOfficialRequirements";
 import {
+  AUTO_SETUP_DECISION,
+  decide_competition_auto_setup,
+} from "./liveGamesAutoSetupDecision";
+import {
   type LiveGamesStartFlowDependencies,
   publish_checks,
   replace_last_check,
@@ -12,19 +16,8 @@ import {
 
 const FIXTURE_DETAILS_ROUTE = "/fixture-details-setup";
 const DEFAULT_ROLE = "player";
-
-async function competition_allows_auto_setup(
-  fixture: Fixture,
-  dependencies: LiveGamesStartFlowDependencies,
-): Promise<boolean> {
-  const competition_result = await dependencies.competition_use_cases.get_by_id(
-    fixture.competition_id,
-  );
-  return Boolean(
-    competition_result.success &&
-    competition_result.data?.allow_auto_fixture_details_setup,
-  );
-}
+const COMPETITION_LOOKUP_FAILED_MESSAGE =
+  "We could not load this competition's settings, so fixture details were not set up automatically. Please try again.";
 
 async function redirect_to_fixture_details_setup(
   fixture: Fixture,
@@ -113,12 +106,42 @@ export async function handle_missing_fixture_details(
     fix_suggestion: "",
   });
   await publish_checks(fixture.id, checks, dependencies);
-  if (!(await competition_allows_auto_setup(fixture, dependencies))) {
-    replace_last_check(checks, officials_check);
-    dependencies.update_checks(fixture.id, checks);
-    dependencies.set_is_starting(fixture.id, false);
-    return true;
+  const decision = await decide_competition_auto_setup(
+    fixture,
+    dependencies.competition_use_cases,
+  );
+  switch (decision.status) {
+    case AUTO_SETUP_DECISION.DISABLED:
+      return stop_with_check(fixture, checks, officials_check, dependencies);
+    case AUTO_SETUP_DECISION.LOOKUP_FAILED:
+      return stop_with_check(
+        fixture,
+        checks,
+        { ...officials_check, message: COMPETITION_LOOKUP_FAILED_MESSAGE },
+        dependencies,
+      );
+    case AUTO_SETUP_DECISION.ALLOWED:
+      return continue_auto_setup(fixture, checks, dependencies);
   }
+}
+
+function stop_with_check(
+  fixture: Fixture,
+  checks: PreFlightCheck[],
+  final_check: PreFlightCheck,
+  dependencies: LiveGamesStartFlowDependencies,
+): boolean {
+  replace_last_check(checks, final_check);
+  dependencies.update_checks(fixture.id, checks);
+  dependencies.set_is_starting(fixture.id, false);
+  return true;
+}
+
+async function continue_auto_setup(
+  fixture: Fixture,
+  checks: PreFlightCheck[],
+  dependencies: LiveGamesStartFlowDependencies,
+): Promise<boolean> {
   checks.push({
     check_name: "auto_setup_check",
     status: CHECK_STATUS.PASSED,

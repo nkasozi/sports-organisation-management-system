@@ -3,11 +3,9 @@
     import type { Fixture } from "$lib/core/entities/Fixture";
     import type { Organization } from "$lib/core/entities/Organization";
     import Toast from "$lib/presentation/components/ui/Toast.svelte";
+    import type { CardSortMode } from "$lib/presentation/logic/competitionResultsCardStats";
     import type { CompetitionResultsCompetitionFormatState } from "$lib/presentation/logic/competitionResultsPageContracts";
-    import type {
-        CardSortMode,
-        PlayerStats,
-    } from "$lib/presentation/logic/competitionResultsStats";
+    import type { PlayerStats } from "$lib/presentation/logic/competitionResultsStats";
     import { derive_competition_results_workspace_state } from "$lib/presentation/logic/competitionResultsWorkspaceState";
     import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
     import type { ToastType } from "$lib/presentation/logic/toastConfig";
@@ -133,6 +131,7 @@
     {downloading_fixture_id}
     bind:stats_team_filter
     stats_available_teams={workspace_state.stats_available_teams}
+    stats_card_categories={workspace_state.stats_card_categories}
     bind:stats_card_sort
     stats_filtered_scorers={workspace_state.stats_filtered_scorers as PlayerStats[]}
     stats_filtered_card_players={workspace_state.stats_filtered_card_players as PlayerStats[]}

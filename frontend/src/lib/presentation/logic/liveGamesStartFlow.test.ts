@@ -99,7 +99,9 @@ describe("liveGamesStartFlow", () => {
 
     expect(set_is_starting).toHaveBeenCalledWith("fixture_1", true);
     expect(set_is_starting).toHaveBeenLastCalledWith("fixture_1", false);
-    expect(goto).toHaveBeenCalledWith("/live-games/fixture_1");
+    expect(goto).toHaveBeenCalledWith(
+      "/live-games/fixture_1?start_confirmed=true",
+    );
     expect(update_checks).toHaveBeenCalled();
   });
 

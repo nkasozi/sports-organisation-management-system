@@ -25,6 +25,8 @@
     export let filter_loading: boolean;
     export let can_user_change_organizations: boolean;
     export let can_user_add_activities: boolean;
+    export let can_user_add_categories: boolean;
+    export let page_subtitle: string;
     export let on_organization_change: () => Promise<void>;
     export let on_open_create_modal: () => void;
     export let on_open_subscribe_modal: () => void;
@@ -113,6 +115,8 @@
                     {filter_loading}
                     {can_user_change_organizations}
                     {can_user_add_activities}
+                    {can_user_add_categories}
+                    {page_subtitle}
                     {on_organization_change}
                     {on_open_create_modal}
                     {on_open_subscribe_modal}

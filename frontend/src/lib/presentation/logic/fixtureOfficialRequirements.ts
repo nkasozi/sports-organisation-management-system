@@ -20,7 +20,7 @@ export interface FixtureOfficialRequirementsDependencies extends CompetitionSpor
   };
 }
 
-function select_requirements(
+export function select_fixture_official_requirements(
   competition: Competition,
   sport: Sport,
 ): OfficialRequirementSource[] {
@@ -58,5 +58,8 @@ export async function load_fixture_official_requirements(
     log_unavailable(fixture, sport_result.error);
     return [];
   }
-  return select_requirements(competition_result.data, sport_result.data);
+  return select_fixture_official_requirements(
+    competition_result.data,
+    sport_result.data,
+  );
 }

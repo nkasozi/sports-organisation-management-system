@@ -3,6 +3,11 @@ import { faker } from "@faker-js/faker";
 import type { FakeDataOverrides } from "./fakeDataEntityNamed";
 import { FAKE_DATA_FIRST_NAMES } from "./fakeDataPeopleNames";
 import {
+  FAKE_DATA_LIST_ENTITY,
+  FAKE_DATA_ROLE_NAMES,
+  type FakeDataNamedListEntity,
+} from "./fakeDataRoleNames";
+import {
   type FakeDataScenario,
   initials_code,
   person_email,
@@ -10,12 +15,7 @@ import {
   to_iso_date,
   uganda_phone_number,
 } from "./fakeDataScenario";
-import {
-  FAKE_DATA_LIST_ENTITY,
-  FAKE_DATA_NOTES,
-  FAKE_DATA_ROLE_NAMES,
-  type FakeDataNamedListEntity,
-} from "./fakeDataVocabulary";
+import { FAKE_DATA_NOTES } from "./fakeDataVocabulary";
 
 const PERSON_AGE_RANGE = {
   player: { min: 16, max: 35 },
@@ -90,6 +90,7 @@ export function list_entity_overrides(
     code: initials_code(name),
     description: list_entity_description(entity, name, scenario),
     identifier_field_label: `${name} Number`,
+    icon: scenario.sport.icon,
     display_order: faker.number.int({ min: 1, max: 10 }),
   };
 }

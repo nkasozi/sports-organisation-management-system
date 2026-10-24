@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { CompetitionRuleOverrides } from "$lib/core/entities/Competition";
     import type { Sport } from "$lib/core/entities/Sport";
+    import { get_overtime_type_label } from "$lib/presentation/logic/overtimeTypeLabels";
     import {
         format_periods_summary,
         get_effective_periods,
@@ -176,7 +177,9 @@
                         sport,
                     )}
                     default_overtime_enabled={sport.overtime_rules.is_enabled}
-                    default_overtime_type={sport.overtime_rules.overtime_type}
+                    default_overtime_type={get_overtime_type_label(
+                        sport.overtime_rules.overtime_type,
+                    )}
                     has_custom_overtime={Boolean(rule_overrides.overtime_rules)}
                     is_customizing_overtime={customizing_state.overtime}
                     on_customize={() => set_customizing(SECTION.OVERTIME, true)}

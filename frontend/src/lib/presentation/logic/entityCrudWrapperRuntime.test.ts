@@ -14,7 +14,6 @@ describe("entityCrudWrapperRuntime", () => {
       entity_type: "Fixture Lineup",
       get_current_view: vi.fn(() => "list" as const),
       goto: vi.fn(async () => {}),
-      normalized_entity_type: "fixturelineup",
       set_current_entity_for_editing: vi.fn(),
       set_current_view: vi.fn(),
       set_total_entity_count: vi.fn(),
@@ -29,11 +28,11 @@ describe("entityCrudWrapperRuntime", () => {
     ).handle_create_requested();
     expect(lineup_command.goto).toHaveBeenCalledWith("/fixture-lineups/create");
 
-    const sport_command = create_command({ normalized_entity_type: "sport" });
+    const sport_command = create_command({ entity_type: "Sport" });
     create_entity_crud_wrapper_runtime(sport_command).handle_create_requested();
     expect(sport_command.goto).toHaveBeenCalledWith("/sports/create");
 
-    const team_command = create_command({ normalized_entity_type: "team" });
+    const team_command = create_command({ entity_type: "Team" });
     create_entity_crud_wrapper_runtime(team_command).handle_create_requested();
     expect(team_command.set_current_view).toHaveBeenCalledWith("create");
     expect(team_command.dispatch).toHaveBeenCalledWith("view_changed", {
@@ -66,7 +65,7 @@ describe("entityCrudWrapperRuntime", () => {
   });
 
   it("dispatches save events and returns to the list or redirect target", () => {
-    const list_command = create_command({ normalized_entity_type: "team" });
+    const list_command = create_command({ entity_type: "Team" });
     const list_runtime = create_entity_crud_wrapper_runtime(list_command);
     const saved_entity = { id: "entity-1" } as never;
 
@@ -81,7 +80,7 @@ describe("entityCrudWrapperRuntime", () => {
 
     const redirect_command = create_command({
       after_save_redirect_url: "/teams",
-      normalized_entity_type: "team",
+      entity_type: "Team",
     });
     create_entity_crud_wrapper_runtime(redirect_command).handle_save_completed(
       saved_entity,

@@ -1,5 +1,13 @@
 import { type Mock, vi } from "vitest";
 
+type TestAssignment = {
+  id: string;
+  selected: boolean;
+  current_team_state:
+    | { status: "unassigned" }
+    | { status: "assigned"; team_id: string; team_name: string };
+};
+
 function create_bulk_assignment_state(): {
   all_player_assignments: { id: string; selected: boolean }[];
   error_message: string;
@@ -7,8 +15,8 @@ function create_bulk_assignment_state(): {
   is_saving: boolean;
   selected_team: { id: string; name: string };
   selected_team_id: string;
-  unassigned_players: { id: string; selected: boolean }[];
-  assigned_players_on_other_teams: { id: string; selected: boolean }[];
+  unassigned_players: TestAssignment[];
+  assigned_players_on_other_teams: TestAssignment[];
 } {
   return {
     all_player_assignments: [
@@ -20,8 +28,24 @@ function create_bulk_assignment_state(): {
     is_saving: false,
     selected_team: { id: "team-1", name: "Lions" },
     selected_team_id: "team-1",
-    unassigned_players: [{ id: "assignment-1", selected: false }],
-    assigned_players_on_other_teams: [{ id: "assignment-2", selected: false }],
+    unassigned_players: [
+      {
+        id: "assignment-1",
+        selected: false,
+        current_team_state: { status: "unassigned" },
+      },
+    ],
+    assigned_players_on_other_teams: [
+      {
+        id: "assignment-2",
+        selected: false,
+        current_team_state: {
+          status: "assigned",
+          team_id: "team-2",
+          team_name: "Tigers",
+        },
+      },
+    ],
   };
 }
 

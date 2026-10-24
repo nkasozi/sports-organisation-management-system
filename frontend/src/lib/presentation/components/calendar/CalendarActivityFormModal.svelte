@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { Activity } from "$lib/core/entities/Activity";
     import type { ActivityCategory } from "$lib/core/entities/ActivityCategory";
-    import { ACTIVITY_SOURCE_TYPE } from "$lib/core/entities/StatusConstants";
+    import { should_show_calendar_activity_delete_button } from "$lib/presentation/logic/calendarActivityPermissions";
     import type { ActivityFormValues } from "$lib/presentation/logic/calendarPageState";
 
     import CalendarActivityFormFields from "./CalendarActivityFormFields.svelte";
@@ -13,6 +13,12 @@
     export let on_close: () => void;
     export let on_save: () => Promise<void>;
     export let on_delete: () => Promise<void>;
+    export let can_delete_activity: boolean;
+
+    $: show_delete_button = should_show_calendar_activity_delete_button(
+        editing_activity?.source_type ?? "",
+        can_delete_activity,
+    );
 
     let modal_position = { x: 0, y: 0 };
     let is_dragging = false;
@@ -107,7 +113,7 @@
                 <div
                     class="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700"
                 >
-                    {#if editing_activity && editing_activity.source_type === ACTIVITY_SOURCE_TYPE.MANUAL}
+                    {#if show_delete_button}
                         <button
                             type="button"
                             class="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400"

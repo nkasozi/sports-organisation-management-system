@@ -3,16 +3,24 @@
 
     import type { OfficialAssignment } from "$lib/core/entities/FixtureDetailsSetup";
     import { create_empty_official_assignment } from "$lib/core/entities/FixtureDetailsSetup";
+    import type { OfficialRoleSportScope } from "$lib/core/services/officialRolesForSport";
     import type { ScalarInput } from "$lib/core/types/DomainScalars";
+    import { create_none_option, type Option } from "$lib/core/types/Option";
     import {
+        get_competition_use_cases,
+        get_fixture_use_cases,
         get_game_official_role_use_cases,
         get_official_use_cases,
+        get_organization_use_cases,
+        get_sport_use_cases,
     } from "$lib/infrastructure/registry/useCaseFactories";
 
+    import { load_fixture_official_role_scope } from "../logic/fixtureOfficialRoleScope";
     import type { SelectOption } from "../logic/officialAssignmentArrayState";
     import {
+        build_scoped_role_options,
         compute_available_officials,
-        load_assignment_options,
+        load_official_role_records,
         reload_official_options,
     } from "../logic/officialAssignmentArrayState";
     import OfficialAssignmentRow from "./OfficialAssignmentRow.svelte";
@@ -23,6 +31,7 @@
     export let disabled: boolean = false;
     export let errors: Record<string, string> = {};
     export let organization_id: string = "";
+    export let fixture_id: string = "";
 
     const dispatch = createEventDispatcher<{
         change: { assignments: EditableOfficialAssignment[] };
@@ -30,21 +39,42 @@
 
     const official_use_cases = get_official_use_cases();
     const role_use_cases = get_game_official_role_use_cases();
+    const role_scope_dependencies = {
+        fixture_use_cases: get_fixture_use_cases(),
+        competition_use_cases: get_competition_use_cases(),
+        organization_use_cases: get_organization_use_cases(),
+        sport_use_cases: get_sport_use_cases(),
+    };
 
     let official_options: SelectOption[] = [];
-    let role_options: SelectOption[] = [];
+    let role_records: Awaited<ReturnType<typeof load_official_role_records>> =
+        [];
+    let role_scope: Option<OfficialRoleSportScope> = create_none_option();
     let is_loading = true;
 
     onMount(async () => {
-        const options = await load_assignment_options({
-            organization_id,
-            official_use_cases,
-            role_use_cases,
-        });
-        official_options = options.official_options;
-        role_options = options.role_options;
+        const [loaded_officials, loaded_roles] = await Promise.all([
+            reload_official_options({ organization_id, official_use_cases }),
+            load_official_role_records({ organization_id, role_use_cases }),
+        ]);
+        official_options = loaded_officials;
+        role_records = loaded_roles;
         is_loading = false;
     });
+
+    $: void refresh_role_scope(fixture_id);
+
+    $: role_options = build_scoped_role_options(role_records, role_scope);
+
+    async function refresh_role_scope(
+        selected_fixture_id: string,
+    ): Promise<boolean> {
+        role_scope = await load_fixture_official_role_scope(
+            selected_fixture_id,
+            role_scope_dependencies,
+        );
+        return true;
+    }
 
     $: {
         if (organization_id) {

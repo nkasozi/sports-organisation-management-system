@@ -2,7 +2,6 @@ import { goto } from "$app/navigation";
 
 import type { EntityMetadata } from "../../core/entities/BaseEntity";
 import { fakeDataGenerator } from "../../infrastructure/utils/FakeDataGenerator";
-import { choose_required_foreign_keys } from "./dynamicEntityFormFakeDataForeignKeys";
 import { DYNAMIC_ENTITY_FORM_EVENT } from "./dynamicEntityFormMessages";
 import type { DynamicEntityFormState } from "./dynamicEntityFormState";
 import { build_foreign_entity_route } from "./dynamicFormLogic";
@@ -42,12 +41,6 @@ export function build_dynamic_form_fake_data_state(
       ...form_state.form_data,
       ...omit_locked_fields(
         fake_data_result.generated_data,
-        locked_field_names,
-      ),
-      ...choose_required_foreign_keys(
-        entity_metadata.fields,
-        form_state.form_data,
-        form_state.foreign_key_options ?? {},
         locked_field_names,
       ),
     },

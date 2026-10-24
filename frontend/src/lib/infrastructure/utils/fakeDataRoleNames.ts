@@ -1,0 +1,75 @@
+export const FAKE_DATA_LIST_ENTITY = {
+  TEAM_STAFF_ROLE: "teamstaffrole",
+  GAME_OFFICIAL_ROLE: "gameofficialrole",
+  PLAYER_POSITION: "playerposition",
+  COMPETITION_FORMAT: "competitionformat",
+  COMPETITION_STAGE: "competitionstage",
+  GAME_EVENT_TYPE: "gameeventtype",
+  IDENTIFICATION_TYPE: "identificationtype",
+  GENDER: "gender",
+  COMPETITION_CONSTRAINT: "competition_constraint",
+} as const;
+
+export const FAKE_DATA_ROLE_NAMES = {
+  teamstaffrole: [
+    "Head Coach",
+    "Assistant Coach",
+    "Goalkeeping Coach",
+    "Team Manager",
+    "Physiotherapist",
+    "Performance Analyst",
+    "Team Doctor",
+    "Kit Manager",
+  ],
+  gameofficialrole: [
+    "Referee",
+    "Assistant Referee",
+    "Fourth Official",
+    "Video Assistant Referee",
+    "Umpire",
+    "Line Judge",
+    "Timekeeper",
+    "Scorer",
+  ],
+  playerposition: [
+    "Goalkeeper",
+    "Defender",
+    "Midfielder",
+    "Forward",
+    "Centre",
+    "Wing Attack",
+    "Goal Shooter",
+    "Point Guard",
+  ],
+  competitionformat: [
+    "Round Robin League",
+    "Group Stage and Knockout",
+    "Single Elimination Cup",
+    "Double Round Robin",
+  ],
+  competitionstage: ["Group Stage", "Quarter Finals", "Semi Finals", "Final"],
+  gameeventtype: [
+    "Goal",
+    "Penalty Goal",
+    "Yellow Card",
+    "Red Card",
+    "Timeout",
+    "Injury Stoppage",
+  ],
+  identificationtype: [
+    "National ID",
+    "Passport",
+    "Driving Permit",
+    "Student ID",
+    "Club Registration Card",
+  ],
+  gender: ["Female", "Male", "Mixed"],
+  competition_constraint: [
+    "Maximum foreign players",
+    "Minimum home-grown players",
+    "Under-21 players on the pitch",
+    "Squad registration limit",
+  ],
+} as const;
+
+export type FakeDataNamedListEntity = keyof typeof FAKE_DATA_ROLE_NAMES;

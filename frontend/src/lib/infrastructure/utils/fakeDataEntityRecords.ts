@@ -10,6 +10,7 @@ import {
 } from "./fakeDataScenario";
 import {
   FAKE_DATA_BODY_TYPES,
+  FAKE_DATA_FIXTURE_TIME_SLOTS,
   FAKE_DATA_NOTES,
   FAKE_DATA_VENUE_TYPES,
 } from "./fakeDataVocabulary";
@@ -77,6 +78,7 @@ export function fixture_overrides(
 ): FakeDataOverrides {
   return {
     scheduled_date: to_iso_date(random_days_from(scenario.today, 3, 60)),
+    scheduled_time: faker.helpers.arrayElement(FAKE_DATA_FIXTURE_TIME_SLOTS),
     venue: `${scenario.city} ${faker.helpers.arrayElement(FAKE_DATA_VENUE_TYPES)}`,
   };
 }

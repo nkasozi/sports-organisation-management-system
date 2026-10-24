@@ -1,9 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 import {
+  format_live_game_kickoff,
   get_live_game_check_class,
   get_live_game_check_container_class,
   get_live_game_check_icon,
@@ -28,6 +29,34 @@ function create_fixture(
     ...overrides,
   } as unknown as Fixture;
 }
+
+describe("format_live_game_kickoff", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("shows the kickoff like the dashboard does instead of the browser locale", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-20T08:00:00.000Z"));
+
+    const result = format_live_game_kickoff(
+      create_fixture({ scheduled_date: "2026-10-24", scheduled_time: "23:00" }),
+    );
+
+    expect(result).toBe("Sat, Oct 24, 23:00");
+  });
+
+  it("says today for a game that kicks off today", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-24T08:00:00.000Z"));
+
+    const result = format_live_game_kickoff(
+      create_fixture({ scheduled_date: "2026-10-24", scheduled_time: "11:00" }),
+    );
+
+    expect(result).toBe("Today, 11:00");
+  });
+});
 
 describe("liveGamesViewLogic", () => {
   it("returns the purple badge classes for postponed fixtures", () => {
