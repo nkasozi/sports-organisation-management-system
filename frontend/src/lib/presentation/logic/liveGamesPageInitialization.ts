@@ -11,6 +11,10 @@ import {
 } from "./liveGamesDataLoader";
 import { LIVE_GAMES_USER_MESSAGE } from "./liveGamesMessages";
 import {
+  list_live_games_organization_candidates,
+  load_first_organization_with_fixtures,
+} from "./liveGamesOrganizationChoice";
+import {
   get_live_games_current_profile_state,
   get_live_games_current_token_state,
 } from "./liveGamesPageAuthState";
@@ -95,6 +99,30 @@ async function authorize_live_games_page(
   return { status: LIVE_GAMES_AUTHORIZATION_STATUS.AUTHORIZED, permissions };
 }
 
+function choose_live_games_organization(
+  command: LiveGamesPageInitializationCommand,
+  organizations: readonly { id: string }[],
+): ReturnType<
+  typeof load_first_organization_with_fixtures<LiveGamesFixtureState>
+> {
+  return load_first_organization_with_fixtures(
+    list_live_games_organization_candidates(
+      organizations,
+      select_live_games_organization_id(
+        organizations,
+        command.search_parameters,
+      ),
+      command.search_parameters,
+    ),
+    (organization_id) =>
+      refresh_live_games_page_fixture_state_result({
+        auth_state: command.auth_state,
+        fixture_state_dependencies: command.fixture_state_dependencies,
+        organization_id,
+      }),
+  );
+}
+
 async function load_ready_live_games_page(
   command: LiveGamesPageInitializationCommand,
   permissions: LiveGamesPagePermissions,
@@ -110,16 +138,9 @@ async function load_ready_live_games_page(
     };
   }
   const organizations = organizations_result.data;
-  const selected_organization_id = select_live_games_organization_id(
-    organizations,
-    command.search_parameters,
-  );
-  const fixture_state_result =
-    await refresh_live_games_page_fixture_state_result({
-      auth_state: command.auth_state,
-      fixture_state_dependencies: command.fixture_state_dependencies,
-      organization_id: selected_organization_id,
-    });
+  const choice = await choose_live_games_organization(command, organizations);
+  const selected_organization_id = choice.organization_id;
+  const fixture_state_result = choice.result;
   if (!fixture_state_result.success)
     return {
       status: LIVE_GAMES_PAGE_STATUS.ERROR,
