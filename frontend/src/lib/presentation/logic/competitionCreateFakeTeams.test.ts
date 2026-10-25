@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { pick_fake_competition_team_ids } from "./competitionCreateFakeTeams";
+import {
+  pick_fake_competition_team_ids,
+  select_organizations_with_teams,
+} from "./competitionCreateFakeTeams";
 
 const MEN = ["m1", "m2", "m3", "m4", "m5"].map((id) => ({
   id,
@@ -25,5 +28,29 @@ describe("fake competitions pick teams that belong together", () => {
 
   it("picks nothing when there are fewer than two teams", () => {
     expect(pick_fake_competition_team_ids([MEN[0]])).toEqual([]);
+  });
+});
+
+describe("fake competitions pick an organisation that can field teams", () => {
+  const organizations = [
+    { id: "org_one_team", name: "One" },
+    { id: "org_ready", name: "Ready" },
+  ];
+
+  it("skips organisations with fewer than two teams", () => {
+    const teams = [
+      { id: "t1", gender_id: "male", organization_id: "org_one_team" },
+      { id: "t2", gender_id: "male", organization_id: "org_ready" },
+      { id: "t3", gender_id: "male", organization_id: "org_ready" },
+    ];
+    expect(select_organizations_with_teams(organizations, teams)).toEqual([
+      organizations[1],
+    ]);
+  });
+
+  it("offers every organisation when none has enough teams", () => {
+    expect(select_organizations_with_teams(organizations, [])).toEqual(
+      organizations,
+    );
   });
 });

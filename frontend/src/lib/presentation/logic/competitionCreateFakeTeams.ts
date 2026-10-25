@@ -29,3 +29,16 @@ export function pick_fake_competition_team_ids(
     )
     .map((team) => team.id);
 }
+
+export function select_organizations_with_teams<T extends { id: string }>(
+  organizations: readonly T[],
+  teams: readonly (FakeTeamCandidate & { organization_id: string })[],
+): T[] {
+  const ready = organizations.filter(
+    (organization) =>
+      pick_fake_competition_team_ids(
+        teams.filter((team) => team.organization_id === organization.id),
+      ).length >= MINIMUM_COMPETITION_TEAMS,
+  );
+  return ready.length > 0 ? [...ready] : [...organizations];
+}
