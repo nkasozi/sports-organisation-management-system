@@ -15,7 +15,7 @@ import {
 import {
   fetch_filtered_jersey_options,
   fetch_fixtures_for_rating,
-  fetch_fixtures_without_setup,
+  fetch_fixtures_without_setup_in_competition,
 } from "./fixtureJerseyDataFetcher";
 import {
   fetch_fixtures_from_official,
@@ -115,9 +115,12 @@ const FIXTURE_AND_OFFICIAL_FETCH_HANDLERS: ReadonlyMap<
   FilteredFieldFetchHandler
 > = new Map<string, FilteredFieldFetchHandler>([
   [
-    "fixtures_without_setup",
+    "fixtures_without_setup_in_competition",
     async (context: FilteredFieldFetchContext) => ({
-      entities: await fetch_fixtures_without_setup(context.dependency_value),
+      entities: await fetch_fixtures_without_setup_in_competition(
+        context.dependency_value,
+        context.organization_id,
+      ),
     }),
   ],
   [

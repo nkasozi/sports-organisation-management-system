@@ -159,6 +159,7 @@ export async function load_fixture_details_setup_auto_populated_data(
     await dependencies.fixture_use_cases.get_by_id(fixture_id);
   if (!fixture_result.success || !fixture_result.data) return result;
   result.organization_id = fixture_result.data.organization_id;
+  result.competition_id = fixture_result.data.competition_id;
   const requirements = await load_fixture_official_requirements(
     fixture_result.data,
     dependencies,

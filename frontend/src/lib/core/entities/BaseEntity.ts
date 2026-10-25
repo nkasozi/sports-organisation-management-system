@@ -54,6 +54,8 @@ export interface FieldMetadata<T extends BaseEntity = BaseEntity> {
   enum_dependency?: EnumDependencyConfig;
   visible_when?: FieldVisibilityCondition;
   foreign_key_entity?: string;
+  foreign_key_value_field?: string;
+  is_form_only?: boolean;
   foreign_key_filter?: ForeignKeyFilterConfig;
   validation_rules?: ValidationRule[];
   sub_entity_config?: SubEntityConfig;
@@ -80,7 +82,8 @@ export interface ForeignKeyFilterConfig {
     | "fixtures_from_official"
     | "fixtures_for_rating"
     | "officials_from_fixture"
-    | "fixtures_without_setup";
+    | "fixtures_without_setup"
+    | "fixtures_without_setup_in_competition";
   holder_type?: string;
   team_side?: "home" | "away";
   exclude_field?: string;

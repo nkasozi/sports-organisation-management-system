@@ -87,6 +87,22 @@ export const FIXTUREDETAILSSETUP_ORGANIZATION_ID_FIELD: FieldMetadata = {
   foreign_key_entity: "organization",
 };
 
+export const FIXTUREDETAILSSETUP_COMPETITION_ID_FIELD: FieldMetadata = {
+  field_name: "competition_id",
+  display_name: "Competition",
+  field_type: "foreign_key",
+  foreign_key_entity: "competition",
+  is_required: true,
+  is_read_only: false,
+  is_form_only: true,
+  hide_on_edit: true,
+  show_in_list: false,
+  foreign_key_filter: {
+    depends_on_field: "organization_id",
+    filter_type: "competitions_from_organization",
+  },
+};
+
 export const FIXTUREDETAILSSETUP_FIXTURE_ID_FIELD: FieldMetadata = {
   field_name: "fixture_id" satisfies keyof FixtureDetailsSetup,
   display_name: "Fixture",
@@ -97,8 +113,8 @@ export const FIXTUREDETAILSSETUP_FIXTURE_ID_FIELD: FieldMetadata = {
   is_read_only_on_edit: true,
   show_in_list: true,
   foreign_key_filter: {
-    depends_on_field: "organization_id",
-    filter_type: "fixtures_without_setup",
+    depends_on_field: "competition_id",
+    filter_type: "fixtures_without_setup_in_competition",
   },
 };
 

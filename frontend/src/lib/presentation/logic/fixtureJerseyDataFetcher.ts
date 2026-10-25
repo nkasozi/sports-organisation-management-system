@@ -23,6 +23,7 @@ const JERSEY_HOLDER_TYPE = {
 export {
   fetch_fixtures_for_rating,
   fetch_fixtures_without_setup,
+  fetch_fixtures_without_setup_in_competition,
 } from "./fixtureRatingDataFetcher";
 
 type JerseyHolder = { holder_type: string; holder_id: string };

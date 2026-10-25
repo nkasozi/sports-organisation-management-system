@@ -12,12 +12,14 @@ import {
   type ActiveMembershipSource,
   load_fake_data_exclusions,
 } from "./dynamicEntityFormFakeDataExclusions";
+import { suggest_fixture_setup_details } from "./dynamicEntityFormFakeDataFixtureSetup";
 import { fill_required_foreign_keys } from "./dynamicEntityFormFakeDataForeignKeys";
 import { refine_fake_data_after_choices } from "./dynamicEntityFormFakeDataRefinements";
 import { create_dynamic_form_field_callbacks } from "./dynamicEntityFormFieldCallbacks";
 import { navigate_to_dynamic_form_foreign_entity } from "./dynamicEntityFormLocalActions";
 import type { DynamicFormFieldCallbacks } from "./dynamicFormComponentTypes";
 import type { DynamicFormData } from "./dynamicFormConstants";
+import { build_fixture_setup_suggestion_dependencies } from "./fixtureSetupSuggestionDependencies";
 
 type DynamicEntityFormController = {
   callbacks: DynamicFormFieldCallbacks;
@@ -44,7 +46,27 @@ async function generate_fake_data_with_choices(
       get_player_team_membership_use_cases() as unknown as ActiveMembershipSource,
     ),
   });
+  await apply_fixture_setup_suggestions(dependencies);
   apply_fake_data_refinements(dependencies, metadata.fields);
+}
+
+async function apply_fixture_setup_suggestions(
+  dependencies: DynamicEntityFormControllerDependencies,
+): Promise<boolean> {
+  const form_state = dependencies.get_form_state();
+  const suggestions = await suggest_fixture_setup_details(
+    {
+      entity_type: dependencies.entity_type,
+      form_data: form_state.form_data,
+      locked_field_names: dependencies.get_locked_field_names(),
+    },
+    build_fixture_setup_suggestion_dependencies,
+  );
+  dependencies.set_form_state({
+    ...dependencies.get_form_state(),
+    form_data: { ...dependencies.get_form_state().form_data, ...suggestions },
+  });
+  return Object.keys(suggestions).length > 0;
 }
 
 function apply_fake_data_refinements(

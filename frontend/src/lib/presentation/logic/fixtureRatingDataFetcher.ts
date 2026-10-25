@@ -38,11 +38,19 @@ function create_team_scope_state(
   return create_single_team_scope_state(raw_team_id);
 }
 
-export async function fetch_fixtures_without_setup(
+export function fetch_fixtures_without_setup_in_competition(
+  competition_id: string,
   organization_id: string,
 ): Promise<BaseEntity[]> {
+  return fetch_fixtures_without_setup(organization_id, { competition_id });
+}
+
+export async function fetch_fixtures_without_setup(
+  organization_id: string,
+  fixture_filter: Record<string, string> = { organization_id },
+): Promise<BaseEntity[]> {
   const [all_fixtures, existing_setups] = await Promise.all([
-    fetch_entities_for_type("fixture", { organization_id }),
+    fetch_entities_for_type("fixture", fixture_filter),
     fetch_entities_for_type("fixturedetailssetup", { organization_id }),
   ]);
   const fixture_ids_with_setup = new Set(

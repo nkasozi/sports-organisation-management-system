@@ -85,6 +85,7 @@ describe("fixtureDetailsSetupAutoPopulate", () => {
     expect(result).toEqual({
       fixture_id: "fixture-1",
       organization_id: "organization-1",
+      competition_id: "competition-1",
       home_team_jersey_id: "home-jersey",
       official_jersey_id: "any-official-jersey",
       assigned_officials: [

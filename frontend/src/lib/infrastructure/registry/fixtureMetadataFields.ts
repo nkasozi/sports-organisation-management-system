@@ -84,10 +84,16 @@ export const FIXTURE_SCHEDULED_DATE_FIELD: FieldMetadata = {
 export const FIXTURE_VENUE_FIELD: FieldMetadata = {
   field_name: "venue" satisfies keyof Fixture,
   display_name: "Venue",
-  field_type: "string",
+  field_type: "foreign_key",
   is_required: false,
   is_read_only: false,
   show_in_list: false,
+  foreign_key_entity: "venue",
+  foreign_key_value_field: "name",
+  foreign_key_filter: {
+    depends_on_field: "organization_id",
+    filter_type: "lookup_from_organization",
+  },
 };
 
 export const FIXTURE_STATUS_FIELD: FieldMetadata = {

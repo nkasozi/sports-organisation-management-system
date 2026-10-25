@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   fetch_filtered_jersey_options: vi.fn(),
   fetch_fixtures_for_rating: vi.fn(),
   fetch_fixtures_from_official: vi.fn(),
-  fetch_fixtures_without_setup: vi.fn(),
+  fetch_fixtures_without_setup_in_competition: vi.fn(),
   fetch_officials_from_fixture: vi.fn(),
   fetch_officials_from_organization: vi.fn(),
   fetch_stages_from_competition: vi.fn(),
@@ -33,7 +33,8 @@ vi.mock("./dynamicFormDataLoader", () => ({
 vi.mock("./fixtureJerseyDataFetcher", () => ({
   fetch_filtered_jersey_options: mocks.fetch_filtered_jersey_options,
   fetch_fixtures_for_rating: mocks.fetch_fixtures_for_rating,
-  fetch_fixtures_without_setup: mocks.fetch_fixtures_without_setup,
+  fetch_fixtures_without_setup_in_competition:
+    mocks.fetch_fixtures_without_setup_in_competition,
 }));
 
 vi.mock("./officialDataFetcher", () => ({
@@ -81,9 +82,9 @@ describe("filteredFieldDispatcher branch characterization", () => {
       ["dependency-1"],
     ],
     [
-      "fixtures_without_setup",
-      "fetch_fixtures_without_setup",
-      ["dependency-1"],
+      "fixtures_without_setup_in_competition",
+      "fetch_fixtures_without_setup_in_competition",
+      ["dependency-1", "org-1"],
     ],
     ["fixtures_for_rating", "fetch_fixtures_for_rating", ["dependency-1"]],
     [

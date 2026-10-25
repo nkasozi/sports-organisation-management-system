@@ -15,6 +15,7 @@ import {
 } from "$lib/presentation/logic/calendarPageDataLogging";
 import { get_current_year_date_range } from "$lib/presentation/logic/calendarPageState";
 import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
+import { create_single_flight } from "$lib/presentation/logic/singleFlight";
 
 type CalendarPageUseCases = UseCasesContainer;
 
@@ -99,10 +100,20 @@ function build_calendar_event_filter(
   return filter;
 }
 
+const sync_activities_once = create_single_flight<boolean>();
+type DefaultCategoriesResult = Awaited<
+  ReturnType<
+    CalendarPageUseCases["activity_category_use_cases"]["ensure_default_categories_exist"]
+  >
+>;
+const ensure_categories_once = create_single_flight<DefaultCategoriesResult>();
+
 export async function sync_and_load_calendar_events(
   command: CalendarEventsCommand,
 ): Promise<CalendarEvent[]> {
-  await sync_calendar_activities(command);
+  await sync_activities_once(command.organization_id, () =>
+    sync_calendar_activities(command),
+  );
   const result = await command.activity_use_cases.get_calendar_events(
     command.organization_id,
     get_current_year_date_range(),
@@ -127,10 +138,13 @@ interface CalendarOrganizationBundleCommand {
 async function load_calendar_categories(
   command: CalendarOrganizationBundleCommand,
 ): Promise<ActivityCategory[]> {
-  const default_categories_result =
-    await command.use_cases.activity_category_use_cases.ensure_default_categories_exist(
-      command.organization_id,
-    );
+  const default_categories_result = await ensure_categories_once(
+    command.organization_id,
+    () =>
+      command.use_cases.activity_category_use_cases.ensure_default_categories_exist(
+        command.organization_id,
+      ),
+  );
   log_calendar_step_failure(
     default_categories_result,
     CALENDAR_PAGE_DATA_EVENTS.DEFAULT_CATEGORIES_FAILED,
