@@ -6,6 +6,8 @@ export const AUDIT_LOG_MESSAGES = {
   RECORD_CREATED: "New record created",
   RECORD_DELETED: "Record deleted",
   NO_CHANGES: "-",
+  SHOW_ALL_CHANGES: "Show all changes",
+  SHOW_FEWER_CHANGES: "Show fewer",
   PREVIOUS_PAGE: "Previous",
   NEXT_PAGE: "Next",
   FILTER_ENTITY_TYPE_LABEL: "Entity Type",

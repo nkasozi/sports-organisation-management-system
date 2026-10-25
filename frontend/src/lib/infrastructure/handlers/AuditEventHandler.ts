@@ -10,13 +10,12 @@ import {
 import { get_repository_container } from "../container";
 import {
   type AccessDeniedPayload,
-  type EntityCreatedPayload,
-  type EntityDeletedPayload,
-  type EntityUpdatedPayload,
   EventBus,
   type PageViewedPayload,
 } from "../events/EventBus";
 import { EVENT_TYPE } from "../events/eventBusConstants";
+import type { EntityChangedPayload } from "../events/EventBusTypes";
+import { build_entity_change_audit_input } from "./AuditEntityChangeHandler";
 import {
   ACCESS_DENIED_DISPLAY_NAME_PREFIX,
   AUDIT_EVENT_HANDLER_LOG_EVENT,
@@ -27,7 +26,6 @@ import {
   apply_anonymous_user_identity,
   build_access_denied_details,
   build_base_audit_input,
-  build_field_changes,
 } from "./AuditEventInputBuilders";
 
 async function persist_audit_input(
@@ -47,55 +45,12 @@ async function persist_audit_input(
   return create_failure_result(AUDIT_LOG_WRITE_FAILED_MESSAGE);
 }
 
-function handle_entity_created(
-  payload: EntityCreatedPayload,
+async function handle_entity_changed(
+  payload: EntityChangedPayload,
 ): AsyncResult<boolean> {
-  return persist_audit_input(
-    build_base_audit_input(
-      payload.entity_type,
-      payload.entity_id,
-      payload.entity_display_name,
-      AUDIT_ACTION.CREATE,
-      [],
-      payload.user_context,
-    ),
-  );
-}
-
-async function handle_entity_updated(
-  payload: EntityUpdatedPayload,
-): AsyncResult<boolean> {
-  if (payload.changed_fields.length === 0) return create_success_result(false);
-  const changes = build_field_changes(
-    payload.old_entity_data,
-    payload.entity_data,
-    payload.changed_fields,
-  );
-  return persist_audit_input(
-    build_base_audit_input(
-      payload.entity_type,
-      payload.entity_id,
-      payload.entity_display_name,
-      AUDIT_ACTION.UPDATE,
-      changes,
-      payload.user_context,
-    ),
-  );
-}
-
-function handle_entity_deleted(
-  payload: EntityDeletedPayload,
-): AsyncResult<boolean> {
-  return persist_audit_input(
-    build_base_audit_input(
-      payload.entity_type,
-      payload.entity_id,
-      payload.entity_display_name,
-      AUDIT_ACTION.DELETE,
-      [],
-      payload.user_context,
-    ),
-  );
+  const audit_input = await build_entity_change_audit_input(payload);
+  if (!audit_input) return create_success_result(false);
+  return persist_audit_input(audit_input);
 }
 
 function handle_access_denied(
@@ -132,9 +87,7 @@ let is_initialized = false;
 
 export function initialize_audit_event_handlers(): boolean {
   if (is_initialized) return false;
-  EventBus.subscribe(EVENT_TYPE.ENTITY_CREATED, handle_entity_created);
-  EventBus.subscribe(EVENT_TYPE.ENTITY_UPDATED, handle_entity_updated);
-  EventBus.subscribe(EVENT_TYPE.ENTITY_DELETED, handle_entity_deleted);
+  EventBus.subscribe(EVENT_TYPE.ENTITY_CHANGED, handle_entity_changed);
   EventBus.subscribe(EVENT_TYPE.ACCESS_DENIED, handle_access_denied);
   EventBus.subscribe(EVENT_TYPE.PAGE_VIEWED, handle_page_viewed);
   is_initialized = true;

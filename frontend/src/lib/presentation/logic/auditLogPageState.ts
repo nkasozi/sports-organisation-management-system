@@ -1,4 +1,4 @@
-import type { AuditLog } from "$lib/core/entities/AuditLog";
+import type { AuditLog, FieldChange } from "$lib/core/entities/AuditLog";
 import {
   get_scope_value,
   type UserScopeProfile,
@@ -80,14 +80,18 @@ export function get_audit_log_action_badge_class(action: string): string {
   }
 }
 
-export function format_audit_log_changes(log: AuditLog): string {
-  if (!log.changes || log.changes.length === 0) return "";
-  return log.changes
-    .map(
-      (change) =>
-        `${change.field_name}: "${change.old_value}" → "${change.new_value}"`,
-    )
-    .join(", ");
+const EMPTY_CHANGE_VALUE = "";
+
+function format_change_line(change: FieldChange): string {
+  if (change.old_value === EMPTY_CHANGE_VALUE)
+    return `${change.field_name}: ${change.new_value}`;
+  if (change.new_value === EMPTY_CHANGE_VALUE)
+    return `${change.field_name}: ${change.old_value}`;
+  return `${change.field_name}: ${change.old_value} → ${change.new_value}`;
+}
+
+export function format_audit_log_change_lines(log: AuditLog): string[] {
+  return (log.changes ?? []).map(format_change_line);
 }
 
 export function compute_audit_log_total_pages(
