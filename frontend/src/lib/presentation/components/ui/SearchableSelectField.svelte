@@ -152,7 +152,7 @@
     );
 </script>
 
-<div bind:this={container_element} class="space-y-1">
+<div bind:this={container_element} class="relative space-y-1">
     <SearchableSelectInput
         bind:input_element
         {label}
