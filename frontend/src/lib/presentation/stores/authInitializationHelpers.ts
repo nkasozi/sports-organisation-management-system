@@ -14,6 +14,7 @@ import { try_restore_anonymous_session as restore_anonymous_session_from_profile
 import {
   build_profiles_with_public_viewer,
   load_sidebar_menu_for_role,
+  sync_user_context_with_event_bus,
 } from "./authHelpers";
 import type {
   ClerkEmailState,
@@ -67,7 +68,13 @@ function resolve_public_viewer_profile_state(
   const public_profile = available_profiles.find(
     (profile) => profile.id === PUBLIC_VIEWER_PROFILE_ID,
   );
-  if (public_profile) return create_present_auth_profile_state(public_profile);
+  if (public_profile) {
+    sync_user_context_with_event_bus({
+      status: PRESENCE_STATUS.PRESENT,
+      profile: public_profile,
+    });
+    return create_present_auth_profile_state(public_profile);
+  }
   console.error("[AuthStore] Public viewer profile is missing", {
     event: AUTH_STORE_LOG_EVENTS.PUBLIC_VIEWER_PROFILE_MISSING,
     available_profile_count: available_profiles.length,

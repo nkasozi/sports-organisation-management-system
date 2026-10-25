@@ -8,7 +8,11 @@ import {
   type CreateAuditLogInput,
   type FieldChange,
 } from "../../core/entities/AuditLog";
-import type { EntityChangedPayload } from "../events/EventBusTypes";
+import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
+import type {
+  EntityChangedPayload,
+  UserContext,
+} from "../events/EventBusTypes";
 import { build_base_audit_input } from "./AuditEventInputBuilders";
 import {
   describe_audited_entity,
@@ -16,6 +20,13 @@ import {
 } from "./auditReferenceNames";
 
 type AuditRecord = Record<string, unknown>;
+
+const ANONYMOUS_USER_CONTEXT = {
+  user_id: "anonymous",
+  user_email: "anonymous@sport-sync.local",
+  user_display_name: "Anonymous user",
+  organization_id: WILDCARD_SCOPE,
+} as UserContext;
 
 function describe_changes(
   action: EntityChangedPayload["action"],
@@ -56,6 +67,6 @@ export async function build_entity_change_audit_input(
     display_name as CreateAuditLogInput["entity_display_name"],
     payload.action,
     changes,
-    payload.user_context,
+    payload.user_context ?? ANONYMOUS_USER_CONTEXT,
   );
 }
