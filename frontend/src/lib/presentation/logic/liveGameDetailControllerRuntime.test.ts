@@ -86,6 +86,7 @@ describe("liveGameDetailControllerRuntime", () => {
       get_view_state: vi.fn(),
       goto: vi.fn(),
       raw_token: vi.fn(),
+      is_public_viewer: vi.fn(() => false),
       set_event_state: vi.fn(),
       set_modal_state: vi.fn(),
       set_page_state: vi.fn(),

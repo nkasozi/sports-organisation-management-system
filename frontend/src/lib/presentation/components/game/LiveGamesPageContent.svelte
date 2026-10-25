@@ -49,6 +49,7 @@
         {can_change_organizations}
         {is_loading_fixtures}
         {on_organization_change}
+        {can_start_games}
     />
     <LiveGamesPermissionNotice message={permission_info_message} />
     <LiveGamesBody

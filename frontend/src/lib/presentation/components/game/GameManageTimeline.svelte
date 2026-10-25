@@ -59,8 +59,10 @@
             <p class="text-gray-500 dark:text-gray-400 text-sm">
                 {#if fixture_status === FIXTURE_STATUS.SCHEDULED}
                     Start the game to begin recording events
-                {:else if is_game_active}
+                {:else if is_game_active && can_correct}
                     Use the buttons above to record match events
+                {:else if is_game_active}
+                    Events will appear here as they happen
                 {:else}
                     This match had no recorded events
                 {/if}

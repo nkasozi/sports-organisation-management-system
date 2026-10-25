@@ -27,6 +27,7 @@ export type LiveGameDetailClockCommand = {
   get_page_state: () => LiveGameDetailPageState;
   goto: (path: string) => Promise<unknown>;
   raw_token: () => string;
+  is_public_viewer: () => boolean;
   set_page_state: (state: LiveGameDetailPageState) => void;
 };
 

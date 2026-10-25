@@ -51,6 +51,7 @@ export function create_clock_handlers(
       get_page_state: state_store.get_page_state,
       goto: overrides.goto ?? vi.fn(),
       raw_token: () => raw_token,
+      is_public_viewer: () => false,
       set_page_state: state_store.set_page_state,
     },
     overrides.now ?? (() => new Date()),

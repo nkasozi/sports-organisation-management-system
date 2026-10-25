@@ -14,6 +14,11 @@ import {
   stop_live_game_detail_clock,
   toggle_live_game_detail_clock,
 } from "./liveGameDetailControllerClockTicking";
+import {
+  NOT_WATCHING,
+  type SpectatorRefreshHandle,
+  start_watching_live_game,
+} from "./liveGameDetailSpectatorRefresh";
 
 function run_and_save_clock(
   context: LiveGameDetailClockContext,
@@ -36,9 +41,17 @@ export function create_live_game_detail_clock_handlers(
   toggle_clock: () => void;
 } {
   const context = create_live_game_detail_clock_context(command, now);
+  let watch_handle: SpectatorRefreshHandle = NOT_WATCHING;
   return {
-    initialize: () => initialize_live_game_detail_clock(context),
-    cleanup: (): void => stop_live_game_detail_clock(context),
+    initialize: async () => {
+      await initialize_live_game_detail_clock(context);
+      watch_handle.stop();
+      watch_handle = start_watching_live_game(context);
+    },
+    cleanup: (): void => {
+      watch_handle.stop();
+      stop_live_game_detail_clock(context);
+    },
     load_fixture_or_error: () =>
       load_live_game_detail_fixture_or_error(context),
     reload_fixture_bundle: () =>

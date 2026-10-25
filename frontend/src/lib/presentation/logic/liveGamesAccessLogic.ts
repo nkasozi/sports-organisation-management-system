@@ -1,5 +1,7 @@
 import { get_entity_data_category } from "$lib/core/interfaces/ports";
 
+import { PUBLIC_VIEWER_LIVE_GAMES_MESSAGE } from "./liveGamesMessages";
+
 type AuthorizationResult = Promise<{
   success: boolean;
   data?: { is_authorized: boolean; role?: string };
@@ -29,6 +31,16 @@ interface LiveGamesPermissions {
   denial_reason: string;
   can_start_games: boolean;
   permission_info_message: string;
+}
+
+export function build_public_viewer_live_games_permissions(): LiveGamesPermissions {
+  return {
+    authorization_succeeded: true,
+    is_read_authorized: true,
+    denial_reason: "",
+    can_start_games: false,
+    permission_info_message: PUBLIC_VIEWER_LIVE_GAMES_MESSAGE,
+  };
 }
 
 function build_failed_read_permissions(): LiveGamesPermissions {

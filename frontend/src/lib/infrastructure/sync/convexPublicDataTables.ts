@@ -9,6 +9,7 @@ export const PublicDataPageKind = {
   COMPETITION_RESULTS: "competition_results",
   CALENDAR: "calendar",
   MATCH_REPORT: "match_report",
+  LIVE_GAMES: "live_games",
 } as const;
 
 export type PublicDataPageType =
@@ -60,6 +61,21 @@ const MATCH_REPORT_TABLES: TableName[] = [
   "player_team_memberships",
 ];
 
+const LIVE_GAMES_TABLES: TableName[] = [
+  "organizations",
+  "sports",
+  "competitions",
+  "competition_stages",
+  "teams",
+  "fixtures",
+  "fixture_lineups",
+  "fixture_details_setups",
+  "officials",
+  "game_official_roles",
+  "players",
+  "player_positions",
+];
+
 export function get_tables_for_page(
   page_type: PublicDataPageType,
 ): TableName[] {
@@ -70,6 +86,8 @@ export function get_tables_for_page(
       return CALENDAR_TABLES;
     case PublicDataPageKind.MATCH_REPORT:
       return MATCH_REPORT_TABLES;
+    case PublicDataPageKind.LIVE_GAMES:
+      return LIVE_GAMES_TABLES;
   }
 }
 
