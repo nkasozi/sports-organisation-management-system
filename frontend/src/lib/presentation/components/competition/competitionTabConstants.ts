@@ -23,6 +23,7 @@ export type CompetitionEditTab =
 export const COMPETITION_RESULTS_TAB = {
   STANDINGS: "standings",
   FIXTURES: "fixtures",
+  LIVE: "live",
   RESULTS: "results",
   STATS: "stats",
 } as const;

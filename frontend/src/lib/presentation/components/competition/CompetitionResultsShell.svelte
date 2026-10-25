@@ -16,17 +16,16 @@
 
     import CompetitionResultsFixturesSection from "./CompetitionResultsFixturesSection.svelte";
     import CompetitionResultsHeader from "./CompetitionResultsHeader.svelte";
+    import CompetitionResultsLiveSection from "./CompetitionResultsLiveSection.svelte";
     import CompetitionResultsResultsSection from "./CompetitionResultsResultsSection.svelte";
     import CompetitionResultsStandingsSection from "./CompetitionResultsStandingsSection.svelte";
     import CompetitionResultsStatsSection from "./CompetitionResultsStatsSection.svelte";
     import CompetitionResultsTabs from "./CompetitionResultsTabs.svelte";
-    import CompetitionResultsTeamFixturesPanel from "./CompetitionResultsTeamFixturesPanel.svelte";
     import {
         COMPETITION_RESULTS_TAB,
         type CompetitionResultsTab,
     } from "./competitionTabConstants";
 
-    type EntityLabelLookup = (entity_id: string) => string;
     type TeamClickEvent = CustomEvent<{ team_id: string; team_name: string }>;
     export let organizations: Organization[];
     export let selected_organization_id: string;
@@ -43,6 +42,7 @@
     export let selected_team_id: string;
     export let live_team_ids: Set<string>;
     export let upcoming_fixtures: Fixture[];
+    export let live_fixtures: Fixture[];
     export let paginated_upcoming: Fixture[];
     export let upcoming_page: number;
     export let upcoming_total_pages: number;
@@ -61,21 +61,10 @@
     export let stats_card_sort: CardSortMode;
     export let stats_filtered_scorers: PlayerStats[];
     export let stats_filtered_card_players: PlayerStats[];
-    export let selected_team_name: string;
-    export let team_fixtures_loading: boolean;
-    export let displayed_team_fixtures: Fixture[];
-    export let paginated_team_fixtures: Fixture[];
-    export let show_all_competitions_fixtures: boolean;
-    export let sorted_team_fixtures_length: number;
-    export let team_fixtures_page: number;
-    export let team_fixtures_total_pages: number;
-    export let team_fixtures_per_page: number;
     export let format_date: (date_string: string) => string;
     export let get_fixture_stage_name: (stage_id: string) => string;
     export let get_fixture_stage_type: (stage_id: string) => string;
     export let get_team_name: (team_id: string) => string;
-    export let get_team_name_extended: (team_id: string) => string;
-    export let get_competition_name_extended: EntityLabelLookup;
     export let get_team_logo_url: (team_id: string) => string;
     export let on_organization_change: () => Promise<void>;
     export let on_competition_change: () => void;
@@ -87,7 +76,6 @@
         fixture: Fixture,
         event: MouseEvent,
     ) => Promise<boolean>;
-    export let on_close_team_fixtures_panel: () => void;
 </script>
 
 <div
@@ -111,6 +99,7 @@
     <CompetitionResultsTabs
         bind:active_tab
         upcoming_count={upcoming_fixtures.length}
+        live_count={live_fixtures.length}
         results_count={completed_fixtures.length}
     />
 
@@ -133,25 +122,7 @@
                 {on_team_click}
                 {on_open_match_report}
             />
-            <CompetitionResultsTeamFixturesPanel
-                {selected_team_id}
-                {selected_team_name}
-                {team_fixtures_loading}
-                {displayed_team_fixtures}
-                {paginated_team_fixtures}
-                bind:show_all_competitions_fixtures
-                {sorted_team_fixtures_length}
-                bind:team_fixtures_page
-                {team_fixtures_total_pages}
-                bind:team_fixtures_per_page
-                {page_size_options}
-                {format_date}
-                {get_team_name_extended}
-                {get_competition_name_extended}
-                {get_team_logo_url}
-                on_close={on_close_team_fixtures_panel}
-                {on_open_match_report}
-            />
+            <slot name="team_fixtures" />
         {:else if active_tab === COMPETITION_RESULTS_TAB.FIXTURES}
             <CompetitionResultsFixturesSection
                 {upcoming_fixtures}
@@ -163,6 +134,14 @@
                 {format_date}
                 {get_fixture_stage_name}
                 {get_fixture_stage_type}
+                {get_team_name}
+                {get_team_logo_url}
+                {on_open_match_report}
+            />
+        {:else if active_tab === COMPETITION_RESULTS_TAB.LIVE}
+            <CompetitionResultsLiveSection
+                {live_fixtures}
+                {get_fixture_stage_name}
                 {get_team_name}
                 {get_team_logo_url}
                 {on_open_match_report}
