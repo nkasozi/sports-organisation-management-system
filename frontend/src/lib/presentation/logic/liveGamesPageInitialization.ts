@@ -2,8 +2,12 @@ import {
   type AsyncResult,
   create_success_result,
 } from "$lib/core/types/Result";
+import { PUBLIC_VIEWER_ROLE } from "$lib/presentation/stores/authStoreConstants";
 
-import { load_live_games_permissions } from "./liveGamesAccessLogic";
+import {
+  build_public_viewer_live_games_permissions,
+  load_live_games_permissions,
+} from "./liveGamesAccessLogic";
 import {
   type LiveGamesFixtureState,
   load_live_games_fixture_state,
@@ -67,6 +71,15 @@ function build_not_ready_result(
   return { status: LIVE_GAMES_AUTHORIZATION_STATUS.NOT_READY, result };
 }
 
+function is_public_viewer_profile(
+  auth_state: LiveGamesPageInitializationCommand["auth_state"],
+): boolean {
+  return (
+    auth_state.current_profile.status === PRESENCE_STATUS.PRESENT &&
+    auth_state.current_profile.profile.role === PUBLIC_VIEWER_ROLE
+  );
+}
+
 async function authorize_live_games_page(
   command: LiveGamesPageInitializationCommand,
 ): Promise<LiveGamesPageAuthorizationResult> {
@@ -76,6 +89,11 @@ async function authorize_live_games_page(
       status: LIVE_GAMES_PAGE_STATUS.ERROR,
       error_message: auth_result.error_message,
     });
+  if (is_public_viewer_profile(command.auth_state))
+    return {
+      status: LIVE_GAMES_AUTHORIZATION_STATUS.AUTHORIZED,
+      permissions: build_public_viewer_live_games_permissions(),
+    };
   const token_state = get_live_games_current_token_state(command.auth_state);
   if (token_state.status === PRESENCE_STATUS.MISSING)
     return build_not_ready_result({

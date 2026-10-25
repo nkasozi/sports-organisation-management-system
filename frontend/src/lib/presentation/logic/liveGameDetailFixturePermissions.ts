@@ -1,4 +1,5 @@
 import type { AuthorizationPort } from "$lib/core/interfaces/ports";
+import { PUBLIC_VIEWER_LIVE_GAMES_MESSAGE } from "$lib/presentation/logic/liveGamesMessages";
 import { access_denial_store } from "$lib/presentation/stores/accessDenial";
 
 import {
@@ -84,10 +85,23 @@ async function apply_live_game_detail_modify_permission(
   return true;
 }
 
+function apply_public_viewer_watch_permission(
+  context: LiveGameDetailClockContext,
+): boolean {
+  update_live_game_detail_clock_page_state(context, (page_state) => ({
+    ...page_state,
+    can_modify_game: false,
+    permission_info_message: PUBLIC_VIEWER_LIVE_GAMES_MESSAGE,
+  }));
+  return true;
+}
+
 export async function apply_live_game_detail_fixture_permissions(
   context: LiveGameDetailClockContext,
   authorization_adapter: AuthorizationPort,
 ): Promise<boolean> {
+  if (context.command.is_public_viewer())
+    return apply_public_viewer_watch_permission(context);
   const raw_token = context.command.raw_token();
   if (!raw_token) {
     console.error("[LiveGameDetail] No session token for permission check", {

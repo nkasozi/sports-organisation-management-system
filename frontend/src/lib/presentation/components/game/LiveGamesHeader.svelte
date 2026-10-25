@@ -6,6 +6,7 @@
     export let can_change_organizations: boolean;
     export let is_loading_fixtures: boolean;
     export let on_organization_change: () => void;
+    export let can_start_games: boolean = true;
 
     function get_current_organization_name(): string {
         return (
@@ -24,12 +25,14 @@
             <h1
                 class="text-2xl sm:text-3xl font-bold text-accent-900 dark:text-white"
             >
-                Live Game Management
+                {can_start_games ? "Live Game Management" : "Live Games"}
             </h1>
             <p
                 class="text-sm sm:text-base text-accent-600 dark:text-accent-300"
             >
-                Start and manage fixtures in real-time
+                {can_start_games
+                    ? "Start and manage fixtures in real-time"
+                    : "Follow games as they happen"}
             </p>
         </div>
         {#if organizations.length > 0}

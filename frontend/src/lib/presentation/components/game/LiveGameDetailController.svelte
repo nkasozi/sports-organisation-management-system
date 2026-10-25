@@ -17,6 +17,10 @@
         get_team_use_cases,
         get_venue_use_cases,
     } from "$lib/infrastructure/registry/useCaseFactories";
+    import {
+        read_is_public_viewer,
+        read_live_game_raw_token,
+    } from "$lib/presentation/logic/liveGameDetailAuthReaders";
     import { start_confirmed_live_game_if_requested } from "$lib/presentation/logic/liveGameDetailConfirmedStart";
     import { type LiveGameDetailDataDependencies } from "$lib/presentation/logic/liveGameDetailData";
     import { type LiveGameDetailPageActionDependencies } from "$lib/presentation/logic/liveGameDetailPageActions";
@@ -37,8 +41,6 @@
         LIVE_GAME_DETAIL_MODAL,
         type LiveGameDetailModal,
     } from "$lib/presentation/logic/liveGameDetailPageStateMachine";
-    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
-    import { auth_store } from "$lib/presentation/stores/auth";
     import { branding_store } from "$lib/presentation/stores/branding";
 
     import { create_live_game_detail_controller_runtime } from "../../logic/liveGameDetailControllerRuntime";
@@ -78,13 +80,8 @@
         get_page_state: () => page_state,
         get_view_state: () => view_state,
         goto,
-        raw_token: () => {
-            const current_token_state = get(auth_store).current_token;
-
-            return current_token_state.status === PRESENCE_STATUS.PRESENT
-                ? current_token_state.token.raw_token
-                : "";
-        },
+        raw_token: read_live_game_raw_token,
+        is_public_viewer: read_is_public_viewer,
         set_event_state: (state: LiveGameDetailEventState) =>
             (event_state = state),
         set_modal_state: (state: LiveGameDetailModalState) =>

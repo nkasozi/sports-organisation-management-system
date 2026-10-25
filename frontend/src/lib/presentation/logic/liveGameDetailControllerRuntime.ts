@@ -25,6 +25,7 @@ type LiveGameDetailControllerRuntimeCommand = {
   get_view_state: () => LiveGameDetailDerivedState;
   goto: (path: string) => Promise<unknown>;
   raw_token: () => string;
+  is_public_viewer: () => boolean;
   set_event_state: (state: LiveGameDetailEventState) => void;
   set_modal_state: (state: LiveGameDetailModalState) => void;
   set_page_state: (state: LiveGameDetailPageState) => void;
@@ -45,6 +46,7 @@ function build_clock_handlers(
     get_page_state: command.get_page_state,
     goto: command.goto,
     raw_token: command.raw_token,
+    is_public_viewer: command.is_public_viewer,
     set_page_state: command.set_page_state,
   });
 }

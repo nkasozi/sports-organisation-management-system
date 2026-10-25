@@ -30,7 +30,7 @@
                             clip-rule="evenodd"
                         />
                     </svg>
-                    Go to Game
+                    {can_start_games ? "Go to Game" : "Watch Live"}
                 </a>
             </div>
             <div class="hidden sm:block sm:flex-1"></div>

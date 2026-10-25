@@ -18,3 +18,6 @@ export const LIVE_GAMES_FALLBACK_LABEL = {
   UNKNOWN_COMPETITION: "Unknown Competition",
   UNKNOWN_SPORT: "Unknown Sport",
 } as const;
+
+export const PUBLIC_VIEWER_LIVE_GAMES_MESSAGE =
+  "You are watching live. Scores and events update as they happen.";
