@@ -5,7 +5,7 @@ import type { AuditLog } from "$lib/core/entities/AuditLog";
 import {
   build_audit_log_filter,
   compute_audit_log_total_pages,
-  format_audit_log_changes,
+  format_audit_log_change_lines,
   get_audit_log_action_badge_class,
   get_audit_log_organization_filter,
 } from "./auditLogPageState";
@@ -86,17 +86,64 @@ describe("auditLogPageState", () => {
     });
   });
 
-  it("formats audit log changes into a readable summary", () => {
-    const result = format_audit_log_changes(create_audit_log());
+  it("describes each updated field from its old value to its new value", () => {
+    const result = format_audit_log_change_lines(create_audit_log());
 
-    expect(result).toContain('name: "Old Name"');
-    expect(result).toContain('"New Name"');
+    expect(result).toEqual(["name: Old Name → New Name"]);
   });
 
-  it("returns an empty change summary when there are no changes", () => {
-    const result = format_audit_log_changes(create_audit_log({ changes: [] }));
+  it("lists the values of a created record", () => {
+    const result = format_audit_log_change_lines(
+      create_audit_log({
+        action: "create",
+        changes: [{ field_name: "Name", old_value: "", new_value: "Lions" }],
+      }),
+    );
 
-    expect(result).toBe("");
+    expect(result).toEqual(["Name: Lions"]);
+  });
+
+  it("lists the values a deleted record had", () => {
+    const result = format_audit_log_change_lines(
+      create_audit_log({
+        action: "delete",
+        changes: [{ field_name: "Name", old_value: "Lions", new_value: "" }],
+      }),
+    );
+
+    expect(result).toEqual(["Name: Lions"]);
+  });
+
+  it("shows added and removed list items with their value", () => {
+    const result = format_audit_log_change_lines(
+      create_audit_log({
+        changes: [
+          {
+            field_name: "Game events: added",
+            old_value: "",
+            new_value: "Goal 3'",
+          },
+          {
+            field_name: "Game events: removed",
+            old_value: "Card 9'",
+            new_value: "",
+          },
+        ],
+      }),
+    );
+
+    expect(result).toEqual([
+      "Game events: added: Goal 3'",
+      "Game events: removed: Card 9'",
+    ]);
+  });
+
+  it("returns no change lines when there are no changes", () => {
+    const result = format_audit_log_change_lines(
+      create_audit_log({ changes: [] }),
+    );
+
+    expect(result).toEqual([]);
   });
 
   it("returns the expected action badge classes", () => {

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AUDIT_ACTION } from "../../core/entities/AuditLog";
+import { emit_entity_changed } from "../events/entityChangeEvents";
 import { EventBus } from "../events/EventBus";
 import { AUDIT_EVENT_HANDLER_LOG_EVENT } from "./auditEventConstants";
 import {
@@ -37,7 +38,13 @@ describe("AuditEventHandler write failures", () => {
       error: "Failed to create audit log",
     });
 
-    EventBus.emit_entity_deleted("Team", "team-9", "City FC", {});
+    emit_entity_changed({
+      entity_type: "Team",
+      entity_id: "team-9",
+      action: "delete",
+      before: { id: "team-9", name: "City FC" },
+      after: {},
+    });
     await vi.waitFor(() => expect(error_spy).toHaveBeenCalled());
 
     expect(error_spy).toHaveBeenCalledWith(
@@ -55,7 +62,13 @@ describe("AuditEventHandler write failures", () => {
     const error_spy = vi.spyOn(console, "error").mockImplementation(() => {});
     mock_create_audit_log.mockResolvedValue({ success: true, data: {} });
 
-    EventBus.emit_entity_created("Team", "team-1", "City FC", {});
+    emit_entity_changed({
+      entity_type: "Team",
+      entity_id: "team-1",
+      action: "create",
+      before: {},
+      after: { id: "team-1", name: "City FC" },
+    });
     await vi.waitFor(() => expect(mock_create_audit_log).toHaveBeenCalled());
 
     expect(error_spy).not.toHaveBeenCalled();

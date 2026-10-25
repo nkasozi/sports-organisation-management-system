@@ -1,12 +1,12 @@
 <script lang="ts">
-    import { AUDIT_ACTION, type AuditLog } from "$lib/core/entities/AuditLog";
+    import type { AuditLog } from "$lib/core/entities/AuditLog";
 
     import {
         compute_audit_log_total_pages,
-        format_audit_log_changes,
         format_audit_log_timestamp,
         get_audit_log_action_badge_class,
     } from "../../logic/auditLogPageState";
+    import AuditLogChanges from "./AuditLogChanges.svelte";
     import { AUDIT_LOG_MESSAGES } from "./auditLogMessages";
 
     export let audit_logs: AuditLog[] = [];
@@ -124,23 +124,9 @@
                                 >{log.entity_display_name || log.entity_id}</td
                             >
                             <td
-                                class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-md truncate"
-                                title={format_audit_log_changes(log)}
+                                class="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 min-w-[16rem] max-w-md align-top"
                             >
-                                {#if log.action === AUDIT_ACTION.UPDATE && log.changes && log.changes.length > 0}
-                                    {format_audit_log_changes(log)}
-                                {:else if log.action === AUDIT_ACTION.CREATE}
-                                    <span
-                                        class="text-green-600 dark:text-green-400"
-                                        >{AUDIT_LOG_MESSAGES.RECORD_CREATED}</span
-                                    >
-                                {:else if log.action === AUDIT_ACTION.DELETE}
-                                    <span class="text-red-600 dark:text-red-400"
-                                        >{AUDIT_LOG_MESSAGES.RECORD_DELETED}</span
-                                    >
-                                {:else}
-                                    {AUDIT_LOG_MESSAGES.NO_CHANGES}
-                                {/if}
+                                <AuditLogChanges {log} />
                             </td>
                         </tr>
                     {/each}

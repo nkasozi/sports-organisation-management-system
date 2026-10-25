@@ -13,18 +13,21 @@ import type {
 } from "../../core/types/Result";
 import { get_database, type SportSyncDatabase } from "./database";
 import {
+  type AuditedWriteContext,
+  create_audited_entity,
+  delete_audited_entities,
+  delete_audited_entity,
+  update_audited_entity,
+} from "./InBrowserBaseRepositoryAuditedWrites";
+import {
   create_paginated_result_from_options,
   paginate_entity_slice,
   sort_entities_by_options,
 } from "./InBrowserBaseRepositoryHelpers";
 import {
-  create_entity,
-  delete_entities_by_ids,
-  delete_existing_entity,
   find_all_entities,
   find_entities_by_ids,
   find_entity_by_id,
-  write_updated_entity,
 } from "./InBrowserBaseRepositoryOperations";
 import {
   clear_entity_data,
@@ -37,6 +40,12 @@ import {
   run_repository_write,
   USER_WRITE_ORIGIN,
 } from "./InBrowserRepositoryWriteOrigin";
+
+const AUDITED = {
+  CREATE: "create",
+  UPDATE: "update",
+  DELETE: "delete",
+} as const;
 
 export abstract class InBrowserBaseRepository<
   TEntity extends BaseEntity,
@@ -127,50 +136,38 @@ export abstract class InBrowserBaseRepository<
   }
 
   create(input: TCreateInput): AsyncResult<TEntity> {
-    return this.run_write(() =>
-      create_entity(
-        this.get_table(),
-        input,
-        this.entity_prefix,
-        this.create_entity_from_input.bind(this),
-      ),
+    return create_audited_entity(
+      this.write_context(),
+      input,
+      this.entity_prefix,
+      this.create_entity_from_input.bind(this),
     );
   }
 
-  async update(
+  update(
     id: ScalarValueInput<TEntity["id"]>,
     updates: TUpdateInput,
   ): AsyncResult<TEntity> {
-    const existing_entity_result = await find_entity_by_id(
-      this.get_table(),
+    return update_audited_entity(
+      this.write_context(),
       id,
-    );
-    if (!existing_entity_result.success) return existing_entity_result;
-    return this.run_write(() =>
-      write_updated_entity(
-        this.get_table(),
-        existing_entity_result.data,
-        updates,
-        this.apply_updates_to_entity.bind(this),
-      ),
+      updates,
+      this.apply_updates_to_entity.bind(this),
     );
   }
 
-  async delete_by_id(
-    id: ScalarValueInput<TEntity["id"]>,
-  ): AsyncResult<boolean> {
-    const existing_entity_result = await find_entity_by_id(
-      this.get_table(),
-      id,
-    );
-    if (!existing_entity_result.success) return existing_entity_result;
-    return this.run_write(() => delete_existing_entity(this.get_table(), id));
+  delete_by_id(id: ScalarValueInput<TEntity["id"]>): AsyncResult<boolean> {
+    return delete_audited_entity(this.write_context(), id);
   }
 
   delete_by_ids(
     ids: Array<ScalarValueInput<TEntity["id"]>>,
   ): AsyncResult<number> {
-    return this.run_write(() => delete_entities_by_ids(this.get_table(), ids));
+    return delete_audited_entities(this.write_context(), ids);
+  }
+
+  private write_context(): AuditedWriteContext<TEntity> {
+    return { table: this.get_table(), origin: this.write_origin };
   }
 
   count(): AsyncResult<number> {

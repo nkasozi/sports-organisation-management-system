@@ -30,6 +30,16 @@ export interface EntityUpdatedPayload extends EntityEventPayload {
 }
 
 export type EntityCreatedPayload = EntityEventPayload;
+
+export interface EntityChangedPayload {
+  entity_type: string;
+  entity_id: string;
+  action: "create" | "update" | "delete";
+  before: Record<string, unknown>;
+  after: Record<string, unknown>;
+  timestamp: IsoDateTimeString;
+  user_context?: UserContext;
+}
 export type EntityDeletedPayload = EntityEventPayload;
 
 export interface AccessDeniedPayload {

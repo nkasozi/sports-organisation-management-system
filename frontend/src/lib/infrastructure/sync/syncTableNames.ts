@@ -1,6 +1,7 @@
-import type { SharedEntityType } from "$convex/shared_permission_definitions";
 import type { UserRole } from "$lib/core/interfaces/ports";
 import { check_entity_permission_in_any_scope } from "$lib/core/interfaces/ports";
+
+import { TABLE_NAME_TO_ENTITY_TYPE } from "./syncTableEntityTypes";
 
 export const TABLE_NAMES = [
   "organizations",
@@ -43,43 +44,6 @@ export const TABLE_NAMES = [
 ] as const;
 
 export type TableName = (typeof TABLE_NAMES)[number];
-
-const TABLE_NAME_TO_ENTITY_TYPE: Partial<Record<TableName, SharedEntityType>> =
-  {
-    organizations: "organization",
-    organization_settings: "organizationsettings",
-    sports: "sport",
-    competitions: "competition",
-    teams: "team",
-    players: "player",
-    officials: "official",
-    fixtures: "fixture",
-    team_staff: "teamstaff",
-    team_staff_roles: "teamstaffrole",
-    game_official_roles: "gameofficialrole",
-    venues: "venue",
-    jersey_colors: "jerseycolor",
-    player_positions: "playerposition",
-    player_profiles: "playerprofile",
-    team_profiles: "teamprofile",
-    profile_links: "profilelink",
-    competition_formats: "competitionformat",
-    competition_teams: "competitionteam",
-    player_team_memberships: "playerteammembership",
-    fixture_details_setups: "fixturedetailssetup",
-    fixture_lineups: "fixturelineup",
-    activity_categories: "activitycategory",
-    system_users: "systemuser",
-    identification_types: "identificationtype",
-    identifications: "identification",
-    qualifications: "qualification",
-    game_event_types: "gameeventtype",
-    genders: "gender",
-    live_game_logs: "livegamelog",
-    game_event_logs: "gameeventlog",
-    player_team_transfer_histories: "playerteamtransferhistory",
-    official_performance_ratings: "officialperformancerating",
-  };
 
 const PushOperation = {
   UPSERT: "upsert",
