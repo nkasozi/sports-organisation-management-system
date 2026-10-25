@@ -6,10 +6,15 @@ describe("competitionCreatePageSubmit", () => {
   function create_dependencies(): {
     competition_use_cases: { create: Mock };
     competition_team_use_cases: { create: Mock };
+    jersey_color_use_cases: { list: Mock; create: Mock };
   } {
     return {
       competition_use_cases: { create: vi.fn() },
       competition_team_use_cases: { create: vi.fn() },
+      jersey_color_use_cases: {
+        list: vi.fn().mockResolvedValue({ success: true, data: { items: [] } }),
+        create: vi.fn(),
+      },
     };
   }
 

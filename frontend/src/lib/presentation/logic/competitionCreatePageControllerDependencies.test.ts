@@ -6,6 +6,7 @@ const competition_create_dependency_mocks = vi.hoisted(() => ({
   get_competition_use_cases: vi.fn(),
   get_organization_use_cases: vi.fn(),
   get_team_use_cases: vi.fn(),
+  get_jersey_color_use_cases: vi.fn(),
 }));
 
 vi.mock("$lib/infrastructure/registry/useCaseFactories", () => ({
@@ -18,6 +19,8 @@ vi.mock("$lib/infrastructure/registry/useCaseFactories", () => ({
   get_organization_use_cases:
     competition_create_dependency_mocks.get_organization_use_cases,
   get_team_use_cases: competition_create_dependency_mocks.get_team_use_cases,
+  get_jersey_color_use_cases:
+    competition_create_dependency_mocks.get_jersey_color_use_cases,
 }));
 
 describe("competitionCreatePageControllerDependencies", () => {
@@ -29,6 +32,7 @@ describe("competitionCreatePageControllerDependencies", () => {
       organization_use_cases: { kind: "organizations" },
       competition_format_use_cases: { kind: "competition-formats" },
       team_use_cases: { kind: "teams" },
+      jersey_color_use_cases: { kind: "jersey-colors" },
     };
     competition_create_dependency_mocks.get_competition_use_cases.mockReturnValue(
       expected_dependencies.competition_use_cases,
@@ -44,6 +48,9 @@ describe("competitionCreatePageControllerDependencies", () => {
     );
     competition_create_dependency_mocks.get_team_use_cases.mockReturnValue(
       expected_dependencies.team_use_cases,
+    );
+    competition_create_dependency_mocks.get_jersey_color_use_cases.mockReturnValue(
+      expected_dependencies.jersey_color_use_cases,
     );
 
     const { COMPETITION_CREATE_PAGE_TEXT, competition_create_dependencies } =
