@@ -110,9 +110,7 @@
         modal_state = build_live_game_detail_modal_state(modal);
     }
 
-    function close_modal(): void {
-        open_modal(LIVE_GAME_DETAIL_MODAL.NONE);
-    }
+    const close_modal = (): void => open_modal(LIVE_GAME_DETAIL_MODAL.NONE);
 
     function navigate_back(): void {
         void goto(LIVE_GAME_DETAIL_TEXT.LIVE_GAMES_PATH);
@@ -147,6 +145,7 @@
     on_end={() => open_modal(LIVE_GAME_DETAIL_MODAL.END)}
     on_download_match_report={runtime.download_report}
     on_open_event_modal={runtime.open_event_modal}
+    on_correct_event={runtime.correct_event}
     on_toggle_home_lineup={() =>
         (page_state = {
             ...page_state,

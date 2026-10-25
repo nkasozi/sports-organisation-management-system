@@ -1,15 +1,22 @@
-import type { GameEvent, GamePeriod } from "../entities/Fixture";
+import type { Fixture, GameEvent, GamePeriod } from "../entities/Fixture";
 import type { ScoreAward } from "../entities/SportEventCatalogConstants";
 import type {
   FixtureRepository,
   FixtureUseCasesPort,
 } from "../interfaces/ports";
+import { OptionStatus } from "../types/Option";
+import {
+  create_edited_event_plan,
+  create_removed_event_plan,
+  find_correctable_event,
+} from "./FixtureGameEventCorrections";
 import {
   create_end_fixture_plan,
   create_recorded_event_plan,
   create_start_fixture_plan,
   is_event_already_recorded,
 } from "./FixtureGameEventPlans";
+import type { FixtureUpdatePlan } from "./FixtureGameEventUpdates";
 import {
   create_guarded_runner,
   type FixturePlanBuilder,
@@ -25,8 +32,26 @@ import type { KeyedSerialExecutor } from "./KeyedSerialExecutor";
 
 type FixtureGameEventMethods = Pick<
   FixtureUseCasesPort,
-  "start_fixture" | "record_game_event" | "update_period" | "end_fixture"
+  | "start_fixture"
+  | "record_game_event"
+  | "update_game_event"
+  | "remove_game_event"
+  | "update_period"
+  | "end_fixture"
 >;
+
+const EVENT_NOT_FOUND_REASON =
+  "This event is no longer in the game. Refresh the page to see the latest events.";
+
+function build_correction_plan(
+  event_id: string,
+  build: (fixture: Fixture) => FixtureUpdatePlan,
+): FixturePlanBuilder {
+  return (fixture) =>
+    find_correctable_event(fixture, event_id).status === OptionStatus.SOME
+      ? { kind: FIXTURE_PLAN_DECISION.APPLY, plan: build(fixture) }
+      : { kind: FIXTURE_PLAN_DECISION.REJECT, reason: EVENT_NOT_FOUND_REASON };
+}
 
 function build_record_event_plan(
   event: GameEvent,
@@ -47,6 +72,29 @@ function build_record_event_plan(
   };
 }
 
+function create_event_correction_methods(
+  run_guarded: ReturnType<typeof create_guarded_runner>,
+): Pick<FixtureGameEventMethods, "update_game_event" | "remove_game_event"> {
+  return {
+    update_game_event: (id, event_id, correction) =>
+      run_guarded(
+        id,
+        FixtureLifecycleCommand.RECORD_EVENT,
+        build_correction_plan(event_id, (fixture) =>
+          create_edited_event_plan(fixture, event_id, correction),
+        ),
+      ),
+    remove_game_event: (id, event_id) =>
+      run_guarded(
+        id,
+        FixtureLifecycleCommand.RECORD_EVENT,
+        build_correction_plan(event_id, (fixture) =>
+          create_removed_event_plan(fixture, event_id),
+        ),
+      ),
+  };
+}
+
 export function create_fixture_game_events(
   repository: FixtureRepository,
   executor: KeyedSerialExecutor = SHARED_FIXTURE_WRITE_EXECUTOR,
@@ -64,6 +112,7 @@ export function create_fixture_game_events(
         FixtureLifecycleCommand.RECORD_EVENT,
         build_record_event_plan(event, score_award),
       ),
+    ...create_event_correction_methods(run_guarded),
     update_period: (id, command) =>
       run_guarded(id, FixtureLifecycleCommand.CHANGE_PERIOD, (fixture) =>
         decide_period_transition(fixture, command),

@@ -11,6 +11,10 @@ import {
   select_live_game_detail_event_player,
   select_live_game_detail_secondary_player,
 } from "./liveGameDetailControllerEventSelection";
+import {
+  correct_live_game_detail_event,
+  type LiveEventCorrectionRequest,
+} from "./liveGameEventCorrection";
 
 export function create_live_game_detail_event_handlers(
   command: LiveGameDetailEventHandlersCommand,
@@ -20,6 +24,7 @@ export function create_live_game_detail_event_handlers(
     team_side: "home" | "away",
   ) => void;
   record_event: () => Promise<void>;
+  correct_event: (request: LiveEventCorrectionRequest) => Promise<boolean>;
   select_event_player: (player_id: string) => void;
   select_secondary_player: (player_id: string) => void;
   update_player_time_on: (
@@ -43,5 +48,7 @@ export function create_live_game_detail_event_handlers(
         new_time_on,
       ),
     record_event: () => record_live_game_detail_event(command),
+    correct_event: (request) =>
+      correct_live_game_detail_event(command, request),
   };
 }
