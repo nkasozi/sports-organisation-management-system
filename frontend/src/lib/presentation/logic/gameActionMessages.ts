@@ -6,6 +6,7 @@ export const GAME_ACTION_USER_MESSAGE = {
     "We couldn't move to the next period. Please try again.",
   END_PERIOD_FAILED: "We couldn't end this period. Please try again.",
   RECORD_EVENT_FAILED: "We couldn't save that event. Please try again.",
+  PLAYER_REQUIRED: "Choose the player first, then record the event.",
   EXTRA_TIME_FAILED: "We couldn't add extra time. Please try again.",
   RELOAD_AFTER_LINEUPS_FAILED:
     "Lineups were generated, but the game could not be refreshed. Please reload the page.",

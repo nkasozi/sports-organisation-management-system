@@ -128,10 +128,41 @@ async function select_preferred_competition_results_organization(
   );
   if (preferred_organization.status !== PRESENCE_STATUS.PRESENT)
     return current_selection;
-  return load_competition_results_selection_for_organization(
+  const is_saved_choice =
+    preferred_organization.organization.id === command.saved_organization_id;
+  return select_first_organization_with_competitions(
     command.competition_results_dependencies,
-    preferred_organization.organization.id,
+    is_saved_choice
+      ? [preferred_organization.organization]
+      : [
+          preferred_organization.organization,
+          ...organizations.filter(
+            (organization) =>
+              organization.id !== preferred_organization.organization.id,
+          ),
+        ],
   );
+}
+
+async function select_first_organization_with_competitions(
+  dependencies: CompetitionResultsPageStateDependencies,
+  candidates: Organization[],
+): Promise<CompetitionResultsPageSelection> {
+  const [first_candidate] = candidates;
+  const first_selection =
+    await load_competition_results_selection_for_organization(
+      dependencies,
+      first_candidate.id,
+    );
+  if (first_selection.competitions.length > 0) return first_selection;
+  for (const candidate of candidates.slice(1)) {
+    const selection = await load_competition_results_selection_for_organization(
+      dependencies,
+      candidate.id,
+    );
+    if (selection.competitions.length > 0) return selection;
+  }
+  return first_selection;
 }
 
 export async function initialize_competition_results_page(

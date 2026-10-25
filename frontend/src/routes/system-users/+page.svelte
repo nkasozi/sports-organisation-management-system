@@ -2,7 +2,7 @@
     import EntityCrudWrapper from "$lib/presentation/components/EntityCrudWrapper.svelte";
     import { auth_store } from "$lib/presentation/stores/auth";
 
-    const SYSTEM_USER_ENTITY_TYPE = "systemuser";
+    const SYSTEM_USER_ENTITY_TYPE = "SystemUser";
     const SYSTEM_USERS_EVENT = {
         PROFILE_REFRESH_STARTED: "system_users_profile_refresh_started",
         PROFILE_REFRESH_SUCCEEDED: "system_users_profile_refresh_succeeded",
