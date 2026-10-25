@@ -12,6 +12,7 @@
 
     import { COMPETITION_RESULTS_DOWNLOAD_TEXT } from "./competitionResultsDisplayConstants";
     import CompetitionResultsShell from "./CompetitionResultsShell.svelte";
+    import CompetitionResultsTeamFixturesPanel from "./CompetitionResultsTeamFixturesPanel.svelte";
     import type { CompetitionResultsTab } from "./competitionTabConstants";
 
     export let organizations: Organization[];
@@ -117,6 +118,7 @@
     {selected_team_id}
     live_team_ids={workspace_state.live_team_ids}
     upcoming_fixtures={workspace_state.upcoming_fixtures}
+    live_fixtures={workspace_state.live_fixtures}
     paginated_upcoming={workspace_state.paginated_upcoming}
     bind:upcoming_page
     upcoming_total_pages={workspace_state.upcoming_total_pages}
@@ -135,21 +137,10 @@
     bind:stats_card_sort
     stats_filtered_scorers={workspace_state.stats_filtered_scorers as PlayerStats[]}
     stats_filtered_card_players={workspace_state.stats_filtered_card_players as PlayerStats[]}
-    {selected_team_name}
-    {team_fixtures_loading}
-    displayed_team_fixtures={workspace_state.displayed_team_fixtures}
-    paginated_team_fixtures={workspace_state.paginated_team_fixtures}
-    bind:show_all_competitions_fixtures
-    sorted_team_fixtures_length={workspace_state.sorted_team_fixtures.length}
-    bind:team_fixtures_page
-    team_fixtures_total_pages={workspace_state.team_fixtures_total_pages}
-    bind:team_fixtures_per_page
     {format_date}
     {get_fixture_stage_name}
     {get_fixture_stage_type}
     {get_team_name}
-    {get_team_name_extended}
-    {get_competition_name_extended}
     {get_team_logo_url}
     {on_organization_change}
     {on_competition_change}
@@ -158,8 +149,29 @@
     {on_open_match_report}
     on_download_all_reports={download_all_reports_with_feedback}
     on_download_match_report={download_match_report_with_feedback}
-    {on_close_team_fixtures_panel}
-/>
+>
+    <CompetitionResultsTeamFixturesPanel
+        slot="team_fixtures"
+        {selected_team_id}
+        {selected_team_name}
+        {team_fixtures_loading}
+        displayed_team_fixtures={workspace_state.displayed_team_fixtures}
+        paginated_team_fixtures={workspace_state.paginated_team_fixtures}
+        bind:show_all_competitions_fixtures
+        sorted_team_fixtures_length={workspace_state.sorted_team_fixtures
+            .length}
+        bind:team_fixtures_page
+        team_fixtures_total_pages={workspace_state.team_fixtures_total_pages}
+        bind:team_fixtures_per_page
+        {page_size_options}
+        {format_date}
+        {get_team_name_extended}
+        {get_competition_name_extended}
+        {get_team_logo_url}
+        on_close={on_close_team_fixtures_panel}
+        {on_open_match_report}
+    />
+</CompetitionResultsShell>
 
 <Toast
     message={toast_message}

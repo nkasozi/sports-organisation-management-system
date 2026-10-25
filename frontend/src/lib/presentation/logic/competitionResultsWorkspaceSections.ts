@@ -98,13 +98,14 @@ export function derive_competition_results_fixtures_section(
     (fixture: Fixture) => fixture.status === FIXTURE_STATUS.COMPLETED,
   );
   const upcoming_fixtures = command.fixtures.filter(
-    (fixture: Fixture) =>
-      fixture.status === FIXTURE_STATUS.SCHEDULED ||
-      fixture.status === FIXTURE_STATUS.IN_PROGRESS,
+    (fixture: Fixture) => fixture.status === FIXTURE_STATUS.SCHEDULED,
   );
   return {
     completed_fixtures,
     upcoming_fixtures,
+    live_fixtures: command.fixtures.filter(
+      (fixture: Fixture) => fixture.status === FIXTURE_STATUS.IN_PROGRESS,
+    ),
     live_team_ids: derive_live_team_ids(command.fixtures),
     upcoming_total_pages: calculate_total_pages(
       upcoming_fixtures.length,

@@ -53,6 +53,7 @@ export interface CompetitionResultsWorkspaceStateResult {
   competition_stage_map: Map<string, CompetitionStage>;
   completed_fixtures: Fixture[];
   upcoming_fixtures: Fixture[];
+  live_fixtures: Fixture[];
   live_team_ids: Set<string>;
   upcoming_total_pages: number;
   paginated_upcoming: Fixture[];
@@ -81,6 +82,7 @@ export type FixturesSection = Pick<
   CompetitionResultsWorkspaceStateResult,
   | "completed_fixtures"
   | "upcoming_fixtures"
+  | "live_fixtures"
   | "live_team_ids"
   | "upcoming_total_pages"
   | "paginated_upcoming"
