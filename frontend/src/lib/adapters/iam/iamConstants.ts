@@ -86,6 +86,7 @@ export const IAM_ROUTE = {
   MATCH_REPORT: "/match-report",
   COMPETITION_RESULTS: "/competition-results",
   HELP: "/help",
+  HOW_IT_WORKS: "/how-it-works",
 } as const;
 
 export const ROUTE_ACCESS_AUDIT = {
