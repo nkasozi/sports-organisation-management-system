@@ -4,6 +4,7 @@
         LiveGameDetailDerivedState,
         LiveGameDetailPageState,
     } from "$lib/presentation/logic/liveGameDetailPageState";
+    import type { LiveEventCorrectionRequest } from "$lib/presentation/logic/liveGameEventCorrection";
 
     import type { GameTeamSide } from "./gameDisplayConstants";
     import {
@@ -34,6 +35,9 @@
     export let on_away_time_on_change: (
         player_id: string,
         new_time_on: PlayerTimeOnStatus,
+    ) => Promise<boolean>;
+    export let on_correct_event: (
+        request: LiveEventCorrectionRequest,
     ) => Promise<boolean>;
 
     $: content_state = build_live_game_detail_content_state(page_state);
@@ -86,4 +90,5 @@
     {on_toggle_away_lineup}
     {on_home_time_on_change}
     {on_away_time_on_change}
+    {on_correct_event}
 />

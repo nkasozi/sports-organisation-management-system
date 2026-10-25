@@ -5,16 +5,24 @@
         get_event_icon,
         get_event_label,
     } from "$lib/core/entities/Fixture";
+    import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
     import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
-    import { get_event_bg_class } from "$lib/presentation/logic/gameEventDisplay";
+    import type { LiveEventCorrectionRequest } from "$lib/presentation/logic/liveGameEventCorrection";
 
     import { GAME_EVENT_TEAM_SIDE } from "./gameDisplayConstants";
+    import GameTimelineTeamEvent from "./GameTimelineTeamEvent.svelte";
 
     export let sorted_events: GameEvent[];
     export let fixture_status: Fixture["status"];
     export let is_game_active: boolean;
     export let home_team_name: string;
     export let away_team_name: string;
+    export let can_correct: boolean;
+    export let home_players: LineupPlayer[];
+    export let away_players: LineupPlayer[];
+    export let on_correct: (
+        request: LiveEventCorrectionRequest,
+    ) => Promise<boolean>;
 </script>
 
 <div>
@@ -100,87 +108,15 @@
                             </div>
                         </div>
                     {:else}
-                        <div class="relative flex items-center">
-                            <div
-                                class={`absolute left-1/2 transform -translate-x-1/2 z-10 w-10 h-10 rounded-full bg-white dark:bg-gray-800 border-4 ${is_home_event ? "border-blue-400" : "border-red-400"} flex items-center justify-center text-lg shadow-sm`}
-                            >
-                                {get_event_icon(event.event_type)}
-                            </div>
-
-                            {#if is_home_event}
-                                <div class="flex-1 pr-8 flex justify-end">
-                                    <div
-                                        class={`max-w-xs w-full rounded-lg border-r-4 p-3 shadow-sm text-right ${get_event_bg_class(event.event_type).replace("border-l-", "border-r-")}`}
-                                    >
-                                        <div
-                                            class="flex items-center justify-end gap-2 mb-1"
-                                        >
-                                            <span
-                                                class="font-semibold text-gray-900 dark:text-white text-sm"
-                                                >{event.description ||
-                                                    get_event_label(
-                                                        event.event_type,
-                                                    )}</span
-                                            >
-                                            <span
-                                                class="text-sm font-bold text-blue-600 dark:text-blue-400"
-                                                >{format_event_time(
-                                                    event.minute,
-                                                    event.stoppage_time_minute,
-                                                )}</span
-                                            >
-                                        </div>
-                                        {#if event.player_name}
-                                            <p
-                                                class="text-xs text-gray-500 dark:text-gray-400"
-                                            >
-                                                {event.player_name}
-                                                {#if event.secondary_player_name}
-                                                    → {event.secondary_player_name}
-                                                {/if}
-                                            </p>
-                                        {/if}
-                                    </div>
-                                </div>
-                                <div class="flex-1 pl-8"></div>
-                            {:else}
-                                <div class="flex-1 pr-8"></div>
-                                <div class="flex-1 pl-8 flex justify-start">
-                                    <div
-                                        class={`max-w-xs w-full rounded-lg border-l-4 p-3 shadow-sm text-left ${get_event_bg_class(event.event_type)}`}
-                                    >
-                                        <div
-                                            class="flex items-center justify-start gap-2 mb-1"
-                                        >
-                                            <span
-                                                class="text-sm font-bold text-red-600 dark:text-red-400"
-                                                >{format_event_time(
-                                                    event.minute,
-                                                    event.stoppage_time_minute,
-                                                )}</span
-                                            >
-                                            <span
-                                                class="font-semibold text-gray-900 dark:text-white text-sm"
-                                                >{event.description ||
-                                                    get_event_label(
-                                                        event.event_type,
-                                                    )}</span
-                                            >
-                                        </div>
-                                        {#if event.player_name}
-                                            <p
-                                                class="text-xs text-gray-500 dark:text-gray-400"
-                                            >
-                                                {event.player_name}
-                                                {#if event.secondary_player_name}
-                                                    → {event.secondary_player_name}
-                                                {/if}
-                                            </p>
-                                        {/if}
-                                    </div>
-                                </div>
-                            {/if}
-                        </div>
+                        <GameTimelineTeamEvent
+                            {event}
+                            is_home={is_home_event}
+                            {can_correct}
+                            team_players={is_home_event
+                                ? home_players
+                                : away_players}
+                            {on_correct}
+                        />
                     {/if}
                 {/each}
             </div>

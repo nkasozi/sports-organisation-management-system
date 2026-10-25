@@ -14,6 +14,7 @@ import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
+import type { GameEventCorrection } from "../../../../usecases/FixtureGameEventCorrections";
 import type { FixtureFilter } from "../../external/repositories/FixtureRepository";
 import type { QueryOptions } from "../../external/repositories/Repository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
@@ -52,6 +53,15 @@ export interface FixtureUseCasesPort extends BaseUseCasesPort<
     id: ScalarValueInput<Fixture["id"]>,
     event: GameEvent,
     score_award: ScoreAward,
+  ): AsyncResult<Fixture>;
+  update_game_event(
+    id: ScalarValueInput<Fixture["id"]>,
+    event_id: string,
+    correction: GameEventCorrection,
+  ): AsyncResult<Fixture>;
+  remove_game_event(
+    id: ScalarValueInput<Fixture["id"]>,
+    event_id: string,
   ): AsyncResult<Fixture>;
   update_period(
     id: ScalarValueInput<Fixture["id"]>,

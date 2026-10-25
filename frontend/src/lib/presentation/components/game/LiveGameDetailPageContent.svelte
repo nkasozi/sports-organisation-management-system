@@ -14,6 +14,7 @@
     import LiveGamePermissionBanner from "$lib/presentation/components/game/LiveGamePermissionBanner.svelte";
     import LiveGameQuickActions from "$lib/presentation/components/game/LiveGameQuickActions.svelte";
     import type { PeriodButtonConfig } from "$lib/presentation/logic/liveGameDetailState";
+    import type { LiveEventCorrectionRequest } from "$lib/presentation/logic/liveGameEventCorrection";
 
     import type { GameTeamSide } from "./gameDisplayConstants";
     import {
@@ -21,7 +22,7 @@
         LIVE_GAME_DETAIL_CONTENT_STATUS,
         type LiveGameDetailContentState,
     } from "./liveGameDetailContentState";
-    import { LIVE_GAME_DETAIL_TEXT } from "./liveGameDetailMessages";
+    import LiveGameDetailLoadError from "./LiveGameDetailLoadError.svelte";
 
     export let content_state: LiveGameDetailContentState;
     export let organization_name: string;
@@ -78,6 +79,9 @@
         player_id: string,
         new_time_on: PlayerTimeOnStatus,
     ) => Promise<boolean>;
+    export let on_correct_event: (
+        request: LiveEventCorrectionRequest,
+    ) => Promise<boolean>;
 
     const live_game_lineup_section_component =
         LiveGameLineupSection as unknown as typeof SvelteComponent;
@@ -92,28 +96,10 @@
             <div
                 class="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-600"
             ></div>
-        </div>{:else if content_state.status === LIVE_GAME_DETAIL_CONTENT_STATUS.FAILED}<div
-            class="max-w-2xl mx-auto p-6"
-        >
-            <div
-                class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center"
-            >
-                <h3
-                    class="text-lg font-medium text-red-800 dark:text-red-200 mb-2"
-                >
-                    {LIVE_GAME_DETAIL_TEXT.ERROR_TITLE}
-                </h3>
-                <p class="text-red-600 dark:text-red-400">
-                    {content_state.message}
-                </p>
-                <button
-                    type="button"
-                    class="btn btn-outline mt-4"
-                    on:click={on_back}
-                    >{LIVE_GAME_DETAIL_TEXT.BACK_TO_LIVE_GAMES}</button
-                >
-            </div>
-        </div>{:else if content_state.status === LIVE_GAME_DETAIL_CONTENT_STATUS.READY}{@const fixture =
+        </div>{:else if content_state.status === LIVE_GAME_DETAIL_CONTENT_STATUS.FAILED}<LiveGameDetailLoadError
+            message={content_state.message}
+            {on_back}
+        />{:else if content_state.status === LIVE_GAME_DETAIL_CONTENT_STATUS.READY}{@const fixture =
             content_state.fixture}{@const team_labels =
             build_live_game_team_labels(
                 fixture,
@@ -193,6 +179,10 @@
                         {is_game_active}
                         home_team_name={team_labels.home_name}
                         away_team_name={team_labels.away_name}
+                        can_correct={can_modify_game && is_game_active}
+                        {home_players}
+                        {away_players}
+                        on_correct={on_correct_event}
                     />
                 </div>
             </div>
