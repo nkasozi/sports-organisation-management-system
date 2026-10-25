@@ -115,6 +115,16 @@ function resolve_leaderboard_user_official_id(
     : "";
 }
 
+export function select_leaderboard_organization_id(
+  organizations: readonly { id: string }[],
+  fixtures: readonly { organization_id: string }[],
+): string {
+  const with_fixtures = organizations.find((organization) =>
+    fixtures.some((fixture) => fixture.organization_id === organization.id),
+  );
+  return (with_fixtures ?? organizations[0])?.id ?? "";
+}
+
 function build_official_leaderboard_page_data(
   results: OfficialLeaderboardDatasetResults,
   profile_state: OfficialLeaderboardProfileState,
@@ -126,7 +136,10 @@ function build_official_leaderboard_page_data(
     profile_state,
   );
   const datasets = {
-    selected_organization_id: organizations[0]?.id ?? "",
+    selected_organization_id: select_leaderboard_organization_id(
+      organizations,
+      results.fixtures_result.data?.items ?? [],
+    ),
     user_official_id: resolve_leaderboard_user_official_id(profile_state),
     all_ratings: results.ratings_result.data?.items ?? [],
     all_officials: results.officials_result.data?.items ?? [],

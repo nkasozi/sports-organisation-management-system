@@ -134,7 +134,14 @@ describe("calendarPageShellControllerInitialData", () => {
       is_public: true,
       current_profile_state: { status: "missing" },
       preferred_organization_id: "",
-      use_cases: {} as never,
+      use_cases: {
+        competition_use_cases: {
+          list: vi.fn().mockResolvedValue({
+            success: true,
+            data: { items: [] },
+          }),
+        },
+      } as never,
     });
 
     expect(fetch_public_data_from_convex_mock.mock.calls).toEqual([

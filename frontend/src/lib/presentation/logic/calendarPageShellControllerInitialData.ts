@@ -57,9 +57,10 @@ async function load_selected_calendar_organization(
     is_preferred_fetch_successful: boolean;
   },
 ): Promise<CalendarShellInitialDataResult> {
-  const selected_organization_id = resolve_selected_organization_id(
+  const selected_organization_id = await resolve_selected_organization_id(
     loaded.organizations,
     command.preferred_organization_id,
+    command.use_cases.competition_use_cases,
   );
   const is_selection_fetched = await fetch_selected_organization_data(
     loaded.preferred_scope.status === OptionStatus.SOME &&
@@ -94,14 +95,25 @@ async function fetch_selected_organization_data(
   return selected_fetch.success;
 }
 
-function resolve_selected_organization_id(
+export async function resolve_selected_organization_id(
   organizations: Organization[],
   preferred_organization_id: string,
-): string {
-  return (
-    organizations.find(
-      (organization: Organization) =>
-        organization.id === preferred_organization_id,
-    )?.id || organizations[0].id
+  competition_use_cases: CalendarShellInitialDataCommand["use_cases"]["competition_use_cases"],
+): Promise<string> {
+  const preferred = organizations.find(
+    (organization: Organization) =>
+      organization.id === preferred_organization_id,
   );
+  if (preferred) return preferred.id;
+  for (const organization of organizations) {
+    const competitions_result = await competition_use_cases.list({
+      organization_id: organization.id,
+    });
+    if (
+      competitions_result.success &&
+      competitions_result.data.items.length > 0
+    )
+      return organization.id;
+  }
+  return organizations[0].id;
 }
