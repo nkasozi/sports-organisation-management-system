@@ -31,7 +31,8 @@ export function get_bulk_import_foreign_key_fields(
 ): FieldMetadata[] {
   return fields.filter(
     (field: FieldMetadata) =>
-      field.field_type === DYNAMIC_FORM_FIELD_TYPE.FOREIGN_KEY,
+      field.field_type === DYNAMIC_FORM_FIELD_TYPE.FOREIGN_KEY &&
+      !field.foreign_key_value_field,
   );
 }
 

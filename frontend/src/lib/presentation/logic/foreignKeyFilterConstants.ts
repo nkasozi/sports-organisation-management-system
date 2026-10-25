@@ -20,6 +20,8 @@ export const FOREIGN_KEY_FILTER_TYPE = {
   FIXTURES_FOR_RATING: "fixtures_for_rating",
   OFFICIALS_FROM_FIXTURE: "officials_from_fixture",
   FIXTURES_WITHOUT_SETUP: "fixtures_without_setup",
+  FIXTURES_WITHOUT_SETUP_IN_COMPETITION:
+    "fixtures_without_setup_in_competition",
 } as const satisfies Record<string, ForeignKeyFilterConfig["filter_type"]>;
 
 export const FOREIGN_KEY_FILTER_TEAM_SIDE = {

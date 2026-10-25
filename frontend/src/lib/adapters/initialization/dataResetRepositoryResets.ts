@@ -23,6 +23,7 @@ import { reset_team_repository } from "../repositories/InBrowserTeamRepository";
 import { reset_team_staff_repository } from "../repositories/InBrowserTeamStaffRepository";
 import { reset_team_staff_role_repository } from "../repositories/InBrowserTeamStaffRoleRepository";
 import { reset_venue_repository } from "../repositories/InBrowserVenueRepository";
+import { CLEARED_TABLE_RESET_STEPS } from "./dataResetClearedTables";
 
 const DataResetRepositoryEvent = {
   STEP_FAILED: "data_reset_repository_step_failed",
@@ -68,7 +69,17 @@ const DEPENDENT_REPOSITORY_RESET_STEPS: readonly RepositoryResetStep[] = [
   { table_name: "team_profiles", reset: reset_team_profile_repository },
   { table_name: "profile_links", reset: reset_profile_link_repository },
   { table_name: "qualifications", reset: reset_qualification_repository },
+  ...CLEARED_TABLE_RESET_STEPS,
 ];
+
+const SEEDED_FIRST_TABLE_NAMES = ["sports", "organizations"] as const;
+
+export function list_reset_table_names(): string[] {
+  return [
+    ...SEEDED_FIRST_TABLE_NAMES,
+    ...DEPENDENT_REPOSITORY_RESET_STEPS.map((step) => step.table_name),
+  ];
+}
 
 function log_reset_step_failure(
   table_name: string,

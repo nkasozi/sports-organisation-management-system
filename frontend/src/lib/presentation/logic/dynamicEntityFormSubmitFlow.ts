@@ -29,6 +29,7 @@ import {
   resolve_transfer_after_save,
 } from "./dynamicEntityFormTransferResolution";
 import { validate_form_data_against_metadata } from "./dynamicFormLogic";
+import { omit_form_only_fields } from "./dynamicFormOnlyFields";
 
 export type {
   DynamicEntityFormSubmitCommand,
@@ -177,7 +178,13 @@ export async function submit_dynamic_entity_form(
     };
   }
 
-  const persist_result = await persist_dynamic_entity_form(command);
+  const persist_result = await persist_dynamic_entity_form({
+    ...command,
+    form_data: omit_form_only_fields(
+      command.form_data,
+      command.entity_metadata.fields,
+    ),
+  });
   if (!persist_result.success) {
     return {
       status: DYNAMIC_ENTITY_FORM_SUBMIT_STATUS.FAILED,

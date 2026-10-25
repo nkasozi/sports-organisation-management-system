@@ -93,7 +93,7 @@ describe("fetch_fixtures_without_setup", () => {
     expect(result).toHaveLength(0);
   });
 
-  it("delegates fixtures_without_setup filter_type in fetch_filtered_entities_for_field", async () => {
+  it("delegates fixtures_without_setup_in_competition filter_type in fetch_filtered_entities_for_field", async () => {
     const fixture_a = create_base_entity("fix_a");
     mock_get_use_cases
       .mockReturnValueOnce(make_list_use_cases([fixture_a]))
@@ -101,14 +101,16 @@ describe("fetch_fixtures_without_setup", () => {
 
     const field = create_field_metadata({
       field_name: "fixture_id",
-      foreign_key_filter: { filter_type: "fixtures_without_setup" } as never,
+      foreign_key_filter: {
+        filter_type: "fixtures_without_setup_in_competition",
+      } as never,
     });
 
     const result = await fetch_filtered_entities_for_field(
       field,
-      "org-1",
+      "competition-1",
       [],
-      {},
+      { organization_id: "org-1" },
     );
 
     expect(result.entities).toHaveLength(1);

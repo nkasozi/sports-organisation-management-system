@@ -5,6 +5,7 @@ import { build_entity_display_label } from "./entityDisplayFormatter";
 
 const JERSEY_COLOR_ENTITY_TYPE = "jerseycolor";
 const FIXTURE_ENTITY_TYPE = "fixture";
+const ID_VALUE_FIELD = "id";
 
 type ForeignKeySelectOption = {
   value: string;
@@ -36,13 +37,19 @@ function resolve_competition_name_for_fixture(
   return is_string_value(competition_name) ? competition_name : "";
 }
 
+function read_option_value(entity: BaseEntity, value_field: string): string {
+  const value = (entity as unknown as Record<string, unknown>)[value_field];
+  return is_string_value(value) ? value.trim() : "";
+}
+
 function build_single_option(
   entity: BaseEntity,
   is_jersey_field: boolean,
   is_fixture: boolean,
   competition_entities: BaseEntity[],
+  value_field: string,
 ): ForeignKeySelectOption[] {
-  const entity_id = String((entity as BaseEntity).id ?? "").trim();
+  const entity_id = read_option_value(entity, value_field);
   if (entity_id.length === 0) return [];
 
   const fixture_record = entity as unknown as Record<string, unknown>;
@@ -75,12 +82,14 @@ export function build_foreign_key_select_options(
   const competition_entities = is_fixture
     ? options_map["competition_id"] || []
     : [];
+  const value_field = field.foreign_key_value_field ?? ID_VALUE_FIELD;
   return entities.flatMap((entity) =>
     build_single_option(
       entity,
       is_jersey_field,
       is_fixture,
       competition_entities,
+      value_field,
     ),
   );
 }

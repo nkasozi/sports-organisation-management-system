@@ -38,6 +38,7 @@ export function generate_bulk_import_example_value(
     case DYNAMIC_FORM_FIELD_TYPE.ENUM:
       return field.enum_values?.[0] || BULK_IMPORT_EXAMPLE_VALUES.ENUM;
     case DYNAMIC_FORM_FIELD_TYPE.FOREIGN_KEY:
+      if (field.foreign_key_value_field) return BULK_IMPORT_EXAMPLE_VALUES.TEXT;
       return `${field.foreign_key_entity?.toLowerCase() || BULK_IMPORT_EXAMPLE_VALUES.ENTITY}${BULK_IMPORT_EXAMPLE_VALUES.FOREIGN_KEY_SUFFIX}`;
     case DYNAMIC_FORM_FIELD_TYPE.STAR_RATING:
     case DYNAMIC_FORM_FIELD_TYPE.FILE:
