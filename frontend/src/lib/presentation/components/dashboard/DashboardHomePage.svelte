@@ -5,6 +5,7 @@
 
     import DashboardAccessNotice from "./DashboardAccessNotice.svelte";
     import DashboardHeroBanner from "./DashboardHeroBanner.svelte";
+    import DashboardNextStepCard from "./DashboardNextStepCard.svelte";
     import DashboardQuickActions from "./DashboardQuickActions.svelte";
     import DashboardRecentCompetitionsPanel from "./DashboardRecentCompetitionsPanel.svelte";
     import DashboardStatsGrid from "./DashboardStatsGrid.svelte";
@@ -65,6 +66,7 @@
         {is_resetting}
         {on_reset}
     />
+    <DashboardNextStepCard />
     <DashboardStatsGrid {loading} {user_has_org_admin_access} {stats} />
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DashboardRecentCompetitionsPanel

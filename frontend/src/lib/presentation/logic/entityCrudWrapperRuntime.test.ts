@@ -10,6 +10,7 @@ describe("entityCrudWrapperRuntime", () => {
   ): Parameters<typeof create_entity_crud_wrapper_runtime>[0] {
     return {
       after_save_redirect_url: "",
+      announce_created: vi.fn(),
       dispatch: vi.fn(),
       entity_type: "Fixture Lineup",
       get_current_view: vi.fn(() => "list" as const),
@@ -76,6 +77,10 @@ describe("entityCrudWrapperRuntime", () => {
     expect(list_command.dispatch).toHaveBeenCalledWith("entity_created", {
       entity: saved_entity,
     });
+    expect(list_command.announce_created).toHaveBeenCalledWith(
+      saved_entity,
+      "",
+    );
     expect(list_command.set_current_view).toHaveBeenCalledWith("list");
 
     const redirect_command = create_command({
@@ -90,5 +95,6 @@ describe("entityCrudWrapperRuntime", () => {
       entity: saved_entity,
     });
     expect(redirect_command.goto).toHaveBeenCalledWith("/teams");
+    expect(redirect_command.announce_created).not.toHaveBeenCalled();
   });
 });

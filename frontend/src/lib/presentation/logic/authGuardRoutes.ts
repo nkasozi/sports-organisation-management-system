@@ -20,7 +20,6 @@ export const ALWAYS_ALLOWED_ROUTE_BASES: Set<string> = new Set([
   "/profile",
   "/team-profile",
   "/help",
-  "/how-it-works",
 ]);
 
 export function is_route_in_accessible_set(

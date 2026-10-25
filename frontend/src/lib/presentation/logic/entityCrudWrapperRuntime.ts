@@ -8,6 +8,7 @@ import { normalize_entity_type } from "./entityCrudWrapperLogic";
 
 type EntityCrudWrapperRuntimeCommand = {
   after_save_redirect_url: string;
+  announce_created: (entity: BaseEntity, redirect_url: string) => void;
   dispatch: (event_name: string, detail: Record<string, unknown>) => void;
   entity_type: string;
   get_current_view: () => EntityCrudWrapperView;
@@ -98,6 +99,7 @@ function handle_entity_crud_wrapper_save_completed(
     is_new,
   });
   command.dispatch(is_new ? "entity_created" : "entity_updated", { entity });
+  if (is_new) command.announce_created(entity, command.after_save_redirect_url);
   if (command.after_save_redirect_url) {
     void command.goto(command.after_save_redirect_url);
     return;

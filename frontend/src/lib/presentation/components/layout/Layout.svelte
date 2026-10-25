@@ -5,6 +5,7 @@
         "layout_conflict_resolution_dismissed";
     import { onMount } from "svelte";
 
+    import ConceptSavedPanel from "$lib/presentation/components/guide/ConceptSavedPanel.svelte";
     import Footer from "$lib/presentation/components/layout/Footer.svelte";
     import Header from "$lib/presentation/components/layout/Header.svelte";
     import LayoutStatusBanner from "$lib/presentation/components/layout/LayoutStatusBanner.svelte";
@@ -79,6 +80,7 @@
                 class="flex-1 min-w-0 transition-all duration-300 ease-in-out lg:ml-4 overflow-x-auto"
             >
                 <div class="w-full max-w-7xl mx-auto p-4 lg:p-6">
+                    <ConceptSavedPanel />
                     <slot />
                 </div>
             </main>

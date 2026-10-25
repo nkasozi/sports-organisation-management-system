@@ -4,6 +4,7 @@
         DynamicEntityListViewState,
     } from "$lib/presentation/logic/dynamicEntityListControllerTypes";
 
+    import ConceptEmptyStateHint from "../guide/ConceptEmptyStateHint.svelte";
     import DynamicEntityListAdvancedFilters from "./DynamicEntityListAdvancedFilters.svelte";
     import {
         build_column_display_names,
@@ -52,6 +53,9 @@
                 ? `No ${display_state.display_name.toLowerCase()} found.`
                 : "No items match your filters."}
         </p>
+        {#if display_state.entities.length === 0}
+            <ConceptEmptyStateHint entity_type={display_state.entity_type} />
+        {/if}
         {#if display_state.entities.length > 0}
             <button
                 type="button"
