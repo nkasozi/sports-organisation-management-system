@@ -6,7 +6,6 @@ import type {
   LineupPlayer,
   PlayerTimeOnStatus,
 } from "$lib/core/entities/FixtureLineup";
-import { create_success_result, type Result } from "$lib/core/types/Result";
 import {
   record_live_game_detail_timed_event,
   update_live_game_player_time_on,
@@ -23,12 +22,12 @@ import type {
   FixtureUseCases,
 } from "./liveGameDetailPageActionTypes";
 import { save_live_game_substitution_lineup } from "./liveGameDetailSubstitutionLineup";
+import { check_event_players } from "./liveGameEventPlayerCheck";
 import {
   attribute_event_time,
   type AttributedEventTime,
   type EventTimingContext,
 } from "./liveGameEventTiming";
-import { validate_substitution } from "./liveGameOnFieldPlayers";
 import type { PlayerAvailability } from "./liveGamePlayerAvailability";
 import type { EffectiveSubstitutionRules } from "./liveGameSubstitutionRules";
 
@@ -127,18 +126,6 @@ async function apply_substitution_lineup(
   };
 }
 
-function check_substitution(command: RecordPageEventCommand): Result<boolean> {
-  if (!command.is_substitution_event) return create_success_result(true);
-  return validate_substitution({
-    on_field_players: command.on_field_players,
-    player_on_id: command.selected_player_id,
-    player_off_id: command.secondary_player_id,
-    max_players_on_field: command.max_players_on_field,
-    availability: command.substitution_availability,
-    rules: command.substitution_rules,
-  });
-}
-
 function record_page_event(
   command: RecordPageEventCommand,
   event_time: AttributedEventTime,
@@ -162,9 +149,9 @@ function record_page_event(
 export async function record_live_game_detail_page_event_action(
   command: RecordPageEventCommand,
 ): Promise<RecordPageEventSuccess | { error_message: string; success: false }> {
-  const substitution_result = check_substitution(command);
+  const substitution_result = check_event_players(command);
   if (!substitution_result.success) {
-    console.warn("[LiveGameDetail] Substitution rejected", {
+    console.warn("[LiveGameDetail] Event rejected", {
       event: GAME_ACTION_EVENT.SUBSTITUTION_REJECTED,
       fixture_id: command.fixture_id,
     });

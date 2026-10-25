@@ -38,6 +38,10 @@
     export let on_confirm_start: () => void;
 </script>
 
+<svelte:head>
+    <title>Live Games - Sports Management</title>
+</svelte:head>
+
 <div class="container mx-auto max-w-5xl px-3 py-4 sm:px-4 sm:py-8">
     <LiveGamesHeader
         {organizations}

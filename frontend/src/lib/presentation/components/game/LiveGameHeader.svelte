@@ -56,7 +56,7 @@
     <div class="flex items-center justify-between max-w-4xl mx-auto relative">
         <button
             type="button"
-            class="p-2 hover:bg-gray-800 rounded-[0.175rem] absolute left-4 top-1/2 -translate-y-1/2 md:static md:translate-y-0"
+            class="p-2 hover:bg-gray-800 rounded-[0.175rem] absolute left-0 top-0 md:static"
             on:click={on_back}
             aria-label="Go back"
             ><svg
