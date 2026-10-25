@@ -186,6 +186,7 @@
 
 <RootLayoutShell
     {...view_state}
+    current_path={$page.url.pathname}
     {storage_recovery_prompt_state}
     on_restore_storage_backup={() =>
         storage_recovery_choice_gate.resolve_choice(RECOVERY_CHOICE.RESTORE)}
