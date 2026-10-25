@@ -47,34 +47,24 @@ describe("new competitions get the first officials' jersey", () => {
     });
   });
 
-  it("prefers the earliest standard officials' kit over alternates", async () => {
+  it("uses the earliest created official jersey, whatever its name", async () => {
     const use_cases = jersey_use_cases([
       {
         ...STANDARD_GRAY,
-        id: "j_green",
-        nickname: "Alternate Green",
+        id: "j_b",
+        nickname: "Kit B",
+        created_at: "2026-01-02",
+      },
+      {
+        ...STANDARD_GRAY,
+        id: "j_a",
+        nickname: "Kit A",
         created_at: "2026-01-01",
-      },
-      {
-        ...STANDARD_GRAY,
-        id: "j_gray",
-        nickname: "Standard Gray",
-        created_at: "2026-01-02",
-      },
-      {
-        ...STANDARD_GRAY,
-        id: "j_black",
-        nickname: "Standard Black",
-        main_color: "#1F2937",
-        created_at: "2026-01-02",
       },
     ]);
     await assign_default_official_jersey("competition_new", use_cases);
     expect(use_cases.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        nickname: "Standard Black",
-        main_color: "#1F2937",
-      }),
+      expect.objectContaining({ nickname: "Kit A" }),
     );
   });
 
