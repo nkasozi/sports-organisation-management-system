@@ -130,6 +130,17 @@ describe("authInitializationHelpers demo profiles", () => {
     ]);
   });
 
+  it("credits an anonymous visitor's changes to the public viewer", async () => {
+    load_sidebar_menu_for_role_mock.mockResolvedValueOnce([]);
+
+    await create_default_anonymous_state([public_viewer_profile]);
+
+    expect(sync_user_context_with_event_bus_mock).toHaveBeenCalledWith({
+      status: "present",
+      profile: public_viewer_profile,
+    });
+  });
+
   it("does not restore an anonymous session into a real synced user", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     verify_token_mock.mockResolvedValueOnce({

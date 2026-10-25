@@ -104,7 +104,7 @@ describe("audit entries describe each change", () => {
     });
   });
 
-  it("records what was deleted", async () => {
+  it("records what was deleted, crediting an anonymous demo user", async () => {
     emit_entity_changed({
       entity_type: "venue",
       entity_id: "v1",
@@ -115,7 +115,8 @@ describe("audit entries describe each change", () => {
     expect(await recorded()).toMatchObject({
       action: "delete",
       entity_display_name: "Jinja Hockey Ground",
-      user_display_name: "System",
+      user_display_name: "Anonymous user",
+      user_id: "anonymous",
       changes: [
         { field_name: "Name", old_value: "Jinja Hockey Ground", new_value: "" },
       ],
