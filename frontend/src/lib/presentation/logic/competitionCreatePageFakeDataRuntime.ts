@@ -7,7 +7,10 @@ import type { SelectOption } from "$lib/presentation/components/ui/SelectField.s
 
 import { fill_competition_create_fake_data } from "./competitionCreateFakeData";
 import { select_fake_friendly_formats } from "./competitionCreateFakeFormats";
-import { pick_fake_competition_team_ids } from "./competitionCreateFakeTeams";
+import {
+  pick_fake_competition_team_ids,
+  select_organizations_with_teams,
+} from "./competitionCreateFakeTeams";
 import type { CompetitionCreatePageControllerCommand } from "./competitionCreatePageControllerCommand";
 import { competition_create_dependencies } from "./competitionCreatePageControllerDependencies";
 import {
@@ -17,6 +20,7 @@ import {
 
 const SPORT_STATE_PRESENT = "present";
 const FAKE_TEAM_PAGE_SIZE = 200;
+const ALL_TEAMS_PAGE_SIZE = 1000;
 
 function read_sport_name(
   command: CompetitionCreatePageControllerCommand,
@@ -55,13 +59,36 @@ async function fill_empty_team_selection(
   return team_ids.length > 0;
 }
 
+async function load_all_team_candidates(): Promise<
+  { id: string; gender_id: string; organization_id: string }[]
+> {
+  const teams_result =
+    await competition_create_dependencies.team_use_cases.list(
+      {},
+      { page_number: 1, page_size: ALL_TEAMS_PAGE_SIZE },
+    );
+  if (!teams_result.success) return [];
+  return teams_result.data.items.map((team) => ({
+    id: String(team.id),
+    gender_id: String(team.gender_id),
+    organization_id: String(team.organization_id),
+  }));
+}
+
 export async function handle_competition_create_fill_fake_data(
   command: CompetitionCreatePageControllerCommand,
 ): Promise<void> {
+  const team_candidates = await load_all_team_candidates();
   await fill_competition_create_fake_data({
     get_form_data: command.get_form_data,
     set_form_data: command.set_form_data,
-    get_organization_options: () => to_options(command.get_organizations()),
+    get_organization_options: () =>
+      to_options(
+        select_organizations_with_teams(
+          command.get_organizations(),
+          team_candidates,
+        ),
+      ),
     get_competition_format_options: () =>
       to_options(
         select_fake_friendly_formats(command.get_competition_formats()),
