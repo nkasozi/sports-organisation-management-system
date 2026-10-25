@@ -33,7 +33,7 @@ const ROLE_MENUS: Record<UserRole, SidebarMenuGroup[]> = {
   team_manager: with_how_it_works(TEAM_MANAGER_MENU),
   official: with_how_it_works(OFFICIAL_MENU),
   player: with_how_it_works(PLAYER_MENU),
-  public_viewer: with_how_it_works(PUBLIC_VIEWER_MENU),
+  public_viewer: PUBLIC_VIEWER_MENU,
 };
 
 export const ROLE_DEFAULT_ROUTES: Record<UserRole, string> = {
@@ -82,7 +82,6 @@ const ALWAYS_ALLOWED_ROUTE_BASES: Set<string> = new Set([
   IAM_ROUTE.HOME,
   IAM_ROUTE.MATCH_REPORT,
   IAM_ROUTE.HELP,
-  IAM_ROUTE.HOW_IT_WORKS,
 ]);
 const ROUTE_ACCESS_GRANTED = { allowed: true, reason: "" } as const;
 

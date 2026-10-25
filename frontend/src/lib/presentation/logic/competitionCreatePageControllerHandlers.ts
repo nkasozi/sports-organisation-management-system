@@ -11,6 +11,10 @@ import {
 } from "$lib/presentation/logic/competitionCreatePageState";
 import { submit_competition_create_form } from "$lib/presentation/logic/competitionCreatePageSubmit";
 import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
+import { announce_saved_record } from "$lib/presentation/stores/conceptSavedNotice";
+
+const COMPETITION_ENTITY_TYPE = "Competition";
+const COMPETITION_LIST_PATH = "/competitions";
 
 export function handle_competition_create_auto_squad_submission_toggle(
   command: CompetitionCreatePageControllerCommand,
@@ -81,8 +85,13 @@ export async function handle_competition_create_submit(
     return;
   }
   command.show_toast(COMPETITION_CREATE_PAGE_TEXT.created, "success");
+  announce_saved_record(
+    COMPETITION_ENTITY_TYPE,
+    String(command.get_form_data().name ?? ""),
+    COMPETITION_LIST_PATH,
+  );
   setTimeout(() => {
-    void command.goto("/competitions");
+    void command.goto(COMPETITION_LIST_PATH);
   }, 1500);
 }
 

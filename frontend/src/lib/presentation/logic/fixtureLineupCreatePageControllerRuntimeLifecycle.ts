@@ -1,3 +1,5 @@
+import { announce_saved_record } from "$lib/presentation/stores/conceptSavedNotice";
+
 import { submit_fixture_lineup_create_form } from "./fixtureLineupCreateData";
 import { FIXTURE_LINEUP_SUBMIT_FAILURE_DISPLAY } from "./fixtureLineupCreateDataTypes";
 import { FIXTURE_LINEUP_CREATE_INITIALIZATION_KIND } from "./fixtureLineupCreateInitializationKind";
@@ -13,6 +15,8 @@ import {
   get_fixture_lineup_create_validation_field,
 } from "./fixtureLineupCreatePageControllerUpdates";
 import { handle_fixture_lineup_create_fixture_change } from "./fixtureLineupCreatePageFlow";
+
+const LINEUP_ENTITY_TYPE = "FixtureLineup";
 
 type RuntimeCommand = FixtureLineupCreatePageControllerRuntimeCommand;
 type FixtureChangeState = ReturnType<
@@ -171,5 +175,7 @@ export async function submit_fixture_lineup_create_runtime_locked_lineup(
     apply_fixture_lineup_create_submit_failure(command, result);
     return;
   }
-  await command.goto(`/fixture-lineups/${result.lineup_id}`);
+  const lineup_path = `/fixture-lineups/${result.lineup_id}`;
+  announce_saved_record(LINEUP_ENTITY_TYPE, "", lineup_path);
+  await command.goto(lineup_path);
 }

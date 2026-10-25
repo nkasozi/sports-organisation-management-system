@@ -14,6 +14,10 @@
         normalize_entity_type,
     } from "$lib/presentation/logic/entityCrudWrapperLogic";
     import { create_entity_crud_wrapper_runtime } from "$lib/presentation/logic/entityCrudWrapperRuntime";
+    import {
+        announce_saved_record,
+        describe_saved_record,
+    } from "$lib/presentation/stores/conceptSavedNotice";
 
     import type { BaseEntity } from "../../core/entities/BaseEntity";
     import type { CrudFunctionality } from "../../core/types/EntityHandlers";
@@ -78,6 +82,12 @@
     );
     const runtime = create_entity_crud_wrapper_runtime({
         after_save_redirect_url,
+        announce_created: (entity: BaseEntity, redirect_url: string) =>
+            announce_saved_record(
+                entity_type,
+                describe_saved_record(entity),
+                redirect_url || window.location.pathname,
+            ),
         dispatch: (event_name: string, detail: Record<string, unknown>) =>
             dispatch(event_name as never, detail as never),
         entity_type,

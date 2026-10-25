@@ -1,8 +1,8 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { get } from "svelte/store";
 
     import { get_concept_definition } from "$lib/presentation/logic/conceptGuideCatalog";
+    import { read_profile_organization_id } from "$lib/presentation/logic/conceptGuideCurrentUser";
     import { create_concept_guide_sources } from "$lib/presentation/logic/conceptGuideDependencies";
     import { load_concept_guide_snapshot } from "$lib/presentation/logic/conceptGuideLoader";
     import { find_next_concept_step } from "$lib/presentation/logic/conceptGuideNextStep";
@@ -20,8 +20,6 @@
         type ConceptGuideSnapshot,
         type ConceptId,
     } from "$lib/presentation/logic/conceptGuideTypes";
-    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
-    import { auth_store } from "$lib/presentation/stores/auth";
     import { sidebar_menu_items } from "$lib/presentation/stores/authDerivedStores";
 
     import ConceptGuideDetailPanel from "./ConceptGuideDetailPanel.svelte";
@@ -49,13 +47,6 @@
     let info_concept_id: ConceptId | typeof NO_INFO = NO_INFO;
 
     $: can_open = build_guide_route_checker($sidebar_menu_items);
-
-    function profile_organization_id(): string {
-        const profile_state = get(auth_store).current_profile;
-        return profile_state.status === PRESENCE_STATUS.PRESENT
-            ? String(profile_state.profile.organization_id ?? "")
-            : "";
-    }
 
     async function refresh_snapshot(): Promise<boolean> {
         const competition = competition_options.find(
@@ -91,7 +82,7 @@
         await select_organization(
             choose_guide_organization_id(
                 organizations,
-                profile_organization_id(),
+                read_profile_organization_id(),
             ),
         );
     });
@@ -111,7 +102,7 @@
         <div class="flex flex-wrap gap-2">
             {#if organization_options.length > 1}
                 <select
-                    class="input w-auto"
+                    class="select-styled w-full sm:w-auto sm:min-w-[240px]"
                     aria-label="Organization"
                     value={organization_id}
                     on:change={(event) =>
@@ -124,7 +115,7 @@
             {/if}
             {#if competition_options.length > 0}
                 <select
-                    class="input w-auto"
+                    class="select-styled w-full sm:w-auto sm:min-w-[240px]"
                     aria-label="Competition"
                     bind:value={competition_id}
                     on:change={() => void refresh_snapshot()}
