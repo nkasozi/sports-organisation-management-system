@@ -5,7 +5,6 @@ import {
 } from "$lib/core/entities/JerseyColor";
 
 const OFFICIAL_JERSEY_PAGE = { page_number: 1, page_size: 200 };
-const STANDARD_KIT_PREFIX = "standard";
 const DEFAULT_OFFICIAL_JERSEY_EVENT = {
   ASSIGNED: "competition_default_official_jersey_assigned",
   FAILED: "competition_default_official_jersey_failed",
@@ -25,16 +24,11 @@ export interface DefaultOfficialJerseyUseCases {
   ): Promise<{ success: boolean; error?: string }>;
 }
 
-function is_standard_kit(jersey: JerseyColor): boolean {
-  return String(jersey.nickname).toLowerCase().startsWith(STANDARD_KIT_PREFIX);
-}
-
 function order_default_candidates(jerseys: JerseyColor[]): JerseyColor[] {
   return [...jerseys].sort(
     (first, second) =>
-      Number(is_standard_kit(second)) - Number(is_standard_kit(first)) ||
       String(first.created_at).localeCompare(String(second.created_at)) ||
-      String(first.nickname).localeCompare(String(second.nickname)),
+      String(first.id).localeCompare(String(second.id)),
   );
 }
 
