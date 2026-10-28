@@ -86,6 +86,31 @@ describe("build_sport_official_roles", () => {
       false,
       false,
     ]);
+    expect(roles.map((role) => role.is_table_official)).toEqual([
+      false,
+      true,
+      true,
+      true,
+    ]);
+  });
+
+  it("adds a table official to sports that don't name one, so games can be run", () => {
+    const hockey = {
+      ...NETBALL,
+      official_requirements: [NETBALL.official_requirements[0]],
+    } as unknown as Sport;
+
+    const roles = build_sport_official_roles(hockey, "org_1");
+
+    expect(roles.map((role) => role.name)).toEqual([
+      "Umpire",
+      "Table Official",
+    ]);
+    expect(roles[1]).toMatchObject({
+      is_table_official: true,
+      is_on_field: false,
+      display_order: 2,
+    });
   });
 });
 

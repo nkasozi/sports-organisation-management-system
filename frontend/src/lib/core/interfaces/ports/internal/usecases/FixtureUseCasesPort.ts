@@ -8,6 +8,10 @@ import type {
 } from "../../../../entities/Fixture";
 import type { FixtureClockState } from "../../../../entities/FixtureClock";
 import type { FixtureClockSnapshot } from "../../../../entities/FixtureClockSnapshot";
+import type {
+  CorrectionAuthor,
+  CorrectionRequest,
+} from "../../../../entities/FixtureEventCorrections";
 import type { ScoreAward } from "../../../../entities/SportEventCatalogConstants";
 import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
@@ -58,10 +62,16 @@ export interface FixtureUseCasesPort extends BaseUseCasesPort<
     id: ScalarValueInput<Fixture["id"]>,
     event_id: string,
     correction: GameEventCorrection,
+    request: CorrectionRequest,
   ): AsyncResult<Fixture>;
   remove_game_event(
     id: ScalarValueInput<Fixture["id"]>,
     event_id: string,
+    request: CorrectionRequest,
+  ): AsyncResult<Fixture>;
+  reset_event_edits(
+    id: ScalarValueInput<Fixture["id"]>,
+    author: Pick<CorrectionAuthor, "name" | "role_label">,
   ): AsyncResult<Fixture>;
   update_period(
     id: ScalarValueInput<Fixture["id"]>,

@@ -60,6 +60,7 @@ export interface Competition extends BaseEntity {
   squad_generation_strategy: SquadGenerationStrategy;
   allow_auto_fixture_details_setup: boolean;
   lineup_submission_deadline_hours: number;
+  max_event_edits_per_game: number;
   start_date: IsoDateString;
   end_date: IsoDateString;
   registration_deadline: IsoDateString;

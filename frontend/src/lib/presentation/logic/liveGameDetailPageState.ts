@@ -12,6 +12,9 @@ import type { Team } from "$lib/core/entities/Team";
 import type { Venue } from "$lib/core/entities/Venue";
 import { type PeriodButtonConfig } from "$lib/presentation/logic/liveGameDetailState";
 
+import type { LiveGameActor } from "./liveGameControl";
+import type { LiveGameCorrectionAccess } from "./liveGameCorrectionAccess";
+
 export interface LiveGameDetailPageState {
   fixture?: Fixture;
   home_team?: Team;
@@ -39,6 +42,9 @@ export interface LiveGameDetailPageState {
   break_elapsed_seconds: number;
   downloading_report: boolean;
   can_modify_game: boolean;
+  live_game_actor: LiveGameActor;
+  correction_author_name: string;
+  correction_author_role: string;
   permission_info_message: string;
   home_lineup_expanded: boolean;
   away_lineup_expanded: boolean;
@@ -86,6 +92,7 @@ export interface LiveGameDetailDerivedState {
   away_score: number;
   sorted_events: Fixture["game_events"];
   is_game_active: boolean;
+  correction_access: LiveGameCorrectionAccess;
   is_awaiting_full_time: boolean;
   is_game_completed: boolean;
   period_button_config?: PeriodButtonConfig;

@@ -1,5 +1,6 @@
 import { build_sport_event_buttons } from "$lib/core/entities/SportEventCatalog";
 import { resolve_sport_event_source } from "$lib/core/entities/SportEventSource";
+import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
 import {
   build_player_select_options_for_team,
   build_players_on_field_options,
@@ -8,6 +9,7 @@ import {
 } from "$lib/presentation/logic/liveGameDetailState";
 
 import { TEAM_SIDE } from "./gameEventConstants";
+import { derive_live_game_correction_access } from "./liveGameCorrectionAccess";
 import { resolve_live_game_max_players_on_field } from "./liveGameDetailMaxPlayersOnField";
 import { derive_live_game_detail_clock_state } from "./liveGameDetailPageClockState";
 import { derive_live_game_detail_presentation_state } from "./liveGameDetailPagePresentationState";
@@ -141,6 +143,7 @@ function derive_live_game_detail_lineup_and_event_state(
   LiveGameDetailDerivedState,
   | keyof ReturnType<typeof derive_live_game_detail_clock_state>
   | keyof ReturnType<typeof derive_live_game_detail_presentation_state>
+  | "correction_access"
 > {
   const { home_players, away_players, fixture } = page_state;
   const match_phase = derive_optional_fixture_match_phase(fixture);
@@ -174,6 +177,10 @@ export function derive_live_game_detail_view_state(command: {
       command.event_state,
     ),
     ...derive_live_game_detail_presentation_state(command.page_state),
+    correction_access: derive_live_game_correction_access(
+      command.page_state,
+      command.page_state.fixture?.status === FIXTURE_STATUS.IN_PROGRESS,
+    ),
   };
 }
 

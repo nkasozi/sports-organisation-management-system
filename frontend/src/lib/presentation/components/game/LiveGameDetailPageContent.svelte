@@ -13,6 +13,7 @@
     import LiveGameLineupSection from "$lib/presentation/components/game/LiveGameLineupSection.svelte";
     import LiveGamePermissionBanner from "$lib/presentation/components/game/LiveGamePermissionBanner.svelte";
     import LiveGameQuickActions from "$lib/presentation/components/game/LiveGameQuickActions.svelte";
+    import type { LiveGameCorrectionAccess } from "$lib/presentation/logic/liveGameCorrectionAccess";
     import type { PeriodButtonConfig } from "$lib/presentation/logic/liveGameDetailState";
     import type { LiveEventCorrectionRequest } from "$lib/presentation/logic/liveGameEventCorrection";
 
@@ -82,6 +83,8 @@
     export let on_correct_event: (
         request: LiveEventCorrectionRequest,
     ) => Promise<boolean>;
+    export let correction_access: LiveGameCorrectionAccess;
+    export let on_reset_edits: () => Promise<boolean>;
 
     const live_game_lineup_section_component =
         LiveGameLineupSection as unknown as typeof SvelteComponent;
@@ -179,7 +182,9 @@
                         {is_game_active}
                         home_team_name={team_labels.home_name}
                         away_team_name={team_labels.away_name}
-                        can_correct={can_modify_game && is_game_active}
+                        {correction_access}
+                        corrections={fixture.event_corrections ?? []}
+                        {on_reset_edits}
                         {home_players}
                         {away_players}
                         on_correct={on_correct_event}

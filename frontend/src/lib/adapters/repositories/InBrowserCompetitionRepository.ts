@@ -6,6 +6,7 @@ import type {
   CreateCompetitionInput,
   UpdateCompetitionInput,
 } from "../../core/entities/Competition";
+import { DEFAULT_MAX_EVENT_EDITS_PER_GAME } from "../../core/entities/CompetitionConstants";
 import type {
   CompetitionFilter,
   CompetitionRepository,
@@ -60,6 +61,8 @@ export class InBrowserCompetitionRepository
         input.allow_auto_fixture_details_setup || false,
       lineup_submission_deadline_hours:
         input.lineup_submission_deadline_hours ?? 2,
+      max_event_edits_per_game:
+        input.max_event_edits_per_game ?? DEFAULT_MAX_EVENT_EDITS_PER_GAME,
       start_date: input.start_date,
       end_date: input.end_date,
       registration_deadline: input.registration_deadline,

@@ -11,6 +11,9 @@ interface LiveGameEventEditForm {
 
 const MINIMUM_MINUTE = 0;
 
+export const REASON_REQUIRED_MESSAGE =
+  "Say why you're changing this event. The reason is shown in the match log.";
+
 export function can_change_event_player(event: GameEvent): boolean {
   return event.event_type !== GAME_EVENT_LOG_TYPE.SUBSTITUTION;
 }

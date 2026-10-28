@@ -5,7 +5,7 @@ import { get_default_football_official_roles_with_ids } from "./GameOfficialRole
 import { FIELD_HOCKEY_OFFICIAL_REQUIREMENTS } from "./SportFieldHockeyPresetConfig";
 
 describe("default official roles cover field hockey", () => {
-  it("fills a hockey match with umpires, not football referees", () => {
+  it("fills a hockey match with a table official and umpires, not football referees", () => {
     const roles = get_default_football_official_roles_with_ids(
       "org_1" as never,
     ).map((role) => ({
@@ -18,6 +18,7 @@ describe("default official roles cover field hockey", () => {
       roles,
     );
     expect(slots.map((slot) => slot.name)).toEqual([
+      "Technical Officer",
       "Main Umpire",
       "Second Umpire",
     ]);

@@ -5,19 +5,25 @@
         get_event_icon,
         get_event_label,
     } from "$lib/core/entities/Fixture";
+    import type { EventCorrectionRecord } from "$lib/core/entities/FixtureEventCorrections";
     import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
     import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
+    import type { LiveGameCorrectionAccess } from "$lib/presentation/logic/liveGameCorrectionAccess";
     import type { LiveEventCorrectionRequest } from "$lib/presentation/logic/liveGameEventCorrection";
 
     import { GAME_EVENT_TEAM_SIDE } from "./gameDisplayConstants";
     import GameTimelineTeamEvent from "./GameTimelineTeamEvent.svelte";
+    import LiveGameCorrectionLog from "./LiveGameCorrectionLog.svelte";
+    import LiveGameEditAllowanceBar from "./LiveGameEditAllowanceBar.svelte";
 
     export let sorted_events: GameEvent[];
     export let fixture_status: Fixture["status"];
     export let is_game_active: boolean;
     export let home_team_name: string;
     export let away_team_name: string;
-    export let can_correct: boolean;
+    export let correction_access: LiveGameCorrectionAccess;
+    export let corrections: EventCorrectionRecord[] = [];
+    export let on_reset_edits: () => Promise<boolean>;
     export let home_players: LineupPlayer[];
     export let away_players: LineupPlayer[];
     export let on_correct: (
@@ -26,6 +32,7 @@
 </script>
 
 <div>
+    <LiveGameEditAllowanceBar access={correction_access} {on_reset_edits} />
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-2">
             <span class="w-3 h-3 rounded-full bg-blue-500"></span>
@@ -59,7 +66,7 @@
             <p class="text-gray-500 dark:text-gray-400 text-sm">
                 {#if fixture_status === FIXTURE_STATUS.SCHEDULED}
                     Start the game to begin recording events
-                {:else if is_game_active && can_correct}
+                {:else if is_game_active && correction_access.can_correct}
                     Use the buttons above to record match events
                 {:else if is_game_active}
                     Events will appear here as they happen
@@ -113,7 +120,8 @@
                         <GameTimelineTeamEvent
                             {event}
                             is_home={is_home_event}
-                            {can_correct}
+                            can_correct={correction_access.can_correct}
+                            edit_cost_text={correction_access.edit_cost_text}
                             team_players={is_home_event
                                 ? home_players
                                 : away_players}
@@ -124,4 +132,5 @@
             </div>
         </div>
     {/if}
+    <LiveGameCorrectionLog {corrections} />
 </div>

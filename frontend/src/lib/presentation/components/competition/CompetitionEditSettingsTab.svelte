@@ -3,6 +3,7 @@
     import FormField from "$lib/presentation/components/ui/FormField.svelte";
 
     import CompetitionCreateAutoSquadSettings from "./CompetitionCreateAutoSquadSettings.svelte";
+    import CompetitionEventEditSettings from "./CompetitionEventEditSettings.svelte";
 
     export let form_data: UpdateCompetitionInput;
     export let can_edit_competition: boolean;
@@ -48,6 +49,8 @@
         bind:form_data
         {on_toggle_auto_squad_submission}
     />
+
+    <CompetitionEventEditSettings bind:form_data />
 
     <div class="mt-8 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
         <button

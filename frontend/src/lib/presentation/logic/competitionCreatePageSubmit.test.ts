@@ -105,4 +105,21 @@ describe("competitionCreatePageSubmit", () => {
       }),
     );
   });
+
+  it("saves a blank event edit limit as the default of 3", async () => {
+    const dependencies = create_dependencies();
+    dependencies.competition_use_cases.create.mockResolvedValue({
+      success: false,
+      error: "stop",
+    });
+
+    await submit_competition_create_form({
+      dependencies: dependencies as never,
+      form_data: { ...base_form_data, max_event_edits_per_game: "" } as never,
+    });
+
+    expect(dependencies.competition_use_cases.create).toHaveBeenCalledWith(
+      expect.objectContaining({ max_event_edits_per_game: 3 }),
+    );
+  });
 });

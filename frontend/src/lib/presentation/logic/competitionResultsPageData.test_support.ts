@@ -25,6 +25,7 @@ export function create_test_competition(
       overrides.allow_auto_fixture_details_setup ?? false,
     lineup_submission_deadline_hours:
       overrides.lineup_submission_deadline_hours ?? 0,
+    max_event_edits_per_game: overrides.max_event_edits_per_game ?? 3,
     start_date: overrides.start_date ?? "2024-06-01",
     end_date: overrides.end_date ?? "2024-06-30",
     registration_deadline: overrides.registration_deadline ?? "2024-05-20",

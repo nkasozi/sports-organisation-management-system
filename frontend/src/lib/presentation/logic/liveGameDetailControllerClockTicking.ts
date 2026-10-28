@@ -14,6 +14,7 @@ import {
   is_game_clock_interval_running,
 } from "./gameClockIntervalState";
 import { advance_live_clock } from "./liveGameClockProgress";
+import type { LiveGameIdentity } from "./liveGameControl";
 import { update_live_game_detail_state } from "./liveGameDetailControllerUtils";
 import {
   derive_optional_fixture_match_phase,
@@ -28,6 +29,9 @@ export type LiveGameDetailClockCommand = {
   goto: (path: string) => Promise<unknown>;
   raw_token: () => string;
   is_public_viewer: () => boolean;
+  load_live_game_identity: (
+    organization_id: string,
+  ) => Promise<LiveGameIdentity>;
   set_page_state: (state: LiveGameDetailPageState) => void;
 };
 

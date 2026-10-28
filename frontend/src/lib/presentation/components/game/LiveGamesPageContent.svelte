@@ -2,6 +2,11 @@
     import type { Fixture } from "$lib/core/entities/Fixture";
     import type { Organization } from "$lib/core/entities/Organization";
     import type { PreFlightCheck } from "$lib/core/services/fixtureStartChecks";
+    import {
+        can_identity_run_fixture,
+        type LiveGameIdentity,
+    } from "$lib/presentation/logic/liveGameControl";
+    import { read_live_game_identity } from "$lib/presentation/logic/liveGameDetailAuthReaders";
     import type { LiveGamesPendingStartFixtureState } from "$lib/presentation/logic/liveGamesPageState";
 
     import LiveGamesBody from "./LiveGamesBody.svelte";
@@ -36,6 +41,24 @@
         };
     export let on_cancel_start: () => void;
     export let on_confirm_start: () => void;
+
+    const NO_IDENTITY: LiveGameIdentity = {
+        role: "",
+        official_id: "",
+        display_name: "",
+        role_label: "",
+        table_role_ids: new Set(),
+    };
+    let identity: LiveGameIdentity = NO_IDENTITY;
+
+    $: void load_identity(selected_organization_id);
+
+    async function load_identity(organization_id: string): Promise<boolean> {
+        if (!organization_id) return false;
+        const loaded = await read_live_game_identity(organization_id);
+        if (organization_id === selected_organization_id) identity = loaded;
+        return true;
+    }
 </script>
 
 <svelte:head>
@@ -62,6 +85,8 @@
         })}
         {incomplete_fixtures}
         {can_start_games}
+        can_run_fixture={(fixture) =>
+            can_identity_run_fixture(identity, fixture)}
         {team_names}
         {team_logo_urls}
         {competition_names}

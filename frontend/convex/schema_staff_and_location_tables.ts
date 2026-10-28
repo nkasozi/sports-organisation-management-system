@@ -61,6 +61,7 @@ export const schema_staff_and_location_tables = {
     is_required: v.optional(v.boolean()),
     is_on_field: v.optional(v.boolean()),
     is_head_official: v.optional(v.boolean()),
+    is_table_official: v.optional(v.boolean()),
     sort_order: v.optional(v.number()),
     display_order: v.optional(v.number()),
     status: v.optional(v.string()),

@@ -39,6 +39,7 @@
     export let on_correct_event: (
         request: LiveEventCorrectionRequest,
     ) => Promise<boolean>;
+    export let on_reset_event_edits: () => Promise<boolean>;
 
     $: content_state = build_live_game_detail_content_state(page_state);
 </script>
@@ -91,4 +92,6 @@
     {on_home_time_on_change}
     {on_away_time_on_change}
     {on_correct_event}
+    correction_access={view_state.correction_access}
+    on_reset_edits={on_reset_event_edits}
 />

@@ -103,6 +103,18 @@ export const game_event_validator = v.object({
   secondary_player_id: v.optional(v.string()),
 });
 
+export const event_correction_validator = v.object({
+  id: v.string(),
+  kind: v.string(),
+  event_id: v.string(),
+  event_before: v.string(),
+  event_after: v.string(),
+  reason: v.string(),
+  corrected_by: v.string(),
+  corrected_by_role: v.string(),
+  corrected_at: v.string(),
+});
+
 export const assigned_official_validator = v.object({
   official_id: v.string(),
   role_id: v.string(),

@@ -8,6 +8,7 @@ import {
   type LiveGameDetailPageState,
 } from "$lib/presentation/logic/liveGameDetailPageState";
 
+import { apply_live_game_detail_control } from "./liveGameDetailControlApplication";
 import { should_resume_live_game_detail_clock } from "./liveGameDetailControllerClockSaving";
 import {
   type LiveGameDetailClockContext,
@@ -57,6 +58,7 @@ async function load_live_game_detail_fixture(
     begin_live_game_detail_load,
   );
   const fixture = await reload_live_game_detail_fixture_bundle(context);
+  if (fixture) await apply_live_game_detail_control(context, fixture);
   update_live_game_detail_clock_page_state(
     context,
     finish_live_game_detail_load,

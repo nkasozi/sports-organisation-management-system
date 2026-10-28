@@ -7,7 +7,6 @@
     } from "$lib/core/entities/Fixture";
     import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
     import type { GameEventCorrection } from "$lib/core/usecases/FixtureGameEventCorrections";
-    import ConfirmationModal from "$lib/presentation/components/ui/ConfirmationModal.svelte";
     import { get_event_bg_class } from "$lib/presentation/logic/gameEventDisplay";
     import {
         LIVE_EVENT_CORRECTION_KIND,
@@ -15,10 +14,12 @@
     } from "$lib/presentation/logic/liveGameEventCorrection";
 
     import LiveGameEventEditDialog from "./LiveGameEventEditDialog.svelte";
+    import LiveGameEventRemoveDialog from "./LiveGameEventRemoveDialog.svelte";
 
     export let event: GameEvent;
     export let is_home: boolean;
     export let can_correct: boolean;
+    export let edit_cost_text: string;
     export let team_players: LineupPlayer[];
     export let on_correct: (
         request: LiveEventCorrectionRequest,
@@ -42,8 +43,13 @@
         is_confirming_removal = false;
     }
 
-    function save_edit(correction: GameEventCorrection): void {
-        void send({ kind: LIVE_EVENT_CORRECTION_KIND.EDIT, event, correction });
+    function save_edit(correction: GameEventCorrection, reason: string): void {
+        void send({
+            kind: LIVE_EVENT_CORRECTION_KIND.EDIT,
+            event,
+            correction,
+            reason,
+        });
     }
 </script>
 
@@ -130,17 +136,19 @@
         {event}
         {team_players}
         {is_saving}
+        {edit_cost_text}
         on_save={save_edit}
         on_cancel={() => (is_editing = false)}
     />{/if}
-<ConfirmationModal
-    is_visible={is_confirming_removal}
-    title={`Delete this ${get_event_label(event.event_type).toLowerCase()}?`}
-    message="It will be removed from the timeline, and the score, stats and lineup will be updated."
-    confirm_text="Delete"
-    is_destructive={true}
-    is_processing={is_saving}
-    on:confirm={() =>
-        void send({ kind: LIVE_EVENT_CORRECTION_KIND.REMOVE, event })}
-    on:cancel={() => (is_confirming_removal = false)}
-/>
+{#if is_confirming_removal}<LiveGameEventRemoveDialog
+        {event}
+        {is_saving}
+        {edit_cost_text}
+        on_remove={(reason) =>
+            void send({
+                kind: LIVE_EVENT_CORRECTION_KIND.REMOVE,
+                event,
+                reason,
+            })}
+        on_cancel={() => (is_confirming_removal = false)}
+    />{/if}

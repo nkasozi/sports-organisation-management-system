@@ -40,7 +40,10 @@ describe("organization defaults for a sport", () => {
       create_some_option(NETBALL),
     );
 
-    expect(roles.map((role) => role.name)).toEqual(["Umpire"]);
+    expect(roles.map((role) => role.name)).toEqual([
+      "Umpire",
+      "Table Official",
+    ]);
     expect(roles[0].id).toBe("role_sport_1_org_1");
   });
 

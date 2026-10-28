@@ -19,6 +19,7 @@
     export let current_checks: Record<string, PreFlightCheck[]> = {};
     export let is_starting: Record<string, boolean> = {};
     export let on_start_click: (fixture: Fixture) => void;
+    export let can_run_fixture: (fixture: Fixture) => boolean = () => true;
 
     function get_team_name(team_id: string): string {
         return team_names[team_id] || LIVE_GAMES_BODY_TEXT.UNKNOWN_TEAM;
@@ -95,7 +96,7 @@
                 away_team_logo_url={team_logo_urls[fixture.away_team_id] ?? ""}
                 competition_name={get_competition_name(fixture.competition_id)}
                 sport_name={get_sport_name(fixture.competition_id)}
-                {can_start_games}
+                can_start_games={can_start_games && can_run_fixture(fixture)}
                 is_starting={is_starting[fixture.id || ""]}
                 checks={current_checks[fixture.id || ""] || []}
                 {on_start_click}

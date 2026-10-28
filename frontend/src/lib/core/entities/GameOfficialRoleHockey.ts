@@ -9,6 +9,7 @@ const HOCKEY_ROLES = [
     description: "Lead umpire who controls the match and its half of the pitch",
     is_on_field: true,
     is_head_official: true,
+    is_table_official: false,
   },
   {
     name: "Second Umpire",
@@ -16,6 +17,7 @@ const HOCKEY_ROLES = [
     description: "Umpire who controls the other half of the pitch",
     is_on_field: true,
     is_head_official: false,
+    is_table_official: false,
   },
   {
     name: "Video Umpire",
@@ -23,6 +25,7 @@ const HOCKEY_ROLES = [
     description: "Reviews referred decisions using video footage",
     is_on_field: false,
     is_head_official: false,
+    is_table_official: false,
   },
   {
     name: "Technical Officer",
@@ -30,6 +33,7 @@ const HOCKEY_ROLES = [
     description: "Runs the technical table, substitutions and match timing",
     is_on_field: false,
     is_head_official: false,
+    is_table_official: true,
   },
 ] as const;
 

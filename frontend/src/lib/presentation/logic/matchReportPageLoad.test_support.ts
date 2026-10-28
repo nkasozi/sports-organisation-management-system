@@ -97,6 +97,7 @@ export function create_competition(
     squad_generation_strategy: "first_available",
     allow_auto_fixture_details_setup: false,
     lineup_submission_deadline_hours: 24,
+    max_event_edits_per_game: 3,
     start_date: "2026-04-01",
     end_date: "2026-07-01",
     registration_deadline: "2026-03-01",

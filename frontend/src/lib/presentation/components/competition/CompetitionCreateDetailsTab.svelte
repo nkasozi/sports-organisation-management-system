@@ -7,6 +7,7 @@
 
     import CompetitionCreateAutoSquadSettings from "./CompetitionCreateAutoSquadSettings.svelte";
     import CompetitionCreateTeamSelection from "./CompetitionCreateTeamSelection.svelte";
+    import CompetitionEventEditSettings from "./CompetitionEventEditSettings.svelte";
 
     export let form_data: CreateCompetitionInput;
     export let organization_options: SelectOption[];
@@ -174,4 +175,5 @@
         bind:form_data
         {on_toggle_auto_squad_submission}
     />
+    <CompetitionEventEditSettings bind:form_data />
 </div>

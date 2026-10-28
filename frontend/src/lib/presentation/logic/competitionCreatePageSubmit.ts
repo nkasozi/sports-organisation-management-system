@@ -7,6 +7,7 @@ import {
   assign_default_official_jersey,
   type DefaultOfficialJerseyUseCases,
 } from "$lib/presentation/logic/competitionDefaultOfficialJersey";
+import { normalize_competition_event_edit_settings } from "$lib/presentation/logic/competitionEventEditSettings";
 
 const COMPETITION_CREATE_SUBMIT_TEXT = {
   create_failed: "Failed to create competition",
@@ -67,7 +68,9 @@ export async function submit_competition_create_form(command: {
   success: boolean;
 }> {
   const competition_result =
-    await command.dependencies.competition_use_cases.create(command.form_data);
+    await command.dependencies.competition_use_cases.create(
+      normalize_competition_event_edit_settings(command.form_data),
+    );
   if (!competition_result.success || !competition_result.data) {
     return {
       success: false,

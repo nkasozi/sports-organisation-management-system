@@ -11,11 +11,15 @@ import {
   FIXTURE_DETAILS_SETUP_LOG_SCOPE,
   FIXTURE_DETAILS_SETUP_MESSAGE,
 } from "./FixtureDetailsSetupConstants";
+import { ensure_table_official_assigned } from "./FixtureTableOfficialCheck";
 
 const UNKNOWN_ROLE_NAME = "";
 
 export interface FixtureOfficialsSyncPort {
   sync_setup_officials(setup: FixtureDetailsSetup): AsyncResult<boolean>;
+  ensure_table_official_assigned(
+    assignments: ReadonlyArray<{ official_id: string; role_id: string }>,
+  ): AsyncResult<boolean>;
 }
 
 type FixtureOfficialsSyncDependencies = {
@@ -66,5 +70,7 @@ export function create_fixture_officials_sync(
   return {
     sync_setup_officials: (setup: FixtureDetailsSetup) =>
       sync_setup_officials(dependencies, setup),
+    ensure_table_official_assigned: (assignments) =>
+      ensure_table_official_assigned(dependencies.role_repository, assignments),
   };
 }
