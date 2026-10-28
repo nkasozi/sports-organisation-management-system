@@ -53,6 +53,23 @@ describe("competitionEditWorkspaceActions", () => {
     ).resolves.toEqual({ success: true, data: true });
   });
 
+  it("saves the event edit limit as a whole number", async () => {
+    const update = vi.fn().mockResolvedValueOnce({ success: true });
+
+    const result = await submit_competition_edit_workspace({
+      competition_id: "competition-1",
+      form_data: { name: "League", max_event_edits_per_game: 2.7 },
+      competition_use_cases: { update },
+    });
+
+    expect(result).toEqual({ success: true, data: true });
+
+    expect(update).toHaveBeenCalledWith("competition-1", {
+      name: "League",
+      max_event_edits_per_game: 3,
+    });
+  });
+
   it("adds a team to the competition and returns the rebuilt workspace collections", async () => {
     const collections = {
       available_teams: [{ id: "team-2" }],

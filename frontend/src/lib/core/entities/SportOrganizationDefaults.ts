@@ -1,6 +1,10 @@
 import type { CreateGameEventTypeInput } from "./GameEventTypeTypes";
 import { EVENT_CATEGORY } from "./GameEventTypeTypes";
 import type { CreateGameOfficialRoleInput } from "./GameOfficialRole";
+import {
+  build_table_official_role_input,
+  TABLE_OFFICIAL_ROLE_CODES,
+} from "./GameOfficialRoleTable";
 import type { CreatePlayerPositionInput } from "./PlayerPosition";
 import type { Sport } from "./Sport";
 import {
@@ -18,18 +22,6 @@ import { ENTITY_STATUS } from "./StatusConstants";
 type OrganizationId = CreateGameOfficialRoleInput["organization_id"];
 
 const FIRST_DISPLAY_ORDER = 1;
-const TABLE_OFFICIAL_ROLE_CODES: ReadonlySet<string> = new Set([
-  "SCORER",
-  "SCOREKEEPER",
-  "SCORE_KEEPER",
-  "TIMEKEEPER",
-  "TIME_KEEPER",
-  "SHOT_CLOCK_OPERATOR",
-  "STATISTICIAN",
-  "TABLE_OFFICIAL",
-  "RECORDER",
-]);
-
 function to_role_code(role_id: string): string {
   return role_id
     .trim()
@@ -45,19 +37,30 @@ export function build_sport_official_roles(
   sport: Sport,
   organization_id: OrganizationId,
 ): CreateGameOfficialRoleInput[] {
-  return sport.official_requirements.map((requirement, index) => ({
-    name: requirement.role_name,
-    code: to_role_code(requirement.role_id),
-    description: requirement.description,
-    sport_id: sport.id,
-    is_on_field:
-      requirement.is_mandatory &&
-      !is_table_official(to_role_code(requirement.role_id)),
-    is_head_official: index === 0,
-    display_order: index + FIRST_DISPLAY_ORDER,
-    status: ENTITY_STATUS.ACTIVE,
-    organization_id,
-  }));
+  const roles = sport.official_requirements.map((requirement, index) => {
+    const code = to_role_code(requirement.role_id);
+    return {
+      name: requirement.role_name,
+      code,
+      description: requirement.description,
+      sport_id: sport.id,
+      is_on_field: requirement.is_mandatory && !is_table_official(code),
+      is_head_official: index === 0,
+      is_table_official: is_table_official(code),
+      display_order: index + FIRST_DISPLAY_ORDER,
+      status: ENTITY_STATUS.ACTIVE,
+      organization_id,
+    };
+  });
+  if (roles.some((role) => role.is_table_official)) return roles;
+  return [
+    ...roles,
+    build_table_official_role_input(
+      organization_id,
+      sport.id,
+      roles.length + FIRST_DISPLAY_ORDER,
+    ),
+  ];
 }
 
 function resolve_event_category(

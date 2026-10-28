@@ -4,9 +4,11 @@ import {
   COMPETITION_VALIDATION_MESSAGES,
   DEFAULT_COMPETITION_LINEUP_DEADLINE_HOURS,
   DEFAULT_COMPETITION_MAX_TEAMS,
+  DEFAULT_MAX_EVENT_EDITS_PER_GAME,
   MINIMUM_COMPETITION_MAX_TEAMS,
   MINIMUM_COMPETITION_NAME_LENGTH,
 } from "./CompetitionConstants";
+import { is_valid_max_event_edits_per_game } from "./CompetitionEventEditLimit";
 import {
   COMPETITION_DERIVED_STATUS,
   type CompetitionDerivedStatus,
@@ -26,6 +28,8 @@ import {
   read_local_calendar_date_key,
 } from "./LocalCalendarDate";
 import { ENTITY_STATUS } from "./StatusConstants";
+
+export { read_max_event_edits_per_game } from "./CompetitionEventEditLimit";
 
 export function derive_competition_status(
   start_date: CreateCompetitionInput["start_date"],
@@ -81,6 +85,7 @@ export function create_empty_competition_input(
     squad_generation_strategy: SQUAD_GENERATION_STRATEGY.FIRST_AVAILABLE,
     allow_auto_fixture_details_setup: true,
     lineup_submission_deadline_hours: DEFAULT_COMPETITION_LINEUP_DEADLINE_HOURS,
+    max_event_edits_per_game: DEFAULT_MAX_EVENT_EDITS_PER_GAME,
     start_date: format_local_calendar_date_key(next_month),
     end_date: format_local_calendar_date_key(two_months_later),
     registration_deadline: format_local_calendar_date_key(today),
@@ -121,6 +126,12 @@ export function validate_competition_input(
     check_condition(
       input.max_teams >= MINIMUM_COMPETITION_MAX_TEAMS,
       COMPETITION_VALIDATION_MESSAGES.MAX_TEAMS_TOO_LOW,
+    ),
+    check_condition(
+      is_valid_max_event_edits_per_game(
+        input.max_event_edits_per_game ?? DEFAULT_MAX_EVENT_EDITS_PER_GAME,
+      ),
+      COMPETITION_VALIDATION_MESSAGES.MAX_EVENT_EDITS_OUT_OF_RANGE,
     ),
   ]);
 }

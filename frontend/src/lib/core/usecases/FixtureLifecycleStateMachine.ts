@@ -6,6 +6,7 @@ import {
 export const FixtureLifecycleCommand = {
   START: "start",
   RECORD_EVENT: "record_event",
+  CORRECT_EVENT: "correct_event",
   CHANGE_PERIOD: "change_period",
   END: "end",
   POSTPONE: "postpone",
@@ -33,6 +34,8 @@ const FIXTURE_LIFECYCLE_MESSAGE = {
     "This game can't be started because it has already started, finished, or is not scheduled.",
   NOT_IN_PROGRESS:
     "This game is not in progress, so live changes can't be recorded. Start the game first.",
+  CANNOT_CORRECT:
+    "Events can only be corrected while a game is in progress or after it has ended.",
   CANNOT_END:
     "This game can only be ended while it is in progress. Start the game first.",
   CANNOT_POSTPONE: "Only a scheduled game can be postponed.",
@@ -73,6 +76,21 @@ function decide_live_change(
     case FIXTURE_STATUS.CANCELLED:
     default:
       return reject(FIXTURE_LIFECYCLE_MESSAGE.NOT_IN_PROGRESS);
+  }
+}
+
+function decide_correction(
+  status: FixtureStatusValue,
+): FixtureLifecycleDecision {
+  switch (status) {
+    case FIXTURE_STATUS.IN_PROGRESS:
+    case FIXTURE_STATUS.COMPLETED:
+      return allow(status);
+    case FIXTURE_STATUS.SCHEDULED:
+    case FIXTURE_STATUS.POSTPONED:
+    case FIXTURE_STATUS.CANCELLED:
+    default:
+      return reject(FIXTURE_LIFECYCLE_MESSAGE.CANNOT_CORRECT);
   }
 }
 
@@ -126,6 +144,8 @@ export function decide_fixture_lifecycle_transition(
     case FixtureLifecycleCommand.RECORD_EVENT:
     case FixtureLifecycleCommand.CHANGE_PERIOD:
       return decide_live_change(status);
+    case FixtureLifecycleCommand.CORRECT_EVENT:
+      return decide_correction(status);
     case FixtureLifecycleCommand.END:
       return decide_end(status);
     case FixtureLifecycleCommand.POSTPONE:

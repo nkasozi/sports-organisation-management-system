@@ -8,6 +8,7 @@ import type {
   LiveGameDetailToastState,
 } from "$lib/presentation/logic/liveGameDetailPageState";
 
+import type { LiveGameIdentity } from "./liveGameControl";
 import { create_live_game_detail_clock_handlers } from "./liveGameDetailControllerClock";
 import { create_live_game_detail_event_handlers } from "./liveGameDetailControllerEventActions";
 import { create_live_game_detail_game_handlers } from "./liveGameDetailControllerGameActions";
@@ -26,6 +27,9 @@ type LiveGameDetailControllerRuntimeCommand = {
   goto: (path: string) => Promise<unknown>;
   raw_token: () => string;
   is_public_viewer: () => boolean;
+  load_live_game_identity: (
+    organization_id: string,
+  ) => Promise<LiveGameIdentity>;
   set_event_state: (state: LiveGameDetailEventState) => void;
   set_modal_state: (state: LiveGameDetailModalState) => void;
   set_page_state: (state: LiveGameDetailPageState) => void;
@@ -47,6 +51,7 @@ function build_clock_handlers(
     goto: command.goto,
     raw_token: command.raw_token,
     is_public_viewer: command.is_public_viewer,
+    load_live_game_identity: command.load_live_game_identity,
     set_page_state: command.set_page_state,
   });
 }

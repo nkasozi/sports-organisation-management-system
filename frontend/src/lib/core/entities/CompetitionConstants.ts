@@ -4,6 +4,9 @@ export const MINIMUM_COMPETITION_NAME_LENGTH = 2;
 export const MINIMUM_COMPETITION_MAX_TEAMS = 2;
 export const DEFAULT_COMPETITION_MAX_TEAMS = 16;
 export const DEFAULT_COMPETITION_LINEUP_DEADLINE_HOURS = 2;
+export const DEFAULT_MAX_EVENT_EDITS_PER_GAME = 3;
+export const MINIMUM_MAX_EVENT_EDITS_PER_GAME = 0;
+export const MAXIMUM_MAX_EVENT_EDITS_PER_GAME = 20;
 
 export const COMPETITION_VALIDATION_MESSAGES = {
   NAME_TOO_SHORT: "Competition name must be at least 2 characters",
@@ -13,6 +16,8 @@ export const COMPETITION_VALIDATION_MESSAGES = {
   END_DATE_REQUIRED: "End date is required",
   END_BEFORE_START: "End date must be after start date",
   MAX_TEAMS_TOO_LOW: "Maximum teams must be at least 2",
+  MAX_EVENT_EDITS_OUT_OF_RANGE:
+    "Event edits allowed per game must be a whole number from 0 to 20",
 } as const;
 
 export const COMPETITION_STATUS_DISPLAY: Readonly<

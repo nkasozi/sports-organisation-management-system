@@ -10,6 +10,7 @@ export interface GameOfficialRole extends BaseEntity {
   sport_id: EntityId | "";
   is_on_field: boolean;
   is_head_official: boolean;
+  is_table_official: boolean;
   display_order: number;
   status: EntityStatus;
   organization_id: EntityId;
@@ -32,6 +33,7 @@ const DEFAULT_FOOTBALL_OFFICIAL_ROLES: ReadonlyArray<
     sport_id: "",
     is_on_field: true,
     is_head_official: true,
+    is_table_official: false,
     display_order: 1,
     status: ENTITY_STATUS.ACTIVE,
   },
@@ -43,6 +45,7 @@ const DEFAULT_FOOTBALL_OFFICIAL_ROLES: ReadonlyArray<
     sport_id: "",
     is_on_field: true,
     is_head_official: false,
+    is_table_official: false,
     display_order: 2,
     status: ENTITY_STATUS.ACTIVE,
   },
@@ -54,6 +57,7 @@ const DEFAULT_FOOTBALL_OFFICIAL_ROLES: ReadonlyArray<
     sport_id: "",
     is_on_field: false,
     is_head_official: false,
+    is_table_official: false,
     display_order: 3,
     status: ENTITY_STATUS.ACTIVE,
   },
@@ -65,6 +69,7 @@ const DEFAULT_FOOTBALL_OFFICIAL_ROLES: ReadonlyArray<
     sport_id: "",
     is_on_field: false,
     is_head_official: false,
+    is_table_official: false,
     display_order: 4,
     status: ENTITY_STATUS.ACTIVE,
   },
@@ -75,6 +80,7 @@ const DEFAULT_FOOTBALL_OFFICIAL_ROLES: ReadonlyArray<
     sport_id: "",
     is_on_field: false,
     is_head_official: false,
+    is_table_official: false,
     display_order: 5,
     status: ENTITY_STATUS.ACTIVE,
   },
@@ -85,6 +91,7 @@ const DEFAULT_FOOTBALL_OFFICIAL_ROLES: ReadonlyArray<
     sport_id: "",
     is_on_field: true,
     is_head_official: false,
+    is_table_official: false,
     display_order: 6,
     status: ENTITY_STATUS.ACTIVE,
   },

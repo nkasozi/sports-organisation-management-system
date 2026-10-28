@@ -14,6 +14,7 @@ import {
 import {
   correct_live_game_detail_event,
   type LiveEventCorrectionRequest,
+  reset_live_game_event_edits,
 } from "./liveGameEventCorrection";
 
 export function create_live_game_detail_event_handlers(
@@ -25,6 +26,7 @@ export function create_live_game_detail_event_handlers(
   ) => void;
   record_event: () => Promise<void>;
   correct_event: (request: LiveEventCorrectionRequest) => Promise<boolean>;
+  reset_event_edits: () => Promise<boolean>;
   select_event_player: (player_id: string) => void;
   select_secondary_player: (player_id: string) => void;
   update_player_time_on: (
@@ -50,5 +52,6 @@ export function create_live_game_detail_event_handlers(
     record_event: () => record_live_game_detail_event(command),
     correct_event: (request) =>
       correct_live_game_detail_event(command, request),
+    reset_event_edits: () => reset_live_game_event_edits(command),
   };
 }

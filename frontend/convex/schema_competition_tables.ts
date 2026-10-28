@@ -44,6 +44,7 @@ export const schema_competition_tables = {
     squad_generation_strategy: v.optional(v.string()),
     allow_auto_fixture_details_setup: v.optional(v.boolean()),
     lineup_submission_deadline_hours: v.optional(v.number()),
+    max_event_edits_per_game: v.optional(v.number()),
     season: v.optional(v.string()),
     start_date: v.optional(v.string()),
     end_date: v.optional(v.string()),

@@ -12,6 +12,7 @@ function create_competition_edit_state(): {
     organization_id: string;
     allow_auto_squad_submission: boolean;
     lineup_submission_deadline_hours: number;
+    max_event_edits_per_game: number;
   };
   selected_format_state: CompetitionEditSelectedFormatState;
   teams_in_competition: { id: string; name: string }[];
@@ -24,6 +25,7 @@ function create_competition_edit_state(): {
       organization_id: "organization-1",
       allow_auto_squad_submission: true,
       lineup_submission_deadline_hours: 24,
+      max_event_edits_per_game: 3,
     },
     selected_format_state: {
       status: "present",

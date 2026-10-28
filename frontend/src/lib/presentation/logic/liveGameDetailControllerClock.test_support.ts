@@ -52,6 +52,13 @@ export function create_clock_handlers(
       goto: overrides.goto ?? vi.fn(),
       raw_token: () => raw_token,
       is_public_viewer: () => false,
+      load_live_game_identity: async () => ({
+        role: "org_admin",
+        official_id: "",
+        display_name: "Admin",
+        role_label: "Organisation Admin",
+        table_role_ids: new Set<string>(),
+      }),
       set_page_state: state_store.set_page_state,
     },
     overrides.now ?? (() => new Date()),

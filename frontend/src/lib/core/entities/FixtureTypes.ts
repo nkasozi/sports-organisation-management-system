@@ -9,6 +9,7 @@ import type {
   ScalarInput,
 } from "../types/DomainScalars";
 import type { BaseEntity } from "./BaseEntity";
+import type { EventCorrectionRecord } from "./FixtureEventCorrections";
 import type { GameEventLogType, TeamSide } from "./GameEventLogTypes";
 import type { FixtureStatusValue, GamePeriodValue } from "./StatusConstants";
 
@@ -60,6 +61,8 @@ export interface Fixture extends BaseEntity {
   away_team_score: number;
   assigned_officials: AssignedOfficial[];
   game_events: GameEvent[];
+  event_edits_used?: number;
+  event_corrections?: EventCorrectionRecord[];
   current_period: GamePeriod;
   current_minute: GameMinute;
   clock_status?: FixtureClockStatus;

@@ -157,4 +157,34 @@ describe("audit details say what changed, from what to what", () => {
     expect(notes.new_value.length).toBeLessThanOrEqual(121);
     expect(notes.new_value.endsWith("…")).toBe(true);
   });
+
+  it("describes event corrections in plain words, with the reason and who made them", () => {
+    expect(
+      describe_updated_record(
+        { event_corrections: [] },
+        {
+          event_corrections: [
+            {
+              id: "c1",
+              kind: "removed",
+              event_id: "evt_1",
+              event_before: "Goal 16' Denis Onyango",
+              event_after: "",
+              reason: "Goal disallowed",
+              corrected_by: "Moses",
+              corrected_by_role: "Officials Manager",
+              corrected_at: "2026-10-28T00:00:00Z",
+            },
+          ],
+        },
+      ),
+    ).toEqual([
+      {
+        field_name: "Event corrections: added",
+        old_value: "",
+        new_value:
+          "Removed: Goal 16' Denis Onyango. Reason: Goal disallowed (by Moses, Officials Manager)",
+      },
+    ]);
+  });
 });

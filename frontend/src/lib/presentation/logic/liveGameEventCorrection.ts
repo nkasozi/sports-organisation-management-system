@@ -7,6 +7,7 @@ import { GAME_EVENT_LOG_TYPE } from "$lib/core/entities/GameEventLogTypes";
 import type { GameEventCorrection } from "$lib/core/usecases/FixtureGameEventCorrections";
 
 import { TEAM_SIDE } from "./gameEventConstants";
+import { build_live_game_correction_author } from "./liveGameCorrectionAuthor";
 import type { LiveGameDetailEventHandlersCommand } from "./liveGameDetailControllerEventSelection";
 import { update_live_game_detail_page_state } from "./liveGameDetailControllerStateAccess";
 import { show_live_game_detail_toast } from "./liveGameDetailControllerUtils";
@@ -22,12 +23,18 @@ export type LiveEventCorrectionRequest =
       kind: typeof LIVE_EVENT_CORRECTION_KIND.EDIT;
       event: GameEvent;
       correction: GameEventCorrection;
+      reason: string;
     }
-  | { kind: typeof LIVE_EVENT_CORRECTION_KIND.REMOVE; event: GameEvent };
+  | {
+      kind: typeof LIVE_EVENT_CORRECTION_KIND.REMOVE;
+      event: GameEvent;
+      reason: string;
+    };
 
 const CORRECTION_MESSAGE = {
   EDITED: "Event updated",
   REMOVED: "Event removed",
+  EDITS_RESET: "This game's event edits have been reset",
   LINEUP_NOT_RESTORED:
     "The substitution was removed, but the lineup could not be restored. Please check the lineup.",
 } as const;
@@ -82,15 +89,24 @@ function send_correction(
   LiveGameDetailEventHandlersCommand["action_dependencies"]["fixture_use_cases"]["remove_game_event"]
 > {
   const fixtures = command.action_dependencies.fixture_use_cases;
+  const correction_request = {
+    reason: request.reason,
+    author: build_live_game_correction_author(command.get_page_state()),
+  };
   switch (request.kind) {
     case LIVE_EVENT_CORRECTION_KIND.EDIT:
       return fixtures.update_game_event(
         fixture_id,
         String(request.event.id),
         request.correction,
+        correction_request,
       );
     case LIVE_EVENT_CORRECTION_KIND.REMOVE:
-      return fixtures.remove_game_event(fixture_id, String(request.event.id));
+      return fixtures.remove_game_event(
+        fixture_id,
+        String(request.event.id),
+        correction_request,
+      );
   }
 }
 
@@ -125,6 +141,36 @@ export async function correct_live_game_detail_event(
         : CORRECTION_MESSAGE.EDITED
       : CORRECTION_MESSAGE.LINEUP_NOT_RESTORED,
     lineup_restored ? TOAST_KIND.SUCCESS : TOAST_KIND.ERROR,
+  );
+  return true;
+}
+
+export async function reset_live_game_event_edits(
+  command: LiveGameDetailEventHandlersCommand,
+): Promise<boolean> {
+  const page_state = command.get_page_state();
+  if (!page_state.fixture) return false;
+  const result =
+    await command.action_dependencies.fixture_use_cases.reset_event_edits(
+      String(page_state.fixture.id),
+      build_live_game_correction_author(page_state),
+    );
+  if (!result.success) {
+    show_live_game_detail_toast(
+      command.set_toast_state,
+      result.error,
+      TOAST_KIND.ERROR,
+    );
+    return false;
+  }
+  update_live_game_detail_page_state(command, (state) => ({
+    ...state,
+    fixture: result.data,
+  }));
+  show_live_game_detail_toast(
+    command.set_toast_state,
+    CORRECTION_MESSAGE.EDITS_RESET,
+    TOAST_KIND.SUCCESS,
   );
   return true;
 }

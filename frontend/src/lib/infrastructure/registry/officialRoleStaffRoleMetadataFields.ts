@@ -57,6 +57,15 @@ export const GAMEOFFICIALROLE_IS_HEAD_OFFICIAL_FIELD: FieldMetadata = {
   show_in_list: false,
 };
 
+export const GAMEOFFICIALROLE_IS_TABLE_OFFICIAL_FIELD: FieldMetadata = {
+  field_name: "is_table_official" satisfies keyof GameOfficialRole,
+  display_name: "Runs the Live Game (Table Official)",
+  field_type: "boolean",
+  is_required: false,
+  is_read_only: false,
+  show_in_list: true,
+};
+
 export const GAMEOFFICIALROLE_DISPLAY_ORDER_FIELD: FieldMetadata = {
   field_name: "display_order" satisfies keyof GameOfficialRole,
   display_name: "Display Order",

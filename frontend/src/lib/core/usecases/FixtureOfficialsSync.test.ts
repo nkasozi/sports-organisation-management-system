@@ -50,7 +50,12 @@ function create_role_repository(): GameOfficialRoleRepository {
   return {
     find_by_id: vi.fn(async (role_id: string) => ({
       success: true,
-      data: { id: role_id, name: role_names[role_id] },
+      data: {
+        id: role_id,
+        name: role_names[role_id],
+        code: role_id,
+        is_table_official: role_id === "role-technical",
+      },
     })),
   } as unknown as GameOfficialRoleRepository;
 }

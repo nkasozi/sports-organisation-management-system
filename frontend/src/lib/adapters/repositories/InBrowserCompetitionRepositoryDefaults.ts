@@ -12,6 +12,7 @@ const DEFAULT_COMPETITION_BASE = {
   allow_auto_fixture_details_setup: true,
   squad_generation_strategy: "first_available" as const,
   lineup_submission_deadline_hours: 2,
+  max_event_edits_per_game: 3,
   status: "active" as const,
   rule_overrides: {},
   competition_format_id: "format_standard_league",

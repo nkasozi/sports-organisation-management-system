@@ -13,6 +13,7 @@ import {
   get_competition_team_collections_after_add,
   get_competition_team_collections_after_remove,
 } from "$lib/presentation/logic/competitionEditPageState";
+import { normalize_competition_event_edit_settings } from "$lib/presentation/logic/competitionEventEditSettings";
 
 interface CompetitionEditWorkspaceCollections {
   available_teams: Team[];
@@ -47,7 +48,7 @@ export async function submit_competition_edit_workspace(command: {
 }): AsyncResult<boolean> {
   const result = await command.competition_use_cases.update(
     command.competition_id,
-    command.form_data,
+    normalize_competition_event_edit_settings(command.form_data),
   );
   if (!result.success)
     return create_failure_result(

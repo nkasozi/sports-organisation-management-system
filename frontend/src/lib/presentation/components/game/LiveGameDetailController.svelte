@@ -19,6 +19,7 @@
     } from "$lib/infrastructure/registry/useCaseFactories";
     import {
         read_is_public_viewer,
+        read_live_game_identity,
         read_live_game_raw_token,
     } from "$lib/presentation/logic/liveGameDetailAuthReaders";
     import { start_confirmed_live_game_if_requested } from "$lib/presentation/logic/liveGameDetailConfirmedStart";
@@ -82,6 +83,7 @@
         goto,
         raw_token: read_live_game_raw_token,
         is_public_viewer: read_is_public_viewer,
+        load_live_game_identity: read_live_game_identity,
         set_event_state: (state: LiveGameDetailEventState) =>
             (event_state = state),
         set_modal_state: (state: LiveGameDetailModalState) =>
@@ -143,6 +145,7 @@
     on_download_match_report={runtime.download_report}
     on_open_event_modal={runtime.open_event_modal}
     on_correct_event={runtime.correct_event}
+    on_reset_event_edits={runtime.reset_event_edits}
     on_toggle_home_lineup={() =>
         (page_state = {
             ...page_state,

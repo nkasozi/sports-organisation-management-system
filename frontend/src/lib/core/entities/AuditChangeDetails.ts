@@ -13,6 +13,7 @@ import type { GameEventType } from "./FixtureTypes";
 type AuditRecord = Readonly<Record<string, unknown>>;
 
 const GAME_EVENTS_FIELD = "game_events";
+const EVENT_CORRECTIONS_FIELD = "event_corrections";
 const SENSITIVE_FIELD_PATTERN =
   /password|secret|token|pin_hash|identifier_value|document_number/i;
 const HIDDEN_VALUE = "•••• (hidden)";
@@ -33,10 +34,23 @@ function describe_game_event(event: AuditRecord): string {
   return `${summary} (${String(event.team_side ?? NO_VALUE)})`;
 }
 
+function describe_event_correction(correction: AuditRecord): string {
+  const before = String(correction.event_before ?? NO_VALUE);
+  const after = String(correction.event_after ?? NO_VALUE);
+  const change = after ? `${before} → ${after}` : before;
+  const reason = String(correction.reason ?? NO_VALUE);
+  return `${humanize_field_name(String(correction.kind ?? NO_VALUE))}: ${change}${reason ? `. Reason: ${reason}` : ""} (by ${String(correction.corrected_by ?? NO_VALUE)}, ${String(correction.corrected_by_role ?? NO_VALUE)})`;
+}
+
 function describe_item(field_name: string, item: AuditRecord): string {
-  return field_name === GAME_EVENTS_FIELD
-    ? describe_game_event(item)
-    : format_object(item);
+  switch (field_name) {
+    case GAME_EVENTS_FIELD:
+      return describe_game_event(item);
+    case EVENT_CORRECTIONS_FIELD:
+      return describe_event_correction(item);
+    default:
+      return format_object(item);
+  }
 }
 
 function is_identified_list(value: unknown): value is AuditRecord[] {

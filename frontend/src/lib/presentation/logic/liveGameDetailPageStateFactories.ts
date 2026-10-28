@@ -1,6 +1,7 @@
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
 import type { LiveGameDetailBundle } from "$lib/presentation/logic/liveGameDetailState";
 
+import { LIVE_GAME_ACTOR } from "./liveGameControl";
 import type {
   LiveGameDetailEventState,
   LiveGameDetailModalState,
@@ -33,6 +34,9 @@ export function create_live_game_detail_page_state(): LiveGameDetailPageState {
     break_elapsed_seconds: 0,
     downloading_report: false,
     can_modify_game: false,
+    live_game_actor: LIVE_GAME_ACTOR.WATCHER,
+    correction_author_name: "",
+    correction_author_role: "",
     permission_info_message: "",
     home_lineup_expanded: false,
     away_lineup_expanded: false,

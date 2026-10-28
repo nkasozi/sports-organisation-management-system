@@ -55,6 +55,10 @@ describe("FixtureDetailsSetupUseCases", () => {
         success: true,
         data: true,
       }),
+      ensure_table_official_assigned: vi.fn().mockResolvedValue({
+        success: true,
+        data: true,
+      }),
     });
   });
 

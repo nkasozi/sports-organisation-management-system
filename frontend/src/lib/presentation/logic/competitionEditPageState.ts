@@ -1,7 +1,8 @@
-import type {
-  Competition,
-  SquadGenerationStrategy,
-  UpdateCompetitionInput,
+import {
+  type Competition,
+  read_max_event_edits_per_game,
+  type SquadGenerationStrategy,
+  type UpdateCompetitionInput,
 } from "$lib/core/entities/Competition";
 import type { TieBreaker } from "$lib/core/entities/CompetitionFormat";
 import type { CompetitionTeam } from "$lib/core/entities/CompetitionTeam";
@@ -31,6 +32,7 @@ export function create_competition_update_form_data(
       competition.allow_auto_fixture_details_setup,
     lineup_submission_deadline_hours:
       competition.lineup_submission_deadline_hours,
+    max_event_edits_per_game: read_max_event_edits_per_game(competition),
     start_date: competition.start_date,
     end_date: competition.end_date,
     registration_deadline: competition.registration_deadline,

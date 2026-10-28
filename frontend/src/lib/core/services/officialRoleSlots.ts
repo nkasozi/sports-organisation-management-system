@@ -1,3 +1,4 @@
+import { is_table_official_role } from "../entities/GameOfficialRoleTable";
 import {
   create_none_option,
   create_some_option,
@@ -16,6 +17,7 @@ export interface OfficialRoleSource {
   id: string;
   name: string;
   code: string;
+  is_table_official?: boolean;
 }
 
 interface IdentifiedRecord {
@@ -100,7 +102,10 @@ export function build_official_role_slots<T extends OfficialRoleSource>(
   const slots = order_mandatory_first(requirements).flatMap((requirement) =>
     build_requirement_slots(requirement, roles),
   );
-  return slots.length > 0 ? slots : [...roles];
+  if (slots.length === 0) return [...roles];
+  if (slots.some(is_table_official_role)) return slots;
+  const table_role = roles.find(is_table_official_role);
+  return table_role ? [table_role, ...slots] : slots;
 }
 
 export function assign_officials_to_slots(

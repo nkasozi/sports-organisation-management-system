@@ -9,6 +9,7 @@
     import type { MatchReportViewState } from "$lib/presentation/logic/matchReportPageState";
     import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
+    import LiveGameCorrectionLog from "../game/LiveGameCorrectionLog.svelte";
     import MatchReportLineupCard from "./MatchReportLineupCard.svelte";
     import MatchReportMetadataPanel from "./MatchReportMetadataPanel.svelte";
     import MatchReportScheduledNotice from "./MatchReportScheduledNotice.svelte";
@@ -93,6 +94,11 @@
                     ? away_team_state.team.name
                     : "Away"}
             />
+            <div class="px-4 sm:px-6 pb-6">
+                <LiveGameCorrectionLog
+                    corrections={fixture.event_corrections ?? []}
+                />
+            </div>
         {/if}
     </div>
 </div>

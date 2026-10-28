@@ -59,7 +59,10 @@ describe("build_official_role_slots", () => {
       NETBALL_ROLES,
     );
 
-    expect(slots.map((slot) => slot.id)).toEqual(["role_umpire"]);
+    expect(slots.map((slot) => slot.id)).toEqual([
+      "role_scorer",
+      "role_umpire",
+    ]);
   });
 
   it("keeps every role once when the sport's officials do not match any role", () => {
@@ -89,6 +92,55 @@ describe("assign_officials_to_slots", () => {
     ).toEqual([
       { official_id: "o1", role_id: "role_umpire" },
       { official_id: "o2", role_id: "role_umpire" },
+    ]);
+  });
+});
+
+describe("every auto-filled game gets a table official", () => {
+  it("puts the table official first when the sport's list doesn't include one", () => {
+    const hockey_roles = [
+      {
+        id: "role_ump",
+        name: "Main Umpire",
+        code: "UMP1",
+        is_table_official: false,
+      },
+      {
+        id: "role_table",
+        name: "Table Official",
+        code: "TABLE_OFFICIAL",
+        is_table_official: true,
+      },
+    ];
+    const slots = build_official_role_slots(
+      [
+        {
+          role_id: "referee",
+          role_name: "Main Umpire",
+          minimum_count: 2,
+          is_mandatory: true,
+        },
+      ],
+      hockey_roles,
+    );
+
+    expect(slots.map((slot) => slot.id)).toEqual([
+      "role_table",
+      "role_ump",
+      "role_ump",
+    ]);
+  });
+
+  it("leaves the slots alone when a table official is already required", () => {
+    const slots = build_official_role_slots(
+      NETBALL_REQUIREMENTS,
+      NETBALL_ROLES,
+    );
+
+    expect(slots.map((slot) => slot.id)).toEqual([
+      "role_umpire",
+      "role_umpire",
+      "role_scorer",
     ]);
   });
 });

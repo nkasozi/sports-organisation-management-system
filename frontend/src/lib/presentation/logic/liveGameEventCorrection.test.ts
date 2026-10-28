@@ -63,6 +63,7 @@ describe("correcting events on the live game screen", () => {
       kind: LIVE_EVENT_CORRECTION_KIND.EDIT,
       event: GOAL_EVENT,
       correction: { minute: 12 } as never,
+      reason: "Wrong minute",
     });
     expect(ok).toBe(true);
     expect(read().fixture).toBe(updated);
@@ -77,6 +78,7 @@ describe("correcting events on the live game screen", () => {
     await correct_live_game_detail_event(command, {
       kind: LIVE_EVENT_CORRECTION_KIND.REMOVE,
       event: SUB_EVENT,
+      reason: "Recorded by mistake",
     });
     expect(record_live_player_times).toHaveBeenCalledWith(
       expect.objectContaining({ lineup_id: "home_lineup" }),
@@ -95,6 +97,7 @@ describe("correcting events on the live game screen", () => {
     await correct_live_game_detail_event(command, {
       kind: LIVE_EVENT_CORRECTION_KIND.REMOVE,
       event: GOAL_EVENT,
+      reason: "Recorded by mistake",
     });
     expect(record_live_player_times).not.toHaveBeenCalled();
   });
@@ -108,6 +111,7 @@ describe("correcting events on the live game screen", () => {
       await correct_live_game_detail_event(command, {
         kind: LIVE_EVENT_CORRECTION_KIND.REMOVE,
         event: GOAL_EVENT,
+        reason: "Recorded by mistake",
       }),
     ).toBe(false);
     expect(toasts.pop()).toEqual({
