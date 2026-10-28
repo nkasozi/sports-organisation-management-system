@@ -1,3 +1,5 @@
+import type { FieldChange } from "$convex/shared_audit_types";
+
 import type {
   EmailAddress,
   EntityId,
@@ -20,11 +22,7 @@ export const AUDIT_ACTION = {
 
 export type AuditAction = (typeof AUDIT_ACTION)[keyof typeof AUDIT_ACTION];
 
-export interface FieldChange<TFieldName extends string = string> {
-  field_name: TFieldName;
-  old_value: string;
-  new_value: string;
-}
+export type { FieldChange };
 
 export interface AuditLog extends BaseEntity {
   entity_type: string;

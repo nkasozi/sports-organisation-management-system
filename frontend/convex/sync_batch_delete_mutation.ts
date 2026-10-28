@@ -25,7 +25,10 @@ import {
 import { NO_SERVER_VERSION } from "./lib/sync_batch_record_types";
 import type { AllowedSyncTable } from "./lib/sync_table_catalog";
 import { validate_table_name } from "./lib/sync_validation";
-import { apply_versioned_delete } from "./lib/sync_versioned_delete";
+import {
+  apply_versioned_delete,
+  DeleteAuditMode,
+} from "./lib/sync_versioned_delete";
 import {
   base_version_validator,
   type BaseVersion,
@@ -127,6 +130,8 @@ async function delete_single_record(
     return build_rejected_delete_outcome(record.local_id, prepared);
   const outcome = await apply_versioned_delete(ctx, {
     table_name: prepared.table_name,
+    caller: prepared.caller,
+    audit_mode: DeleteAuditMode.RECORD_ENTRY,
     local_id: record.local_id,
     existing_record: prepared.existing_record,
     base_version: create_some_option(record.base_version),

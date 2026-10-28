@@ -20,6 +20,7 @@ describe("unauthorizedReason", () => {
   it.each([
     ["missing_email", UNAUTHORIZED_REASON_MESSAGE.MISSING_EMAIL],
     ["access_denied", UNAUTHORIZED_REASON_MESSAGE.ACCESS_DENIED],
+    ["not_registered", UNAUTHORIZED_REASON_MESSAGE.NOT_REGISTERED],
   ])("maps the %s reason to its constant message", (code, message) => {
     expect(
       resolve_unauthorized_reason_message(

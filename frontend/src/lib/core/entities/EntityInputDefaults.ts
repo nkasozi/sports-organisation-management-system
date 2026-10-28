@@ -24,3 +24,18 @@ export function apply_entity_input_defaults<TInput extends object>(
   );
   return { ...defaults, ...provided_fields } as TInput;
 }
+
+export function remove_blank_entity_fields<TInput extends object>(
+  input: TInput,
+  optional_field_names: ReadonlyArray<keyof TInput>,
+): TInput {
+  return Object.fromEntries(
+    Object.entries(input).filter(
+      ([field_name, value]) =>
+        !(
+          optional_field_names.includes(field_name as keyof TInput) &&
+          value === BLANK_FORM_VALUE
+        ),
+    ),
+  ) as TInput;
+}

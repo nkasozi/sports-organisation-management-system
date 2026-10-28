@@ -4,7 +4,10 @@ import { create_none_option, create_some_option } from "./option";
 import { read_record_local_id } from "./sync_clear_page_loading";
 import { run_guarded_write, SyncResultAction } from "./sync_mutation_support";
 import type { AllowedSyncTable } from "./sync_table_catalog";
-import { apply_versioned_delete } from "./sync_versioned_delete";
+import {
+  apply_versioned_delete,
+  DeleteAuditMode,
+} from "./sync_versioned_delete";
 
 export const GuardedDeleteOutcome = {
   DELETED: "deleted",
@@ -37,6 +40,8 @@ export async function delete_record_as_caller(
   if (!guarded.success) return GuardedDeleteOutcome.REJECTED;
   const outcome = await apply_versioned_delete(ctx, {
     table_name: command.table_name,
+    caller: command.caller,
+    audit_mode: DeleteAuditMode.COVERED_BY_JOB_AUDIT,
     local_id,
     existing_record,
     base_version: create_none_option(),

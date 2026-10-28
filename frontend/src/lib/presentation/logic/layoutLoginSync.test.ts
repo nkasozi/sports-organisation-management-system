@@ -58,7 +58,7 @@ describe("layoutLoginSync", () => {
     );
   });
 
-  it("signs the user out and redirects to unauthorized when the server has no profile", async () => {
+  it("signs an unregistered email out with the reason, before asking for a PIN or downloading anything", async () => {
     const { dependencies } = create_login_sync_test_dependencies();
     dependencies.look_up_current_user_profile.mockResolvedValueOnce({
       status: "not_found",
@@ -72,8 +72,10 @@ describe("layoutLoginSync", () => {
       error: "No profile found for this account.",
     });
     expect(dependencies.sign_out_and_tear_down_device).toHaveBeenCalledWith(
-      "/unauthorized",
+      "/unauthorized?reason=not_registered",
     );
+    expect(dependencies.protect_local_data_for_sign_in).not.toHaveBeenCalled();
+    expect(dependencies.reset_database).not.toHaveBeenCalled();
     expect(dependencies.show_sync_retry).not.toHaveBeenCalled();
   });
 

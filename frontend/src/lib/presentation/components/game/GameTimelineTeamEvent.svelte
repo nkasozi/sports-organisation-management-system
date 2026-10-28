@@ -30,6 +30,13 @@
         is_saving = false;
 
     $: event_label = event.description || get_event_label(event.event_type);
+    $: event_description = [
+        event_label,
+        format_event_time(event.minute, event.stoppage_time_minute),
+        event.player_name,
+    ]
+        .filter(Boolean)
+        .join(" ");
     $: card_class = is_home
         ? `text-right ${get_event_bg_class(event.event_type).replace("border-l-", "border-r-")} border-r-4`
         : `text-left ${get_event_bg_class(event.event_type)} border-l-4`;
@@ -85,10 +92,12 @@
                         <button
                             type="button"
                             class="text-xs font-medium text-primary-600 dark:text-primary-400 hover:underline"
+                            aria-label={`Edit ${event_description}`}
                             on:click={() => (is_editing = true)}>Edit</button
                         ><button
                             type="button"
                             class="text-xs font-medium text-red-600 dark:text-red-400 hover:underline"
+                            aria-label={`Delete ${event_description}`}
                             on:click={() => (is_confirming_removal = true)}
                             >Delete</button
                         >
@@ -121,10 +130,12 @@
                         <button
                             type="button"
                             class="text-xs font-medium text-primary-600 dark:text-primary-400 hover:underline"
+                            aria-label={`Edit ${event_description}`}
                             on:click={() => (is_editing = true)}>Edit</button
                         ><button
                             type="button"
                             class="text-xs font-medium text-red-600 dark:text-red-400 hover:underline"
+                            aria-label={`Delete ${event_description}`}
                             on:click={() => (is_confirming_removal = true)}
                             >Delete</button
                         >

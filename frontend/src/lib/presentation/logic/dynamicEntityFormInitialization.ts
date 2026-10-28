@@ -17,6 +17,7 @@ import type {
 } from "../../core/entities/BaseEntity";
 import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
 import { DYNAMIC_ENTITY_FORM_EVENT } from "./dynamicEntityFormMessages";
+import { DYNAMIC_FORM_FIELD_TYPE } from "./dynamicFormConstants";
 import {
   DYNAMIC_FORM_ENTITY_TYPE,
   DYNAMIC_FORM_FIELD_NAME,
@@ -88,7 +89,10 @@ export function build_dynamic_form_initial_data(
   entity_type: string,
 ): DynamicFormData {
   const new_form_data: DynamicFormData = {};
-  for (const field of metadata.fields) {
+  const record_fields = metadata.fields.filter(
+    (field) => field.field_type !== DYNAMIC_FORM_FIELD_TYPE.SUB_ENTITY,
+  );
+  for (const field of record_fields) {
     new_form_data[field.field_name] = resolve_initial_field_value(
       field,
       existing_data,

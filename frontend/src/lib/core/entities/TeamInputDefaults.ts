@@ -1,5 +1,8 @@
-import { apply_entity_input_defaults } from "./EntityInputDefaults";
-import type { CreateTeamInput } from "./Team";
+import {
+  apply_entity_input_defaults,
+  remove_blank_entity_fields,
+} from "./EntityInputDefaults";
+import type { CreateTeamInput, UpdateTeamInput } from "./Team";
 
 type TeamDefaultedFields = Pick<
   CreateTeamInput,
@@ -28,8 +31,18 @@ export const TEAM_INPUT_DEFAULTS: TeamDefaultedFields = {
   website: "",
 };
 
+const TEAM_OPTIONAL_NUMBER_FIELDS = ["founded_year"] as const;
+
+export function remove_blank_team_fields<
+  TInput extends CreateTeamInput | UpdateTeamInput,
+>(input: TInput): TInput {
+  return remove_blank_entity_fields(input, TEAM_OPTIONAL_NUMBER_FIELDS);
+}
+
 export function apply_team_input_defaults(
   input: CreateTeamInput,
 ): CreateTeamInput {
-  return apply_entity_input_defaults(TEAM_INPUT_DEFAULTS, input);
+  return remove_blank_team_fields(
+    apply_entity_input_defaults(TEAM_INPUT_DEFAULTS, input),
+  );
 }

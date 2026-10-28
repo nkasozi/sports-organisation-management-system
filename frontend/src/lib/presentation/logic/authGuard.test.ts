@@ -143,7 +143,7 @@ describe("authGuard", () => {
 
       expect(protected_result).toEqual({
         allowed: false,
-        message: AUTH_GUARD_MESSAGES.SESSION_UNAVAILABLE,
+        message: `${AUTH_GUARD_MESSAGES.SESSION_UNAVAILABLE} Reason: storage unavailable`,
       });
       expect(public_result.allowed).toBe(true);
     });

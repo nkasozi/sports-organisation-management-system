@@ -2,7 +2,8 @@ import {
   describe_created_record,
   describe_deleted_record,
   describe_updated_record,
-} from "../../core/entities/AuditChangeDetails";
+} from "$convex/shared_audit_change_details";
+
 import {
   AUDIT_ACTION,
   type CreateAuditLogInput,

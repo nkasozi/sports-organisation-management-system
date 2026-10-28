@@ -42,6 +42,8 @@ export {
   save_token,
 } from "./authSessionStorage";
 
+const NO_TEAM_SCOPE = "";
+
 function build_auth_token_payload_core_input(
   profile: UserProfile,
 ): ScalarInput<AuthTokenPayloadCore> {
@@ -62,7 +64,7 @@ function build_auth_token_payload_core_input(
     display_name: profile.display_name,
     role: profile.role,
     organization_id: profile.organization_id,
-    team_id: profile.team_id,
+    team_id: profile.team_id === NO_TEAM_SCOPE ? ANY_VALUE : profile.team_id,
   };
 }
 

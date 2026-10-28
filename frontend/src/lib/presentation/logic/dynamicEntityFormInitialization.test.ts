@@ -69,6 +69,27 @@ describe("dynamicEntityFormInitialization", () => {
     expect(result["age"]).toBe("");
   });
 
+  it("leaves out sub-lists like a player's identity documents, which are saved separately", () => {
+    const metadata = create_entity_metadata({
+      fields: [
+        create_field_metadata({ field_name: "first_name" }),
+        create_field_metadata({
+          field_name: "identifications",
+          field_type: "sub_entity",
+        }),
+      ],
+    });
+
+    const result = build_dynamic_form_initial_data(
+      metadata,
+      void 0,
+      {},
+      "player",
+    );
+
+    expect(result).toEqual({ first_name: "" });
+  });
+
   it("hydrates stage templates for empty competition format forms", () => {
     const metadata = create_entity_metadata({
       fields: [

@@ -1,4 +1,4 @@
-import type { FieldChange } from "./AuditLog";
+import type { FieldChange } from "./shared_audit_types";
 import {
   format_object,
   format_value,
@@ -6,9 +6,8 @@ import {
   is_plain_object,
   is_tracked_field,
   NO_VALUE,
-} from "./AuditValueFormat";
-import { get_event_label } from "./FixtureGameEvents";
-import type { GameEventType } from "./FixtureTypes";
+} from "./shared_audit_value_format";
+import { get_game_event_label } from "./shared_game_event_labels";
 
 type AuditRecord = Readonly<Record<string, unknown>>;
 
@@ -30,7 +29,7 @@ function describe_game_event(event: AuditRecord): string {
     ? `${String(event.player_name ?? NO_VALUE)} → ${second_player}`
     : String(event.player_name ?? NO_VALUE);
   const summary =
-    `${get_event_label(event.event_type as GameEventType)} ${String(event.minute ?? 0)}' ${players}`.trim();
+    `${get_game_event_label(String(event.event_type ?? NO_VALUE))} ${String(event.minute ?? 0)}' ${players}`.trim();
   return `${summary} (${String(event.team_side ?? NO_VALUE)})`;
 }
 
