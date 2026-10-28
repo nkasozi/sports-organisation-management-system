@@ -5,6 +5,7 @@ import { create_team_use_cases } from "../usecases/TeamUseCases";
 import type { CreateTeamInput } from "./Team";
 import {
   apply_team_input_defaults,
+  remove_blank_team_fields,
   TEAM_INPUT_DEFAULTS,
 } from "./TeamInputDefaults";
 
@@ -29,6 +30,24 @@ describe("team input defaults", () => {
       TEAM_INPUT_DEFAULTS.secondary_color,
     );
     expect(completed_input.description).toBe(TEAM_INPUT_DEFAULTS.description);
+  });
+
+  it("leaves out an established year the user left blank, so the team can be saved to the server", () => {
+    const completed_input = apply_team_input_defaults({
+      ...FORM_SUBMITTED_TEAM,
+      founded_year: "" as never,
+    });
+
+    expect(completed_input).not.toHaveProperty("founded_year");
+  });
+
+  it("leaves out a blank established year when a team is edited", () => {
+    expect(
+      remove_blank_team_fields({
+        name: "QA Falcons HC",
+        founded_year: "" as never,
+      }),
+    ).toEqual({ name: "QA Falcons HC" });
   });
 
   it("keeps every value the user provided", () => {

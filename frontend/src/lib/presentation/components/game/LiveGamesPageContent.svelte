@@ -2,10 +2,7 @@
     import type { Fixture } from "$lib/core/entities/Fixture";
     import type { Organization } from "$lib/core/entities/Organization";
     import type { PreFlightCheck } from "$lib/core/services/fixtureStartChecks";
-    import {
-        can_identity_run_fixture,
-        type LiveGameIdentity,
-    } from "$lib/presentation/logic/liveGameControl";
+    import type { LiveGameIdentity } from "$lib/presentation/logic/liveGameControl";
     import { read_live_game_identity } from "$lib/presentation/logic/liveGameDetailAuthReaders";
     import type { LiveGamesPendingStartFixtureState } from "$lib/presentation/logic/liveGamesPageState";
 
@@ -85,8 +82,7 @@
         })}
         {incomplete_fixtures}
         {can_start_games}
-        can_run_fixture={(fixture) =>
-            can_identity_run_fixture(identity, fixture)}
+        live_game_identity={identity}
         {team_names}
         {team_logo_urls}
         {competition_names}

@@ -1,5 +1,6 @@
 import type { MutationCtx } from "../_generated/server";
 import type { SystemUserRecord } from "./auth_middleware";
+import { omit_blank_optional_numbers } from "./blank_number_fields";
 import { resolve_caller_scope } from "./caller_scope";
 import {
   create_none_option,
@@ -58,12 +59,16 @@ function strip_convex_system_fields(
 }
 
 function sanitize_incoming_record(
+  table_name: AllowedSyncTable,
   incoming_record: Option<Record<string, unknown>>,
 ): Option<Record<string, unknown>> {
   return incoming_record.status === OptionStatus.SOME
     ? {
         status: OptionStatus.SOME,
-        value: strip_convex_system_fields(incoming_record.value),
+        value: omit_blank_optional_numbers(
+          table_name,
+          strip_convex_system_fields(incoming_record.value),
+        ),
       }
     : create_none_option();
 }
@@ -107,7 +112,10 @@ export async function guard_sync_record_write(
   ctx: MutationCtx,
   command: SyncWriteCommand,
 ): Promise<SyncWriteDecision> {
-  const incoming_record = sanitize_incoming_record(command.incoming_record);
+  const incoming_record = sanitize_incoming_record(
+    command.table_name,
+    command.incoming_record,
+  );
   if (has_invalid_urls(incoming_record))
     return reject_sync_write(
       SyncWriteRejection.INVALID_URL,

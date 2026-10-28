@@ -22,6 +22,8 @@ export default [
       "node_modules/**",
       "src/lib/generated/**",
       "convex/_generated/**",
+      "e2e/.results/**",
+      "e2e/.report/**",
       "src/lib/tooling/fixtures/**",
     ],
   },

@@ -1,0 +1,20 @@
+export const E2E_WORLD = {
+  sport_name: "E2E Field Hockey",
+  squad_rules: {
+    max_players_on_field: 3,
+    min_players_on_field: 2,
+    max_squad_size: 10,
+    min_players_per_fixture: 3,
+    max_players_per_fixture: 6,
+  },
+  organization_name: "E2E Hockey League",
+  venue_name: "E2E National Hockey Stadium",
+  competition_name: "E2E Premier Cup",
+  event_edits_per_game: 3,
+  home_team: "E2E Lions",
+  away_team: "E2E Tigers",
+  table_official: "Grace Akello",
+  field_official: "Peter Mukasa",
+  home_players: ["Robert Kizza", "Allan Ssebo", "Brian Okot"],
+  away_players: ["Daniel Opio", "Eric Wasswa", "Frank Lule"],
+} as const;

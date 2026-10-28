@@ -35,12 +35,12 @@ describe("dashboard route state", () => {
     expect(dashboard_data_of(reloading)).toEqual(LOADED);
   });
 
-  it("fails with a friendly message instead of the raw error", () => {
+  it("fails with a friendly message that names the real cause", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const failed = settle_dashboard_load(create_failure_result("timeout"));
     expect(failed).toEqual({
       status: DASHBOARD_ROUTE_STATUS.FAILED,
-      message: DASHBOARD_ROUTE_MESSAGES.LOAD_FAILED,
+      message: `${DASHBOARD_ROUTE_MESSAGES.LOAD_FAILED} Reason: timeout`,
     });
     expect(dashboard_data_of(failed)).toEqual(EMPTY_DASHBOARD_DATA);
   });

@@ -1,5 +1,7 @@
+import { get_game_event_label } from "$convex/shared_game_event_labels";
+
 import type { QuickEventButton } from "./FixtureGameEventConfig";
-import { GAME_EVENT_ICONS, GAME_EVENT_LABELS } from "./FixtureGameEventConfig";
+import { GAME_EVENT_ICONS } from "./FixtureGameEventConfig";
 import {
   CARD_BUTTON_COLOR,
   CARD_BUTTON_COLORS,
@@ -77,19 +79,10 @@ export function create_score_award_resolver(
   };
 }
 
-export function humanize_event_code(event_code: string): string {
-  return event_code
-    .split("_")
-    .filter((word) => word.length > 0)
-    .map((word) => word[0].toUpperCase() + word.slice(1))
-    .join(" ");
-}
+export { humanize_event_code } from "$convex/shared_game_event_labels";
 
 export function get_known_event_label(event_code: string): string {
-  return (
-    (GAME_EVENT_LABELS as Readonly<Record<string, string>>)[event_code] ??
-    humanize_event_code(event_code)
-  );
+  return get_game_event_label(event_code);
 }
 
 function get_known_event_icon(event_code: string, fallback: string): string {

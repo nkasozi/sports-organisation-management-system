@@ -1,4 +1,5 @@
 import type { MutationCtx } from "../_generated/server";
+import type { SystemUserRecord } from "./auth_middleware";
 import {
   create_none_option,
   create_some_option,
@@ -28,6 +29,7 @@ const NO_PREVIOUS_VERSION = 0;
 
 interface LegacyUpsertCommand {
   table_name: AllowedSyncTable;
+  caller: SystemUserRecord;
   local_id: string;
   record_data: Record<string, unknown>;
   existing_record: Option<Record<string, unknown>>;
@@ -102,6 +104,7 @@ export type ResolvedWriteOutcome =
 
 interface ResolvedWriteCommand {
   table_name: AllowedSyncTable;
+  caller: SystemUserRecord;
   local_id: string;
   record_data: Record<string, unknown>;
   existing_record: Option<Record<string, unknown>>;

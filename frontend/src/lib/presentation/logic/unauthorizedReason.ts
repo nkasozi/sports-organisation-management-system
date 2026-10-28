@@ -1,6 +1,7 @@
 export const UNAUTHORIZED_REASON_CODE = {
   MISSING_EMAIL: "missing_email",
   ACCESS_DENIED: "access_denied",
+  NOT_REGISTERED: "not_registered",
 } as const;
 
 type UnauthorizedReasonCode =
@@ -12,6 +13,8 @@ export const UNAUTHORIZED_REASON_MESSAGE = {
     "Your account has no email address. Authentication requires an email. Please contact your administrator.",
   ACCESS_DENIED:
     "Your account doesn't have access to this system yet. Please contact your organization administrator.",
+  NOT_REGISTERED:
+    "The email you signed in with isn't registered in this system, so you were signed out. Ask your organization administrator to add you, then sign in again.",
 } as const;
 
 const UNAUTHORIZED_REASON_QUERY_PARAMETER = "reason";
@@ -37,6 +40,8 @@ function describe_reason_code(reason_code: UnauthorizedReasonCode): string {
       return UNAUTHORIZED_REASON_MESSAGE.MISSING_EMAIL;
     case UNAUTHORIZED_REASON_CODE.ACCESS_DENIED:
       return UNAUTHORIZED_REASON_MESSAGE.ACCESS_DENIED;
+    case UNAUTHORIZED_REASON_CODE.NOT_REGISTERED:
+      return UNAUTHORIZED_REASON_MESSAGE.NOT_REGISTERED;
   }
 }
 

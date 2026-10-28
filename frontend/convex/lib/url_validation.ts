@@ -9,6 +9,9 @@ const URL_PARSE_FAILED_EVENT = "url_parse_failed";
 const IMAGE_DATA_URL_FIELD_PATTERN =
   /(logo|image|avatar|photo|picture|document)_url$/;
 const RELATIVE_ASSET_FIELD_EXACT_NAMES = ["background_pattern_url"];
+const EMOJI_ICON_FIELD_EXACT_NAMES = ["icon_url"];
+const EMOJI_ICON_MAX_LENGTH = 16;
+const URL_SCHEME_SEPARATOR = ":";
 const URL_FIELD_SUFFIXES = ["_url"];
 const URL_FIELD_EXACT_NAMES = ["website"];
 
@@ -61,6 +64,14 @@ function is_allowed_relative_asset_url(
   );
 }
 
+function is_allowed_emoji_icon(field_name: string, value: string): boolean {
+  return (
+    EMOJI_ICON_FIELD_EXACT_NAMES.includes(field_name.toLowerCase()) &&
+    value.length <= EMOJI_ICON_MAX_LENGTH &&
+    !value.includes(URL_SCHEME_SEPARATOR)
+  );
+}
+
 export function validate_url_field_value(
   field_name: string,
   value: unknown,
@@ -80,6 +91,10 @@ export function validate_url_field_value(
   }
 
   if (is_allowed_relative_asset_url(field_name, value)) {
+    return create_valid_url_validation_result();
+  }
+
+  if (is_allowed_emoji_icon(field_name, value)) {
     return create_valid_url_validation_result();
   }
 

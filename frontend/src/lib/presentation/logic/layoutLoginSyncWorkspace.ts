@@ -15,7 +15,6 @@ import {
 import { create_inactive_sync_progress_subscription } from "./layoutLoginSyncProgress";
 import { sign_out_after_failed_login } from "./layoutLoginSyncSignOut";
 import { protect_and_clear_login_workspace } from "./layoutLoginSyncVaultProtection";
-import { APP_ROUTE_PATH } from "./layoutRouteConstants";
 import {
   LAYOUT_SESSION_EVENT,
   LAYOUT_SESSION_MESSAGE,
@@ -25,6 +24,10 @@ import {
   run_with_timeout,
   SESSION_OPERATION_TIMEOUT_MS,
 } from "./layoutSessionTimeouts";
+import {
+  build_unauthorized_reason_path,
+  UNAUTHORIZED_REASON_CODE,
+} from "./unauthorizedReason";
 
 const ORGANIZATIONS_TABLE = "organizations";
 const TEAMS_TABLE = "teams";
@@ -67,7 +70,10 @@ async function sign_out_unregistered_user(
     error,
   });
   dependencies.initial_sync_store.reset();
-  await sign_out_after_failed_login(dependencies, APP_ROUTE_PATH.UNAUTHORIZED);
+  await sign_out_after_failed_login(
+    dependencies,
+    build_unauthorized_reason_path(UNAUTHORIZED_REASON_CODE.NOT_REGISTERED),
+  );
   return create_failure_result(LAYOUT_SESSION_MESSAGE.NO_PROFILE_FOUND);
 }
 

@@ -15,7 +15,10 @@ import {
   write_resolved_record,
 } from "./lib/sync_legacy_writes";
 import { SyncResultAction } from "./lib/sync_mutation_support";
-import { apply_versioned_delete } from "./lib/sync_versioned_delete";
+import {
+  apply_versioned_delete,
+  DeleteAuditMode,
+} from "./lib/sync_versioned_delete";
 import { base_version_validator } from "./lib/sync_versioning";
 import {
   prepare_guarded_sync_write,
@@ -42,6 +45,7 @@ export const upsert_record = mutation({
     if (!prepared.success) return prepared;
     const outcome = await apply_legacy_upsert(ctx, {
       table_name: prepared.table_name,
+      caller: prepared.caller,
       local_id: args.local_id,
       record_data: prepared.record_data,
       existing_record: prepared.existing_record,
@@ -67,6 +71,8 @@ export const delete_record = mutation({
     if (!prepared.success) return prepared;
     const outcome = await apply_versioned_delete(ctx, {
       table_name: prepared.table_name,
+      caller: prepared.caller,
+      audit_mode: DeleteAuditMode.RECORD_ENTRY,
       local_id: args.local_id,
       existing_record: prepared.existing_record,
       base_version: create_none_option(),
@@ -126,6 +132,7 @@ export const force_resolve_conflict = mutation({
     if (!prepared.success) return prepared;
     const outcome = await write_resolved_record(ctx, {
       table_name: prepared.table_name,
+      caller: prepared.caller,
       local_id: args.local_id,
       existing_record: prepared.existing_record,
       base_version: args.base_version,

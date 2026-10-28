@@ -12,6 +12,7 @@ import {
   type OwnershipRoleKindValue,
   resolve_ownership_role_kind,
 } from "./caller_ownership";
+import { is_table_official_lineup_write } from "./official_lineup_scope";
 import {
   create_none_option,
   create_some_option,
@@ -158,6 +159,11 @@ async function check_category_scope(
     ownership,
   );
   if (is_created_player_write) return create_none_option();
+  const is_table_official_lineup = await is_table_official_lineup_write(ctx, {
+    ...command,
+    records_to_own: list_records_to_own(command),
+  });
+  if (is_table_official_lineup) return create_none_option();
   return check_self_scope({ ...command, table_name }, ownership);
 }
 

@@ -1,5 +1,6 @@
 import type { Result } from "$lib/core/types/Result";
 import type { DashboardData } from "$lib/presentation/logic/dashboardPageTypes";
+import { with_failure_reason } from "$lib/presentation/logic/failureReason";
 
 export const DASHBOARD_ROUTE_STATUS = {
   LOADING: "loading",
@@ -9,8 +10,7 @@ export const DASHBOARD_ROUTE_STATUS = {
 
 export const DASHBOARD_ROUTE_MESSAGES = {
   LOAD_FAILED_TITLE: "Unable to Load Dashboard",
-  LOAD_FAILED:
-    "We couldn't load your dashboard right now. Please check your connection and try again.",
+  LOAD_FAILED: "We couldn't load your dashboard.",
   RESET_FAILED:
     "We couldn't reset the demo data. Your existing data is unchanged. Please try again.",
   RESET_STARTED: "Clearing demo data...",
@@ -67,7 +67,10 @@ export function settle_dashboard_load(
   });
   return {
     status: DASHBOARD_ROUTE_STATUS.FAILED,
-    message: DASHBOARD_ROUTE_MESSAGES.LOAD_FAILED,
+    message: with_failure_reason(
+      DASHBOARD_ROUTE_MESSAGES.LOAD_FAILED,
+      result.error,
+    ),
   };
 }
 

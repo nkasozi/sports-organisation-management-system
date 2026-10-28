@@ -80,6 +80,23 @@ describe("official live game grants", () => {
       ).toBe(SharedPermissionScope.ALL_RECORDS);
   });
 
+  it("lets the official starting a game save the squads it builds automatically", () => {
+    expect(
+      resolve_shared_entity_permission_scope(
+        "official",
+        "fixturelineup",
+        SharedCrudAction.CREATE,
+      ),
+    ).toBe(SharedPermissionScope.ALL_RECORDS);
+    expect(
+      resolve_shared_entity_permission_scope(
+        "official",
+        "fixturelineup",
+        SharedCrudAction.DELETE,
+      ),
+    ).toBe(SharedPermissionScope.NONE);
+  });
+
   it("does not let officials delete live game logs or create other organisation data", () => {
     expect(
       resolve_shared_entity_permission_scope(

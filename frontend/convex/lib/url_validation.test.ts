@@ -19,6 +19,25 @@ describe("url_validation", () => {
     ).toEqual({ is_valid: true, error: "" });
   });
 
+  it("allows an emoji icon, since sports keep their emoji in icon_url", () => {
+    expect(validate_url_field_value("icon_url", "🏑")).toEqual({
+      is_valid: true,
+      error: "",
+    });
+    expect(
+      validate_record_url_fields({ name: "Field Hockey", icon_url: "⚽" }),
+    ).toEqual({ is_valid: true, error: "" });
+  });
+
+  it("still rejects scripts and long text in an icon", () => {
+    expect(
+      validate_url_field_value("icon_url", "javascript:alert(1)").is_valid,
+    ).toBe(false);
+    expect(validate_url_field_value("icon_url", "a".repeat(40)).is_valid).toBe(
+      false,
+    );
+  });
+
   it("allows trusted app asset paths for branding image fields", () => {
     expect(
       validate_url_field_value(

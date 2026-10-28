@@ -14,6 +14,10 @@ import {
   ROOT_ROUTE_PATH,
 } from "./authGuardConstants";
 import {
+  describe_session_failure,
+  initialize_auth_when_needed,
+} from "./authGuardInitialization";
+import {
   is_pathname_in_route_access_cache,
   refresh_route_access_cache_for_role,
 } from "./authGuardRouteAccessCache";
@@ -95,27 +99,14 @@ function build_role_denied_route_access_result(
   };
 }
 
-async function initialize_auth_when_needed(): Promise<boolean> {
-  if (get(auth_store).is_initialized) return true;
-  console.log("[AuthGuard] Initializing auth", {
-    event: AUTH_GUARD_EVENTS.AUTH_INITIALIZATION_STARTED,
-  });
-  const initialize_result = await auth_store.initialize();
-  if (initialize_result.success) return true;
-  console.error("[AuthGuard] Auth initialization failed", {
-    event: AUTH_GUARD_EVENTS.AUTH_INITIALIZATION_FAILED,
-    error: initialize_result.error,
-  });
-  return false;
-}
-
 export async function check_route_access(
   pathname: string,
 ): Promise<RouteAccessCheckResult> {
-  if (!(await initialize_auth_when_needed())) {
+  const initialized = await initialize_auth_when_needed();
+  if (!initialized.success) {
     return build_unverified_route_access_result(
       pathname,
-      AUTH_GUARD_MESSAGES.SESSION_UNAVAILABLE,
+      describe_session_failure(initialized.error),
     );
   }
   const profile_state = build_auth_guard_profile_state(
@@ -154,11 +145,12 @@ export async function ensure_route_access(pathname: string): Promise<boolean> {
 
 export async function ensure_auth_profile(): Promise<AuthGuardResult> {
   const missing_profile_state = { status: PRESENCE_STATUS.MISSING } as const;
-  if (!(await initialize_auth_when_needed())) {
+  const initialized = await initialize_auth_when_needed();
+  if (!initialized.success) {
     return {
       success: false,
       profile_state: missing_profile_state,
-      error_message: AUTH_GUARD_MESSAGES.SESSION_UNAVAILABLE,
+      error_message: describe_session_failure(initialized.error),
     };
   }
   const profile_state = build_auth_guard_profile_state(

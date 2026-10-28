@@ -96,7 +96,7 @@ describe("authGuard", () => {
       expect(result).toEqual({
         success: false,
         profile_state: { status: "missing" },
-        error_message: AUTH_GUARD_MESSAGES.SESSION_UNAVAILABLE,
+        error_message: `${AUTH_GUARD_MESSAGES.SESSION_UNAVAILABLE} Reason: storage unavailable`,
       });
     });
   });

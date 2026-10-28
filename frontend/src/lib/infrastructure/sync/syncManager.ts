@@ -98,10 +98,7 @@ export class ConvexSyncManager {
   }
 
   is_configured(): boolean {
-    return (
-      this.convex_client_state.status === ConvexClientStatus.CONFIGURED &&
-      this.config.convex_url !== EMPTY_CONVEX_URL
-    );
+    return this.convex_client_state.status === ConvexClientStatus.CONFIGURED;
   }
 
   async sync_now(

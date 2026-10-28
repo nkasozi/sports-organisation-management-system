@@ -1,4 +1,5 @@
 import type { MutationCtx } from "../_generated/server";
+import type { SystemUserRecord } from "./auth_middleware";
 import { omit_cleared_values } from "./cleared_fields";
 import {
   create_none_option,
@@ -7,6 +8,11 @@ import {
   OptionStatus,
 } from "./option";
 import { refresh_ownership_dependents } from "./ownership_refresh";
+import {
+  record_sync_audit_entry,
+  SyncAuditAction,
+  type SyncAuditActionValue,
+} from "./sync_audit_trail";
 import {
   type BatchRecordOutcome,
   build_outcome,
@@ -35,6 +41,7 @@ type PersistableUpsertDecision = Extract<
 
 interface PersistVersionedUpsertCommand {
   table_name: AllowedSyncTable;
+  caller: SystemUserRecord;
   local_id: string;
   record_data: Record<string, unknown>;
   existing_record: Option<Record<string, unknown>>;
@@ -67,6 +74,23 @@ async function build_stamped_record_data(
   };
 }
 
+function audit_upsert(
+  ctx: MutationCtx,
+  command: PersistVersionedUpsertCommand,
+  action: SyncAuditActionValue,
+  before: Record<string, unknown>,
+  after: Record<string, unknown>,
+): Promise<boolean> {
+  return record_sync_audit_entry(ctx, {
+    table_name: command.table_name,
+    caller: command.caller,
+    local_id: command.local_id,
+    action,
+    before,
+    after,
+  });
+}
+
 async function insert_versioned_record(
   ctx: MutationCtx,
   command: PersistVersionedUpsertCommand,
@@ -87,6 +111,7 @@ async function insert_versioned_record(
     previous_record: create_none_option(),
     next_record: create_some_option(record_data),
   });
+  await audit_upsert(ctx, command, SyncAuditAction.CREATE, {}, record_data);
   return build_outcome(command.local_id, {
     success: true,
     name: SyncResultAction.CREATED,
@@ -122,6 +147,10 @@ async function update_versioned_record(
     table_name: command.table_name,
     previous_record: create_some_option(previous_record),
     next_record: create_some_option(record_data),
+  });
+  await audit_upsert(ctx, command, SyncAuditAction.UPDATE, previous_record, {
+    ...previous_record,
+    ...record_data,
   });
   return build_outcome(command.local_id, {
     success: true,

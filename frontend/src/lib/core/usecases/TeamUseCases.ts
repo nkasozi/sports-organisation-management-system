@@ -1,6 +1,9 @@
 import type { CreateTeamInput, Team, UpdateTeamInput } from "../entities/Team";
 import { validate_team_input } from "../entities/Team";
-import { apply_team_input_defaults } from "../entities/TeamInputDefaults";
+import {
+  apply_team_input_defaults,
+  remove_blank_team_fields,
+} from "../entities/TeamInputDefaults";
 import type {
   QueryOptions,
   TeamFilter,
@@ -108,12 +111,15 @@ async function update_team(
       TeamUseCaseMessage.ID_REQUIRED,
     );
   }
-  return forward_dependency_result(await repository.update(id, input), {
-    log_scope: TEAM_USE_CASES_LOG_SCOPE,
-    event: TeamUseCaseEvent.UPDATE_FAILED,
-    code: UseCaseErrorCode.DEPENDENCY_FAILED,
-    context: { team_id: id },
-  });
+  return forward_dependency_result(
+    await repository.update(id, remove_blank_team_fields(input)),
+    {
+      log_scope: TEAM_USE_CASES_LOG_SCOPE,
+      event: TeamUseCaseEvent.UPDATE_FAILED,
+      code: UseCaseErrorCode.DEPENDENCY_FAILED,
+      context: { team_id: id },
+    },
+  );
 }
 
 async function delete_team(

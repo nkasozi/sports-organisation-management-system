@@ -91,6 +91,7 @@ async function guard_and_persist_record(
   }
   return persist_versioned_upsert(ctx, {
     table_name,
+    caller: command.caller,
     local_id: record.local_id,
     record_data: decision.record_data,
     existing_record: state.existing_record,

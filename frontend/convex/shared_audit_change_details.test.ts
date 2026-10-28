@@ -4,7 +4,7 @@ import {
   describe_created_record,
   describe_deleted_record,
   describe_updated_record,
-} from "./AuditChangeDetails";
+} from "./shared_audit_change_details";
 
 const GOAL = {
   id: "e1",

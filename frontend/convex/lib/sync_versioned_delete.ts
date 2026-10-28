@@ -1,5 +1,6 @@
 import type { MutationCtx } from "../_generated/server";
 import { strip_convex_fields } from "../sync_record_helpers";
+import type { SystemUserRecord } from "./auth_middleware";
 import {
   create_none_option,
   create_some_option,
@@ -7,6 +8,7 @@ import {
   OptionStatus,
 } from "./option";
 import { refresh_ownership_dependents } from "./ownership_refresh";
+import { record_sync_audit_entry, SyncAuditAction } from "./sync_audit_trail";
 import { NO_SERVER_VERSION } from "./sync_batch_record_types";
 import { create_sync_change_stamp } from "./sync_change_stamp";
 import { SyncResultAction } from "./sync_mutation_support";
@@ -19,8 +21,18 @@ import {
   VersionedDeleteKind,
 } from "./sync_versioning_delete";
 
+export const DeleteAuditMode = {
+  RECORD_ENTRY: "record_entry",
+  COVERED_BY_JOB_AUDIT: "covered_by_job_audit",
+} as const;
+
+type DeleteAuditModeValue =
+  (typeof DeleteAuditMode)[keyof typeof DeleteAuditMode];
+
 interface VersionedDeleteCommand {
   table_name: AllowedSyncTable;
+  caller: SystemUserRecord;
+  audit_mode: DeleteAuditModeValue;
   local_id: string;
   existing_record: Option<Record<string, unknown>>;
   base_version: Option<BaseVersion>;
@@ -39,6 +51,26 @@ function build_delete_outcome(
   remote_record: Option<Record<string, unknown>>,
 ): VersionedDeleteOutcome {
   return { success: true, action, server_version, remote_record };
+}
+
+async function audit_deletion(
+  ctx: MutationCtx,
+  command: VersionedDeleteCommand,
+  existing_record: Record<string, unknown>,
+): Promise<boolean> {
+  switch (command.audit_mode) {
+    case DeleteAuditMode.COVERED_BY_JOB_AUDIT:
+      return false;
+    case DeleteAuditMode.RECORD_ENTRY:
+      return record_sync_audit_entry(ctx, {
+        table_name: command.table_name,
+        caller: command.caller,
+        local_id: command.local_id,
+        action: SyncAuditAction.DELETE,
+        before: existing_record,
+        after: {},
+      });
+  }
 }
 
 async function delete_and_tombstone(
@@ -65,6 +97,7 @@ async function delete_and_tombstone(
     sync_sequence: stamp.sync_sequence,
     deleted_at: stamp.synced_at,
   });
+  await audit_deletion(ctx, command, existing_record);
   return build_delete_outcome(
     SyncResultAction.DELETED,
     tombstone_version,
