@@ -15,6 +15,12 @@ const live_games_page_dependency_mocks = vi.hoisted(() => ({
   get_player_use_cases: vi.fn(),
   get_sport_use_cases: vi.fn(),
   get_team_use_cases: vi.fn(),
+  fetch_public_data_from_convex: vi.fn(),
+}));
+
+vi.mock("$lib/infrastructure/sync/convexPublicDataService", () => ({
+  fetch_public_data_from_convex:
+    live_games_page_dependency_mocks.fetch_public_data_from_convex,
 }));
 
 vi.mock("$lib/infrastructure/AuthorizationProvider", () => ({
@@ -113,6 +119,29 @@ describe("liveGamesPageDependencies", () => {
     const { live_games_page_dependencies } =
       await import("./liveGamesPageDependencies");
 
-    expect(live_games_page_dependencies).toEqual(expected_dependencies);
+    expect(live_games_page_dependencies).toEqual({
+      ...expected_dependencies,
+      load_public_live_games_data: expect.any(Function),
+    });
+  });
+
+  it("loads the public live games data for the organization asked for", async () => {
+    vi.resetModules();
+    live_games_page_dependency_mocks.fetch_public_data_from_convex.mockResolvedValue(
+      { success: true },
+    );
+    const { live_games_page_dependencies } =
+      await import("./liveGamesPageDependencies");
+    const organization_scope = { status: "some", value: "org_1" } as const;
+
+    const result =
+      await live_games_page_dependencies.load_public_live_games_data(
+        organization_scope,
+      );
+
+    expect(result).toEqual({ success: true });
+    expect(
+      live_games_page_dependency_mocks.fetch_public_data_from_convex,
+    ).toHaveBeenCalledWith("live_games", organization_scope);
   });
 });

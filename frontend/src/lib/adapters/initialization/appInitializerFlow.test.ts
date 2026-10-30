@@ -86,7 +86,7 @@ describe("initialize_app_data", () => {
     expect(mocks.initialize_clerk).not.toHaveBeenCalled();
   });
 
-  it("initializes a signed-out returning user locally exactly once", async () => {
+  it("initializes a signed-out returning user from the server's public data exactly once", async () => {
     await expect(initialize_app_data(OPTIONS)).resolves.toBe("success");
     await expect(initialize_app_data(OPTIONS)).resolves.toBe("success");
 
@@ -97,7 +97,7 @@ describe("initialize_app_data", () => {
       state.convex_client,
     );
     expect(mocks.run_seeding_with_strategy).toHaveBeenCalledWith(
-      "local_only",
+      "public_server_data",
       false,
     );
     expect(mocks.set_first_time).not.toHaveBeenCalled();
@@ -119,8 +119,22 @@ describe("initialize_app_data", () => {
       ["Setting up data repositories...", 20],
     ]);
     expect(mocks.run_seeding_with_strategy).toHaveBeenCalledWith(
-      "local_only",
+      "public_server_data",
       true,
+    );
+  });
+
+  it("falls back to local demo data only when the site has no server", async () => {
+    mocks.initialize_convex_client.mockReturnValue({
+      success: false,
+      error: "Convex URL not configured",
+    });
+
+    await expect(initialize_app_data(OPTIONS)).resolves.toBe("success");
+
+    expect(mocks.run_seeding_with_strategy).toHaveBeenCalledWith(
+      "local_only",
+      false,
     );
   });
 

@@ -2,7 +2,6 @@ import {
   type AsyncResult,
   create_success_result,
 } from "$lib/core/types/Result";
-import { PUBLIC_VIEWER_ROLE } from "$lib/presentation/stores/authStoreConstants";
 
 import {
   build_public_viewer_live_games_permissions,
@@ -32,6 +31,10 @@ import {
   type LiveGamesPageNotReadyResult,
   type LiveGamesPagePermissions,
 } from "./liveGamesPageInitializationTypes";
+import {
+  is_public_viewer_profile,
+  load_public_live_games_data_when_public,
+} from "./liveGamesPublicData";
 import { select_live_games_organization_id } from "./liveGamesStartResume";
 import { PRESENCE_STATUS } from "./presenceStatus";
 
@@ -51,6 +54,11 @@ export async function refresh_live_games_page_fixture_state_result(
   if (!command.organization_id) {
     return create_success_result(create_empty_live_games_fixture_state());
   }
+  await load_public_live_games_data_when_public(
+    command.fixture_state_dependencies,
+    command.auth_state,
+    command.organization_id,
+  );
   return load_live_games_fixture_state(
     command.fixture_state_dependencies,
     get_live_games_current_profile_state(command.auth_state),
@@ -69,15 +77,6 @@ function build_not_ready_result(
   result: LiveGamesPageNotReadyResult,
 ): LiveGamesPageAuthorizationResult {
   return { status: LIVE_GAMES_AUTHORIZATION_STATUS.NOT_READY, result };
-}
-
-function is_public_viewer_profile(
-  auth_state: LiveGamesPageInitializationCommand["auth_state"],
-): boolean {
-  return (
-    auth_state.current_profile.status === PRESENCE_STATUS.PRESENT &&
-    auth_state.current_profile.profile.role === PUBLIC_VIEWER_ROLE
-  );
 }
 
 async function authorize_live_games_page(
@@ -145,6 +144,10 @@ async function load_ready_live_games_page(
   command: LiveGamesPageInitializationCommand,
   permissions: LiveGamesPagePermissions,
 ): Promise<LiveGamesPageInitializationResult> {
+  await load_public_live_games_data_when_public(
+    command.fixture_state_dependencies,
+    command.auth_state,
+  );
   const organizations_result = await load_live_games_organizations(
     { organization_use_cases: command.organization_use_cases },
     get_live_games_current_profile_state(command.auth_state),

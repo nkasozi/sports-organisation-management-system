@@ -21,6 +21,7 @@ import {
   INITIALIZATION_EVENT,
 } from "./initializationEvents";
 import { INITIALIZATION_ERROR_MESSAGE } from "./initializationMessages";
+import { prepare_public_server_data } from "./publicServerDataPreparation";
 import { seed_demo_data } from "./seedingDemoData";
 import {
   handle_convex_mandatory,
@@ -105,5 +106,7 @@ export async function seed_from_convex_or_local(
       return handle_convex_with_local_fallback(on_progress);
     case SEEDING_STRATEGY.CONVEX_MANDATORY:
       return handle_convex_mandatory(on_progress);
+    case SEEDING_STRATEGY.PUBLIC_SERVER_DATA:
+      return prepare_public_server_data();
   }
 }

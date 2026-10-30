@@ -1,4 +1,5 @@
 import { sign_out } from "$lib/adapters/iam/clerkAuthService";
+import { is_convex_url_configured } from "$lib/adapters/initialization/appConvexInitializer";
 import { rebuild_signed_out_demo_data } from "$lib/adapters/initialization/dataResetService";
 import { reset_database } from "$lib/adapters/repositories/database";
 import {
@@ -24,6 +25,14 @@ import {
   type LogoutDeviceTeardownCommand,
 } from "./logoutDeviceTeardown";
 
+async function prepare_signed_out_data(): AsyncResult<boolean> {
+  if (!is_convex_url_configured()) return rebuild_signed_out_demo_data();
+  console.log("[Logout] Signed-out pages will read the server's public data", {
+    event: "logout_public_server_data_selected",
+  });
+  return create_success_result(true);
+}
+
 function create_runtime_logout_device_teardown_command(): LogoutDeviceTeardownCommand {
   return {
     stop_background_sync: stop_background_sync_and_wait_for_idle,
@@ -38,7 +47,7 @@ function create_runtime_logout_device_teardown_command(): LogoutDeviceTeardownCo
     clear_session_sync_flag,
     logout_auth_store: () => auth_store.logout(),
     sign_out,
-    seed_signed_out_demo_data: rebuild_signed_out_demo_data,
+    seed_signed_out_demo_data: prepare_signed_out_data,
     mark_anonymous_demo_session: () =>
       write_session_sync_marker(build_anonymous_session_sync_marker()),
     mark_pending_clerk_sign_out,

@@ -4,7 +4,10 @@ import {
   determine_seeding_strategy,
   get_is_public_content_page,
 } from "./appInitializer";
-import { SEEDING_COMPLETION_STATE } from "./initializationConstants";
+import {
+  PUBLIC_DATA_SOURCE,
+  SEEDING_COMPLETION_STATE,
+} from "./initializationConstants";
 
 describe("get_is_public_content_page", () => {
   it("returns true for /competition-results", () => {
@@ -37,6 +40,7 @@ describe("determine_seeding_strategy", () => {
         "/calendar",
         SEEDING_COMPLETION_STATE.UNREADABLE,
         false,
+        PUBLIC_DATA_SOURCE.LOCAL_DEMO,
       ),
     ).toBe("local_only");
   });
@@ -49,6 +53,7 @@ describe("determine_seeding_strategy", () => {
           "/competition-results/lgue-1",
           SEEDING_COMPLETION_STATE.COMPLETE,
           false,
+          PUBLIC_DATA_SOURCE.LOCAL_DEMO,
         ),
       ).toBe("skip_seeding");
     });
@@ -60,6 +65,7 @@ describe("determine_seeding_strategy", () => {
           "/calendar",
           SEEDING_COMPLETION_STATE.COMPLETE,
           false,
+          PUBLIC_DATA_SOURCE.LOCAL_DEMO,
         ),
       ).toBe("skip_seeding");
     });
@@ -71,6 +77,7 @@ describe("determine_seeding_strategy", () => {
           "/match-report/fix-1",
           SEEDING_COMPLETION_STATE.COMPLETE,
           false,
+          PUBLIC_DATA_SOURCE.LOCAL_DEMO,
         ),
       ).toBe("skip_seeding");
     });
@@ -84,6 +91,7 @@ describe("determine_seeding_strategy", () => {
           "/competition-results",
           SEEDING_COMPLETION_STATE.NOT_COMPLETE,
           false,
+          PUBLIC_DATA_SOURCE.LOCAL_DEMO,
         ),
       ).toBe("local_only");
     });
@@ -97,6 +105,7 @@ describe("determine_seeding_strategy", () => {
           "/players",
           SEEDING_COMPLETION_STATE.NOT_COMPLETE,
           false,
+          PUBLIC_DATA_SOURCE.LOCAL_DEMO,
         ),
       ).toBe("local_only");
     });
@@ -108,6 +117,7 @@ describe("determine_seeding_strategy", () => {
           "/players",
           SEEDING_COMPLETION_STATE.COMPLETE,
           false,
+          PUBLIC_DATA_SOURCE.LOCAL_DEMO,
         ),
       ).toBe("local_only");
     });
@@ -121,6 +131,7 @@ describe("determine_seeding_strategy", () => {
           "/official-roles",
           SEEDING_COMPLETION_STATE.COMPLETE,
           true,
+          PUBLIC_DATA_SOURCE.LOCAL_DEMO,
         ),
       ).toBe("skip_seeding");
     });
@@ -132,6 +143,7 @@ describe("determine_seeding_strategy", () => {
           "/players",
           SEEDING_COMPLETION_STATE.NOT_COMPLETE,
           true,
+          PUBLIC_DATA_SOURCE.LOCAL_DEMO,
         ),
       ).toBe("skip_seeding");
     });
@@ -145,6 +157,7 @@ describe("determine_seeding_strategy", () => {
           "/",
           SEEDING_COMPLETION_STATE.COMPLETE,
           false,
+          PUBLIC_DATA_SOURCE.LOCAL_DEMO,
         ),
       ).toBe("skip_seeding");
     });
@@ -156,6 +169,7 @@ describe("determine_seeding_strategy", () => {
           "/fixtures",
           SEEDING_COMPLETION_STATE.COMPLETE,
           false,
+          PUBLIC_DATA_SOURCE.LOCAL_DEMO,
         ),
       ).toBe("skip_seeding");
     });
@@ -167,6 +181,7 @@ describe("determine_seeding_strategy", () => {
           "/teams",
           SEEDING_COMPLETION_STATE.NOT_COMPLETE,
           false,
+          PUBLIC_DATA_SOURCE.LOCAL_DEMO,
         ),
       ).toBe("skip_seeding");
     });

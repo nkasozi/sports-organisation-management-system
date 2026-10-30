@@ -69,6 +69,7 @@ export function create_fixture_state_dependencies(
   fixtures: Fixture[] = [create_fixture()],
 ): LiveGamesDataDependencies {
   return {
+    load_public_live_games_data: async () => ({ success: true }),
     fixture_use_cases: {
       list: async () => ({ success: true, data: { items: fixtures } }),
     },

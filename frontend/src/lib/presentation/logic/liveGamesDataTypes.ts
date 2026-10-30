@@ -2,6 +2,7 @@ import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Organization } from "$lib/core/entities/Organization";
 import type { UserScopeProfile } from "$lib/core/interfaces/ports";
 
+import type { LiveGamesPublicDataLoader } from "./liveGamesPublicData";
 import type { PRESENCE_STATUS } from "./presenceStatus";
 
 type ListResult<T> = Promise<{ success: boolean; data?: { items: T[] } }>;
@@ -11,7 +12,7 @@ export type LiveGamesProfileState =
   | { status: typeof PRESENCE_STATUS.MISSING }
   | { status: typeof PRESENCE_STATUS.PRESENT; profile: UserScopeProfile };
 
-export interface LiveGamesDataDependencies {
+export interface LiveGamesDataDependencies extends LiveGamesPublicDataLoader {
   organization_use_cases: {
     list(filter: Record<string, string>): ListResult<Organization>;
     get_by_id(organization_id: string): GetByIdResult<{

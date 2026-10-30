@@ -120,6 +120,7 @@ function describe_seeding_start(strategy: SeedingStrategy): string {
       return INITIALIZATION_PROGRESS_MESSAGE.PULLING_DATA_FROM_SERVER;
     case SEEDING_STRATEGY.CONVEX_FIRST_WITH_LOCAL_FALLBACK:
     case SEEDING_STRATEGY.SKIP_SEEDING:
+    case SEEDING_STRATEGY.PUBLIC_SERVER_DATA:
       return INITIALIZATION_PROGRESS_MESSAGE.CHECKING_SERVER;
   }
 }
@@ -137,6 +138,17 @@ async function prepare_public_view(
   return APP_INIT_RESULT.SUCCESS;
 }
 
+async function prepare_public_server_view(
+  reporter: SetupProgressReporter,
+): Promise<AppInitResult> {
+  const seed_result = await seed_from_convex_or_local(
+    create_progress_callback(reporter),
+    SEEDING_STRATEGY.PUBLIC_SERVER_DATA,
+  );
+  if (!seed_result.success) return finish_after_failure(reporter, seed_result);
+  return prepare_public_view(reporter);
+}
+
 export async function run_seeding_with_strategy(
   strategy: SeedingStrategy,
   is_first_time: boolean,
@@ -147,9 +159,22 @@ export async function run_seeding_with_strategy(
     strategy,
     progress_mode: reporter.mode,
   });
-  if (strategy === SEEDING_STRATEGY.SKIP_SEEDING) {
-    return prepare_public_view(reporter);
+  switch (strategy) {
+    case SEEDING_STRATEGY.SKIP_SEEDING:
+      return prepare_public_view(reporter);
+    case SEEDING_STRATEGY.PUBLIC_SERVER_DATA:
+      return prepare_public_server_view(reporter);
+    case SEEDING_STRATEGY.LOCAL_ONLY:
+    case SEEDING_STRATEGY.CONVEX_MANDATORY:
+    case SEEDING_STRATEGY.CONVEX_FIRST_WITH_LOCAL_FALLBACK:
+      return seed_and_report(strategy, reporter);
   }
+}
+
+async function seed_and_report(
+  strategy: SeedingStrategy,
+  reporter: SetupProgressReporter,
+): Promise<AppInitResult> {
   await report_setup_step(
     reporter,
     describe_seeding_start(strategy),

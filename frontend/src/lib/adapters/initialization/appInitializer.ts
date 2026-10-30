@@ -34,6 +34,7 @@ import {
   APP_INIT_RESULT,
   type AppInitResult,
   is_browser_environment,
+  PUBLIC_DATA_SOURCE,
 } from "./initializationConstants";
 import {
   is_seeding_already_complete,
@@ -71,14 +72,18 @@ interface PreparedRuntimeServices {
 }
 
 async function resolve_seeding_strategy(
-  user_is_signed_in: boolean,
+  services: PreparedRuntimeServices,
   options: InitializeOptions,
 ): Promise<SeedingStrategy> {
+  const { user_is_signed_in } = services;
   const strategy = determine_seeding_strategy(
     user_is_signed_in,
     options.current_path,
     await is_seeding_already_complete(),
     options.session_already_synced,
+    services.convex_client_result.success
+      ? PUBLIC_DATA_SOURCE.SERVER
+      : PUBLIC_DATA_SOURCE.LOCAL_DEMO,
   );
   console.log("[AppInitializer] Seeding strategy determined", {
     event: APP_INITIALIZER_EVENT.SEEDING_STRATEGY_DETERMINED,
@@ -143,8 +148,9 @@ async function run_first_initialization(
   options: InitializeOptions,
 ): Promise<AppInitResult> {
   const is_first_time = await is_first_time_use();
-  const { user_is_signed_in } = await prepare_runtime_services(is_first_time);
-  const strategy = await resolve_seeding_strategy(user_is_signed_in, options);
+  const services = await prepare_runtime_services(is_first_time);
+  const { user_is_signed_in } = services;
+  const strategy = await resolve_seeding_strategy(services, options);
   const seed_outcome = await run_seeding_with_strategy(strategy, is_first_time);
   switch (seed_outcome) {
     case APP_INIT_RESULT.REDIRECT_TO_LOGIN:
