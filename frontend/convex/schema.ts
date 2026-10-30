@@ -3,6 +3,7 @@ import { defineSchema } from "convex/server";
 import { schema_admin_and_settings_tables } from "./schema_admin_and_settings_tables";
 import { schema_competition_tables } from "./schema_competition_tables";
 import { schema_game_and_admin_tables } from "./schema_game_and_admin_tables";
+import { schema_live_audience_tables } from "./schema_live_audience_tables";
 import { schema_match_tables } from "./schema_match_tables";
 import { schema_profile_and_format_tables } from "./schema_profile_and_format_tables";
 import { schema_relation_tables } from "./schema_relation_tables";
@@ -20,4 +21,5 @@ export default defineSchema({
   ...schema_game_and_admin_tables,
   ...schema_admin_and_settings_tables,
   ...schema_sync_engine_tables,
+  ...schema_live_audience_tables,
 });

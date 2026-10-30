@@ -8,6 +8,7 @@
     } from "$lib/core/entities/FixtureLineup";
     import type { Option } from "$lib/core/types/Option";
     import GameManageTimeline from "$lib/presentation/components/game/GameManageTimeline.svelte";
+    import LiveGameAudience from "$lib/presentation/components/game/LiveGameAudience.svelte";
     import LiveGameHeader from "$lib/presentation/components/game/LiveGameHeader.svelte";
     import LiveGameInfoSummary from "$lib/presentation/components/game/LiveGameInfoSummary.svelte";
     import LiveGameLineupSection from "$lib/presentation/components/game/LiveGameLineupSection.svelte";
@@ -136,6 +137,9 @@
                 {on_extra_time}
                 {on_end}
                 {on_download_match_report}
+            /><LiveGameAudience
+                fixture_id={fixture.id}
+                fixture_status={fixture.status}
             />{#if permission_info_message}<svelte:component
                     this={live_game_permission_banner_component}
                     {permission_info_message}
