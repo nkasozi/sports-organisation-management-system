@@ -28,6 +28,10 @@ export function remember_realtime_convex_client(client: ConvexClient): boolean {
   return true;
 }
 
+export function read_realtime_convex_client(): Option<ConvexClient> {
+  return realtime_convex_client;
+}
+
 export function start_realtime_sync_when_signed_in(
   user_is_signed_in: boolean,
 ): boolean {

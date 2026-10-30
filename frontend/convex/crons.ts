@@ -30,4 +30,18 @@ crons.daily(
   { retention_days: SYNC_TOMBSTONE_RETENTION_DAYS, continuation_count: 0 },
 );
 
+crons.interval(
+  "refresh-live-game-viewer-stats",
+  { minutes: 1 },
+  internal.live_audience_stats.refresh_live_game_viewer_stats,
+  {},
+);
+
+crons.daily(
+  "prune-old-live-game-viewers",
+  { hourUTC: 4, minuteUTC: 0 },
+  internal.live_audience_stats.prune_old_live_game_viewers,
+  {},
+);
+
 export default crons;

@@ -70,6 +70,7 @@ test("the table official fixes mistakes until the game's edits run out", async (
 }) => {
   await sign_in_as(page, E2E_PROFILES.table_official);
   await go_to_game(page);
+  await expect(page.getByTestId("live-audience-bar")).toContainText(/watching/);
   await expect(edit_allowance(page)).toHaveText(/3 of 3 event edits left/);
   await record_home_goal(page, FIRST_SCORER);
   await record_home_goal(page, SECOND_SCORER);
@@ -143,6 +144,9 @@ test("the org admin sees the corrections in the match report", async ({
   await sign_in_as(page, E2E_PROFILES.org_admin);
   await page.goto(`/match-report/${read_todays_fixture().local_id}`);
   await expect_all_reasons_visible(page);
+  await expect(page.getByTestId("live-viewer-stats")).toContainText(
+    /\d+ (person|people) followed live/,
+  );
 });
 
 test("the org admin finds every correction in the audit trail", async ({

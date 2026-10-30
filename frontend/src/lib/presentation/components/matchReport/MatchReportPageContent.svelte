@@ -10,6 +10,7 @@
     import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
     import LiveGameCorrectionLog from "../game/LiveGameCorrectionLog.svelte";
+    import LiveGameViewerStats from "../game/LiveGameViewerStats.svelte";
     import MatchReportLineupCard from "./MatchReportLineupCard.svelte";
     import MatchReportMetadataPanel from "./MatchReportMetadataPanel.svelte";
     import MatchReportScheduledNotice from "./MatchReportScheduledNotice.svelte";
@@ -98,6 +99,12 @@
                 <LiveGameCorrectionLog
                     corrections={fixture.event_corrections ?? []}
                 />
+            </div>
+        {/if}
+
+        {#if view_state.is_game_completed && fixture.id}
+            <div class="px-4 sm:px-6 pb-6">
+                <LiveGameViewerStats fixture_id={fixture.id} />
             </div>
         {/if}
     </div>
