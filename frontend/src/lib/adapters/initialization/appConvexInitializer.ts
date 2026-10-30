@@ -57,6 +57,10 @@ function create_convex_client(convex_url: string): ConvexClient {
   return client;
 }
 
+export function is_convex_url_configured(): boolean {
+  return Boolean(PUBLIC_CONVEX_URL);
+}
+
 export function initialize_convex_client(): Result<ConvexClient> {
   const convex_url = PUBLIC_CONVEX_URL;
   if (!convex_url) {

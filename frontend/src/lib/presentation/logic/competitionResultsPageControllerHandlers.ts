@@ -145,10 +145,7 @@ async function load_initialized_competition_results_page(
       is_public,
       saved_organization_id: command.get_saved_organization_id(),
       sync_public_organization: command.sync_public_organization,
-      load_public_data: () =>
-        load_competition_results_public_data(
-          url_params.org_id || command.get_saved_organization_id(),
-        ),
+      load_public_data: load_competition_results_public_data,
     });
     apply_initialized_competition_results_page(command, initialized_page);
   } catch (error) {

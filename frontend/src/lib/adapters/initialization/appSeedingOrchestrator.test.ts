@@ -5,6 +5,7 @@ import {
   create_convex_required_seed_result,
   create_failed_seed_result,
   create_offline_mode_seed_result,
+  create_skipped_seed_result,
 } from "./seedResults";
 
 const mocks = vi.hoisted(() => ({
@@ -94,6 +95,29 @@ describe("run_seeding_with_strategy", () => {
     expect(console.error).toHaveBeenCalledWith(
       "[AppInitializer] Seeding failed",
       expect.objectContaining({ event: "app_seeding_failed" }),
+    );
+  });
+
+  it("prepares the public view from server data for signed-out visitors", async () => {
+    mocks.seed_from_convex_or_local.mockResolvedValue(
+      create_skipped_seed_result(),
+    );
+    expect(await run("public_server_data", false)).toBe("success");
+    expect(mocks.seed_from_convex_or_local).toHaveBeenCalledWith(
+      expect.any(Function),
+      "public_server_data",
+    );
+    expect(console.error).not.toHaveBeenCalled();
+  });
+
+  it("explains when old demo data could not be cleared", async () => {
+    mocks.seed_from_convex_or_local.mockResolvedValue(
+      create_failed_seed_result("Old demo data could not be cleared"),
+    );
+    expect(await run("public_server_data", true)).toBe("success");
+    expect(mocks.update_progress).toHaveBeenCalledWith(
+      "Old demo data could not be cleared",
+      0,
     );
   });
 });

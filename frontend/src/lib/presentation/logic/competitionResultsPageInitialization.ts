@@ -8,14 +8,19 @@ import {
   find_competition_results_competition,
   find_competition_results_organization,
   load_competition_results_bundle,
-  load_competitions_for_results_organization,
   select_preferred_results_organization,
 } from "$lib/presentation/logic/competitionResultsPageState";
 import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
+import {
+  create_public_organization_data_preparer,
+  load_competition_results_selection_for_organization,
+  read_initially_fetched_organization_id,
+  select_first_organization_with_competitions,
+} from "./competitionResultsOrganizationCandidates";
 import type { CompetitionResultsProfileState } from "./competitionResultsPageContracts";
 
-interface CompetitionResultsPageInitializationResult {
+export interface CompetitionResultsPageInitializationResult {
   is_using_cached_data: boolean;
   organizations: Organization[];
   selected_organization_id: string;
@@ -24,17 +29,17 @@ interface CompetitionResultsPageInitializationResult {
   bundle: CompetitionResultsSelectedBundle;
 }
 
-interface CompetitionResultsPageInitializationCommand {
+export interface CompetitionResultsPageInitializationCommand {
   current_profile_state: CompetitionResultsProfileState;
   competition_results_dependencies: CompetitionResultsPageStateDependencies;
   url_params: { org_id: string; competition_id: string };
   is_public: boolean;
   saved_organization_id: string;
   sync_public_organization: (organization: Organization) => Promise<void>;
-  load_public_data: () => Promise<{ success: boolean }>;
+  load_public_data: (organization_id: string) => Promise<{ success: boolean }>;
 }
 
-type CompetitionResultsPageSelection = Omit<
+export type CompetitionResultsPageSelection = Omit<
   CompetitionResultsPageInitializationResult,
   "is_using_cached_data" | "organizations"
 >;
@@ -45,22 +50,6 @@ function create_empty_competition_results_selection(): CompetitionResultsPageSel
     competitions: [],
     selected_competition_id: "",
     bundle: create_empty_competition_results_bundle(),
-  };
-}
-
-async function load_competition_results_selection_for_organization(
-  dependencies: CompetitionResultsPageStateDependencies,
-  organization_id: string,
-): Promise<CompetitionResultsPageSelection> {
-  const organization_result = await load_competitions_for_results_organization(
-    dependencies,
-    organization_id,
-  );
-  return {
-    selected_organization_id: organization_id,
-    competitions: organization_result.competitions,
-    selected_competition_id: organization_result.selected_competition_id,
-    bundle: organization_result.bundle,
   };
 }
 
@@ -132,6 +121,7 @@ async function select_preferred_competition_results_organization(
     preferred_organization.organization.id === command.saved_organization_id;
   return select_first_organization_with_competitions(
     command.competition_results_dependencies,
+    create_public_organization_data_preparer(command),
     is_saved_choice
       ? [preferred_organization.organization]
       : [
@@ -144,31 +134,12 @@ async function select_preferred_competition_results_organization(
   );
 }
 
-async function select_first_organization_with_competitions(
-  dependencies: CompetitionResultsPageStateDependencies,
-  candidates: Organization[],
-): Promise<CompetitionResultsPageSelection> {
-  const [first_candidate] = candidates;
-  const first_selection =
-    await load_competition_results_selection_for_organization(
-      dependencies,
-      first_candidate.id,
-    );
-  if (first_selection.competitions.length > 0) return first_selection;
-  for (const candidate of candidates.slice(1)) {
-    const selection = await load_competition_results_selection_for_organization(
-      dependencies,
-      candidate.id,
-    );
-    if (selection.competitions.length > 0) return selection;
-  }
-  return first_selection;
-}
-
 export async function initialize_competition_results_page(
   command: CompetitionResultsPageInitializationCommand,
 ): Promise<CompetitionResultsPageInitializationResult> {
-  const fetch_result = await command.load_public_data();
+  const fetch_result = await command.load_public_data(
+    read_initially_fetched_organization_id(command),
+  );
   const organizations = await load_competition_results_organizations(
     command.current_profile_state,
     command.competition_results_dependencies.organization_use_cases,

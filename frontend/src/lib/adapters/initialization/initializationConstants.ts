@@ -5,10 +5,19 @@ export const SEEDING_STRATEGY = {
   CONVEX_FIRST_WITH_LOCAL_FALLBACK: "convex_first_with_local_fallback",
   CONVEX_MANDATORY: "convex_mandatory",
   LOCAL_ONLY: "local_only",
+  PUBLIC_SERVER_DATA: "public_server_data",
 } as const;
 
 export type SeedingStrategy =
   (typeof SEEDING_STRATEGY)[keyof typeof SEEDING_STRATEGY];
+
+export const PUBLIC_DATA_SOURCE = {
+  SERVER: "server",
+  LOCAL_DEMO: "local_demo",
+} as const;
+
+export type PublicDataSource =
+  (typeof PUBLIC_DATA_SOURCE)[keyof typeof PUBLIC_DATA_SOURCE];
 
 export const SEED_OUTCOME = {
   SKIPPED: "skipped",

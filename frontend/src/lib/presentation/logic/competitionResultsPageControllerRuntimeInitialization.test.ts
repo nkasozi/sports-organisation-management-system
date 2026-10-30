@@ -161,7 +161,7 @@ describe("competitionResultsPageControllerRuntime", () => {
     expect(command.apply_bundle).toHaveBeenCalledWith({ empty: true });
   });
 
-  it("loads public data scoped to the organization named in the url", async () => {
+  it("loads public data scoped to the organization it is asked for", async () => {
     const { command } = create_command();
     ensure_auth_profile_mock.mockResolvedValueOnce({ success: true });
     extract_competition_results_url_params_mock.mockReturnValueOnce({
@@ -169,8 +169,10 @@ describe("competitionResultsPageControllerRuntime", () => {
       competition_id: "",
     });
     initialize_competition_results_page_mock.mockImplementationOnce(
-      async (init: { load_public_data: () => Promise<unknown> }) => {
-        await init.load_public_data();
+      async (init: {
+        load_public_data: (organization_id: string) => Promise<unknown>;
+      }) => {
+        await init.load_public_data("organization-9");
         return Promise.reject(new Error("stop after public data"));
       },
     );
