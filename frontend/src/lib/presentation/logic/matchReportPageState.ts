@@ -1,3 +1,4 @@
+import { format_display_date } from "$lib/core/entities/DateDisplay";
 import type { GameEvent } from "$lib/core/entities/Fixture";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
 import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
@@ -160,18 +161,16 @@ export function format_match_report_kickoff_display(
     return time || MATCH_REPORT_DEFAULT_TEXT.kickoff_time_tbd;
   }
 
-  const parsed_date = new Date(`${date}T00:00:00`);
-  const formatted_date = Number.isNaN(parsed_date.getTime())
-    ? date
-    : parsed_date.toLocaleDateString(
-        MATCH_REPORT_DEFAULT_TEXT.kickoff_date_locale,
-        {
-          weekday: "short",
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        },
-      );
+  const formatted_date = format_display_date(
+    date,
+    MATCH_REPORT_DEFAULT_TEXT.kickoff_date_locale,
+    {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    },
+  );
 
   if (!time) {
     return formatted_date;

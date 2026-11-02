@@ -3,6 +3,7 @@ import {
   type CompetitionStage,
   get_stage_type_label,
 } from "$lib/core/entities/CompetitionStage";
+import { format_display_date } from "$lib/core/entities/DateDisplay";
 import { get_team_logo, type Team } from "$lib/core/entities/Team";
 
 const COMPETITION_RESULTS_DISPLAY_TEXT = {
@@ -16,14 +17,17 @@ const COMPETITION_RESULTS_DISPLAY_TEXT = {
 export const competition_results_page_size_options: number[] = [10, 20, 50];
 
 export function format_competition_results_date(date_string: string): string {
-  return new Date(date_string).toLocaleDateString(
+  const includes_time = date_string.includes("T");
+  return format_display_date(
+    date_string,
     COMPETITION_RESULTS_DISPLAY_TEXT.date_locale,
     {
       weekday: "short",
       month: "short",
       day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+      ...(includes_time
+        ? ({ hour: "2-digit", minute: "2-digit" } as const)
+        : {}),
     },
   );
 }

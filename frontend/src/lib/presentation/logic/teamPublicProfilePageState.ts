@@ -1,4 +1,5 @@
 import type { Competition } from "$lib/core/entities/Competition";
+import { format_display_date } from "$lib/core/entities/DateDisplay";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
 import type { Team } from "$lib/core/entities/Team";
@@ -111,7 +112,7 @@ export function apply_fixture_to_team_public_profile_stats(
 }
 
 export function format_team_public_profile_date(date_string: string): string {
-  return new Date(date_string).toLocaleDateString("en-US", {
+  return format_display_date(date_string, "en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",

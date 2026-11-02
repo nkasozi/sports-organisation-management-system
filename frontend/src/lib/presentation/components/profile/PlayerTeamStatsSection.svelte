@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { format_display_date } from "$lib/core/entities/DateDisplay";
     import { MEMBERSHIP_STATUS } from "$lib/core/entities/StatusConstants";
     import type { PlayerPublicTeamStats } from "$lib/presentation/logic/playerPublicProfilePageState";
 
@@ -27,9 +28,9 @@
                             </h3>
                             <p class="text-sm text-gray-500 dark:text-gray-400">
                                 #{current_team_stat.membership.jersey_number} • Since
-                                {new Date(
+                                {format_display_date(
                                     current_team_stat.membership.start_date,
-                                ).toLocaleDateString()}
+                                )}
                             </p>
                         </div>
                         <span

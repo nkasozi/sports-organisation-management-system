@@ -12,6 +12,16 @@ import {
 } from "./competitionResultsWorkspaceDisplay";
 
 describe("competitionResultsWorkspaceDisplay", () => {
+  it("shows unknown dates clearly and does not show midnight for an unknown time", () => {
+    expect(format_competition_results_date("")).toBe("Date not recorded");
+    expect(format_competition_results_date("T00:00")).toBe("Date not recorded");
+    expect(format_competition_results_date("invalid")).toBe(
+      "Date not recorded",
+    );
+    expect(format_competition_results_date("2026-11-01")).not.toMatch(
+      /00:00|12:00|AM|PM/,
+    );
+  });
   it("exposes the supported page sizes and formats result dates for display", () => {
     expect(competition_results_page_size_options).toEqual([10, 20, 50]);
     expect(

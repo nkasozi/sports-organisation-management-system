@@ -1,3 +1,7 @@
+import {
+  format_display_date,
+  MISSING_DATE_LABEL,
+} from "$lib/core/entities/DateDisplay";
 import type { GameEvent } from "$lib/core/entities/Fixture";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
 import { get_time_on_display } from "$lib/core/entities/FixtureLineup";
@@ -137,6 +141,8 @@ export function build_match_player_entry(
 }
 
 export function format_report_date(date_string: string): string {
+  if (format_display_date(date_string) === MISSING_DATE_LABEL)
+    return MISSING_DATE_LABEL;
   const parsed_date = parse_local_calendar_date(date_string);
   const date =
     parsed_date.status === OptionStatus.SOME
