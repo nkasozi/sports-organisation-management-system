@@ -31,8 +31,6 @@ export interface CompetitionResultsWorkspaceStateCommand {
   team_map: Map<string, Team>;
   upcoming_page: number;
   upcoming_per_page: number;
-  results_page: number;
-  results_per_page: number;
   stats_team_filter: string;
   stats_card_sort: CardSortMode;
   team_fixtures_in_competition: Fixture[];
@@ -57,8 +55,6 @@ export interface CompetitionResultsWorkspaceStateResult {
   live_team_ids: Set<string>;
   upcoming_total_pages: number;
   paginated_upcoming: Fixture[];
-  results_total_pages: number;
-  paginated_completed: Fixture[];
   stats_card_categories: CardStatCategory[];
   stats_available_teams: string[];
   stats_filtered_scorers: ReturnType<typeof filter_and_sort_scorers>;
@@ -86,8 +82,6 @@ export type FixturesSection = Pick<
   | "live_team_ids"
   | "upcoming_total_pages"
   | "paginated_upcoming"
-  | "results_total_pages"
-  | "paginated_completed"
 >;
 
 export type StatsSection = Pick<

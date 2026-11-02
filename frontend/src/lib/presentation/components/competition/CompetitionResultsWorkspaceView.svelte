@@ -124,9 +124,7 @@
     upcoming_total_pages={workspace_state.upcoming_total_pages}
     bind:upcoming_per_page
     completed_fixtures={workspace_state.completed_fixtures}
-    paginated_completed={workspace_state.paginated_completed}
     bind:results_page
-    results_total_pages={workspace_state.results_total_pages}
     bind:results_per_page
     {page_size_options}
     {downloading_all_reports}

@@ -48,9 +48,7 @@
     export let upcoming_total_pages: number;
     export let upcoming_per_page: number;
     export let completed_fixtures: Fixture[];
-    export let paginated_completed: Fixture[];
     export let results_page: number;
-    export let results_total_pages: number;
     export let results_per_page: number;
     export let page_size_options: number[];
     export let downloading_all_reports: boolean;
@@ -149,9 +147,8 @@
         {:else if active_tab === COMPETITION_RESULTS_TAB.RESULTS}
             <CompetitionResultsResultsSection
                 {completed_fixtures}
-                {paginated_completed}
+                {stage_results_sections}
                 bind:results_page
-                {results_total_pages}
                 bind:results_per_page
                 {page_size_options}
                 {downloading_all_reports}
