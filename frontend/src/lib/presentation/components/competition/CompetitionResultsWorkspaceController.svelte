@@ -86,8 +86,6 @@
         team_map,
         upcoming_page,
         upcoming_per_page,
-        results_page,
-        results_per_page,
         stats_team_filter,
         stats_card_sort,
         team_fixtures_in_competition,

@@ -116,15 +116,6 @@ export function derive_competition_results_fixtures_section(
       command.upcoming_page,
       command.upcoming_per_page,
     ),
-    results_total_pages: calculate_total_pages(
-      completed_fixtures.length,
-      command.results_per_page,
-    ),
-    paginated_completed: paginate_fixtures(
-      completed_fixtures,
-      command.results_page,
-      command.results_per_page,
-    ),
   };
 }
 
