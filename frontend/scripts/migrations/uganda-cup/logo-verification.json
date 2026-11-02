@@ -1,0 +1,98 @@
+{
+  "source": "https://challenge.place/c/6a15adab5afc4d1f05826e36",
+  "organization_id": "org-1793650098381-cxp1tfz5na",
+  "checked_at": "2026-11-02T20:44:31.133Z",
+  "status": "verified",
+  "logos": [
+    {
+      "team": "Badgers",
+      "team_id": "team-1793650442745-x0qtabnxrh",
+      "source_url": "https://static.challengeplace.com/2026/5/26/11/competitor/7933b5fd-0697-49ea-b5e9-8284337706ce.jpg",
+      "bytes": 10742,
+      "sha256": "e78cd80bfc421b15e76a5ec09d8dcfd8ec9a83c212808ec6c48d1471e4bca20d",
+      "changed": true
+    },
+    {
+      "team": "KHC Originals",
+      "team_id": "team-1793650519469-2094ya5h9vv",
+      "source_url": "https://static.challengeplace.com/2026/5/26/11/competitor/fe84d948-4eac-4e40-bf07-e6dfdefa27a6.jpg",
+      "bytes": 10824,
+      "sha256": "13df854dbf5e8120c06eade186c551776e328d4800b21203723a7d907a70d0a4",
+      "changed": true
+    },
+    {
+      "team": "Kampala",
+      "team_id": "team-1793650488496-cxe4hk4xqz4",
+      "source_url": "https://static.challengeplace.com/2026/5/26/11/competitor/477c2785-252b-4cdc-be27-c9bbfab9451b.jpg",
+      "bytes": 10632,
+      "sha256": "aeab3462e0003581c8b38219575e39f9b4dfce1afe1f6d60ff8df431300d31f3",
+      "changed": true
+    },
+    {
+      "team": "Makerere",
+      "team_id": "team-1793650533447-a1w8sor7i6",
+      "source_url": "https://static.challengeplace.com/2026/5/26/11/competitor/aaf0bd61-b0bb-4ce1-a863-38a2dbc99122.jpg",
+      "bytes": 10700,
+      "sha256": "b92d4e7b242b2f2449c91e4e3c4fb114eff53a63c857f4b08db524fa87f18832",
+      "changed": true
+    },
+    {
+      "team": "RSC Community",
+      "team_id": "team-1793650549829-wjm1riqaw2o",
+      "source_url": "https://static.challengeplace.com/2026/5/26/11/competitor/1765b061-946e-4789-9116-e30d2ebb00fe.jpg",
+      "bytes": 13864,
+      "sha256": "e1c87bad79e3239f9b8e5878fffa2a14f88829c2b32633d302c16c5437f2704a",
+      "changed": true
+    },
+    {
+      "team": "Rockets",
+      "team_id": "team-1793650542696-ozmrv72l22",
+      "source_url": "https://static.challengeplace.com/2026/5/26/11/competitor/a1f3c103-9a7c-48a6-b2e0-85762bf8d4cf.jpg",
+      "bytes": 13188,
+      "sha256": "1e49bb0e2785aa195b882a57a5d9edf5fe350665e264ef2bbcbf5bbd3f80bd5a",
+      "changed": true
+    },
+    {
+      "team": "Thunders",
+      "team_id": "team-1793650556812-pfaebgcy8e",
+      "source_url": "https://static.challengeplace.com/2026/5/26/11/competitor/07a4cb09-fbf4-4969-81d2-bb90fd95ed62.jpg",
+      "bytes": 12446,
+      "sha256": "e83ea8ab6c480419cbc1276b5a89162edd27dd5938093c5127fa7decc3807a8b",
+      "changed": true
+    },
+    {
+      "team": "WHC Titans",
+      "team_id": "team-1793650588947-ht92kxarwzn",
+      "source_url": "https://static.challengeplace.com/2026/5/26/11/competitor/28fc1cb5-c7db-4c71-ae97-d21f07c21cf5.jpg",
+      "bytes": 6484,
+      "sha256": "3e9593823654e9ff446079a0a7e8d083bf8ded832c1131bf92d6d50e0261e901",
+      "changed": true
+    },
+    {
+      "team": "WSC Wabalozi",
+      "team_id": "team-1793650597049-kxuhljrkm8g",
+      "source_url": "https://static.challengeplace.com/2026/5/26/11/competitor/ba33c60e-03f2-4348-9b16-f573f9fe9459.jpg",
+      "bytes": 10283,
+      "sha256": "9054017a87916209e97d8cd10b18f8cb7b0ee1ff022a7eca005cb9709ea01d06",
+      "changed": true
+    },
+    {
+      "team": "Wananchi",
+      "team_id": "team-1793650569139-jq6qectxbc",
+      "source_url": "https://static.challengeplace.com/2026/5/26/11/competitor/c07e749d-f208-4980-bcbd-5258abdf2df8.jpg",
+      "bytes": 10337,
+      "sha256": "76801e4f1c74b7525a820b05e4779af4995e10f7ae7f03ff19dc2166c4b9a5b7",
+      "changed": true
+    },
+    {
+      "team": "Weatherhead",
+      "team_id": "team-1793650576678-h3p0cvc9ay",
+      "source_url": "https://static.challengeplace.com/2026/5/26/11/competitor/4b33a466-b5a0-4982-aa8f-45acd2a02f50.jpg",
+      "bytes": 6570,
+      "sha256": "dbc7926fc0842efad2a45180a7c8a23fd6f65305474739f27d934e88dc5d61f7",
+      "changed": true
+    }
+  ],
+  "verified_at": "2026-11-02T20:44:49.375Z",
+  "saved_logos": 11
+}
