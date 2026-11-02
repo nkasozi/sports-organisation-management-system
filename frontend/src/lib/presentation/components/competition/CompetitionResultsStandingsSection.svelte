@@ -10,6 +10,7 @@
         type ResultsViewMode,
     } from "$lib/presentation/logic/competitionResultsViewMode";
     import {
+        ORDER_PREFERENCE,
         order_stage_results_sections,
         STAGE_ORDER,
         type StageOrder,
@@ -77,7 +78,10 @@
     <div class="space-y-6">
         <div class="flex flex-wrap items-center justify-end gap-2">
             {#if stage_results_sections.length > 1}
-                <StageOrderToggle bind:stage_order />
+                <StageOrderToggle
+                    preference={ORDER_PREFERENCE.STANDINGS_STAGES}
+                    bind:stage_order
+                />
             {/if}
             {#if has_bracket_stages}
                 <ResultsViewModeToggle

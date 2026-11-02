@@ -2,6 +2,8 @@ import type { Fixture } from "$lib/core/entities/Fixture";
 import { build_fixture_kickoff_date_time } from "$lib/core/entities/FixtureKickoff";
 import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
 
+import { PRESENCE_STATUS } from "./presenceStatus";
+
 const TIE_KEY_SEPARATOR = "|";
 
 export const BRACKET_OUTCOME_STATUS = {
@@ -13,10 +15,19 @@ export type BracketTieOutcome =
   | { status: typeof BRACKET_OUTCOME_STATUS.DECIDED; winner_team_id: string }
   | { status: typeof BRACKET_OUTCOME_STATUS.UNDECIDED };
 
+export type BracketScore =
+  | { status: typeof PRESENCE_STATUS.PRESENT; value: number }
+  | { status: typeof PRESENCE_STATUS.MISSING };
+
 export interface BracketTeamLine {
   team_id: string;
-  score: number;
+  score: BracketScore;
 }
+
+const STARTED_FIXTURE_STATUSES: readonly string[] = [
+  FIXTURE_STATUS.IN_PROGRESS,
+  FIXTURE_STATUS.COMPLETED,
+];
 
 export interface BracketTie {
   tie_id: string;
@@ -33,7 +44,24 @@ function build_tie_key(fixture: Fixture): string {
     .join(TIE_KEY_SEPARATOR);
 }
 
-function score_for_team(fixtures: Fixture[], team_id: string): number {
+function has_started(fixture: Fixture): boolean {
+  return STARTED_FIXTURE_STATUSES.includes(fixture.status);
+}
+
+function score_for_team(fixtures: Fixture[], team_id: string): BracketScore {
+  const started_legs = fixtures.filter(has_started);
+  if (started_legs.length === 0) return { status: PRESENCE_STATUS.MISSING };
+  return {
+    status: PRESENCE_STATUS.PRESENT,
+    value: sum_team_goals(started_legs, team_id),
+  };
+}
+
+function score_value(score: BracketScore): number {
+  return score.status === PRESENCE_STATUS.PRESENT ? score.value : 0;
+}
+
+function sum_team_goals(fixtures: Fixture[], team_id: string): number {
   return fixtures.reduce(
     (total: number, fixture: Fixture) =>
       total +
@@ -62,7 +90,8 @@ function decide_tie_outcome(
   );
   if (!is_finished) return { status: BRACKET_OUTCOME_STATUS.UNDECIDED };
   const deciding_leg = fixtures[fixtures.length - 1];
-  const score_margin = first_team.score - second_team.score;
+  const score_margin =
+    score_value(first_team.score) - score_value(second_team.score);
   const shootout_margin =
     shootout_score_for_team(deciding_leg, first_team.team_id) -
     shootout_score_for_team(deciding_leg, second_team.team_id);

@@ -1,6 +1,8 @@
 import type { Fixture } from "$lib/core/entities/Fixture";
 import { build_fixture_kickoff_date_time } from "$lib/core/entities/FixtureKickoff";
 
+import { STAGE_ORDER, type StageOrder } from "./competitionStageOrder";
+
 const SEARCH_TERM_SEPARATOR = /\s+/;
 const SEARCH_TEXT_JOINER = " ";
 
@@ -75,4 +77,30 @@ export function build_completed_results_page(
       Math.ceil(command.fixtures.length / command.items_per_page),
     ),
   };
+}
+
+function compare_kickoffs(
+  left_kickoff: string,
+  right_kickoff: string,
+  order: StageOrder,
+): number {
+  if (!left_kickoff || !right_kickoff)
+    return Number(!left_kickoff) - Number(!right_kickoff);
+  const ascending_comparison = left_kickoff.localeCompare(right_kickoff);
+  return order === STAGE_ORDER.DESCENDING
+    ? -ascending_comparison
+    : ascending_comparison;
+}
+
+export function sort_completed_results_by_kickoff(
+  fixtures: Fixture[],
+  order: StageOrder,
+): Fixture[] {
+  return [...fixtures].sort((left: Fixture, right: Fixture) =>
+    compare_kickoffs(
+      build_fixture_kickoff_date_time(left),
+      build_fixture_kickoff_date_time(right),
+      order,
+    ),
+  );
 }

@@ -5,7 +5,9 @@ import type { Fixture } from "$lib/core/entities/Fixture";
 import {
   build_completed_results_page,
   filter_completed_results,
+  sort_completed_results_by_kickoff,
 } from "./competitionResultsSearch";
+import { STAGE_ORDER } from "./competitionStageOrder";
 
 const TEAM_NAMES: Record<string, string> = {
   team_rockets: "Rockets",
@@ -124,5 +126,30 @@ describe("build_completed_results_page", () => {
 
     expect(page.total_pages).toBe(1);
     expect(page.page_fixtures).toEqual([]);
+  });
+});
+
+describe("sort_completed_results_by_kickoff", () => {
+  const april = build_fixture("april", "a", "b", "s", "2026-04-25");
+  const may = build_fixture("may", "a", "b", "s", "2026-05-02");
+  const march = build_fixture("march", "a", "b", "s", "2026-03-10");
+  const undated = build_fixture("undated", "a", "b", "s", "");
+
+  it("puts the latest match first when descending", () => {
+    expect(
+      sort_completed_results_by_kickoff(
+        [april, undated, march, may],
+        STAGE_ORDER.DESCENDING,
+      ).map((fixture) => fixture.id),
+    ).toEqual(["may", "april", "march", "undated"]);
+  });
+
+  it("puts the earliest match first when ascending, undated still last", () => {
+    expect(
+      sort_completed_results_by_kickoff(
+        [april, undated, may, march],
+        STAGE_ORDER.ASCENDING,
+      ).map((fixture) => fixture.id),
+    ).toEqual(["march", "april", "may", "undated"]);
   });
 });
