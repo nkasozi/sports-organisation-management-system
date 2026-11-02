@@ -1,0 +1,63 @@
+{
+  "source": "https://challenge.place/c/6a15aeea99a101a46e33f643",
+  "competition_id": "cp-uha-2026-women-competition",
+  "verified_at": "2026-11-02T21:07:54.270Z",
+  "team_mapping": [
+    {
+      "source_id": "6a15af0e3f5dda4f495e390f",
+      "team_id": "cp-uha-2026-women-team-6a15af0e3f5dda4f495e390f",
+      "name": "Deliverance Ch+",
+      "source_name": "Deliverance Ch+",
+      "gender": "Female"
+    },
+    {
+      "source_id": "6a15af0e3f5dda4f495e3925",
+      "team_id": "cp-uha-2026-women-team-6a15af0e3f5dda4f495e3925",
+      "name": "Kampala Swans",
+      "source_name": "Kampala",
+      "gender": "Female"
+    },
+    {
+      "source_id": "6a15af0e3f5dda4f495e3942",
+      "team_id": "cp-uha-2026-women-team-6a15af0e3f5dda4f495e3942",
+      "name": "MUK Eagles",
+      "source_name": "MUK Eagles",
+      "gender": "Female"
+    },
+    {
+      "source_id": "6a15af0e3f5dda4f495e3956",
+      "team_id": "cp-uha-2026-women-team-6a15af0e3f5dda4f495e3956",
+      "name": "Thunders",
+      "source_name": "Thunders",
+      "gender": "Female"
+    },
+    {
+      "source_id": "6a15af0e3f5dda4f495e396a",
+      "team_id": "cp-uha-2026-women-team-6a15af0e3f5dda4f495e396a",
+      "name": "WHC Diamonds",
+      "source_name": "WHC Diamonds",
+      "gender": "Female"
+    },
+    {
+      "source_id": "6a15af0e3f5dda4f495e3983",
+      "team_id": "cp-uha-2026-women-team-6a15af0e3f5dda4f495e3983",
+      "name": "Wananchi",
+      "source_name": "Wananchi",
+      "gender": "Female"
+    },
+    {
+      "source_id": "6a15af0e3f5dda4f495e39a1",
+      "team_id": "cp-uha-2026-women-team-6a15af0e3f5dda4f495e39a1",
+      "name": "Wananchi-HDF",
+      "source_name": "Wananchi-HDF",
+      "gender": "Female"
+    },
+    {
+      "source_id": "6a15af0e3f5dda4f495e39bb",
+      "team_id": "cp-uha-2026-women-team-6a15af0e3f5dda4f495e39bb",
+      "name": "Weatherhead",
+      "source_name": "Weatherhead",
+      "gender": "Female"
+    }
+  ]
+}
