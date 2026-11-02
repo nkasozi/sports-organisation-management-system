@@ -5,6 +5,7 @@ import type { AppSettingsPort } from "$lib/core/interfaces/ports";
 import { create_mock_storage } from "./columnPreferences.test_support";
 import {
   load_stage_order_preference,
+  ORDER_PREFERENCE,
   order_stage_results_sections,
   save_stage_order_preference,
   STAGE_ORDER,
@@ -68,6 +69,7 @@ describe("stage order preference", () => {
   it("defaults to ascending when nothing has been saved", async () => {
     const result = await load_stage_order_preference({
       storage: create_mock_storage(),
+      preference: ORDER_PREFERENCE.STANDINGS_STAGES,
     });
 
     expect(result).toEqual({ success: true, data: STAGE_ORDER.ASCENDING });
@@ -78,9 +80,13 @@ describe("stage order preference", () => {
 
     const save_result = await save_stage_order_preference({
       storage,
+      preference: ORDER_PREFERENCE.STANDINGS_STAGES,
       stage_order: STAGE_ORDER.DESCENDING,
     });
-    const result = await load_stage_order_preference({ storage });
+    const result = await load_stage_order_preference({
+      storage,
+      preference: ORDER_PREFERENCE.STANDINGS_STAGES,
+    });
 
     expect(save_result.success).toBe(true);
 
@@ -95,7 +101,10 @@ describe("stage order preference", () => {
     const storage = create_mock_storage();
     await storage.set_setting(STAGE_ORDER_SETTING_KEY, "sideways");
 
-    const result = await load_stage_order_preference({ storage });
+    const result = await load_stage_order_preference({
+      storage,
+      preference: ORDER_PREFERENCE.STANDINGS_STAGES,
+    });
 
     expect(result).toEqual({ success: true, data: STAGE_ORDER.ASCENDING });
   });
@@ -106,7 +115,10 @@ describe("stage order preference", () => {
       get_setting: vi.fn(() => Promise.reject(new Error("storage offline"))),
     };
 
-    const result = await load_stage_order_preference({ storage });
+    const result = await load_stage_order_preference({
+      storage,
+      preference: ORDER_PREFERENCE.STANDINGS_STAGES,
+    });
 
     expect(result.success).toBe(false);
   });
@@ -119,9 +131,42 @@ describe("stage order preference", () => {
 
     const result = await save_stage_order_preference({
       storage,
+      preference: ORDER_PREFERENCE.STANDINGS_STAGES,
       stage_order: STAGE_ORDER.DESCENDING,
     });
 
     expect(result.success).toBe(false);
+  });
+});
+
+describe("results order preference", () => {
+  it("defaults to latest first and is remembered apart from stage order", async () => {
+    const storage = create_mock_storage();
+    const initial = await load_stage_order_preference({
+      storage,
+      preference: ORDER_PREFERENCE.RESULTS_KICKOFF,
+    });
+
+    const save_result = await save_stage_order_preference({
+      storage,
+      preference: ORDER_PREFERENCE.RESULTS_KICKOFF,
+      stage_order: STAGE_ORDER.ASCENDING,
+    });
+    const results_order = await load_stage_order_preference({
+      storage,
+      preference: ORDER_PREFERENCE.RESULTS_KICKOFF,
+    });
+    const stage_order = await load_stage_order_preference({
+      storage,
+      preference: ORDER_PREFERENCE.STANDINGS_STAGES,
+    });
+
+    expect(initial).toEqual({ success: true, data: STAGE_ORDER.DESCENDING });
+    expect(save_result.success).toBe(true);
+    expect(results_order).toEqual({
+      success: true,
+      data: STAGE_ORDER.ASCENDING,
+    });
+    expect(stage_order).toEqual({ success: true, data: STAGE_ORDER.ASCENDING });
   });
 });

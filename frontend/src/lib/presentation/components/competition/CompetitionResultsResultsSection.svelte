@@ -9,12 +9,18 @@
     import {
         build_completed_results_page,
         filter_completed_results,
+        sort_completed_results_by_kickoff,
     } from "$lib/presentation/logic/competitionResultsSearch";
     import {
         RESULTS_VIEW_MODE,
         RESULTS_VIEW_SURFACE,
         type ResultsViewMode,
     } from "$lib/presentation/logic/competitionResultsViewMode";
+    import {
+        get_default_order,
+        ORDER_PREFERENCE,
+        type StageOrder,
+    } from "$lib/presentation/logic/competitionStageOrder";
     import type { CompetitionStageResultsSection } from "$lib/presentation/logic/competitionStageResults";
 
     import CompetitionBracket from "./CompetitionBracket.svelte";
@@ -24,6 +30,7 @@
     } from "./competitionResultsDisplayConstants";
     import DownloadAllReportsButton from "./DownloadAllReportsButton.svelte";
     import ResultsViewModeToggle from "./ResultsViewModeToggle.svelte";
+    import StageOrderToggle from "./StageOrderToggle.svelte";
 
     export let completed_fixtures: Fixture[];
     export let stage_results_sections: CompetitionStageResultsSection[];
@@ -46,15 +53,21 @@
 
     let search_query = "";
     let view_mode: ResultsViewMode = RESULTS_VIEW_MODE.LIST;
+    let results_order: StageOrder = get_default_order(
+        ORDER_PREFERENCE.RESULTS_KICKOFF,
+    );
 
-    $: matching_fixtures = filter_completed_results({
-        fixtures: completed_fixtures,
-        search_query,
-        get_team_name,
-        get_stage_name: get_fixture_stage_name,
-        get_stage_type: get_fixture_stage_type,
-        format_date,
-    });
+    $: matching_fixtures = sort_completed_results_by_kickoff(
+        filter_completed_results({
+            fixtures: completed_fixtures,
+            search_query,
+            get_team_name,
+            get_stage_name: get_fixture_stage_name,
+            get_stage_type: get_fixture_stage_type,
+            format_date,
+        }),
+        results_order,
+    );
     $: results_page_view = build_completed_results_page({
         fixtures: matching_fixtures,
         page_number: results_page,
@@ -103,6 +116,12 @@
                 on:input={(event) =>
                     update_search_query(event.currentTarget.value)}
             />
+            {#if !is_bracket_view}
+                <StageOrderToggle
+                    preference={ORDER_PREFERENCE.RESULTS_KICKOFF}
+                    bind:stage_order={results_order}
+                />
+            {/if}
             {#if has_bracket_stages}
                 <ResultsViewModeToggle
                     surface={RESULTS_VIEW_SURFACE.RESULTS}

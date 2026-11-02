@@ -65,7 +65,9 @@
                         ? get_team_name(line.team_id)
                         : BRACKET_TEXT.TO_BE_DECIDED}</span
                 >
-                <span class="text-sm tabular-nums">{line.score}</span>
+                {#if line.score.status === PRESENCE_STATUS.PRESENT}
+                    <span class="text-sm tabular-nums">{line.score.value}</span>
+                {/if}
             </div>
         {/each}
     </button>

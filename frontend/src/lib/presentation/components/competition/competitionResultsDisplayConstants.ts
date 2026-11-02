@@ -3,6 +3,8 @@ import {
   type ResultsViewMode,
 } from "$lib/presentation/logic/competitionResultsViewMode";
 import {
+  ORDER_PREFERENCE,
+  type OrderPreference,
   STAGE_ORDER,
   type StageOrder,
 } from "$lib/presentation/logic/competitionStageOrder";
@@ -50,15 +52,27 @@ export const COMPETITION_RESULTS_DOWNLOAD_TEXT = {
 } as const;
 
 export const STAGE_ORDER_TOGGLE_TEXT: Readonly<
-  Record<StageOrder, { label: string; title: string }>
+  Record<OrderPreference, Record<StageOrder, { label: string; title: string }>>
 > = {
-  [STAGE_ORDER.ASCENDING]: {
-    label: "Earliest stage first",
-    title: "Show the latest stage first",
+  [ORDER_PREFERENCE.STANDINGS_STAGES]: {
+    [STAGE_ORDER.ASCENDING]: {
+      label: "Earliest stage first",
+      title: "Show the latest stage first",
+    },
+    [STAGE_ORDER.DESCENDING]: {
+      label: "Latest stage first",
+      title: "Show the earliest stage first",
+    },
   },
-  [STAGE_ORDER.DESCENDING]: {
-    label: "Latest stage first",
-    title: "Show the earliest stage first",
+  [ORDER_PREFERENCE.RESULTS_KICKOFF]: {
+    [STAGE_ORDER.ASCENDING]: {
+      label: "Oldest first",
+      title: "Show the latest results first",
+    },
+    [STAGE_ORDER.DESCENDING]: {
+      label: "Latest first",
+      title: "Show the oldest results first",
+    },
   },
 };
 

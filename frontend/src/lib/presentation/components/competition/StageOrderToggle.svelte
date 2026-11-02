@@ -4,6 +4,7 @@
     import { get_app_settings_storage } from "$lib/infrastructure/container";
     import {
         load_stage_order_preference,
+        type OrderPreference,
         save_stage_order_preference,
         type StageOrder,
         toggle_stage_order,
@@ -11,13 +12,15 @@
 
     import { STAGE_ORDER_TOGGLE_TEXT } from "./competitionResultsDisplayConstants";
 
+    export let preference: OrderPreference;
     export let stage_order: StageOrder;
 
-    $: stage_order_text = STAGE_ORDER_TOGGLE_TEXT[stage_order];
+    $: stage_order_text = STAGE_ORDER_TOGGLE_TEXT[preference][stage_order];
 
     onMount(async (): Promise<boolean> => {
         const result = await load_stage_order_preference({
             storage: get_app_settings_storage(),
+            preference,
         });
         if (!result.success) return false;
         stage_order = result.data;
@@ -28,6 +31,7 @@
         stage_order = toggle_stage_order(stage_order);
         const result = await save_stage_order_preference({
             storage: get_app_settings_storage(),
+            preference,
             stage_order,
         });
         return result.success;

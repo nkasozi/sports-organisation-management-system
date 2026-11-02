@@ -135,8 +135,14 @@ describe("build_competition_bracket", () => {
     expect(
       decided_slot.status === PRESENCE_STATUS.PRESENT && decided_slot.tie,
     ).toMatchObject({
-      first_team: { team_id: "a", score: 2 },
-      second_team: { team_id: "b", score: 4 },
+      first_team: {
+        team_id: "a",
+        score: { status: PRESENCE_STATUS.PRESENT, value: 2 },
+      },
+      second_team: {
+        team_id: "b",
+        score: { status: PRESENCE_STATUS.PRESENT, value: 4 },
+      },
       outcome: { status: BRACKET_OUTCOME_STATUS.DECIDED, winner_team_id: "b" },
     });
     expect(
