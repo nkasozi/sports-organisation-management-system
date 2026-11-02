@@ -3,6 +3,7 @@
 
     import { goto } from "$app/navigation";
     import { page } from "$app/stores";
+    import { format_display_date } from "$lib/core/entities/DateDisplay";
     import { get_fixture_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
     import OfficialRatingPanel from "$lib/presentation/components/OfficialRatingPanel.svelte";
     import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
@@ -53,8 +54,7 @@
     }
 
     function format_date(date_string: string): string {
-        if (!date_string) return "—";
-        return new Date(date_string).toLocaleDateString([], {
+        return format_display_date(date_string, [], {
             weekday: "short",
             year: "numeric",
             month: "short",

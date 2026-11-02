@@ -1,3 +1,4 @@
+import { MISSING_DATE_LABEL } from "$lib/core/entities/DateDisplay";
 import { parse_local_calendar_date } from "$lib/core/entities/LocalCalendarDate";
 import { OptionStatus } from "$lib/core/types/Option";
 
@@ -50,6 +51,7 @@ export function format_fixture_date(
       ? parsed_date.value
       : new Date(scheduled_date);
   const today = new Date();
+  if (!Number.isFinite(fixture_date.getTime())) return MISSING_DATE_LABEL;
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 

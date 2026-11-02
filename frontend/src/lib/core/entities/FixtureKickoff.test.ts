@@ -22,12 +22,26 @@ describe("build_fixture_kickoff_date_time", () => {
     ).toBe("2026-04-06T15:00:00");
   });
 
-  it("falls back to the start of the day when no time is scheduled", () => {
+  it("keeps a missing kickoff time unknown instead of inventing midnight", () => {
     expect(
       build_fixture_kickoff_date_time({
         scheduled_date: "2026-10-13",
         scheduled_time: "",
       }),
-    ).toBe("2026-10-13T00:00");
+    ).toBe("2026-10-13");
+  });
+  it("does not construct a time-only invalid date when the date is missing", () => {
+    expect(
+      build_fixture_kickoff_date_time({
+        scheduled_date: "",
+        scheduled_time: "",
+      }),
+    ).toBe("");
+    expect(
+      build_fixture_kickoff_date_time({
+        scheduled_date: "",
+        scheduled_time: "15:00",
+      }),
+    ).toBe("");
   });
 });

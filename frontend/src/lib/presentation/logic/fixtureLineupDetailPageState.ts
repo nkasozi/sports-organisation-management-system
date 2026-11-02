@@ -1,3 +1,4 @@
+import { format_display_date } from "$lib/core/entities/DateDisplay";
 import type { FixtureLineup } from "$lib/core/entities/FixtureLineup";
 import { LINEUP_STATUS } from "$lib/core/entities/StatusConstants";
 import { convert_team_player_to_lineup_player } from "$lib/core/services/fixtureLineupWizard";
@@ -104,7 +105,12 @@ export function format_fixture_lineup_submission_date(
     return FIXTURE_LINEUP_FALLBACK_TEXT.SUBMISSION_PLACEHOLDER;
   }
 
-  return new Date(submitted_at).toLocaleDateString();
+  return format_display_date(
+    submitted_at,
+    void 0,
+    void 0,
+    FIXTURE_LINEUP_FALLBACK_TEXT.SUBMISSION_PLACEHOLDER,
+  );
 }
 
 export function build_fixture_lineup_permission_info_message(
