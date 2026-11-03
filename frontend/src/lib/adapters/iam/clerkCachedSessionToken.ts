@@ -26,10 +26,21 @@ const CACHED_TOKEN_EVENTS = {
   CLEAR_FAILED: "clerk_cached_token_clear_failed",
 } as const;
 
+export const CLERK_SESSION_STATE = {
+  UNAVAILABLE: "unavailable",
+  SIGNED_OUT: "signed_out",
+  SIGNED_IN: "signed_in",
+} as const;
+
+export type ClerkSessionState =
+  | { status: typeof CLERK_SESSION_STATE.UNAVAILABLE }
+  | { status: typeof CLERK_SESSION_STATE.SIGNED_OUT }
+  | { status: typeof CLERK_SESSION_STATE.SIGNED_IN; session_id: string };
+
 export interface CachedSessionTokenDependencies {
   storage: AppSettingsPort;
   now_ms(): number;
-  current_session_id: Option<string>;
+  clerk_session: ClerkSessionState;
   request_fresh_token(): Promise<Result<string>>;
 }
 
@@ -74,8 +85,9 @@ function is_usable_token(
   const claims = read_token_claims(token);
   if (claims.status !== OptionStatus.SOME) return false;
   const is_current_session =
-    dependencies.current_session_id.status !== OptionStatus.SOME ||
-    dependencies.current_session_id.value === claims.value.session_id;
+    dependencies.clerk_session.status === CLERK_SESSION_STATE.UNAVAILABLE ||
+    (dependencies.clerk_session.status === CLERK_SESSION_STATE.SIGNED_IN &&
+      dependencies.clerk_session.session_id === claims.value.session_id);
   return (
     is_current_session &&
     claims.value.expires_at_ms - EXPIRY_SAFETY_MARGIN_MS > dependencies.now_ms()
@@ -114,6 +126,8 @@ export async function get_cached_or_fresh_session_token(
   dependencies: CachedSessionTokenDependencies,
   request: SessionTokenRequest,
 ): Promise<Result<string>> {
+  if (dependencies.clerk_session.status === CLERK_SESSION_STATE.SIGNED_OUT)
+    await clear_cached_session_token(dependencies.storage);
   const saved_token = request.force_refresh
     ? ""
     : await read_saved_token(dependencies.storage);

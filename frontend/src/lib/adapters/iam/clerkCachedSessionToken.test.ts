@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AppSettingsPort } from "$lib/core/interfaces/ports";
-import { create_none_option, create_some_option } from "$lib/core/types/Option";
 import { base64_url_encode } from "$lib/infrastructure/utils/JwtTokenUtils";
 import { create_mock_storage } from "$lib/presentation/logic/columnPreferences.test_support";
 
 import {
   type CachedSessionTokenDependencies,
   clear_cached_session_token,
+  CLERK_SESSION_STATE,
   get_cached_or_fresh_session_token,
 } from "./clerkCachedSessionToken";
 
@@ -36,7 +36,10 @@ function build_dependencies(
   return {
     storage,
     now_ms: () => NOW_MS,
-    current_session_id: create_some_option("sess_1"),
+    clerk_session: {
+      status: CLERK_SESSION_STATE.SIGNED_IN,
+      session_id: "sess_1",
+    },
     request_fresh_token: vi.fn(async () => ({
       success: true as const,
       data: fresh_token,
@@ -68,11 +71,11 @@ describe("get_cached_or_fresh_session_token", () => {
     expect(dependencies.request_fresh_token).not.toHaveBeenCalled();
   });
 
-  it("uses the saved token while Clerk has not reported a session yet", async () => {
+  it("uses the saved token while Clerk is not loaded or cannot be reached", async () => {
     const saved_token = build_token(1800, "sess_1");
     await storage.set_setting(CACHED_TOKEN_SETTING_KEY, saved_token);
     const dependencies = build_dependencies(storage, {
-      current_session_id: create_none_option(),
+      clerk_session: { status: CLERK_SESSION_STATE.UNAVAILABLE },
     });
 
     expect(
@@ -80,6 +83,30 @@ describe("get_cached_or_fresh_session_token", () => {
         force_refresh: false,
       }),
     ).toEqual({ success: true, data: saved_token });
+  });
+
+  it("deletes and ignores the saved token once Clerk says nobody is signed in", async () => {
+    await storage.set_setting(
+      CACHED_TOKEN_SETTING_KEY,
+      build_token(1800, "sess_1"),
+    );
+    const dependencies = build_dependencies(storage, {
+      clerk_session: { status: CLERK_SESSION_STATE.SIGNED_OUT },
+      request_fresh_token: async () => ({
+        success: false as const,
+        error: "No Clerk session available",
+      }),
+    });
+
+    const result = await get_cached_or_fresh_session_token(dependencies, {
+      force_refresh: false,
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "No Clerk session available",
+    });
+    expect(await storage.get_setting(CACHED_TOKEN_SETTING_KEY)).toBe("");
   });
 
   it("asks Clerk and saves the token when none is saved", async () => {
