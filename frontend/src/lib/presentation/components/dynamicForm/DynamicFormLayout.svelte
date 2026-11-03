@@ -66,6 +66,7 @@
         {info_message}
     />
     <form
+        novalidate
         on:submit|preventDefault={on_submit}
         class={is_mobile_view ? "space-y-4" : "space-y-6"}
     >

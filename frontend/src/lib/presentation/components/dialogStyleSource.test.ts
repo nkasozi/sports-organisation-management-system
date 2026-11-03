@@ -52,3 +52,10 @@ describe("the brown palette stays gone", () => {
     expect(brown_fills).toEqual([]);
   });
 });
+
+describe("the shared entity form", () => {
+  it("leaves checking to the app's own rules so every problem shows under its field", () => {
+    const layout = component_sources["./dynamicForm/DynamicFormLayout.svelte"];
+    expect(layout).toMatch(/<form\s+novalidate/);
+  });
+});
