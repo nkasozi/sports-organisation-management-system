@@ -3,7 +3,10 @@ import { ConvexClient } from "convex/browser";
 import { api } from "$convex/_generated/api";
 import { PUBLIC_CONVEX_URL } from "$env/static/public";
 import { get_clerk_authentication_adapter } from "$lib/adapters/iam/ClerkAuthenticationAdapter";
-import { get_session_token } from "$lib/adapters/iam/clerkAuthService";
+import {
+  get_session_token,
+  refresh_session_token,
+} from "$lib/adapters/iam/clerkAuthService";
 import { get_authentication_adapter } from "$lib/adapters/iam/LocalAuthenticationAdapter";
 import { get_system_user_repository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
 import type { Result } from "$lib/core/types/Result";
@@ -43,8 +46,10 @@ let auth_cache_invalidator_state: AuthCacheInvalidatorState = {
 
 function create_convex_client(convex_url: string): ConvexClient {
   const client = new ConvexClient(convex_url);
-  client.setAuth(async () => {
-    const token_result = await get_session_token();
+  client.setAuth(async ({ forceRefreshToken }) => {
+    const token_result = forceRefreshToken
+      ? await refresh_session_token()
+      : await get_session_token();
     if (!token_result.success) return;
     return token_result.data;
   });

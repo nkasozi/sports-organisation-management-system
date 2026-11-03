@@ -52,7 +52,7 @@ import {
   set_clerk_session_gate,
 } from "./clerkSessionPublisher";
 import { build_clerk_session_state } from "./clerkSessionStateBuilders";
-import { request_clerk_session_token } from "./clerkSessionToken";
+import { create_session_token_functions } from "./clerkSessionTokenProvider";
 import { sign_out_of_clerk } from "./clerkSignOut";
 export type { ClerkUser } from "./clerkAuthTypes";
 export { clerk_provider_generation } from "./clerkSessionGate";
@@ -162,18 +162,17 @@ export function get_clerk_reachability(): ClerkReachability {
   );
 }
 
-export async function get_session_token(): Promise<Result<string>> {
-  if (!is_clerk_session_gate_open()) {
-    console.warn("[Clerk] Token withheld until sign-out completes", {
-      event: CLERK_LOG_EVENT.TOKEN_SUPPRESSED,
-    });
-    return create_failure_result(CLERK_MESSAGE.SESSION_SIGNING_OUT);
-  }
-  return request_clerk_session_token(get_clerk());
-}
+const session_tokens = create_session_token_functions(
+  is_clerk_session_gate_open,
+  get_clerk,
+);
+
+export const get_session_token = session_tokens.get_session_token;
+export const refresh_session_token = session_tokens.refresh_session_token;
 
 export async function sign_out(): Promise<Result<true>> {
   expire_clerk_session_cookies();
+  await session_tokens.forget_session_token();
   const clerk_result = get_clerk();
   if (!clerk_result.success) {
     console.error("[Clerk] Sign out requested before initialization", {
