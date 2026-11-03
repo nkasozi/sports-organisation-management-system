@@ -1,10 +1,5 @@
 import type { Clerk } from "@clerk/clerk-js";
 
-import {
-  create_none_option,
-  create_some_option,
-  type Option,
-} from "$lib/core/types/Option";
 import type { Result } from "$lib/core/types/Result";
 import { create_failure_result } from "$lib/core/types/Result";
 
@@ -12,6 +7,8 @@ import { DexieAppSettingsAdapter } from "../persistence/DexieAppSettingsAdapter"
 import { CLERK_LOG_EVENT, CLERK_MESSAGE } from "./clerkAuthConstants";
 import {
   clear_cached_session_token,
+  CLERK_SESSION_STATE,
+  type ClerkSessionState,
   get_cached_or_fresh_session_token,
 } from "./clerkCachedSessionToken";
 import { request_clerk_session_token } from "./clerkSessionToken";
@@ -24,10 +21,16 @@ interface SessionTokenProviderRequest {
   force_refresh: boolean;
 }
 
-function read_current_session_id(clerk_result: Result<Clerk>): Option<string> {
-  return clerk_result.success && clerk_result.data.session
-    ? create_some_option(clerk_result.data.session.id)
-    : create_none_option();
+function read_clerk_session_state(
+  clerk_result: Result<Clerk>,
+): ClerkSessionState {
+  if (!clerk_result.success) return { status: CLERK_SESSION_STATE.UNAVAILABLE };
+  return clerk_result.data.session
+    ? {
+        status: CLERK_SESSION_STATE.SIGNED_IN,
+        session_id: clerk_result.data.session.id,
+      }
+    : { status: CLERK_SESSION_STATE.SIGNED_OUT };
 }
 
 function provide_session_token(
@@ -45,7 +48,7 @@ function provide_session_token(
     {
       storage: session_token_storage,
       now_ms: Date.now,
-      current_session_id: read_current_session_id(request.clerk_result),
+      clerk_session: read_clerk_session_state(request.clerk_result),
       request_fresh_token: () =>
         request_clerk_session_token(request.clerk_result),
     },
