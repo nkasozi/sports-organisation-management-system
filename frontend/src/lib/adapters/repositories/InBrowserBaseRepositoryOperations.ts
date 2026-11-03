@@ -1,11 +1,6 @@
 import type { Table } from "dexie";
 
 import type { BaseEntity } from "../../core/entities/BaseEntity";
-import {
-  create_timestamp_fields,
-  generate_unique_id,
-  update_timestamp,
-} from "../../core/entities/BaseEntity";
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import type {
@@ -104,56 +99,6 @@ export function find_entities_by_ids<TEntity extends BaseEntity>(
       (await table.bulkGet(ids)).filter((entity): entity is TEntity =>
         Boolean(entity),
       ),
-  );
-}
-
-export function create_entity<TEntity extends BaseEntity, TCreateInput>(
-  table: Table<TEntity, string>,
-  input: TCreateInput,
-  entity_prefix: string,
-  create_entity_from_input: (
-    input: TCreateInput,
-    id: TEntity["id"],
-    timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
-  ) => TEntity,
-): AsyncResult<TEntity> {
-  return execute_repository_operation(
-    describe_table_operation_failure(
-      BASE_REPOSITORY_OPERATION.CREATE_ENTITY,
-      table,
-    ),
-    async () => {
-      const entity_id = generate_unique_id(entity_prefix) as TEntity["id"];
-      const new_entity = create_entity_from_input(
-        input,
-        entity_id,
-        create_timestamp_fields(),
-      );
-      await table.add(new_entity);
-      return new_entity;
-    },
-  );
-}
-
-export function write_updated_entity<TEntity extends BaseEntity, TUpdateInput>(
-  table: Table<TEntity, string>,
-  existing_entity: TEntity,
-  updates: TUpdateInput,
-  apply_updates_to_entity: (entity: TEntity, updates: TUpdateInput) => TEntity,
-): AsyncResult<TEntity> {
-  return execute_repository_operation(
-    describe_entity_operation_failure(
-      BASE_REPOSITORY_OPERATION.UPDATE_ENTITY,
-      table,
-      existing_entity.id as ScalarValueInput<TEntity["id"]>,
-    ),
-    async () => {
-      const updated_entity = update_timestamp(
-        apply_updates_to_entity(existing_entity, updates),
-      );
-      await table.put(updated_entity);
-      return updated_entity;
-    },
   );
 }
 

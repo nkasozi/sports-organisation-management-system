@@ -58,6 +58,7 @@ function error_code_for_rejection(
     case SyncWriteRejection.VERIFICATION_CHANGE:
       return ConvexErrorCode.ACCESS_DENIED;
     case SyncWriteRejection.INVALID_URL:
+    case SyncWriteRejection.INVALID_FIELD:
     case SyncWriteRejection.MISSING_EMAIL:
       return ConvexErrorCode.INVALID_REQUEST;
   }

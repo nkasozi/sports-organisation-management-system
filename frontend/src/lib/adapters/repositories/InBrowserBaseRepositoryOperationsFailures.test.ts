@@ -2,12 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   create_entity,
+  write_updated_entity,
+} from "./InBrowserBaseRepositoryEntityWrites";
+import {
   delete_entities_by_ids,
   delete_existing_entity,
   find_all_entities,
   find_entities_by_ids,
   find_entity_by_id,
-  write_updated_entity,
 } from "./InBrowserBaseRepositoryOperations";
 import {
   FAKE_TABLE_FAILURE_MESSAGE,
@@ -45,6 +47,7 @@ describe("InBrowserBaseRepositoryOperations outcomes", () => {
       { n: 2 },
       "item",
       (input, id, stamps) => ({ id, ...stamps, ...input }) as never,
+      true,
     );
     const existing = await find_entity_by_id(table, "i1");
     const updated = await write_updated_entity(
@@ -52,6 +55,7 @@ describe("InBrowserBaseRepositoryOperations outcomes", () => {
       existing.success ? existing.data : (row("i1", {}) as never),
       { n: 5 },
       (entity, updates) => ({ ...(entity as object), ...updates }) as never,
+      true,
     );
     const by_ids = await find_entities_by_ids(table, ["i1", "zz"]);
     const deleted = await delete_existing_entity(table, "i1");
@@ -95,9 +99,9 @@ describe("InBrowserBaseRepositoryOperations outcomes", () => {
     expect(await find_entities_by_ids(table, ["x"])).toEqual(
       failure("fetch entities by ids"),
     );
-    expect(await create_entity(table, {}, "item", () => ({}) as never)).toEqual(
-      failure("create entity"),
-    );
+    expect(
+      await create_entity(table, {}, "item", () => ({}) as never, true),
+    ).toEqual(failure("create entity"));
     expect(await delete_entities_by_ids(table, ["x"])).toEqual(
       failure("delete entities"),
     );
@@ -124,7 +128,7 @@ describe("InBrowserBaseRepositoryOperations outcomes", () => {
 
     const existing = row("i1", {}) as never;
     expect(
-      await write_updated_entity(table, existing, {}, (entity) => entity),
+      await write_updated_entity(table, existing, {}, (entity) => entity, true),
     ).toEqual({
       success: false,
       error: "Failed to update entity",
