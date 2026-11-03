@@ -56,7 +56,6 @@ describe("build_competition_bracket", () => {
     const bracket = build_competition_bracket({
       stages: [semi_finals, league, round_of_16, quarter_finals],
       fixtures: [],
-      show_placeholders: true,
     });
 
     expect(bracket.columns.map((column) => column.stage.id)).toEqual([
@@ -74,7 +73,6 @@ describe("build_competition_bracket", () => {
         build_fixture("leg2", "r16", "wabalozi", "rockets", "08"),
         build_fixture("qf1", "qf", "rockets", "khc", "15"),
       ],
-      show_placeholders: true,
     });
 
     expect(describe_column(bracket.columns[0])).toEqual(["leg1@0", "leg2@1"]);
@@ -95,7 +93,6 @@ describe("build_competition_bracket", () => {
         build_fixture("d", "r16", "t7", "t8", "04"),
         build_fixture("qf1", "qf", "t1", "t4", "10"),
       ],
-      show_placeholders: true,
     });
 
     expect(describe_column(bracket.columns[1])).toEqual(["qf1@0.5", "TBD@2.5"]);
@@ -111,22 +108,6 @@ describe("build_competition_bracket", () => {
     expect(bracket.row_count).toBe(4);
   });
 
-  it("leaves out placeholders when asked to show only the games given", () => {
-    const bracket = build_competition_bracket({
-      stages: [round_of_16, quarter_finals, semi_finals],
-      fixtures: [
-        build_fixture("a", "r16", "t1", "t2", "01"),
-        build_fixture("b", "r16", "t3", "t4", "02"),
-      ],
-      show_placeholders: false,
-    });
-
-    expect(describe_column(bracket.columns[0])).toEqual(["a@0", "b@1"]);
-    expect(describe_column(bracket.columns[1])).toEqual([]);
-    expect(describe_column(bracket.columns[2])).toEqual([]);
-    expect(bracket.links).toEqual([]);
-  });
-
   it("keeps both legs of a tie next to each other, ties in order of their first leg", () => {
     const bracket = build_competition_bracket({
       stages: [round_of_16],
@@ -136,7 +117,6 @@ describe("build_competition_bracket", () => {
         build_fixture("a2", "r16", "t2", "t1", "08"),
         build_fixture("b2", "r16", "t4", "t3", "09"),
       ],
-      show_placeholders: true,
     });
 
     expect(describe_column(bracket.columns[0])).toEqual([
@@ -155,7 +135,6 @@ describe("build_competition_bracket", () => {
         build_fixture("qf1", "qf", "t1", "t9", "10"),
         build_fixture("qf2", "qf", "t2", "t8", "11"),
       ],
-      show_placeholders: true,
     });
 
     expect(describe_column(bracket.columns[1])).toEqual(["qf1@0", "qf2@1"]);
@@ -163,11 +142,7 @@ describe("build_competition_bracket", () => {
 
   it("lays out nothing when there are no knockout stages", () => {
     expect(
-      build_competition_bracket({
-        stages: [league],
-        fixtures: [],
-        show_placeholders: true,
-      }),
+      build_competition_bracket({ stages: [league], fixtures: [] }),
     ).toEqual({ columns: [], links: [], row_count: 0 });
   });
 });
