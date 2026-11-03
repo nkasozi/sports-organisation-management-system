@@ -6,6 +6,7 @@
         build_competition_bracket,
         is_bracket_stage_type,
     } from "$lib/presentation/logic/competitionBracket";
+    import { EMPTY_BRACKET_LAYOUT } from "$lib/presentation/logic/competitionBracketGeometry";
     import {
         build_completed_results_page,
         filter_completed_results,
@@ -78,12 +79,12 @@
     );
     $: is_bracket_view =
         has_bracket_stages && view_mode === RESULTS_VIEW_MODE.BRACKET;
-    $: bracket_rounds = is_bracket_view
+    $: bracket_layout = is_bracket_view
         ? build_competition_bracket({
               stages: stage_results_sections.map((section) => section.stage),
               fixtures: matching_fixtures,
           })
-        : [];
+        : EMPTY_BRACKET_LAYOUT;
 
     function update_search_query(next_search_query: string): string {
         search_query = next_search_query;
@@ -146,7 +147,7 @@
         </div>
     {:else if is_bracket_view}
         <CompetitionBracket
-            rounds={bracket_rounds}
+            layout={bracket_layout}
             {get_team_name}
             {get_team_logo_url}
             {on_open_match_report}
