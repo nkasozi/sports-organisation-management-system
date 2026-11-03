@@ -13,6 +13,7 @@ import {
 import {
   calculate_player_stats,
   derive_stats_available_teams,
+  filter_and_sort_assisters,
   filter_and_sort_scorers,
 } from "$lib/presentation/logic/competitionResultsStats";
 import { sort_team_fixtures } from "$lib/presentation/logic/competitionResultsTeamFixturesData";
@@ -132,11 +133,21 @@ export function derive_competition_results_stats_section(
     command.team_map,
     create_score_award_resolver(command.sport_rules.event_source.scoring_rules),
     stats_card_categories,
+    new Map(
+      command.sport_rules.periods.map((period) => [
+        period.id,
+        { name: period.name, order: period.order },
+      ]),
+    ),
   );
   return {
     stats_card_categories,
     stats_available_teams: derive_stats_available_teams(player_stats),
     stats_filtered_scorers: filter_and_sort_scorers(
+      player_stats,
+      command.stats_team_filter,
+    ),
+    stats_filtered_assisters: filter_and_sort_assisters(
       player_stats,
       command.stats_team_filter,
     ),

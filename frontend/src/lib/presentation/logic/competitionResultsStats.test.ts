@@ -6,12 +6,7 @@ import type { Team } from "$lib/core/entities/Team";
 import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 import { build_card_stat_categories } from "./competitionResultsCardStats";
-import {
-  calculate_player_stats,
-  derive_stats_available_teams,
-  filter_and_sort_scorers,
-  type PlayerStats,
-} from "./competitionResultsStats";
+import { calculate_player_stats } from "./competitionResultsStats";
 
 const FOOTBALL_CARD_CATEGORIES = build_card_stat_categories({
   card_types: [
@@ -132,61 +127,56 @@ describe("calculate_player_stats", () => {
         team_map,
         create_score_award_resolver([]),
         FOOTBALL_CARD_CATEGORIES,
+        new Map(),
       ),
     ).toEqual([
       {
+        player_key: "Alex|team_1",
         player_name: "Alex",
         team_name: "Falcons",
         points: 2,
         assists: 0,
         card_counts: {},
+        moments: [
+          {
+            kind: "score",
+            fixture_id: "fixture_1",
+            kickoff: "2024-06-01T10:00:00.000Z",
+            opponent_team_id: "team_2",
+            timing_label: "12'",
+            timing_rank: 1200,
+            points: 1,
+          },
+          {
+            kind: "score",
+            fixture_id: "fixture_1",
+            kickoff: "2024-06-01T10:00:00.000Z",
+            opponent_team_id: "team_2",
+            timing_label: "48'",
+            timing_rank: 4800,
+            points: 1,
+          },
+        ],
       },
       {
+        player_key: "Jordan|team_2",
         player_name: "Jordan",
         team_name: "Wolves",
         points: 0,
         assists: 0,
         card_counts: { yellow_card: 1 },
+        moments: [
+          {
+            kind: "card",
+            fixture_id: "fixture_1",
+            kickoff: "2024-06-01T10:00:00.000Z",
+            opponent_team_id: "team_1",
+            timing_label: "65'",
+            timing_rank: 6500,
+            card_type_id: "yellow_card",
+          },
+        ],
       },
-    ]);
-  });
-});
-
-describe("competition results stats filters", () => {
-  const player_stats: PlayerStats[] = [
-    {
-      player_name: "Alex",
-      team_name: "Falcons",
-      points: 4,
-      assists: 0,
-      card_counts: { yellow_card: 1 },
-    },
-    {
-      player_name: "Sam",
-      team_name: "Wolves",
-      points: 2,
-      assists: 0,
-      card_counts: { red_card: 1 },
-    },
-    {
-      player_name: "Jamie",
-      team_name: "Falcons",
-      points: 0,
-      assists: 0,
-      card_counts: { yellow_card: 3 },
-    },
-  ];
-
-  it("derives sorted unique team names", () => {
-    expect(derive_stats_available_teams(player_stats)).toEqual([
-      "Falcons",
-      "Wolves",
-    ]);
-  });
-
-  it("filters and sorts top scorers by team", () => {
-    expect(filter_and_sort_scorers(player_stats, "Falcons")).toEqual([
-      player_stats[0],
     ]);
   });
 });

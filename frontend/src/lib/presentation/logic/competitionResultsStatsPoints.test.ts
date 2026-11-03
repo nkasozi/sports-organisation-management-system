@@ -23,6 +23,8 @@ describe("calculate_player_stats for points-based sports", () => {
     const fixtures = [
       {
         home_team_id: "team_1",
+        scheduled_date: "2024-06-01",
+        scheduled_time: "10:00",
         away_team_id: "team_2",
         game_events: [
           create_score("super_shot", "e1"),
@@ -39,6 +41,7 @@ describe("calculate_player_stats for points-based sports", () => {
         { event_type: "super_shot", points_awarded: 2 },
       ]),
       [],
+      new Map(),
     );
 
     expect(player).toMatchObject({
@@ -52,6 +55,8 @@ describe("calculate_player_stats for points-based sports", () => {
     const fixtures = [
       {
         home_team_id: "team_1",
+        scheduled_date: "2024-06-01",
+        scheduled_time: "10:00",
         away_team_id: "team_2",
         game_events: [
           { ...create_score("goal", "e1"), points_awarded: 1 },
@@ -65,6 +70,7 @@ describe("calculate_player_stats for points-based sports", () => {
       new Map([["team_1", { name: "Falcons" }]]) as never,
       create_score_award_resolver([{ event_type: "goal", points_awarded: 3 }]),
       [],
+      new Map(),
     );
 
     expect(player.points).toBe(1);

@@ -4,16 +4,26 @@
         CardStatCategory,
         PlayerStats,
     } from "$lib/presentation/logic/competitionResultsCardStats";
+    import { PLAYER_STAT_MOMENT_KIND } from "$lib/presentation/logic/competitionResultsPlayerMoments";
 
     import CompetitionResultsCardLeaders from "./CompetitionResultsCardLeaders.svelte";
-    import { COMPETITION_STATS_ALL_TEAMS_FILTER } from "./competitionResultsDisplayConstants";
+    import {
+        COMPETITION_STATS_ALL_TEAMS_FILTER,
+        STATS_DETAIL_TEXT,
+        STATS_SECTION_TEXT,
+    } from "./competitionResultsDisplayConstants";
+    import StatsLeaderboardCard from "./StatsLeaderboardCard.svelte";
 
     export let stats_team_filter: string;
     export let stats_available_teams: string[];
     export let stats_card_categories: CardStatCategory[];
     export let stats_card_sort: CardSortMode;
     export let stats_filtered_scorers: PlayerStats[];
+    export let stats_filtered_assisters: PlayerStats[];
     export let stats_filtered_card_players: PlayerStats[];
+    export let format_date: (date_string: string) => string;
+    export let get_team_name: (team_id: string) => string;
+    export let on_open_match_report: (fixture_id: string) => void;
 </script>
 
 <div class="space-y-4 sm:space-y-6">
@@ -35,59 +45,41 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-            <h3
-                class="text-base sm:text-lg font-semibold text-accent-900 dark:text-accent-100 mb-4 flex items-center gap-2"
-            >
-                <span>🏅</span> Top Scorers
-            </h3>
-            {#if stats_filtered_scorers.length === 0}
-                <div class="text-center py-4 text-gray-500 dark:text-gray-400">
-                    {stats_team_filter === COMPETITION_STATS_ALL_TEAMS_FILTER
-                        ? "No scores recorded yet."
-                        : `No scores recorded for ${stats_team_filter} yet.`}
-                </div>
-            {:else}
-                <div class="space-y-2">
-                    {#each stats_filtered_scorers as player, index}
-                        <div
-                            class="flex items-center justify-between p-2 sm:p-3 bg-white dark:bg-gray-900 rounded-lg"
-                        >
-                            <div
-                                class="flex items-center gap-2 sm:gap-3 min-w-0"
-                            >
-                                <span
-                                    class={`w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 flex items-center justify-center text-xs sm:text-sm font-bold rounded-full ${index < 3 ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400" : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"}`}
-                                    >{index + 1}</span
-                                >
-                                <div class="min-w-0">
-                                    <div
-                                        class="text-sm font-medium text-accent-900 dark:text-accent-100 truncate"
-                                    >
-                                        {player.player_name}
-                                    </div>
-                                    <div
-                                        class="text-xs text-gray-500 dark:text-gray-400 truncate"
-                                    >
-                                        {player.team_name}
-                                    </div>
-                                </div>
-                            </div>
-                            <span
-                                class="text-lg sm:text-xl font-bold text-accent-900 dark:text-accent-100 ml-2"
-                                >{player.points}</span
-                            >
-                        </div>
-                    {/each}
-                </div>
-            {/if}
-        </div>
-
+        <StatsLeaderboardCard
+            title={STATS_SECTION_TEXT.TOP_SCORERS}
+            icon={STATS_SECTION_TEXT.SCORERS_ICON}
+            empty_message={stats_team_filter ===
+            COMPETITION_STATS_ALL_TEAMS_FILTER
+                ? STATS_SECTION_TEXT.NO_SCORES
+                : `${STATS_SECTION_TEXT.NO_SCORES_FOR} ${stats_team_filter} yet.`}
+            players={stats_filtered_scorers}
+            read_value={(player) => player.points}
+            kind={PLAYER_STAT_MOMENT_KIND.SCORE}
+            card_categories={stats_card_categories}
+            {format_date}
+            {get_team_name}
+            {on_open_match_report}
+        />
+        <StatsLeaderboardCard
+            title={STATS_DETAIL_TEXT.TOP_ASSISTS}
+            icon={STATS_SECTION_TEXT.ASSISTS_ICON}
+            empty_message={STATS_DETAIL_TEXT.NO_ASSISTS}
+            players={stats_filtered_assisters}
+            read_value={(player) => player.assists}
+            kind={PLAYER_STAT_MOMENT_KIND.ASSIST}
+            card_categories={stats_card_categories}
+            {format_date}
+            {get_team_name}
+            {on_open_match_report}
+        />
         <CompetitionResultsCardLeaders
             {stats_team_filter}
             {stats_card_categories}
             bind:stats_card_sort
             {stats_filtered_card_players}
+            {format_date}
+            {get_team_name}
+            {on_open_match_report}
         />
     </div>
 </div>

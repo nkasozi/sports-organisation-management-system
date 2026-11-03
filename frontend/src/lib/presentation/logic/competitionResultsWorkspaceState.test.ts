@@ -11,6 +11,7 @@ const competition_results_workspace_state_mocks = vi.hoisted(() => ({
   derive_effective_tie_breakers: vi.fn(),
   derive_stats_available_teams: vi.fn(),
   filter_and_sort_card_players: vi.fn(),
+  filter_and_sort_assisters: vi.fn(),
   filter_and_sort_scorers: vi.fn(),
   sort_team_fixtures: vi.fn(),
 }));
@@ -27,6 +28,8 @@ vi.mock("$lib/presentation/logic/competitionResultsStats", () => ({
     competition_results_workspace_state_mocks.calculate_player_stats,
   derive_stats_available_teams:
     competition_results_workspace_state_mocks.derive_stats_available_teams,
+  filter_and_sort_assisters:
+    competition_results_workspace_state_mocks.filter_and_sort_assisters,
   filter_and_sort_scorers:
     competition_results_workspace_state_mocks.filter_and_sort_scorers,
 }));
@@ -73,6 +76,9 @@ describe("competitionResultsWorkspaceState", () => {
     );
     competition_results_workspace_state_mocks.filter_and_sort_scorers.mockReturnValue(
       [{ player_id: "player-1" }],
+    );
+    competition_results_workspace_state_mocks.filter_and_sort_assisters.mockReturnValue(
+      [{ player_id: "player-3" }],
     );
     competition_results_workspace_state_mocks.filter_and_sort_card_players.mockReturnValue(
       [{ player_id: "player-2" }],
@@ -146,6 +152,7 @@ describe("competitionResultsWorkspaceState", () => {
       paginated_upcoming: [scheduled_fixture],
       stats_available_teams: ["Lions"],
       stats_filtered_scorers: [{ player_id: "player-1" }],
+      stats_filtered_assisters: [{ player_id: "player-3" }],
       stats_filtered_card_players: [{ player_id: "player-2" }],
       stats_card_categories: [
         { card_type_id: "technical_foul", label: "Technical Foul" },

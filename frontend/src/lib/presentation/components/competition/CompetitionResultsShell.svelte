@@ -58,6 +58,7 @@
     export let stats_card_categories: CardStatCategory[];
     export let stats_card_sort: CardSortMode;
     export let stats_filtered_scorers: PlayerStats[];
+    export let stats_filtered_assisters: PlayerStats[];
     export let stats_filtered_card_players: PlayerStats[];
     export let format_date: (date_string: string) => string;
     export let get_fixture_stage_name: (stage_id: string) => string;
@@ -169,7 +170,11 @@
                 {stats_card_categories}
                 bind:stats_card_sort
                 {stats_filtered_scorers}
+                {stats_filtered_assisters}
                 {stats_filtered_card_players}
+                {format_date}
+                {get_team_name}
+                {on_open_match_report}
             />
         {/if}
     </div>

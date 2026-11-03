@@ -14,7 +14,10 @@ import type {
   derive_effective_points_config,
   derive_effective_tie_breakers,
 } from "$lib/presentation/logic/competitionResultsPageData";
-import type { filter_and_sort_scorers } from "$lib/presentation/logic/competitionResultsStats";
+import type {
+  filter_and_sort_assisters,
+  filter_and_sort_scorers,
+} from "$lib/presentation/logic/competitionResultsStats";
 import type {
   build_competition_stage_results_sections,
   calculate_team_standings,
@@ -58,6 +61,7 @@ export interface CompetitionResultsWorkspaceStateResult {
   stats_card_categories: CardStatCategory[];
   stats_available_teams: string[];
   stats_filtered_scorers: ReturnType<typeof filter_and_sort_scorers>;
+  stats_filtered_assisters: ReturnType<typeof filter_and_sort_assisters>;
   stats_filtered_card_players: ReturnType<typeof filter_and_sort_card_players>;
   displayed_team_fixtures: Fixture[];
   sorted_team_fixtures: Fixture[];
@@ -89,6 +93,7 @@ export type StatsSection = Pick<
   | "stats_card_categories"
   | "stats_available_teams"
   | "stats_filtered_scorers"
+  | "stats_filtered_assisters"
   | "stats_filtered_card_players"
 >;
 
