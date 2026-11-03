@@ -144,7 +144,7 @@
             class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
         >
             <div
-                class="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg bg-white shadow-xl"
+                class="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-[0.175rem] bg-white shadow-xl"
             >
                 <MergeConflictHeader
                     current_progress={$conflict_progress.current}

@@ -27,7 +27,7 @@
     class="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
 >
     <div
-        class="bg-white dark:bg-gray-800 w-full sm:max-w-md sm:rounded-xl shadow-2xl"
+        class="bg-white dark:bg-gray-800 w-full sm:max-w-md sm:rounded-[0.175rem] shadow-2xl"
         role="dialog"
         aria-label="Delete event"
     >

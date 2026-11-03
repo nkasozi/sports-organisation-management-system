@@ -16,7 +16,7 @@
     const ERROR_NOTICE_CLASSES =
         "border-red-300 bg-red-50 text-red-800 dark:border-red-700 dark:bg-red-950 dark:text-red-200";
     const WARNING_NOTICE_CLASSES =
-        "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100";
+        "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/40 dark:bg-accent-900 dark:text-amber-100";
 
     const ESCAPE_KEY = "Escape";
 
@@ -39,14 +39,14 @@
 
 {#if import_view.status === VIEW_STATUS.BUSY}
     <p
-        class="rounded-md border border-accent-200 bg-accent-50 p-3 text-sm text-accent-700 dark:border-accent-700 dark:bg-accent-900 dark:text-accent-200"
+        class="rounded-[0.175rem] border border-accent-200 bg-accent-50 p-3 text-sm text-accent-700 dark:border-accent-700 dark:bg-accent-900 dark:text-accent-200"
         role="status"
     >
         {import_view.message}
     </p>
 {:else if import_view.status === VIEW_STATUS.CONFIRMATION}
     <div
-        class="space-y-3 rounded-md border border-accent-300 bg-white p-4 dark:border-accent-600 dark:bg-accent-900"
+        class="space-y-3 rounded-[0.175rem] border border-accent-300 bg-white p-4 dark:border-accent-600 dark:bg-accent-900"
         role="alertdialog"
         aria-labelledby="settings-data-import-confirm-title"
         aria-describedby="settings-data-import-confirm-warning"
@@ -88,7 +88,7 @@
         </dl>
         <p
             id="settings-data-import-confirm-warning"
-            class="rounded-md border border-red-300 bg-red-50 p-3 text-sm font-medium text-red-800 dark:border-red-700 dark:bg-red-950 dark:text-red-200"
+            class="rounded-[0.175rem] border border-red-300 bg-red-50 p-3 text-sm font-medium text-red-800 dark:border-red-700 dark:bg-red-950 dark:text-red-200"
         >
             {import_view.warning_message}
         </p>
@@ -112,7 +112,7 @@
     </div>
 {:else if import_view.status === VIEW_STATUS.NOTICE}
     <div
-        class={`space-y-2 rounded-md border p-3 text-sm ${import_view.tone === STORAGE_BACKUP_IMPORT_NOTICE_TONE.ERROR ? ERROR_NOTICE_CLASSES : WARNING_NOTICE_CLASSES}`}
+        class={`space-y-2 rounded-[0.175rem] border p-3 text-sm ${import_view.tone === STORAGE_BACKUP_IMPORT_NOTICE_TONE.ERROR ? ERROR_NOTICE_CLASSES : WARNING_NOTICE_CLASSES}`}
         role="alert"
     >
         <p class="font-semibold">{import_view.title}</p>

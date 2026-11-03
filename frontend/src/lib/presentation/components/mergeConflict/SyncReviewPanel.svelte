@@ -60,7 +60,7 @@
     aria-labelledby="sync-review-title"
 >
     <div
-        class="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg bg-white shadow-xl"
+        class="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-[0.175rem] bg-white shadow-xl"
     >
         <div class="border-b border-gray-200 bg-violet-50 px-6 py-4">
             <h2
@@ -75,7 +75,7 @@
         </div>
         <ul class="flex-1 space-y-4 overflow-y-auto p-6">
             {#each review_state.items as item (item.id)}
-                <li class="rounded-lg border border-gray-200 p-4">
+                <li class="rounded-[0.175rem] border border-gray-200 p-4">
                     <p class="font-medium text-gray-900">
                         “{item.entity_display_name}” {REVIEW_COPY[item.kind]
                             .title}

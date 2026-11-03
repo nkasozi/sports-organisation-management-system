@@ -60,7 +60,7 @@
         role="presentation"
     >
         <div
-            class="bg-white dark:bg-accent-800 rounded-lg shadow-xl max-w-md w-full p-6"
+            class="bg-white dark:bg-accent-800 rounded-[0.175rem] shadow-xl max-w-md w-full p-6"
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"

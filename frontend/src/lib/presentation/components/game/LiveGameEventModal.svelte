@@ -40,7 +40,7 @@
         class="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
     >
         <div
-            class="bg-white dark:bg-gray-800 w-full sm:max-w-md sm:rounded-xl shadow-2xl"
+            class="bg-white dark:bg-gray-800 w-full sm:max-w-md sm:rounded-[0.175rem] shadow-2xl"
         >
             <div
                 class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between"
@@ -63,7 +63,7 @@
                 </div>
                 <button
                     aria-label="Close event form"
-                    class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                    class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-[0.175rem]"
                     on:click={on_cancel}
                     ><svg
                         class="w-5 h-5 text-gray-500"
@@ -101,7 +101,7 @@
                                         ).value,
                                     ),
                                 )}
-                            class="w-24 px-3 py-2 text-center text-2xl font-mono font-bold border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            class="w-24 px-3 py-2 text-center text-2xl font-mono font-bold border border-gray-300 dark:border-gray-600 rounded-[0.175rem] bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         /><span class="text-2xl font-bold text-gray-500">'</span
                         ><button
                             type="button"
@@ -149,7 +149,7 @@
                                 (event.currentTarget as HTMLInputElement).value,
                             )}
                         placeholder="Add details..."
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.175rem] bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                 </div>
             </div>

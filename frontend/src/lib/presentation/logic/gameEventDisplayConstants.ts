@@ -4,7 +4,7 @@ const SCORING_EVENT_CLASS =
   "border-l-green-500 bg-green-50 dark:bg-green-900/20";
 const BLUE_EVENT_CLASS = "border-l-blue-500 bg-blue-50 dark:bg-blue-900/20";
 const CAUTION_EVENT_CLASS =
-  "border-l-yellow-400 bg-yellow-50 dark:bg-yellow-900/20";
+  "border-l-yellow-400 bg-yellow-50 dark:bg-accent-900";
 const DISMISSAL_EVENT_CLASS = "border-l-red-500 bg-red-50 dark:bg-red-900/20";
 const PERIOD_EVENT_CLASS =
   "border-l-purple-500 bg-purple-50 dark:bg-purple-900/20";

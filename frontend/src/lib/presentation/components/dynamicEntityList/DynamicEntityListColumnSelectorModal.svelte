@@ -41,11 +41,11 @@
             <div class="max-h-96 space-y-2 overflow-y-auto">
                 {#each available_fields as field}
                     <label
-                        class="flex cursor-pointer items-center rounded p-2 hover:bg-accent-50 dark:hover:bg-accent-700"
+                        class="flex cursor-pointer items-center rounded-[0.175rem] p-2 hover:bg-accent-50 dark:hover:bg-accent-700"
                     >
                         <input
                             type="checkbox"
-                            class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-gray-600"
+                            class="h-4 w-4 rounded-[0.175rem] border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-gray-600"
                             checked={visible_columns.has(field.field_name)}
                             on:change={() =>
                                 on_toggle_column_visibility(field.field_name)}

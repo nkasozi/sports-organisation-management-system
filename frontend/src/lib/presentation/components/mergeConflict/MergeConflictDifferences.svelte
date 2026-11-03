@@ -29,13 +29,13 @@
     <h4 class="mb-3 font-medium text-gray-900">Field Differences</h4>
     <div class="space-y-3">
         {#each differences as difference}
-            <div class="rounded-lg border border-gray-200 bg-white p-4">
+            <div class="rounded-[0.175rem] border border-gray-200 bg-white p-4">
                 <div class="mb-2 font-medium text-gray-700">
                     {difference.display_name}
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div
-                        class="cursor-pointer rounded border-2 p-3 transition-colors {get_selected_value_source(
+                        class="cursor-pointer rounded-[0.175rem] border-2 p-3 transition-colors {get_selected_value_source(
                             difference.field_name,
                             difference,
                         ) === MERGE_CONFLICT_VALUE_SOURCE.LOCAL
@@ -66,7 +66,7 @@
                             )}</pre>
                     </div>
                     <div
-                        class="cursor-pointer rounded border-2 p-3 transition-colors {get_selected_value_source(
+                        class="cursor-pointer rounded-[0.175rem] border-2 p-3 transition-colors {get_selected_value_source(
                             difference.field_name,
                             difference,
                         ) === MERGE_CONFLICT_VALUE_SOURCE.REMOTE

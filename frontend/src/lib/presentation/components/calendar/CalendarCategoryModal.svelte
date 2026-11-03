@@ -53,7 +53,7 @@
                 on:click={handle_close}
             ></button>
             <div
-                class="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 space-y-4"
+                class="relative bg-white dark:bg-gray-800 rounded-[0.175rem] shadow-xl max-w-md w-full p-6 space-y-4"
             >
                 <div class="flex justify-between items-center">
                     <h3
@@ -90,7 +90,7 @@
                             id="category_name"
                             type="text"
                             bind:value={category_name}
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-accent-900 dark:text-accent-100"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.175rem] bg-white dark:bg-gray-700 text-accent-900 dark:text-accent-100"
                             placeholder="e.g., Team Building"
                         />
                     </div>
@@ -105,7 +105,7 @@
                                 id="category_color"
                                 type="color"
                                 bind:value={category_color}
-                                class="w-12 h-10 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
+                                class="w-12 h-10 rounded-[0.175rem] border border-gray-300 dark:border-gray-600 cursor-pointer"
                             /><span
                                 class="text-sm text-accent-600 dark:text-accent-400"
                                 >{category_color}</span

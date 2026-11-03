@@ -18,7 +18,7 @@
         blue: "border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200",
         red: "border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-200",
         violet: "border-violet-200 dark:border-violet-700 bg-violet-50 dark:bg-violet-900/30 text-violet-800 dark:text-violet-200",
-        yellow: "border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-900 dark:text-yellow-100",
+        yellow: "border-yellow-200 dark:border-yellow-500/40 bg-yellow-50 dark:bg-accent-900 text-yellow-700 dark:text-yellow-100",
     };
 
     const icon_classes: Record<DynamicFormAlertTone, string> = {

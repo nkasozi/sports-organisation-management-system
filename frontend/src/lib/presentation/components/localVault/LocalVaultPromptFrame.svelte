@@ -11,7 +11,7 @@
     class="fixed inset-0 z-[10002] flex items-center justify-center bg-accent-950 px-4"
 >
     <div
-        class="w-full max-w-md rounded-2xl border border-accent-700 bg-accent-900 p-6 text-white"
+        class="w-full max-w-md rounded-[0.175rem] border border-accent-700 bg-accent-900 p-6 text-white"
         role="dialog"
         aria-modal="true"
         aria-labelledby={TITLE_ELEMENT_ID}

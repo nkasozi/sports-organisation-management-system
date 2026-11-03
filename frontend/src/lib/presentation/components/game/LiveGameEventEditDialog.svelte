@@ -48,7 +48,7 @@
     class="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
 >
     <div
-        class="bg-white dark:bg-gray-800 w-full sm:max-w-md sm:rounded-xl shadow-2xl"
+        class="bg-white dark:bg-gray-800 w-full sm:max-w-md sm:rounded-[0.175rem] shadow-2xl"
         role="dialog"
         aria-label="Edit event"
     >
@@ -73,7 +73,7 @@
                     min="0"
                     max="150"
                     bind:value={form.minute}
-                    class="w-24 px-3 py-2 text-center text-2xl font-mono font-bold border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    class="w-24 px-3 py-2 text-center text-2xl font-mono font-bold border border-gray-300 dark:border-gray-600 rounded-[0.175rem] bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
             </div>
             {#if can_change_event_player(event)}
@@ -103,7 +103,7 @@
                     type="text"
                     bind:value={form.description}
                     placeholder="Add details..."
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.175rem] bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
             </div>
             <LiveGameCorrectionReasonField

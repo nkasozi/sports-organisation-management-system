@@ -10,7 +10,7 @@
 {#if notice.status === ResolutionNoticeStatus.SHOWN}
     <p
         role="alert"
-        class="rounded-[0.175rem] border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+        class="rounded-[0.175rem] border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-700"
     >
         {notice.message}
     </p>

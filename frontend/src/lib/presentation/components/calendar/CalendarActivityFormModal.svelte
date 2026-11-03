@@ -72,7 +72,7 @@
             style={`transform: translate(calc(-50% + ${modal_position.x}px), calc(-50% + ${modal_position.y}px));`}
         >
             <div
-                class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto"
+                class="bg-white dark:bg-gray-800 rounded-[0.175rem] shadow-xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto"
             >
                 <div
                     class="flex justify-between items-center cursor-move select-none"

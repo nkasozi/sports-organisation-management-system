@@ -44,7 +44,7 @@
         class="fixed inset-0 z-[10002] flex items-center justify-center bg-black/50 px-4"
     >
         <div
-            class="w-full max-w-md rounded-xl bg-white p-5 text-gray-900 shadow-xl dark:bg-gray-900 dark:text-gray-100"
+            class="w-full max-w-md rounded-[0.175rem] bg-white p-5 text-gray-900 shadow-xl dark:bg-gray-900 dark:text-gray-100"
             role="alertdialog"
             aria-modal="true"
             aria-labelledby={TITLE_ELEMENT_ID}
@@ -58,7 +58,7 @@
             >
                 <button
                     type="button"
-                    class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 disabled:opacity-60 dark:border-gray-600"
+                    class="rounded-[0.175rem] border border-gray-300 px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 disabled:opacity-60 dark:border-gray-600"
                     disabled={is_busy}
                     on:click={handle_sign_out}
                 >
@@ -66,7 +66,7 @@
                 </button>
                 <button
                     type="button"
-                    class="rounded-lg bg-theme-primary-600 px-4 py-2 text-sm font-medium text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-theme-primary-500 disabled:opacity-60"
+                    class="rounded-[0.175rem] bg-theme-primary-600 px-4 py-2 text-sm font-medium text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-theme-primary-500 disabled:opacity-60"
                     disabled={is_busy}
                     on:click={handle_retry}
                 >
