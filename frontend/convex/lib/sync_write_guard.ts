@@ -19,6 +19,7 @@ import {
   type SecurityAuditEntry,
 } from "./security_audit_scheduler";
 import { apply_server_owned_fields } from "./server_owned_fields";
+import { find_record_content_rejection } from "./sync_record_content_guard";
 import {
   type AllowedSyncTable,
   get_entity_type_for_table,
@@ -36,7 +37,6 @@ import {
   guard_system_user_write,
   SystemUserWriteStatus,
 } from "./system_user_write_guard";
-import { validate_record_url_fields } from "./url_validation";
 
 const CONVEX_SYSTEM_FIELDS = ["_id", "_creationTime"];
 const EMPTY_AUDIT_VALUE = "";
@@ -73,15 +73,6 @@ function sanitize_incoming_record(
     : create_none_option();
 }
 
-function has_invalid_urls(
-  incoming_record: Option<Record<string, unknown>>,
-): boolean {
-  return (
-    incoming_record.status === OptionStatus.SOME &&
-    !validate_record_url_fields(incoming_record.value).is_valid
-  );
-}
-
 async function guard_system_user_fields(
   ctx: MutationCtx,
   command: SyncWriteCommand,
@@ -116,11 +107,9 @@ export async function guard_sync_record_write(
     command.table_name,
     command.incoming_record,
   );
-  if (has_invalid_urls(incoming_record))
-    return reject_sync_write(
-      SyncWriteRejection.INVALID_URL,
-      SyncWriteRejection.INVALID_URL,
-    );
+  const content_rejection = find_record_content_rejection(incoming_record);
+  if (content_rejection.status === OptionStatus.SOME)
+    return content_rejection.value;
   const caller_scope = resolve_caller_scope(command.caller);
   const parent_organizations = await resolve_write_parent_organizations(ctx, {
     table_name: command.table_name,

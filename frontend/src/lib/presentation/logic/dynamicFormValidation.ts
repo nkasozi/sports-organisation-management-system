@@ -18,6 +18,7 @@ import {
   is_dynamic_form_entity_type,
 } from "./dynamicFormConstants";
 import { is_field_visible_by_visible_when_condition } from "./dynamicFormLogic";
+import { find_shared_field_rule_errors } from "./dynamicFormSharedFieldRules";
 import { PRESENCE_STATUS } from "./presenceStatus";
 import { is_number_value, is_string_value } from "./runtimeTypeGuards";
 import {
@@ -36,13 +37,9 @@ type FieldErrorState =
 
 const NO_FIELD_ERROR: FieldErrorState = { status: PRESENCE_STATUS.MISSING };
 
-function is_less_than(actual: number, limit: number): boolean {
-  return actual < limit;
-}
-
-function is_greater_than(actual: number, limit: number): boolean {
-  return actual > limit;
-}
+const is_less_than = (actual: number, limit: number): boolean => actual < limit;
+const is_greater_than = (actual: number, limit: number): boolean =>
+  actual > limit;
 
 function is_length_rule_violated(
   value: unknown,
@@ -167,6 +164,7 @@ export function validate_form_data_against_metadata(
   entity_type: string,
 ): Result<boolean, Record<string, string>> {
   const errors: Record<string, string> = {};
+  const checked_fields: FieldMetadata[] = [];
   const is_system_user_entity = is_dynamic_form_entity_type(
     entity_type,
     DYNAMIC_FORM_SYSTEM_USER_ENTITY_KEY,
@@ -177,6 +175,7 @@ export function validate_form_data_against_metadata(
 
   for (const field of metadata.fields) {
     if (is_field_skipped_for_validation(field, data, is_edit_mode)) continue;
+    checked_fields.push(field);
     const is_required =
       field.is_required ||
       (is_system_user_entity &&
@@ -190,6 +189,11 @@ export function validate_form_data_against_metadata(
       errors[field.field_name] = error_state.error_message;
   }
 
-  if (Object.keys(errors).length > 0) return create_failure_result(errors);
+  const all_errors = {
+    ...find_shared_field_rule_errors(checked_fields, data),
+    ...errors,
+  };
+  if (Object.keys(all_errors).length > 0)
+    return create_failure_result(all_errors);
   return create_success_result(true);
 }

@@ -5,14 +5,17 @@ import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import type { AsyncResult } from "../../core/types/Result";
 import {
   create_entity,
+  write_updated_entity,
+} from "./InBrowserBaseRepositoryEntityWrites";
+import {
   delete_entities_by_ids,
   delete_existing_entity,
   find_entities_by_ids,
   find_entity_by_id,
-  write_updated_entity,
 } from "./InBrowserBaseRepositoryOperations";
 import {
   type RepositoryWriteOrigin,
+  RepositoryWriteOriginKind,
   run_repository_write,
 } from "./InBrowserRepositoryWriteOrigin";
 import {
@@ -42,6 +45,12 @@ function target<TEntity extends BaseEntity>(
   return { table_name: context.table.name, origin: context.origin, action };
 }
 
+function is_user_write<TEntity extends BaseEntity>(
+  context: AuditedWriteContext<TEntity>,
+): boolean {
+  return context.origin.kind === RepositoryWriteOriginKind.USER;
+}
+
 export async function create_audited_entity<TEntity extends BaseEntity, TInput>(
   context: AuditedWriteContext<TEntity>,
   input: TInput,
@@ -53,7 +62,13 @@ export async function create_audited_entity<TEntity extends BaseEntity, TInput>(
   ) => TEntity,
 ): AsyncResult<TEntity> {
   const result = await run_repository_write(context.table, context.origin, () =>
-    create_entity(context.table, input, entity_prefix, build),
+    create_entity(
+      context.table,
+      input,
+      entity_prefix,
+      build,
+      is_user_write(context),
+    ),
   );
   return audit_after_write(
     target(context, AUDITED_ACTION.CREATE),
@@ -74,7 +89,13 @@ export async function update_audited_entity<
   const existing = await find_entity_by_id(context.table, id);
   if (!existing.success) return existing;
   const result = await run_repository_write(context.table, context.origin, () =>
-    write_updated_entity(context.table, existing.data, updates, apply),
+    write_updated_entity(
+      context.table,
+      existing.data,
+      updates,
+      apply,
+      is_user_write(context),
+    ),
   );
   return audit_after_write(
     target(context, AUDITED_ACTION.UPDATE),

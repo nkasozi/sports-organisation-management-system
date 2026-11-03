@@ -1,3 +1,5 @@
+import { is_field_rule_failure_message } from "$convex/shared_field_rules";
+
 import type { Result } from "./Result";
 import { create_failure_result } from "./Result";
 
@@ -51,6 +53,12 @@ function build_technical_detail_entry(
     : { technical_detail: details.technical_detail };
 }
 
+function choose_user_message(details: UseCaseFailureDetails): string {
+  const technical_detail = details.technical_detail ?? "";
+  if (is_field_rule_failure_message(technical_detail)) return technical_detail;
+  return details.user_message ?? USE_CASE_ERROR_MESSAGES[details.code];
+}
+
 export function fail_use_case(
   details: UseCaseFailureDetails,
 ): Result<never, string> {
@@ -60,7 +68,5 @@ export function fail_use_case(
     ...build_technical_detail_entry(details),
     ...details.context,
   });
-  return create_failure_result(
-    details.user_message ?? USE_CASE_ERROR_MESSAGES[details.code],
-  );
+  return create_failure_result(choose_user_message(details));
 }

@@ -42,6 +42,20 @@ describe("fail_use_case", () => {
     );
   });
 
+  it("shows a field check's own message instead of a generic save failure", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const field_message =
+      "Please check your entries: Phone should be a phone number with 7 to 15 digits, e.g. +256 700 123456.";
+    const result = fail_use_case({
+      code: UseCaseErrorCode.DEPENDENCY_FAILED,
+      event: TEST_EVENT,
+      log_scope: "[PlayerUseCases]",
+      technical_detail: field_message,
+      context: {},
+    });
+    expect(result.success ? "" : result.error).toBe(field_message);
+  });
+
   it("logs a structured event with the code, context and technical detail", () => {
     const error_spy = vi.spyOn(console, "error").mockImplementation(() => {});
     const result = fail_use_case({

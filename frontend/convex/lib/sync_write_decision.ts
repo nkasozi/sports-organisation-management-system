@@ -8,6 +8,7 @@ export const SyncWriteStatus = {
 
 export const SyncWriteRejection = {
   INVALID_URL: "rejected_invalid_url",
+  INVALID_FIELD: "rejected_invalid_field",
   WRONG_ORGANIZATION: "rejected_wrong_organization",
   PRIVILEGE_CHANGE: "rejected_privilege_change",
   MISSING_EMAIL: "skipped_no_email",
@@ -36,6 +37,8 @@ export const SYNC_WRITE_REJECTION_MESSAGES: Record<
 > = {
   [SyncWriteRejection.INVALID_URL]:
     "Record contains a URL with a disallowed protocol",
+  [SyncWriteRejection.INVALID_FIELD]:
+    "Record contains a field value in the wrong format or out of range",
   [SyncWriteRejection.WRONG_ORGANIZATION]:
     "Record organization does not match caller organization",
   [SyncWriteRejection.PRIVILEGE_CHANGE]: "Access denied",
@@ -62,6 +65,7 @@ export function get_audit_event_type_for_rejection(
     case SyncWriteRejection.OUTSIDE_CALLER_SCOPE:
       return create_some_option<string>(SecurityEventType.ACCESS_DENIED);
     case SyncWriteRejection.INVALID_URL:
+    case SyncWriteRejection.INVALID_FIELD:
     case SyncWriteRejection.MISSING_EMAIL:
       return create_none_option();
   }
