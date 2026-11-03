@@ -5,9 +5,7 @@ import type { Fixture } from "$lib/core/entities/Fixture";
 import { FIXTURE_STATUS, STAGE_TYPE } from "$lib/core/entities/StatusConstants";
 
 import {
-  BRACKET_OUTCOME_STATUS,
-  type BracketRound,
-  type BracketSlot,
+  type BracketColumn,
   build_competition_bracket,
 } from "./competitionBracket";
 import { PRESENCE_STATUS } from "./presenceStatus";
@@ -23,154 +21,128 @@ function build_stage(
 function build_fixture(
   id: string,
   stage_id: string,
-  teams: [string, string],
-  scores: [number, number],
-  overrides: Partial<Fixture> = {},
+  home_team_id: string,
+  away_team_id: string,
+  day: string,
 ): Fixture {
   return {
     id,
     stage_id,
-    home_team_id: teams[0],
-    away_team_id: teams[1],
-    home_team_score: scores[0],
-    away_team_score: scores[1],
-    scheduled_date: `2026-04-${id.padStart(2, "0")}`,
+    home_team_id,
+    away_team_id,
+    home_team_score: 1,
+    away_team_score: 0,
+    scheduled_date: `2026-04-${day}`,
     scheduled_time: "13:00",
     status: FIXTURE_STATUS.COMPLETED,
-    ...overrides,
-  } as Fixture;
+  } as unknown as Fixture;
 }
 
-function describe_slots(round: BracketRound): string[] {
-  return round.slots.map((slot: BracketSlot) =>
-    slot.status === PRESENCE_STATUS.PRESENT
-      ? `${slot.tie.first_team.team_id}-${slot.tie.second_team.team_id}`
-      : "TBD",
+function describe_column(column: BracketColumn): string[] {
+  return column.cards.map((card) =>
+    card.content.status === PRESENCE_STATUS.PRESENT
+      ? `${card.content.match.fixture_id}@${card.row}`
+      : `TBD@${card.row}`,
   );
 }
 
-const quarter_finals = build_stage("quarters", 2);
-const semi_finals = build_stage("semis", 3);
-const final_stage = build_stage("final", 4);
-const league = build_stage("league", 1, STAGE_TYPE.LEAGUE_STAGE);
-
-const quarter_fixtures = [
-  build_fixture("1", "quarters", ["a", "b"], [2, 0]),
-  build_fixture("2", "quarters", ["c", "d"], [0, 1]),
-  build_fixture("3", "quarters", ["e", "f"], [3, 1]),
-  build_fixture("4", "quarters", ["g", "h"], [1, 2]),
-];
+const round_of_16 = build_stage("r16", 1);
+const quarter_finals = build_stage("qf", 2);
+const semi_finals = build_stage("sf", 3);
+const league = build_stage("league", 0, STAGE_TYPE.LEAGUE_STAGE);
 
 describe("build_competition_bracket", () => {
-  it("only includes knockout stages, in stage order", () => {
+  it("only lays out knockout stages, in stage order", () => {
     const bracket = build_competition_bracket({
-      stages: [final_stage, league, quarter_finals, semi_finals],
-      fixtures: quarter_fixtures,
+      stages: [semi_finals, league, round_of_16, quarter_finals],
+      fixtures: [],
     });
 
-    expect(bracket.map((round) => round.stage.id)).toEqual([
-      "quarters",
-      "semis",
-      "final",
+    expect(bracket.columns.map((column) => column.stage.id)).toEqual([
+      "r16",
+      "qf",
+      "sf",
     ]);
   });
 
-  it("fills later rounds with placeholders until fixtures exist", () => {
+  it("shows each leg as its own game and connects both legs to the next game", () => {
     const bracket = build_competition_bracket({
-      stages: [quarter_finals, semi_finals, final_stage],
-      fixtures: quarter_fixtures,
+      stages: [round_of_16, quarter_finals],
+      fixtures: [
+        build_fixture("leg1", "r16", "rockets", "wabalozi", "01"),
+        build_fixture("leg2", "r16", "wabalozi", "rockets", "08"),
+        build_fixture("qf1", "qf", "rockets", "khc", "15"),
+      ],
     });
 
-    expect(describe_slots(bracket[0])).toEqual(["a-b", "c-d", "e-f", "g-h"]);
-    expect(describe_slots(bracket[1])).toEqual(["TBD", "TBD"]);
-    expect(describe_slots(bracket[2])).toEqual(["TBD"]);
+    expect(describe_column(bracket.columns[0])).toEqual(["leg1@0", "leg2@1"]);
+    expect(describe_column(bracket.columns[1])).toEqual(["qf1@0.5"]);
+    expect(bracket.links).toEqual([
+      { from_card_id: "leg1", to_card_id: "qf1" },
+      { from_card_id: "leg2", to_card_id: "qf1" },
+    ]);
   });
 
-  it("places each tie beside the earlier ties its teams came from", () => {
+  it("fills games that are not known yet with placeholders fed by the games before them", () => {
     const bracket = build_competition_bracket({
-      stages: [quarter_finals, semi_finals],
+      stages: [round_of_16, quarter_finals, semi_finals],
       fixtures: [
-        ...quarter_fixtures,
-        build_fixture("5", "semis", ["e", "h"], [1, 0]),
-        build_fixture("6", "semis", ["a", "d"], [0, 0], {
-          status: FIXTURE_STATUS.SCHEDULED,
-        }),
+        build_fixture("a", "r16", "t1", "t2", "01"),
+        build_fixture("b", "r16", "t3", "t4", "02"),
+        build_fixture("c", "r16", "t5", "t6", "03"),
+        build_fixture("d", "r16", "t7", "t8", "04"),
+        build_fixture("qf1", "qf", "t1", "t4", "10"),
       ],
     });
 
-    expect(describe_slots(bracket[1])).toEqual(["a-d", "e-h"]);
-  });
-
-  it("marks the winner of a completed tie", () => {
-    const [round] = build_competition_bracket({
-      stages: [quarter_finals],
-      fixtures: [quarter_fixtures[1]],
-    });
-    const slot = round.slots[0];
-
-    expect(slot.status).toBe(PRESENCE_STATUS.PRESENT);
-    expect(slot.status === PRESENCE_STATUS.PRESENT && slot.tie.outcome).toEqual(
-      { status: BRACKET_OUTCOME_STATUS.DECIDED, winner_team_id: "d" },
+    expect(describe_column(bracket.columns[1])).toEqual(["qf1@0.5", "TBD@2.5"]);
+    expect(describe_column(bracket.columns[2])).toEqual(["TBD@1.5"]);
+    expect(bracket.links).toEqual(
+      expect.arrayContaining([
+        { from_card_id: "c", to_card_id: "qf-tbd-0" },
+        { from_card_id: "d", to_card_id: "qf-tbd-0" },
+        { from_card_id: "qf1", to_card_id: "sf-tbd-0" },
+        { from_card_id: "qf-tbd-0", to_card_id: "sf-tbd-0" },
+      ]),
     );
+    expect(bracket.row_count).toBe(4);
   });
 
-  it("aggregates two legs and leaves an unfinished tie undecided", () => {
-    const first_leg = build_fixture("1", "quarters", ["a", "b"], [2, 1]);
-    const second_leg = build_fixture("2", "quarters", ["b", "a"], [3, 0]);
-    const [decided_round] = build_competition_bracket({
-      stages: [quarter_finals],
-      fixtures: [first_leg, second_leg],
-    });
-    const [undecided_round] = build_competition_bracket({
-      stages: [quarter_finals],
+  it("keeps both legs of a tie next to each other, ties in order of their first leg", () => {
+    const bracket = build_competition_bracket({
+      stages: [round_of_16],
       fixtures: [
-        first_leg,
-        { ...second_leg, status: FIXTURE_STATUS.IN_PROGRESS },
+        build_fixture("a1", "r16", "t1", "t2", "01"),
+        build_fixture("b1", "r16", "t3", "t4", "02"),
+        build_fixture("a2", "r16", "t2", "t1", "08"),
+        build_fixture("b2", "r16", "t4", "t3", "09"),
       ],
     });
-    const decided_slot = decided_round.slots[0];
-    const undecided_slot = undecided_round.slots[0];
 
-    expect(decided_round.slots).toHaveLength(1);
-    expect(
-      decided_slot.status === PRESENCE_STATUS.PRESENT && decided_slot.tie,
-    ).toMatchObject({
-      first_team: {
-        team_id: "a",
-        score: { status: PRESENCE_STATUS.PRESENT, value: 2 },
-      },
-      second_team: {
-        team_id: "b",
-        score: { status: PRESENCE_STATUS.PRESENT, value: 4 },
-      },
-      outcome: { status: BRACKET_OUTCOME_STATUS.DECIDED, winner_team_id: "b" },
-    });
-    expect(
-      undecided_slot.status === PRESENCE_STATUS.PRESENT &&
-        undecided_slot.tie.outcome,
-    ).toEqual({ status: BRACKET_OUTCOME_STATUS.UNDECIDED });
+    expect(describe_column(bracket.columns[0])).toEqual([
+      "a1@0",
+      "a2@1",
+      "b1@2",
+      "b2@3",
+    ]);
   });
 
-  it("settles a level tie with the shootout", () => {
-    const [round] = build_competition_bracket({
-      stages: [quarter_finals],
+  it("keeps cards from overlapping when they would sit at the same height", () => {
+    const bracket = build_competition_bracket({
+      stages: [round_of_16, quarter_finals],
       fixtures: [
-        build_fixture("1", "quarters", ["a", "b"], [1, 1], {
-          shootout_home_score: 3,
-          shootout_away_score: 4,
-        }),
+        build_fixture("a", "r16", "t1", "t2", "01"),
+        build_fixture("qf1", "qf", "t1", "t9", "10"),
+        build_fixture("qf2", "qf", "t2", "t8", "11"),
       ],
     });
-    const slot = round.slots[0];
 
-    expect(slot.status === PRESENCE_STATUS.PRESENT && slot.tie.outcome).toEqual(
-      { status: BRACKET_OUTCOME_STATUS.DECIDED, winner_team_id: "b" },
-    );
+    expect(describe_column(bracket.columns[1])).toEqual(["qf1@0", "qf2@1"]);
   });
 
-  it("returns no rounds when the competition has no knockout stages", () => {
+  it("lays out nothing when there are no knockout stages", () => {
     expect(
       build_competition_bracket({ stages: [league], fixtures: [] }),
-    ).toEqual([]);
+    ).toEqual({ columns: [], links: [], row_count: 0 });
   });
 });

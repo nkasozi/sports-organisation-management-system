@@ -4,6 +4,7 @@
         build_competition_bracket,
         is_bracket_stage_type,
     } from "$lib/presentation/logic/competitionBracket";
+    import { EMPTY_BRACKET_LAYOUT } from "$lib/presentation/logic/competitionBracketGeometry";
     import {
         RESULTS_VIEW_MODE,
         RESULTS_VIEW_SURFACE,
@@ -54,14 +55,14 @@
             : stage_results_sections,
         stage_order,
     );
-    $: bracket_rounds = is_bracket_view
+    $: bracket_layout = is_bracket_view
         ? build_competition_bracket({
               stages: stage_results_sections.map((section) => section.stage),
               fixtures: stage_results_sections.flatMap(
                   (section) => section.fixtures,
               ),
           })
-        : [];
+        : EMPTY_BRACKET_LAYOUT;
     $: is_bracket_first =
         is_bracket_view && stage_order === STAGE_ORDER.DESCENDING;
 </script>
@@ -92,7 +93,7 @@
         </div>
         {#if is_bracket_first}
             <CompetitionBracket
-                rounds={bracket_rounds}
+                layout={bracket_layout}
                 {get_team_name}
                 {get_team_logo_url}
                 {on_open_match_report}
@@ -112,7 +113,7 @@
         {/each}
         {#if is_bracket_view && !is_bracket_first}
             <CompetitionBracket
-                rounds={bracket_rounds}
+                layout={bracket_layout}
                 {get_team_name}
                 {get_team_logo_url}
                 {on_open_match_report}

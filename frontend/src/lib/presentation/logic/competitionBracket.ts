@@ -3,24 +3,37 @@ import type { Fixture } from "$lib/core/entities/Fixture";
 import { STAGE_TYPE } from "$lib/core/entities/StatusConstants";
 
 import {
-  type BracketTie,
-  group_fixtures_into_ties,
-} from "./competitionBracketTies";
+  type BracketMatch,
+  build_bracket_match,
+} from "./competitionBracketMatch";
+import {
+  type BracketCard,
+  type BracketCardContent,
+  build_pair_key,
+  plan_placeholders,
+} from "./competitionBracketPlaceholders";
 import { PRESENCE_STATUS } from "./presenceStatus";
 
 export {
   BRACKET_OUTCOME_STATUS,
   type BracketTeamLine,
-  type BracketTie,
-} from "./competitionBracketTies";
+} from "./competitionBracketMatch";
+export type { BracketCard } from "./competitionBracketPlaceholders";
 
-export type BracketSlot =
-  | { status: typeof PRESENCE_STATUS.PRESENT; tie: BracketTie }
-  | { status: typeof PRESENCE_STATUS.MISSING };
-
-export interface BracketRound {
+export interface BracketColumn {
   stage: CompetitionStage;
-  slots: BracketSlot[];
+  cards: BracketCard[];
+}
+
+export interface BracketLink {
+  from_card_id: string;
+  to_card_id: string;
+}
+
+export interface BracketLayout {
+  columns: BracketColumn[];
+  links: BracketLink[];
+  row_count: number;
 }
 
 interface BuildCompetitionBracketCommand {
@@ -28,7 +41,11 @@ interface BuildCompetitionBracketCommand {
   fixtures: Fixture[];
 }
 
-const MISSING_SLOT: BracketSlot = { status: PRESENCE_STATUS.MISSING };
+interface PlacementRequest {
+  card_id: string;
+  desired_row: number;
+  content: BracketCardContent;
+}
 
 export function is_bracket_stage_type(stage_type: string): boolean {
   return (
@@ -37,80 +54,124 @@ export function is_bracket_stage_type(stage_type: string): boolean {
   );
 }
 
-function tie_team_ids(tie: BracketTie): string[] {
-  return [tie.first_team.team_id, tie.second_team.team_id];
-}
-
-function find_feeding_slot_index(
-  tie: BracketTie,
-  previous_slots: BracketSlot[],
-): number {
-  const team_ids = tie_team_ids(tie);
-  return previous_slots.findIndex(
-    (slot: BracketSlot) =>
-      slot.status === PRESENCE_STATUS.PRESENT &&
-      tie_team_ids(slot.tie).some((team_id: string) =>
-        team_ids.includes(team_id),
-      ),
+function shares_a_team(card: BracketCard, match: BracketMatch): boolean {
+  if (card.content.status !== PRESENCE_STATUS.PRESENT) return false;
+  const card_team_ids = [
+    card.content.match.home.team_id,
+    card.content.match.away.team_id,
+  ].filter((team_id: string) => team_id.length > 0);
+  return [match.home.team_id, match.away.team_id].some((team_id: string) =>
+    card_team_ids.includes(team_id),
   );
 }
 
-function place_ties_in_slots(
-  ties: BracketTie[],
-  previous_slots: BracketSlot[],
-): BracketSlot[] {
-  const slot_count = Math.max(
-    Math.ceil(previous_slots.length / 2),
-    ties.length,
-  );
-  const slots: BracketSlot[] = Array.from(
-    { length: slot_count },
-    () => MISSING_SLOT,
-  );
-  const unplaced_ties: BracketTie[] = [];
-  for (const tie of ties) {
-    const feeding_index = find_feeding_slot_index(tie, previous_slots);
-    const target_index = Math.floor(feeding_index / 2);
-    const can_place =
-      feeding_index >= 0 &&
-      slots[target_index].status === PRESENCE_STATUS.MISSING;
-    if (can_place)
-      slots[target_index] = { status: PRESENCE_STATUS.PRESENT, tie };
-    if (!can_place) unplaced_ties.push(tie);
+function average_row(cards: readonly BracketCard[]): number {
+  return cards.length === 0
+    ? Number.POSITIVE_INFINITY
+    : cards.reduce((total, card) => total + card.row, 0) / cards.length;
+}
+
+function assign_rows(requests: PlacementRequest[]): BracketCard[] {
+  const placed: BracketCard[] = [];
+  for (const request of [...requests].sort(
+    (left, right) => left.desired_row - right.desired_row,
+  )) {
+    const next_free_row =
+      placed.length === 0 ? 0 : placed[placed.length - 1].row + 1;
+    const row = Number.isFinite(request.desired_row)
+      ? Math.max(request.desired_row, next_free_row)
+      : next_free_row;
+    placed.push({ card_id: request.card_id, row, content: request.content });
   }
-  for (const tie of unplaced_ties) {
-    const free_index = slots.findIndex(
-      (slot: BracketSlot) => slot.status === PRESENCE_STATUS.MISSING,
+  return placed;
+}
+
+function lay_out_column(
+  stage: CompetitionStage,
+  matches: BracketMatch[],
+  previous_cards: readonly BracketCard[],
+  links: BracketLink[],
+): BracketCard[] {
+  const linked_card_ids = new Set<string>();
+  const match_requests = matches.map((match: BracketMatch) => {
+    const feeders = previous_cards.filter((card) => shares_a_team(card, match));
+    feeders.forEach((card) => {
+      linked_card_ids.add(card.card_id);
+      links.push({ from_card_id: card.card_id, to_card_id: match.fixture_id });
+    });
+    return {
+      card_id: match.fixture_id,
+      desired_row: previous_cards.length === 0 ? 0 : average_row(feeders),
+      content: { status: PRESENCE_STATUS.PRESENT, match } as const,
+    };
+  });
+  const placeholder_requests = plan_placeholders(
+    previous_cards,
+    linked_card_ids,
+    new Set(matches.map(build_pair_key)).size,
+    stage.id,
+  ).map((placeholder) => {
+    placeholder.feeder_card_ids.forEach((card_id: string) =>
+      links.push({ from_card_id: card_id, to_card_id: placeholder.card_id }),
     );
-    slots[free_index] = { status: PRESENCE_STATUS.PRESENT, tie };
+    return {
+      card_id: placeholder.card_id,
+      desired_row: placeholder.desired_row,
+      content: { status: PRESENCE_STATUS.MISSING } as const,
+    };
+  });
+  return assign_rows([...match_requests, ...placeholder_requests]);
+}
+
+function compare_kickoffs(left: BracketMatch, right: BracketMatch): number {
+  return (
+    left.kickoff.localeCompare(right.kickoff) ||
+    left.fixture_id.localeCompare(right.fixture_id)
+  );
+}
+
+function order_matches_by_tie(matches: BracketMatch[]): BracketMatch[] {
+  const first_leg_by_pair = new Map<string, BracketMatch>();
+  for (const match of [...matches].sort(compare_kickoffs)) {
+    const pair_key = build_pair_key(match);
+    if (!first_leg_by_pair.has(pair_key))
+      first_leg_by_pair.set(pair_key, match);
   }
-  return slots;
+  return [...matches].sort(
+    (left, right) =>
+      compare_kickoffs(
+        first_leg_by_pair.get(build_pair_key(left)) ?? left,
+        first_leg_by_pair.get(build_pair_key(right)) ?? right,
+      ) || compare_kickoffs(left, right),
+  );
 }
 
 export function build_competition_bracket(
   command: BuildCompetitionBracketCommand,
-): BracketRound[] {
+): BracketLayout {
   const bracket_stages = command.stages
-    .filter((stage: CompetitionStage) =>
-      is_bracket_stage_type(stage.stage_type),
-    )
-    .sort(
-      (left: CompetitionStage, right: CompetitionStage) =>
-        left.stage_order - right.stage_order,
-    );
-  const rounds: BracketRound[] = [];
+    .filter((stage) => is_bracket_stage_type(stage.stage_type))
+    .sort((left, right) => left.stage_order - right.stage_order);
+  const links: BracketLink[] = [];
+  const columns: BracketColumn[] = [];
   for (const stage of bracket_stages) {
-    const stage_ties = group_fixtures_into_ties(
-      command.fixtures.filter(
-        (fixture: Fixture) => fixture.stage_id === stage.id,
-      ),
+    const matches = order_matches_by_tie(
+      command.fixtures
+        .filter((fixture: Fixture) => fixture.stage_id === stage.id)
+        .map(build_bracket_match),
     );
-    const previous_slots =
-      rounds.length > 0 ? rounds[rounds.length - 1].slots : [];
-    rounds.push({
+    const previous_cards = columns.at(-1)?.cards ?? [];
+    columns.push({
       stage,
-      slots: place_ties_in_slots(stage_ties, previous_slots),
+      cards: lay_out_column(stage, matches, previous_cards, links),
     });
   }
-  return rounds;
+  const rows = columns.flatMap((column) =>
+    column.cards.map((card) => card.row),
+  );
+  return {
+    columns,
+    links,
+    row_count: rows.length === 0 ? 0 : Math.max(...rows) + 1,
+  };
 }
