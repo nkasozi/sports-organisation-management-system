@@ -183,6 +183,7 @@
         {value}
         on_highlight={(index: number) => (highlighted_index = index)}
         on_select={commit_value}
+        anchor_element={input_element}
     />
 
     {#if has_error}

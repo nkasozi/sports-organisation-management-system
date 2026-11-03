@@ -4,16 +4,21 @@ import { describe, expect, it } from "vitest";
 
 const FIELD_WRAPPER_PATTERN =
   /<div bind:this=\{container_element\} class="[^"]*\brelative\b[^"]*">/;
-const FULL_WIDTH_PANEL_PATTERN = /class="absolute [^"]*\bw-full\b/;
+const VIEWPORT_PLACED_PANEL_PATTERN =
+  /style=\{format_dropdown_style\(placement\)\}/;
+const FIELD_MEASURED_PLACEMENT_PATTERN = /anchor_element=\{input_element\}/;
 
 function read_component_source(relative_path: string): string {
   return readFileSync(new URL(relative_path, import.meta.url), "utf8");
 }
 
 describe("searchable dropdown width source contract", () => {
-  it("anchors the full-width option panel to its own field", () => {
+  it("sizes and places the option panel from its own field", () => {
     expect(read_component_source("./SearchableSelectDropdown.svelte")).toMatch(
-      FULL_WIDTH_PANEL_PATTERN,
+      VIEWPORT_PLACED_PANEL_PATTERN,
+    );
+    expect(read_component_source("./SearchableSelectField.svelte")).toMatch(
+      FIELD_MEASURED_PLACEMENT_PATTERN,
     );
     expect(read_component_source("./SearchableSelectField.svelte")).toMatch(
       FIELD_WRAPPER_PATTERN,

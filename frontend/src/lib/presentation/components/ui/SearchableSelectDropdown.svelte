@@ -1,8 +1,16 @@
 <script lang="ts">
+    import { onMount } from "svelte";
+
     import {
         get_flat_index_for_grouped,
         type GroupedSelectOptions,
     } from "./searchable_select_logic";
+    import {
+        format_dropdown_style,
+        INITIAL_DROPDOWN_PLACEMENT,
+        measure_dropdown_placement,
+        watch_anchor_movement,
+    } from "./searchable_select_placement";
 
     export let is_open: boolean = false;
     export let list_id: string;
@@ -12,12 +20,31 @@
     export let value: string = "";
     export let on_highlight: (index: number) => void;
     export let on_select: (selected_value: string) => void;
+    export let anchor_element: HTMLElement | undefined = undefined;
+
+    let placement = INITIAL_DROPDOWN_PLACEMENT;
+
+    $: if (is_open) placement = follow_anchor_position(anchor_element);
+
+    function follow_anchor_position(
+        anchor: HTMLElement | undefined,
+    ): typeof placement {
+        return measure_dropdown_placement(anchor, placement);
+    }
+
+    onMount(() =>
+        watch_anchor_movement((): boolean => {
+            placement = follow_anchor_position(anchor_element);
+            return is_open;
+        }),
+    );
 </script>
 
 {#if is_open}
     <div
         id={list_id}
-        class="absolute z-[9999] mt-2 w-full max-h-64 overflow-auto rounded-[0.175rem] border border-accent-200 dark:border-accent-700 bg-white dark:bg-accent-800 shadow-lg"
+        style={format_dropdown_style(placement)}
+        class="z-[9999] overflow-auto rounded-[0.175rem] border border-accent-200 dark:border-accent-700 bg-white dark:bg-accent-800 shadow-lg"
         role="listbox"
         tabindex="-1"
         on:mousedown|preventDefault
