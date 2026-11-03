@@ -10,6 +10,7 @@ interface CommandOptions {
   key_replacement_succeeds: boolean;
   sign_out_succeeds: boolean;
   demo_seed_succeeds: boolean;
+  sync_settles: boolean;
 }
 
 const DEFAULT_OPTIONS: CommandOptions = {
@@ -18,6 +19,7 @@ const DEFAULT_OPTIONS: CommandOptions = {
   key_replacement_succeeds: true,
   sign_out_succeeds: true,
   demo_seed_succeeds: true,
+  sync_settles: true,
 };
 
 function record(call_order: string[], step: string): boolean {
@@ -31,8 +33,10 @@ export function create_command(
 ): LogoutDeviceTeardownCommand {
   const options = { ...DEFAULT_OPTIONS, ...overrides };
   return {
+    sync_settle_timeout_ms: 20,
     stop_background_sync: async () => {
       record(call_order, "stop_background_sync");
+      if (!options.sync_settles) return new Promise(() => {});
       await new Promise((resolve) => setTimeout(resolve, 0));
       return record(call_order, "background_sync_idle");
     },

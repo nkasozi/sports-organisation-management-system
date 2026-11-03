@@ -12,6 +12,11 @@
         get_session_token,
     } from "$lib/adapters/iam/clerkAuthService";
     import { CLERK_PRESENCE_STATUS } from "$lib/adapters/iam/clerkAuthTypes";
+    import { read_clerk_session_cookie_identity } from "$lib/adapters/iam/clerkSessionCookieIdentity";
+    import {
+        create_none_option,
+        create_some_option,
+    } from "$lib/core/types/Option";
     import {
         AuthCheckerAccessStatus,
         CURRENT_USER_PROFILE_QUERY,
@@ -20,10 +25,13 @@
     import {
         AUTH_CHECKER_PRECHECK,
         build_access_denied_redirect_path,
+        build_identity_unavailable_redirect_path,
         build_missing_email_redirect_path,
         decide_auth_checker_precheck,
         is_auth_checker_exempt_page,
     } from "$lib/presentation/logic/authCheckerPrecheck";
+    import { has_saved_identity_for_session } from "$lib/presentation/logic/authCheckerSavedIdentity";
+    import { load_verified_identity } from "$lib/presentation/stores/authOfflineVerifiedIdentity";
 
     const ACCESS_CHECK_SKIPPED_EVENT = "auth_checker_access_check_skipped";
     const ACCESS_CHECK_TIMED_OUT_EVENT = "auth_checker_access_check_timed_out";
@@ -36,12 +44,14 @@
     interface ClerkIdentitySnapshot {
         clerk_ready: boolean;
         is_signed_in: boolean;
+        is_user_loaded: boolean;
         has_email: boolean;
     }
 
     const UNAVAILABLE_CLERK_IDENTITY: ClerkIdentitySnapshot = {
         clerk_ready: false,
         is_signed_in: false,
+        is_user_loaded: false,
         has_email: false,
     };
 
@@ -49,6 +59,8 @@
         if (!browser) return UNAVAILABLE_CLERK_IDENTITY;
         const clerk_state = get(clerk_session);
         if (!clerk_state.is_loaded) return UNAVAILABLE_CLERK_IDENTITY;
+        const is_user_loaded =
+            clerk_state.user_state.status === CLERK_PRESENCE_STATUS.PRESENT;
         const user_email =
             clerk_state.user_state.status === CLERK_PRESENCE_STATUS.PRESENT
                 ? clerk_state.user_state.user.email_address
@@ -56,6 +68,7 @@
         return {
             clerk_ready: true,
             is_signed_in: clerk_state.is_signed_in,
+            is_user_loaded,
             has_email: user_email.length > 0,
         };
     }
@@ -80,10 +93,29 @@
             await goto(build_access_denied_redirect_path());
     }
 
+    async function check_saved_identity_for_session(
+        identity: ClerkIdentitySnapshot,
+    ): Promise<boolean> {
+        if (!identity.is_signed_in || identity.is_user_loaded) return false;
+        const session_id_state = get(clerk_session).session_id_state;
+        return has_saved_identity_for_session({
+            clerk_session_id:
+                session_id_state.status === CLERK_PRESENCE_STATUS.PRESENT
+                    ? create_some_option(session_id_state.session_id)
+                    : create_none_option(),
+            read_cookie_identity: () =>
+                read_clerk_session_cookie_identity(document.cookie),
+            load_verified_identity,
+        });
+    }
+
     async function check_authorization(): Promise<void> {
+        const clerk_identity = read_clerk_identity();
         const precheck = decide_auth_checker_precheck({
             in_browser: browser,
-            ...read_clerk_identity(),
+            ...clerk_identity,
+            has_saved_identity_for_session:
+                await check_saved_identity_for_session(clerk_identity),
             already_checked: authorization_checked,
             is_auth_page,
             convex_configured: Boolean(PUBLIC_CONVEX_URL),
@@ -93,9 +125,13 @@
             precheck,
         });
         switch (precheck) {
+            case AUTH_CHECKER_PRECHECK.IDENTITY_UNAVAILABLE:
+                await goto(build_identity_unavailable_redirect_path());
+                break;
             case AUTH_CHECKER_PRECHECK.MISSING_EMAIL:
                 await goto(build_missing_email_redirect_path());
                 break;
+            case AUTH_CHECKER_PRECHECK.TRUST_SAVED_IDENTITY:
             case AUTH_CHECKER_PRECHECK.CONVEX_NOT_CONFIGURED:
                 authorization_checked = true;
                 break;

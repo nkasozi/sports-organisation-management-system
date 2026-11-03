@@ -38,6 +38,20 @@ describe("execute_logout_device_teardown", () => {
     ]);
   });
 
+  it("still signs out when in-flight sync never settles, such as while Clerk is failing", async () => {
+    const call_order: string[] = [];
+
+    const teardown_state = await execute_logout_device_teardown(
+      create_command(call_order, { sync_settles: false }),
+      LANDING_REQUEST,
+    );
+
+    expect(teardown_state).toEqual({ status: "completed" });
+    expect(call_order).not.toContain("background_sync_idle");
+    expect(call_order).toContain("reset_local_database");
+    expect(call_order.at(-1)).toBe("reload_into:/");
+  });
+
   it("treats an already missing or unsupported device backup as removed", async () => {
     for (const delete_state of [
       { status: "already_missing" as const },

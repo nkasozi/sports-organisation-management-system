@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   AUTH_CHECKER_PRECHECK,
   build_access_denied_redirect_path,
+  build_identity_unavailable_redirect_path,
   build_missing_email_redirect_path,
   decide_auth_checker_precheck,
 } from "./authCheckerPrecheck";
@@ -13,6 +14,8 @@ const ready_input = {
   is_signed_in: true,
   already_checked: false,
   is_auth_page: false,
+  is_user_loaded: true,
+  has_saved_identity_for_session: false,
   has_email: true,
   convex_configured: true,
 };
@@ -34,6 +37,30 @@ describe("decide_auth_checker_precheck", () => {
     expect(
       decide_auth_checker_precheck({ ...ready_input, [field]: value }),
     ).toBe(AUTH_CHECKER_PRECHECK.SKIP);
+  });
+
+  it("reports the sign-in service when a signed-in user's details could not be loaded", () => {
+    expect(
+      decide_auth_checker_precheck({
+        ...ready_input,
+        is_user_loaded: false,
+        has_email: false,
+      }),
+    ).toBe(AUTH_CHECKER_PRECHECK.IDENTITY_UNAVAILABLE);
+    expect(build_identity_unavailable_redirect_path()).toBe(
+      "/unauthorized?reason=identity_unavailable",
+    );
+  });
+
+  it("trusts the saved identity for this session when Clerk cannot load the user", () => {
+    expect(
+      decide_auth_checker_precheck({
+        ...ready_input,
+        is_user_loaded: false,
+        has_saved_identity_for_session: true,
+        has_email: false,
+      }),
+    ).toBe(AUTH_CHECKER_PRECHECK.TRUST_SAVED_IDENTITY);
   });
 
   it("rejects a signed-in user without an email", () => {
