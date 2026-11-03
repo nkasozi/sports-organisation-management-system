@@ -83,3 +83,18 @@ export function reject_sync_write(
 ): SyncWriteDecision {
   return { status: SyncWriteStatus.REJECTED, rejection, reason };
 }
+
+const NO_CLIENT_REASON = "";
+
+export type RejectedSyncWriteDecision = Extract<
+  SyncWriteDecision,
+  { status: typeof SyncWriteStatus.REJECTED }
+>;
+
+export function describe_rejection_for_client(
+  decision: RejectedSyncWriteDecision,
+): string {
+  return decision.rejection === SyncWriteRejection.INVALID_FIELD
+    ? decision.reason
+    : NO_CLIENT_REASON;
+}

@@ -1,4 +1,5 @@
 import { SYNC_WRITE_REJECTION_MESSAGES } from "$convex/lib/sync_write_decision";
+import { is_field_rule_failure_message } from "$convex/shared_field_rules";
 import type { SyncOutboxEntry } from "$lib/adapters/repositories/syncOutbox/syncOutboxTypes";
 
 import {
@@ -39,6 +40,7 @@ export interface ServerRecordResult {
   success: boolean;
   action: string;
   server_version: number;
+  rejection_reason?: string;
 }
 
 export interface RejectedOutboxRecord {
@@ -78,6 +80,13 @@ function describe_rejection(rejection_code: string): string {
   return REJECTION_MESSAGES[rejection_code] ?? rejection_code;
 }
 
+function describe_server_rejection(result: ServerRecordResult): string {
+  const reason = result.rejection_reason ?? "";
+  return is_field_rule_failure_message(reason)
+    ? reason
+    : describe_rejection(result.action);
+}
+
 export function build_rejected_record(
   entry: SyncOutboxEntry,
   rejection_code: string,
@@ -115,7 +124,7 @@ export async function settle_upsert_result(
     case PushOutcomeKind.REJECTED:
       await mark_outbox_entry_rejected(dependencies.database, entry, {
         code: result.action,
-        message: describe_rejection(result.action),
+        message: describe_server_rejection(result),
       });
       return PushOutcomeKind.REJECTED;
   }
@@ -140,7 +149,7 @@ export async function settle_delete_result(
     case PushOutcomeKind.REJECTED:
       await mark_outbox_entry_rejected(dependencies.database, entry, {
         code: result.action,
-        message: describe_rejection(result.action),
+        message: describe_server_rejection(result),
       });
       return PushOutcomeKind.REJECTED;
   }
