@@ -39,6 +39,7 @@ export interface BracketLayout {
 interface BuildCompetitionBracketCommand {
   stages: CompetitionStage[];
   fixtures: Fixture[];
+  show_placeholders: boolean;
 }
 
 interface PlacementRequest {
@@ -91,6 +92,7 @@ function lay_out_column(
   matches: BracketMatch[],
   previous_cards: readonly BracketCard[],
   links: BracketLink[],
+  show_placeholders: boolean,
 ): BracketCard[] {
   const linked_card_ids = new Set<string>();
   const match_requests = matches.map((match: BracketMatch) => {
@@ -105,6 +107,7 @@ function lay_out_column(
       content: { status: PRESENCE_STATUS.PRESENT, match } as const,
     };
   });
+  if (!show_placeholders) return assign_rows(match_requests);
   const placeholder_requests = plan_placeholders(
     previous_cards,
     linked_card_ids,
@@ -163,7 +166,13 @@ export function build_competition_bracket(
     const previous_cards = columns.at(-1)?.cards ?? [];
     columns.push({
       stage,
-      cards: lay_out_column(stage, matches, previous_cards, links),
+      cards: lay_out_column(
+        stage,
+        matches,
+        previous_cards,
+        links,
+        command.show_placeholders,
+      ),
     });
   }
   const rows = columns.flatMap((column) =>
