@@ -37,7 +37,7 @@ describe("dialogs share one look", () => {
 });
 
 describe("the brown palette stays gone", () => {
-  it("uses purple, not amber, for the primary colour", () => {
+  it("never uses amber for the primary colour", () => {
     const config = readFileSync(
       new URL("../../../../tailwind.config.js", import.meta.url),
       "utf8",
