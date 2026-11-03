@@ -1,9 +1,18 @@
 <script lang="ts">
     import type { ActivityCategory } from "$lib/core/entities/ActivityCategory";
+    import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
     import type { ActivityFormValues } from "$lib/presentation/logic/calendarPageState";
 
     export let activity_form_values: ActivityFormValues;
     export let categories: ActivityCategory[];
+
+    $: category_options = [
+        { value: "", label: "Select a category" },
+        ...categories.map((category: ActivityCategory) => ({
+            value: category.id,
+            label: category.name,
+        })),
+    ];
 </script>
 
 <div class="space-y-4">
@@ -23,20 +32,16 @@
     </div>
     <div>
         <label
-            for="activity_category"
+            for="searchable-select-activity_category"
             class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
             >Category *</label
         >
-        <select
-            id="activity_category"
+        <SearchableSelectField
+            name="activity_category"
             bind:value={activity_form_values.category_id}
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.175rem] bg-white dark:bg-gray-700 text-accent-900 dark:text-accent-100"
-        >
-            <option value="">Select a category</option>
-            {#each categories as category}
-                <option value={category.id}>{category.name}</option>
-            {/each}
-        </select>
+            options={category_options}
+            placeholder="Select a category"
+        />
     </div>
     <div>
         <label

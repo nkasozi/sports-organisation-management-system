@@ -2,6 +2,8 @@
     import type { Organization } from "$lib/core/entities/Organization";
     import type { UserScopeProfile } from "$lib/core/interfaces/ports";
     import { type Option, OptionStatus } from "$lib/core/types/Option";
+    import { build_named_record_options } from "$lib/presentation/components/ui/searchable_select_options";
+    import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
     import type {
         OfficialLeaderboardEntry,
         PerFixtureRating,
@@ -32,6 +34,14 @@
     export let on_close_breakdown: () => void;
     export let on_organization_change: () => void;
     export let on_select_official: (entry: OfficialLeaderboardEntry) => void;
+
+    $: organization_options = build_named_record_options(organizations);
+
+    function choose_organization(organization_id: string): boolean {
+        selected_organization_id = organization_id;
+        on_organization_change();
+        return true;
+    }
 
     function get_official_leaderboard_profile_state(): OfficialLeaderboardProfileState {
         const current_profile_state = $auth_store.current_profile;
@@ -64,17 +74,15 @@
         </div>
         <div class="shrink-0">
             {#if can_user_change_official_leaderboard_organizations(get_official_leaderboard_profile_state())}
-                <select
-                    bind:value={selected_organization_id}
-                    onchange={on_organization_change}
-                    class="select-styled w-full sm:w-auto sm:min-w-[200px]"
-                >
-                    {#each organizations as organization}
-                        <option value={organization.id}
-                            >{organization.name}</option
-                        >
-                    {/each}
-                </select>
+                <div class="w-full sm:w-auto sm:min-w-[200px]">
+                    <SearchableSelectField
+                        name="official_leaderboard_organization"
+                        value={selected_organization_id}
+                        options={organization_options}
+                        on:change={(event) =>
+                            choose_organization(event.detail.value)}
+                    />
+                </div>
             {:else if organizations.length > 0}
                 <span
                     class="rounded-[0.175rem] bg-accent-100 px-3 py-2 text-sm font-medium text-accent-700 dark:bg-accent-800 dark:text-accent-300"

@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { Competition } from "$lib/core/entities/Competition";
     import type { Organization } from "$lib/core/entities/Organization";
+    import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
 
     export let organizations: Organization[];
     export let selected_organization_id: string;
@@ -12,6 +13,26 @@
     export let on_organization_change: () => Promise<void>;
     export let on_competition_change: () => void;
     export let on_copy_share_link: () => boolean;
+
+    $: organization_options = organizations.map((organization) => ({
+        value: organization.id,
+        label: organization.name,
+    }));
+    $: competition_options = competitions.map((competition) => ({
+        value: competition.id,
+        label: competition.name,
+    }));
+
+    function choose_organization(organization_id: string): Promise<void> {
+        selected_organization_id = organization_id;
+        return on_organization_change();
+    }
+
+    function choose_competition(competition_id: string): boolean {
+        selected_competition_id = competition_id;
+        on_competition_change();
+        return true;
+    }
 </script>
 
 <div
@@ -32,15 +53,15 @@
         class="flex flex-col sm:flex-row sm:flex-wrap xl:justify-end items-start sm:items-center gap-3 w-full xl:w-auto min-w-0"
     >
         {#if can_change_organizations}
-            <select
-                bind:value={selected_organization_id}
-                on:change={() => void on_organization_change()}
-                class="select-styled w-full sm:w-auto min-w-0 sm:min-w-[200px]"
-            >
-                {#each organizations as organization}
-                    <option value={organization.id}>{organization.name}</option>
-                {/each}
-            </select>
+            <div class="w-full sm:w-auto min-w-0 sm:min-w-[220px]">
+                <SearchableSelectField
+                    name="organization_select"
+                    value={selected_organization_id}
+                    options={organization_options}
+                    on:change={(event) =>
+                        void choose_organization(event.detail.value)}
+                />
+            </div>
         {:else}
             <span
                 class="text-sm font-medium text-accent-700 dark:text-accent-300 px-3 py-2 bg-accent-100 dark:bg-accent-800 rounded-[0.175rem]"
@@ -52,16 +73,14 @@
             </span>
         {/if}
 
-        <select
-            id="competition_select"
-            bind:value={selected_competition_id}
-            on:change={on_competition_change}
-            class="select-styled w-full sm:w-auto sm:min-w-[200px] sm:max-w-[300px]"
-        >
-            {#each competitions as competition}
-                <option value={competition.id}>{competition.name}</option>
-            {/each}
-        </select>
+        <div class="w-full sm:w-auto sm:min-w-[220px] sm:max-w-[300px]">
+            <SearchableSelectField
+                name="competition_select"
+                value={selected_competition_id}
+                options={competition_options}
+                on:change={(event) => choose_competition(event.detail.value)}
+            />
+        </div>
 
         <button
             type="button"

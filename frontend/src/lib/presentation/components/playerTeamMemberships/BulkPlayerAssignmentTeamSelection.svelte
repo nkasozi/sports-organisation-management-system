@@ -1,5 +1,7 @@
 <script lang="ts">
     import type { Team } from "$lib/core/entities/Team";
+    import { build_named_record_options_with_blank } from "$lib/presentation/components/ui/searchable_select_options";
+    import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
 
     export let teams: Team[];
     export let selected_team_id: string;
@@ -7,26 +9,27 @@
     export let search_query: string;
     export let on_select_all_unassigned: () => void;
     export let on_deselect_all: () => void;
+
+    $: team_options = build_named_record_options_with_blank(
+        "-- Select a team --",
+        teams,
+    );
 </script>
 
 <div class="card p-4 sm:p-6">
     <div class="space-y-4">
         <div>
             <label
-                for="team_select"
+                for="searchable-select-team_select"
                 class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-2"
                 >Select Target Team *</label
             >
-            <select
-                id="team_select"
+            <SearchableSelectField
+                name="team_select"
                 bind:value={selected_team_id}
-                class="w-full px-3 py-2 border border-accent-300 dark:border-accent-600 rounded-[0.175rem] bg-white dark:bg-accent-700 text-accent-900 dark:text-accent-100"
-            >
-                <option value="">-- Select a team --</option>
-                {#each teams as current_team}
-                    <option value={current_team.id}>{current_team.name}</option>
-                {/each}
-            </select>
+                options={team_options}
+                placeholder="-- Select a team --"
+            />
         </div>
 
         {#if selected_team_id}

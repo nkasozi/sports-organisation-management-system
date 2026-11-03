@@ -127,6 +127,8 @@ export const STATS_DETAIL_TEXT = {
   MATCH_REPORT: "Match report",
   TOP_ASSISTS: "Top Assists",
   NO_ASSISTS: "No assists recorded yet.",
+  COLLAPSE_SECTION: "Collapse this section",
+  EXPAND_SECTION: "Expand this section",
 } as const;
 
 export const STATS_SECTION_TEXT = {
@@ -135,4 +137,8 @@ export const STATS_SECTION_TEXT = {
   ASSISTS_ICON: "🤝",
   NO_SCORES: "No scores recorded yet.",
   NO_SCORES_FOR: "No scores recorded for",
+  MOST_CARDS: "Most Cards",
+  CARDS_ICON: "🟨",
+  TEAM_FILTER_LABEL: "Filter by team:",
+  ALL_TEAMS: "All Teams",
 } as const;

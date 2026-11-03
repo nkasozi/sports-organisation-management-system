@@ -27,7 +27,11 @@ import {
   wait_for_todays_fixture,
 } from "./support/liveGameSteps";
 import { E2E_PROFILES } from "./support/profiles";
-import { expect_no_sync_rejections, open_from_sidebar } from "./support/ui";
+import {
+  choose_option,
+  expect_no_sync_rejections,
+  open_from_sidebar,
+} from "./support/ui";
 import { E2E_WORLD } from "./support/world";
 
 test.describe.configure({ mode: "serial" });
@@ -183,9 +187,8 @@ test("the public can follow the result and read why events were changed", async 
   page,
 }) => {
   await page.goto("/competition-results");
-  const pickers = page.locator("main select");
-  await pickers.nth(0).selectOption({ label: E2E_WORLD.organization_name });
-  await pickers.nth(1).selectOption({ label: E2E_WORLD.competition_name });
+  await choose_option(page, "organization_select", E2E_WORLD.organization_name);
+  await choose_option(page, "competition_select", E2E_WORLD.competition_name);
   await page.getByRole("button", { name: /Results/ }).click();
   await expect(page.getByText(E2E_WORLD.home_team).first()).toBeVisible();
   await page.goto(`/match-report/${read_todays_fixture().local_id}`);

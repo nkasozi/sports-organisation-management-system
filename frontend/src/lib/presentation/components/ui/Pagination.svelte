@@ -1,3 +1,12 @@
+<script context="module" lang="ts">
+    let pagination_instance_count = 0;
+
+    function claim_pagination_instance_number(): number {
+        pagination_instance_count += 1;
+        return pagination_instance_count;
+    }
+</script>
+
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
 
@@ -5,6 +14,7 @@
         build_visible_page_entries,
         PAGINATION_ENTRY_KIND,
     } from "./paginationLogic";
+    import SearchableSelectField from "./SearchableSelectField.svelte";
 
     export let current_page: number;
     export let total_pages: number;
@@ -20,17 +30,21 @@
     $: display_start =
         total_items === 0 ? 0 : (current_page - 1) * items_per_page + 1;
     $: display_end = Math.min(current_page * items_per_page, total_items);
+    const page_size_field_name = `pagination_page_size_${claim_pagination_instance_number()}`;
+
+    $: page_size_select_options = page_size_options.map((size: number) => ({
+        value: String(size),
+        label: String(size),
+    }));
     $: visible_page_entries = build_visible_page_entries(
         current_page,
         total_pages,
     );
 
-    function handle_page_size_change(event: Event): void {
-        const new_size = parseInt(
-            (event.target as HTMLSelectElement).value,
-            10,
-        );
+    function handle_page_size_change(selected_value: string): boolean {
+        const new_size = parseInt(selected_value, 10);
         dispatch("page_size_change", { size: new_size });
+        return true;
     }
 
     function go_to_page(page: number): void {
@@ -62,18 +76,22 @@
                 >|</span
             >
 
-            <label class="hidden sm:flex items-center gap-1.5">
-                <span class="text-xs">Per page:</span>
-                <select
-                    value={items_per_page}
-                    on:change={handle_page_size_change}
-                    class="text-xs rounded border border-accent-200 dark:border-accent-700 bg-white dark:bg-accent-800 text-accent-900 dark:text-accent-100 px-1.5 py-0.5 focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+            <div class="hidden sm:flex items-center gap-1.5">
+                <label
+                    class="text-xs"
+                    for={`searchable-select-${page_size_field_name}_wide`}
+                    >Per page:</label
                 >
-                    {#each page_size_options as size}
-                        <option value={size}>{size}</option>
-                    {/each}
-                </select>
-            </label>
+                <div class="w-20">
+                    <SearchableSelectField
+                        name={`${page_size_field_name}_wide`}
+                        value={String(items_per_page)}
+                        options={page_size_select_options}
+                        on:change={(event) =>
+                            handle_page_size_change(event.detail.value)}
+                    />
+                </div>
+            </div>
         </div>
 
         <div class="flex items-center gap-1">
@@ -142,19 +160,23 @@
             </button>
         </div>
 
-        <label
+        <div
             class="flex sm:hidden items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400"
         >
-            <span class="text-xs">Per page:</span>
-            <select
-                value={items_per_page}
-                on:change={handle_page_size_change}
-                class="text-xs rounded border border-accent-200 dark:border-accent-700 bg-white dark:bg-accent-800 text-accent-900 dark:text-accent-100 px-1.5 py-0.5 focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+            <label
+                class="text-xs"
+                for={`searchable-select-${page_size_field_name}_narrow`}
+                >Per page:</label
             >
-                {#each page_size_options as size}
-                    <option value={size}>{size}</option>
-                {/each}
-            </select>
-        </label>
+            <div class="w-20">
+                <SearchableSelectField
+                    name={`${page_size_field_name}_narrow`}
+                    value={String(items_per_page)}
+                    options={page_size_select_options}
+                    on:change={(event) =>
+                        handle_page_size_change(event.detail.value)}
+                />
+            </div>
+        </div>
     </div>
 {/if}

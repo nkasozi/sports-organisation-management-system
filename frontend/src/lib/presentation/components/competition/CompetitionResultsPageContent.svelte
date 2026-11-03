@@ -7,6 +7,8 @@
     import type { Team } from "$lib/core/entities/Team";
     import type { LoadingState } from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
     import LoadingStateWrapper from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
+    import { build_named_record_options } from "$lib/presentation/components/ui/searchable_select_options";
+    import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
     import type {
         CompetitionResultsCompetitionFormatState,
         CompetitionResultsSelectedCompetitionState,
@@ -41,6 +43,13 @@
     export let can_change_organizations: boolean;
     export let on_organization_change: () => Promise<void>;
     export let on_competition_change: () => void;
+
+    $: organization_options = build_named_record_options(organizations);
+
+    function choose_organization(organization_id: string): Promise<void> {
+        selected_organization_id = organization_id;
+        return on_organization_change();
+    }
 </script>
 
 <div class="w-full">
@@ -107,18 +116,17 @@
                 class="bg-white dark:bg-accent-800 shadow-sm border-y border-accent-200 dark:border-accent-700 -mx-4 px-4 py-8 text-center sm:mx-0 sm:p-12 sm:border sm:rounded-lg"
             >
                 {#if can_change_organizations}
-                    <select
-                        aria-label="Organization"
-                        bind:value={selected_organization_id}
-                        on:change={() => void on_organization_change()}
-                        class="select-styled w-full sm:w-auto sm:min-w-[240px] mb-6"
+                    <div
+                        class="w-full sm:w-auto sm:min-w-[240px] sm:inline-block mb-6 text-left"
                     >
-                        {#each organizations as organization}
-                            <option value={organization.id}
-                                >{organization.name}</option
-                            >
-                        {/each}
-                    </select>
+                        <SearchableSelectField
+                            name="competition_results_empty_organization"
+                            value={selected_organization_id}
+                            options={organization_options}
+                            on:change={(event) =>
+                                void choose_organization(event.detail.value)}
+                        />
+                    </div>
                 {/if}
                 <svg
                     class="mx-auto h-12 w-12 text-accent-400"

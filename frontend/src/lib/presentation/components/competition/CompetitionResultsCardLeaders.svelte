@@ -10,9 +10,13 @@
     } from "$lib/presentation/logic/competitionResultsCardStats";
     import { PLAYER_STAT_MOMENT_KIND } from "$lib/presentation/logic/competitionResultsPlayerMoments";
 
-    import { COMPETITION_STATS_ALL_TEAMS_FILTER } from "./competitionResultsDisplayConstants";
+    import {
+        COMPETITION_STATS_ALL_TEAMS_FILTER,
+        STATS_SECTION_TEXT,
+    } from "./competitionResultsDisplayConstants";
     import StatsLeaderboardRow from "./StatsLeaderboardRow.svelte";
     import StatsPlayerGames from "./StatsPlayerGames.svelte";
+    import StatsSectionCard from "./StatsSectionCard.svelte";
 
     export let stats_team_filter: string;
     export let stats_card_categories: CardStatCategory[];
@@ -54,15 +58,11 @@
     }
 </script>
 
-<div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-    <div
-        class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4"
-    >
-        <h3
-            class="text-base sm:text-lg font-semibold text-accent-900 dark:text-accent-100 flex items-center gap-2 shrink-0"
-        >
-            <span>🟨</span> Most Cards
-        </h3>
+<StatsSectionCard
+    title={STATS_SECTION_TEXT.MOST_CARDS}
+    icon={STATS_SECTION_TEXT.CARDS_ICON}
+>
+    <div slot="actions" class="self-start sm:self-auto">
         {#if stats_card_categories.length > 0}
             <div
                 class="flex flex-wrap rounded-md border border-accent-200 dark:border-accent-700 overflow-hidden text-xs font-medium self-start sm:self-auto"
@@ -150,4 +150,4 @@
             {/each}
         </div>
     {/if}
-</div>
+</StatsSectionCard>

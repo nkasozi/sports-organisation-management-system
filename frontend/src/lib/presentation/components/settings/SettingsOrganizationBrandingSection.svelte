@@ -2,6 +2,7 @@
     import type { Organization } from "$lib/core/entities/Organization";
     import SettingsSectionCard from "$lib/presentation/components/settings/SettingsSectionCard.svelte";
     import ImageUpload from "$lib/presentation/components/ui/ImageUpload.svelte";
+    import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
 
     export let default_logo_svg: string;
     export let organization_name: string;
@@ -17,6 +18,18 @@
     export let on_organization_switch: () => Promise<boolean>;
     export let on_logo_change: (event: CustomEvent<{ url: string }>) => void;
     export let on_save: () => Promise<void>;
+
+    $: organization_options = organizations.map(
+        (organization: Organization) => ({
+            value: organization.id,
+            label: organization.name,
+        }),
+    );
+
+    function choose_organization(organization_id: string): Promise<boolean> {
+        selected_organization_id = organization_id;
+        return on_organization_switch();
+    }
 </script>
 
 <SettingsSectionCard
@@ -25,15 +38,15 @@
 >
     <svelte:fragment slot="header-actions">
         {#if is_super_admin && organizations.length > 0}
-            <select
-                class="input text-xs py-1 px-2 rounded-[0.175rem]"
-                bind:value={selected_organization_id}
-                on:change={() => void on_organization_switch()}
-            >
-                {#each organizations as organization (organization.id)}
-                    <option value={organization.id}>{organization.name}</option>
-                {/each}
-            </select>
+            <div class="w-full sm:w-auto sm:min-w-[200px]">
+                <SearchableSelectField
+                    name="branding_organization"
+                    value={selected_organization_id}
+                    options={organization_options}
+                    on:change={(event) =>
+                        void choose_organization(event.detail.value)}
+                />
+            </div>
         {:else}
             <span
                 class={`inline-flex items-center px-3 py-1 rounded-[0.175rem] text-xs font-medium ${

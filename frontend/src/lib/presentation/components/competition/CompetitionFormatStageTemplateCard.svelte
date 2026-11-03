@@ -2,6 +2,7 @@
     import type { CompetitionFormatStageTemplate } from "$lib/core/entities/CompetitionFormat";
     import { STAGE_TYPE_OPTIONS } from "$lib/core/entities/CompetitionStage";
     import type { ScalarInput } from "$lib/core/types/DomainScalars";
+    import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
 
     export let stage_template: ScalarInput<CompetitionFormatStageTemplate>;
     export let template_index: number;
@@ -68,26 +69,20 @@
         </div>
 
         <div class="space-y-2">
-            <label class="label" for={`stage_template_type_${template_index}`}>
+            <label
+                class="label"
+                for={`searchable-select-stage_template_type_${template_index}`}
+            >
                 Stage Type
             </label>
-            <select
-                id={`stage_template_type_${template_index}`}
-                class="input"
+            <SearchableSelectField
+                name={`stage_template_type_${template_index}`}
                 value={stage_template.stage_type}
-                on:change={(event) =>
-                    on_type_change(
-                        template_index,
-                        (event.currentTarget as HTMLSelectElement).value,
-                    )}
+                options={STAGE_TYPE_OPTIONS}
                 {disabled}
-            >
-                {#each STAGE_TYPE_OPTIONS as stage_type_option}
-                    <option value={stage_type_option.value}>
-                        {stage_type_option.label}
-                    </option>
-                {/each}
-            </select>
+                on:change={(event) =>
+                    on_type_change(template_index, event.detail.value)}
+            />
         </div>
     </div>
 </div>

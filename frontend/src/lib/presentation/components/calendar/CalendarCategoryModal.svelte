@@ -1,4 +1,19 @@
 <script lang="ts">
+    import { ACTIVITY_CATEGORY_TYPE } from "$lib/core/entities/ActivityCategory";
+    import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
+
+    const CATEGORY_TYPE_OPTIONS = [
+        { value: ACTIVITY_CATEGORY_TYPE.CUSTOM, label: "Custom" },
+        { value: ACTIVITY_CATEGORY_TYPE.TRAINING, label: "Training" },
+        {
+            value: ACTIVITY_CATEGORY_TYPE.ADMINISTRATIVE,
+            label: "Administrative",
+        },
+        { value: ACTIVITY_CATEGORY_TYPE.MEETING, label: "Meeting" },
+        { value: ACTIVITY_CATEGORY_TYPE.MEDICAL, label: "Medical" },
+        { value: ACTIVITY_CATEGORY_TYPE.TRAVEL, label: "Travel" },
+    ];
+
     export let is_visible: boolean;
     export let on_close: () => void;
     export let on_create: (
@@ -99,21 +114,15 @@
                     </div>
                     <div>
                         <label
-                            for="category_type"
+                            for="searchable-select-category_type"
                             class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
                             >Type</label
-                        ><select
-                            id="category_type"
-                            bind:value={category_type}
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.175rem] bg-white dark:bg-gray-700 text-accent-900 dark:text-accent-100"
-                            ><option value="custom">Custom</option><option
-                                value="training">Training</option
-                            ><option value="administrative"
-                                >Administrative</option
-                            ><option value="meeting">Meeting</option><option
-                                value="medical">Medical</option
-                            ><option value="travel">Travel</option></select
                         >
+                        <SearchableSelectField
+                            name="category_type"
+                            bind:value={category_type}
+                            options={CATEGORY_TYPE_OPTIONS}
+                        />
                     </div>
                 </div>
                 <div

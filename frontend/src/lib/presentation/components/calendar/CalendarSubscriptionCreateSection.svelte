@@ -3,6 +3,21 @@
         CALENDAR_FEED_TYPE,
         type CalendarFeedType,
     } from "$lib/core/entities/CalendarToken";
+    import {
+        build_named_record_options_with_blank,
+        build_numeric_select_options,
+        parse_numeric_select_value,
+    } from "$lib/presentation/components/ui/searchable_select_options";
+    import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
+
+    const FEED_TYPE_OPTIONS = [
+        { value: CALENDAR_FEED_TYPE.ALL, label: "All Events" },
+        { value: CALENDAR_FEED_TYPE.TEAM, label: "Team Schedule" },
+        {
+            value: CALENDAR_FEED_TYPE.COMPETITION,
+            label: "Competition Schedule",
+        },
+    ];
 
     export let show_create_form: boolean = false;
     export let selected_feed_type: CalendarFeedType = CALENDAR_FEED_TYPE.ALL;
@@ -18,6 +33,28 @@
     export let on_hide_form: () => void = () => {};
     export let on_feed_type_change: () => void = () => {};
     export let on_create: () => void = () => {};
+
+    $: entity_options = build_named_record_options_with_blank(
+        "-- Select --",
+        get_entity_options(),
+    );
+    $: reminder_select_options = build_numeric_select_options(reminder_options);
+
+    function is_feed_type(value: string): value is CalendarFeedType {
+        return (Object.values(CALENDAR_FEED_TYPE) as string[]).includes(value);
+    }
+
+    function choose_feed_type(selected_value: string): boolean {
+        if (!is_feed_type(selected_value)) return false;
+        selected_feed_type = selected_value;
+        on_feed_type_change();
+        return true;
+    }
+
+    function choose_reminder(selected_value: string): boolean {
+        reminder_minutes = parse_numeric_select_value(selected_value);
+        return true;
+    }
 </script>
 
 <div class="create-section mt-6">
@@ -50,65 +87,50 @@
             <div class="form-fields space-y-4">
                 <div>
                     <label
-                        for="feed-type-select"
+                        for="searchable-select-feed-type-select"
                         class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
                         >Feed Type</label
                     >
-                    <select
-                        id="feed-type-select"
-                        bind:value={selected_feed_type}
-                        on:change={on_feed_type_change}
-                        class="select-styled w-full"
-                    >
-                        <option value={CALENDAR_FEED_TYPE.ALL}
-                            >All Events</option
-                        >
-                        <option value={CALENDAR_FEED_TYPE.TEAM}
-                            >Team Schedule</option
-                        >
-                        <option value={CALENDAR_FEED_TYPE.COMPETITION}
-                            >Competition Schedule</option
-                        >
-                    </select>
+                    <SearchableSelectField
+                        name="feed-type-select"
+                        value={selected_feed_type}
+                        options={FEED_TYPE_OPTIONS}
+                        on:change={(event) =>
+                            choose_feed_type(event.detail.value)}
+                    />
                 </div>
 
                 {#if selected_feed_type !== CALENDAR_FEED_TYPE.ALL}
                     <div>
                         <label
-                            for="entity-select"
+                            for="searchable-select-entity-select"
                             class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
                             >{selected_feed_type === CALENDAR_FEED_TYPE.TEAM
                                 ? "Select Team"
                                 : "Select Competition"}</label
                         >
-                        <select
-                            id="entity-select"
+                        <SearchableSelectField
+                            name="entity-select"
                             bind:value={selected_entity_id}
-                            class="select-styled w-full"
-                        >
-                            <option value="">-- Select --</option>
-                            {#each get_entity_options() as option}
-                                <option value={option.id}>{option.name}</option>
-                            {/each}
-                        </select>
+                            options={entity_options}
+                            placeholder="-- Select --"
+                        />
                     </div>
                 {/if}
 
                 <div>
                     <label
-                        for="reminder-select"
+                        for="searchable-select-reminder-select"
                         class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
                         >Default Reminder</label
                     >
-                    <select
-                        id="reminder-select"
-                        bind:value={reminder_minutes}
-                        class="select-styled w-full"
-                    >
-                        {#each reminder_options as option}
-                            <option value={option.value}>{option.label}</option>
-                        {/each}
-                    </select>
+                    <SearchableSelectField
+                        name="reminder-select"
+                        value={String(reminder_minutes)}
+                        options={reminder_select_options}
+                        on:change={(event) =>
+                            choose_reminder(event.detail.value)}
+                    />
                     <p
                         class="text-xs text-accent-500 dark:text-accent-400 mt-1"
                     >

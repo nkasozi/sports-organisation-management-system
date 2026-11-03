@@ -1,5 +1,9 @@
 <script lang="ts">
-    import type { CreateSportInput } from "$lib/core/entities/Sport";
+    import type {
+        CreateSportInput,
+        OvertimeRule,
+    } from "$lib/core/entities/Sport";
+    import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
     import {
         SPORT_OVERTIME_TRIGGER_OPTIONS,
         SPORT_OVERTIME_TYPE_OPTIONS,
@@ -8,6 +12,18 @@
     import { is_penalty_based_overtime } from "./sportFormSectionConstants";
 
     export let form_data: CreateSportInput;
+
+    function choose_trigger_condition(selected_value: string): boolean {
+        form_data.overtime_rules.trigger_condition =
+            selected_value as OvertimeRule["trigger_condition"];
+        return true;
+    }
+
+    function choose_overtime_type(selected_value: string): boolean {
+        form_data.overtime_rules.overtime_type =
+            selected_value as OvertimeRule["overtime_type"];
+        return true;
+    }
 </script>
 
 <div class="space-y-6">
@@ -30,40 +46,32 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label
-                        for="sport-overtime-trigger"
+                        for="searchable-select-sport-overtime-trigger"
                         class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-2"
                         >Trigger Condition</label
                     >
-                    <select
-                        id="sport-overtime-trigger"
-                        class="input w-full"
-                        bind:value={form_data.overtime_rules.trigger_condition}
-                    >
-                        {#each SPORT_OVERTIME_TRIGGER_OPTIONS as current_option}
-                            <option value={current_option.value}
-                                >{current_option.label}</option
-                            >
-                        {/each}
-                    </select>
+                    <SearchableSelectField
+                        name="sport-overtime-trigger"
+                        value={form_data.overtime_rules.trigger_condition}
+                        options={SPORT_OVERTIME_TRIGGER_OPTIONS}
+                        on:change={(event) =>
+                            choose_trigger_condition(event.detail.value)}
+                    />
                 </div>
 
                 <div>
                     <label
-                        for="sport-overtime-type"
+                        for="searchable-select-sport-overtime-type"
                         class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-2"
                         >Overtime Type</label
                     >
-                    <select
-                        id="sport-overtime-type"
-                        class="input w-full"
-                        bind:value={form_data.overtime_rules.overtime_type}
-                    >
-                        {#each SPORT_OVERTIME_TYPE_OPTIONS as current_option}
-                            <option value={current_option.value}
-                                >{current_option.label}</option
-                            >
-                        {/each}
-                    </select>
+                    <SearchableSelectField
+                        name="sport-overtime-type"
+                        value={form_data.overtime_rules.overtime_type}
+                        options={SPORT_OVERTIME_TYPE_OPTIONS}
+                        on:change={(event) =>
+                            choose_overtime_type(event.detail.value)}
+                    />
                 </div>
             </div>
 
