@@ -54,3 +54,7 @@ dist/
 .github/copilot-instructions.md
 /frontend/.vercel
 *.log
+.claude/launch.json
+frontend/convex/README.md
+frontend/output.txt
+frontend/test_output.txt
