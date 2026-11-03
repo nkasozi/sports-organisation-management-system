@@ -11,7 +11,7 @@
     <h4 class="mb-3 font-medium text-gray-900">Resolution Strategy</h4>
     <div class="space-y-2">
         <label
-            class="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-3 transition-colors hover:bg-gray-50 {selected_action ===
+            class="flex cursor-pointer items-center gap-3 rounded-[0.175rem] border border-gray-200 p-3 transition-colors hover:bg-gray-50 {selected_action ===
             ConflictResolutionActionKind.KEEP_LOCAL
                 ? 'border-blue-500 bg-blue-50'
                 : ''}"
@@ -31,7 +31,7 @@
             </div>
         </label>
         <label
-            class="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-3 transition-colors hover:bg-gray-50 {selected_action ===
+            class="flex cursor-pointer items-center gap-3 rounded-[0.175rem] border border-gray-200 p-3 transition-colors hover:bg-gray-50 {selected_action ===
             ConflictResolutionActionKind.KEEP_REMOTE
                 ? 'border-green-500 bg-green-50'
                 : ''}"
@@ -51,7 +51,7 @@
             </div>
         </label>
         <label
-            class="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-3 transition-colors hover:bg-gray-50 {selected_action ===
+            class="flex cursor-pointer items-center gap-3 rounded-[0.175rem] border border-gray-200 p-3 transition-colors hover:bg-gray-50 {selected_action ===
             ConflictResolutionActionKind.MERGE
                 ? 'border-purple-500 bg-purple-50'
                 : ''}"

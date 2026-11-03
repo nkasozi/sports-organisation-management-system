@@ -70,11 +70,11 @@
         >
             {validation_error}
         </div>{/if}{#if !has_selected_team}<div
-            class="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-yellow-800 dark:text-yellow-200"
+            class="p-4 bg-yellow-50 dark:bg-accent-900 rounded-lg text-yellow-700 dark:text-yellow-200"
         >
             Select a team first to load players.
         </div>{:else if filtered_team_players.length === 0}<div
-            class="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-yellow-800 dark:text-yellow-200"
+            class="p-4 bg-yellow-50 dark:bg-accent-900 rounded-lg text-yellow-700 dark:text-yellow-200"
         >
             No players match your search.
         </div>{:else}<div

@@ -126,7 +126,7 @@
   }
 
   .status-warning {
-    @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200;
+    @apply bg-yellow-100 text-yellow-700 dark:bg-accent-900 dark:text-yellow-200;
   }
 
   .status-info {

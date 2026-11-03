@@ -9,7 +9,7 @@
 
 {#if phase.status === LOCAL_VAULT_PROMPT_PHASE.FAILED}
     <p
-        class="rounded-xl border border-red-500 bg-red-950 px-4 py-3 text-sm text-red-100"
+        class="rounded-[0.175rem] border border-red-500 bg-red-950 px-4 py-3 text-sm text-red-100"
         role="alert"
     >
         {phase.message}

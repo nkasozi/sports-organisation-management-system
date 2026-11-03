@@ -20,7 +20,7 @@
         class="fixed inset-x-0 top-0 z-[10001] px-4 pt-4 sm:left-auto sm:right-4 sm:max-w-md sm:px-0"
     >
         <div
-            class="rounded-xl border border-amber-500 bg-amber-50 p-4 text-amber-900 dark:border-amber-500 dark:bg-amber-950 dark:text-amber-100"
+            class="rounded-[0.175rem] border border-amber-500 bg-amber-50 p-4 text-amber-700 dark:border-amber-500 dark:bg-accent-900 dark:text-amber-100"
             role="alert"
             aria-labelledby={TITLE_ELEMENT_ID}
         >
@@ -35,7 +35,7 @@
                 {#if $is_signed_in}
                     <button
                         type="button"
-                        class="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                        class="rounded-[0.175rem] bg-amber-600 px-4 py-2 text-sm font-semibold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                         on:click={reload_from_server}
                     >
                         Reload from server
@@ -43,7 +43,7 @@
                 {/if}
                 <button
                     type="button"
-                    class="rounded-lg border border-amber-600 px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                    class="rounded-[0.175rem] border border-amber-600 px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                     on:click={local_record_tamper_notice_store.dismiss}
                 >
                     Dismiss

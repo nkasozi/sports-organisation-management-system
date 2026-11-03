@@ -48,7 +48,7 @@
         <div class="text-center py-8 text-accent-500">Loading teams...</div>
     {:else if team_options.length === 0}
         <div
-            class="flex items-start gap-2 rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-yellow-900"
+            class="flex items-start gap-2 rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-yellow-700"
         >
             <svg
                 class="h-5 w-5 flex-shrink-0 text-yellow-600"
@@ -65,7 +65,7 @@
                 <p class="text-sm font-medium">
                     No teams available for the selected organisation.
                 </p>
-                <p class="text-sm text-yellow-800">
+                <p class="text-sm text-yellow-700">
                     Create teams under the organisation to add them here.
                 </p>
             </div>

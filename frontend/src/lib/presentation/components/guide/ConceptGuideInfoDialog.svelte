@@ -32,7 +32,7 @@
     on:click|self={on_close}
 >
     <div
-        class="bg-white dark:bg-gray-800 w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-t-xl sm:rounded-xl shadow-2xl"
+        class="bg-white dark:bg-gray-800 w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-t-[0.175rem] sm:rounded-[0.175rem] shadow-2xl"
         role="dialog"
         aria-modal="true"
         aria-labelledby="concept_info_title"
@@ -109,7 +109,7 @@
                 <div class="grid gap-3 sm:grid-cols-2">
                     {#each explanation.scenarios as scenario (scenario.title)}
                         <div
-                            class="rounded-lg bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700 p-3"
+                            class="rounded-[0.175rem] bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700 p-3"
                         >
                             <div
                                 class="text-sm font-semibold text-accent-900 dark:text-accent-100"

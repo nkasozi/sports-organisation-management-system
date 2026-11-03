@@ -16,7 +16,7 @@
         class="fixed inset-x-0 bottom-0 z-[10001] px-4 pb-4 sm:bottom-4 sm:left-auto sm:right-4 sm:max-w-md sm:px-0 sm:pb-0"
     >
         <div
-            class="rounded-xl border border-amber-500 bg-amber-50 p-4 text-amber-900 dark:border-amber-500 dark:bg-amber-950 dark:text-amber-100"
+            class="rounded-xl border border-amber-500 bg-amber-50 p-4 text-amber-700 dark:border-amber-500 dark:bg-accent-900 dark:text-amber-100"
             role="alert"
             aria-labelledby={TITLE_ELEMENT_ID}
         >

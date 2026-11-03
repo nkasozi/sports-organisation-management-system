@@ -18,7 +18,7 @@
 
 {#if access.status_text}
     <div
-        class={`mb-4 rounded-lg border px-4 py-3 flex flex-wrap items-center gap-3 ${access.can_correct ? "border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20" : "border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20"}`}
+        class={`mb-4 rounded-lg border px-4 py-3 flex flex-wrap items-center gap-3 ${access.can_correct ? "border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20" : "border-amber-200 bg-amber-50 dark:border-amber-500/40 dark:bg-accent-900"}`}
         aria-live="polite"
     >
         <div class="flex-1 min-w-[12rem]">

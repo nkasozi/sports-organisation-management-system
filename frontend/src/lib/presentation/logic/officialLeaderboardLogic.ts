@@ -86,7 +86,7 @@ export function build_leaderboard_entries(
 
 export function get_tier_badge_classes(tier: PerformanceTier): string {
   const classes: Record<PerformanceTier, string> = {
-    elite: "bg-yellow-100 text-yellow-800 border border-yellow-300",
+    elite: "bg-yellow-100 text-yellow-700 border border-yellow-300",
     strong: "bg-emerald-100 text-emerald-800 border border-emerald-300",
     adequate: "bg-blue-100 text-blue-800 border border-blue-300",
     needs_development: "bg-gray-100 text-gray-700 border border-gray-300",

@@ -83,7 +83,7 @@
         on:click={handle_backdrop_click}
     >
         <div
-            class="w-full max-w-md rounded-lg border border-accent-200 bg-white p-6 shadow-xl dark:border-accent-700 dark:bg-gray-800"
+            class="w-full max-w-md rounded-[0.175rem] border border-accent-200 bg-white p-6 shadow-xl dark:border-accent-700 dark:bg-gray-800"
             role="alertdialog"
             aria-modal="true"
             aria-labelledby={TITLE_ELEMENT_ID}

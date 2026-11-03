@@ -18,7 +18,7 @@
     tabindex="-1"
 >
     <div
-        class="bg-white dark:bg-accent-800 rounded-lg shadow-xl max-w-md w-full p-6 flex flex-col items-center"
+        class="bg-white dark:bg-accent-800 rounded-[0.175rem] shadow-xl max-w-md w-full p-6 flex flex-col items-center"
     >
         <span
             class="animate-spin rounded-full h-8 w-8 border-2 border-theme-primary-200 border-t-theme-primary-600 mb-4"
@@ -35,7 +35,7 @@
             </p>
             <button
                 type="button"
-                class="mt-4 rounded-lg border border-accent-300 px-4 py-2 text-sm font-medium text-accent-700 hover:bg-accent-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-theme-primary-500 dark:border-accent-600 dark:text-accent-200 dark:hover:bg-accent-700"
+                class="mt-4 rounded-[0.175rem] border border-accent-300 px-4 py-2 text-sm font-medium text-accent-700 hover:bg-accent-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-theme-primary-500 dark:border-accent-600 dark:text-accent-200 dark:hover:bg-accent-700"
                 on:click={on_stop_syncing}
             >
                 {LOGOUT_WARNING_TEXT.STOP_SYNCING}

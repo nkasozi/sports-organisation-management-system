@@ -16,7 +16,7 @@
                 on:click={on_close}
             ></button>
             <div
-                class="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 space-y-4"
+                class="relative bg-white dark:bg-gray-800 rounded-[0.175rem] shadow-xl max-w-md w-full p-6 space-y-4"
             >
                 <div class="flex justify-between items-center">
                     <h3

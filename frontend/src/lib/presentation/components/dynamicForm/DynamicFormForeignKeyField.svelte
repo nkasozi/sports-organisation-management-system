@@ -63,7 +63,7 @@
 
 {#if show_empty_state}
     <div
-        class="mt-2 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-900 dark:text-yellow-100"
+        class="mt-2 p-3 rounded-lg border border-yellow-200 dark:border-yellow-500/40 bg-yellow-50 dark:bg-accent-900 text-yellow-700 dark:text-yellow-100"
     >
         <div class="text-sm font-semibold">
             No {field.display_name} options available.

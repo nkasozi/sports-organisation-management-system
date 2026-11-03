@@ -24,7 +24,7 @@
                 on:click={on_close}
             ></button>
             <div
-                class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+                class="relative bg-white dark:bg-gray-800 rounded-[0.175rem] shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="subscribe-modal-title"

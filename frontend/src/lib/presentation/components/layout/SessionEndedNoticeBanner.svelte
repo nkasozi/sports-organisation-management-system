@@ -56,7 +56,7 @@
         class="fixed inset-0 z-[10001] flex items-end justify-center bg-black/50 px-4 pb-4 sm:items-center sm:pb-0"
     >
         <div
-            class="w-full max-w-md rounded-xl border border-amber-500 bg-amber-50 p-5 text-amber-900 shadow-xl dark:border-amber-500 dark:bg-amber-950 dark:text-amber-100"
+            class="w-full max-w-md rounded-[0.175rem] border border-amber-500 bg-amber-50 p-5 text-amber-700 shadow-xl dark:border-amber-500 dark:bg-accent-900 dark:text-amber-100"
             role="alertdialog"
             aria-modal="true"
             aria-labelledby={TITLE_ELEMENT_ID}
@@ -75,7 +75,7 @@
             >
                 <button
                     type="button"
-                    class="rounded-lg border border-amber-600 px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 disabled:opacity-60"
+                    class="rounded-[0.175rem] border border-amber-600 px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 disabled:opacity-60"
                     disabled={is_clearing}
                     on:click={handle_sign_in}
                 >
@@ -83,7 +83,7 @@
                 </button>
                 <button
                     type="button"
-                    class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-60"
+                    class="rounded-[0.175rem] bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-60"
                     disabled={is_clearing}
                     on:click={handle_discard_and_continue}
                 >

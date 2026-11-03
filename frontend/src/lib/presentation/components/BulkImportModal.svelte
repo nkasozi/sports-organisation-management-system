@@ -132,7 +132,7 @@
         aria-labelledby="bulk-import-title"
     >
         <div
-            class="bg-white dark:bg-accent-800 rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden flex flex-col"
+            class="bg-white dark:bg-accent-800 rounded-[0.175rem] shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden flex flex-col"
         >
             <div
                 class="px-6 py-4 border-b border-accent-200 dark:border-accent-700 flex items-center justify-between"

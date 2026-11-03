@@ -14,7 +14,7 @@ export const MATCH_REPORT_EVENT_BACKGROUND_BY_TYPE: Record<string, string> = {
   goal: "border-l-green-500 bg-green-50 dark:bg-green-900/20",
   penalty_scored: "border-l-green-500 bg-green-50 dark:bg-green-900/20",
   own_goal: "border-l-blue-500 bg-blue-50 dark:bg-blue-900/20",
-  yellow_card: "border-l-yellow-400 bg-yellow-50 dark:bg-yellow-900/20",
+  yellow_card: "border-l-yellow-400 bg-yellow-50 dark:bg-accent-900",
   red_card: "border-l-red-500 bg-red-50 dark:bg-red-900/20",
   second_yellow: "border-l-red-500 bg-red-50 dark:bg-red-900/20",
   substitution: "border-l-blue-500 bg-blue-50 dark:bg-blue-900/20",

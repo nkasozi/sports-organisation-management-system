@@ -38,7 +38,7 @@
         aria-labelledby="start-game-confirmation-title"
     >
         <div
-            class="w-full max-w-md rounded-xl border border-accent-200 bg-white p-6 shadow-2xl dark:border-accent-700 dark:bg-accent-900"
+            class="w-full max-w-md rounded-[0.175rem] border border-accent-200 bg-white p-6 shadow-2xl dark:border-accent-700 dark:bg-accent-900"
         >
             <div class="space-y-2">
                 <h2
@@ -57,7 +57,7 @@
 
             {#if should_show_date_warning(pending_start_fixture_state)}
                 <div
-                    class="mt-4 rounded-lg border border-purple-300 bg-purple-50 px-4 py-3 dark:border-purple-700 dark:bg-purple-950/40"
+                    class="mt-4 rounded-[0.175rem] border border-purple-300 bg-purple-50 px-4 py-3 dark:border-purple-700 dark:bg-purple-950/40"
                 >
                     <div class="flex items-start gap-3">
                         <svg

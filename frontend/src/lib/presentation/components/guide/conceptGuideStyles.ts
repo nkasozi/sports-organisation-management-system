@@ -11,8 +11,7 @@ export const CONCEPT_STATUS_STYLES: Record<
   },
   todo: {
     label: "To do",
-    classes:
-      "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
+    classes: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
   },
   locked: {
     label: "Locked",

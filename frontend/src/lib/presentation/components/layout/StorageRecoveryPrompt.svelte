@@ -66,7 +66,7 @@
 >
     <div
         bind:this={dialog_element}
-        class="w-full max-w-lg rounded-2xl border border-accent-700 bg-accent-900 p-6 text-white"
+        class="w-full max-w-lg rounded-[0.175rem] border border-accent-700 bg-accent-900 p-6 text-white"
         role="dialog"
         aria-modal="true"
         aria-labelledby={TITLE_ELEMENT_ID}
@@ -92,7 +92,7 @@
         </div>
 
         <div
-            class="mt-6 grid gap-3 rounded-xl border border-accent-700 bg-accent-800 p-4 text-sm text-accent-200 sm:grid-cols-2"
+            class="mt-6 grid gap-3 rounded-[0.175rem] border border-accent-700 bg-accent-800 p-4 text-sm text-accent-200 sm:grid-cols-2"
         >
             <div>
                 <p class="text-xs uppercase tracking-[0.2em] text-accent-400">
@@ -131,7 +131,7 @@
         >
             <button
                 type="button"
-                class="rounded-xl border border-accent-600 px-4 py-3 text-sm font-medium text-accent-200 transition hover:border-accent-400 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-300 sm:py-2"
+                class="rounded-[0.175rem] border border-accent-600 px-4 py-3 text-sm font-medium text-accent-200 transition hover:border-accent-400 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-300 sm:py-2"
                 on:click={on_continue}
             >
                 {is_restore_available ? CONTINUE_FRESH_LABEL : CONTINUE_LABEL}
@@ -139,7 +139,7 @@
             {#if is_restore_available}
                 <button
                     type="button"
-                    class="rounded-xl bg-theme-primary-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-theme-primary-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-theme-primary-300 sm:py-2"
+                    class="rounded-[0.175rem] bg-theme-primary-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-theme-primary-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-theme-primary-300 sm:py-2"
                     on:click={on_restore}
                 >
                     Restore Backup

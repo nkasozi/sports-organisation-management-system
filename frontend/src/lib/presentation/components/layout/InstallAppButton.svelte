@@ -48,7 +48,7 @@
         </button>
         {#if show_ios_steps}
             <div
-                class="absolute right-0 mt-2 w-64 z-50 p-3 rounded-lg shadow-lg bg-white dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700"
+                class="absolute right-0 mt-2 w-64 z-50 p-3 rounded-[0.175rem] shadow-lg bg-white dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700"
                 style="text-shadow: none"
                 role="dialog"
                 aria-label="How to install Sport-Sync"

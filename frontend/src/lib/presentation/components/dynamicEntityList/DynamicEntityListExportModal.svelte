@@ -41,7 +41,7 @@
                 visible columns
             </p>
             <div
-                class="rounded-lg border border-accent-200 p-4 dark:border-accent-700"
+                class="rounded-[0.175rem] border border-accent-200 p-4 dark:border-accent-700"
             >
                 <div class="flex items-center justify-between">
                     <div>
