@@ -20,7 +20,7 @@ import {
   type BatchRecordInput,
   type BatchRecordOutcome,
   build_outcome,
-  NO_SERVER_VERSION,
+  build_rejected_outcome,
 } from "./sync_batch_record_types";
 import { persist_versioned_upsert } from "./sync_batch_record_writer";
 import { SyncResultAction } from "./sync_mutation_support";
@@ -83,11 +83,7 @@ async function guard_and_persist_record(
   const decision = await guard_sync_record_write(ctx, write_command);
   if (decision.status === SyncWriteStatus.REJECTED) {
     await audit_rejected_sync_write(ctx, write_command, decision);
-    return build_outcome(record.local_id, {
-      success: false,
-      name: decision.rejection,
-      server_version: NO_SERVER_VERSION,
-    });
+    return build_rejected_outcome(record.local_id, decision);
   }
   return persist_versioned_upsert(ctx, {
     table_name,

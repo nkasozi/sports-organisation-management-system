@@ -2,6 +2,10 @@ import type { SystemUserRecord } from "./auth_middleware";
 import type { RemoteDataStatusValue } from "./caller_record_projection";
 import type { AllowedSyncTable } from "./sync_table_catalog";
 import type { BaseVersion } from "./sync_versioning";
+import {
+  describe_rejection_for_client,
+  type RejectedSyncWriteDecision,
+} from "./sync_write_decision";
 
 export const NO_SERVER_VERSION = 0;
 
@@ -31,7 +35,8 @@ interface BatchRecordResultFields {
 
 export type BatchRecordResult =
   | BatchRecordResultFields
-  | (BatchRecordResultFields & { record: Record<string, unknown> });
+  | (BatchRecordResultFields & { record: Record<string, unknown> })
+  | (BatchRecordResultFields & { rejection_reason: string });
 
 export const RemoteAuthorKind = {
   KNOWN: "known",
@@ -83,6 +88,22 @@ export type BatchFollowUp =
 export interface BatchRecordOutcome {
   result: BatchRecordResult;
   follow_up: BatchFollowUp;
+}
+
+export function build_rejected_outcome(
+  local_id: string,
+  decision: RejectedSyncWriteDecision,
+): BatchRecordOutcome {
+  return {
+    result: {
+      local_id,
+      success: false,
+      action: decision.rejection,
+      server_version: NO_SERVER_VERSION,
+      rejection_reason: describe_rejection_for_client(decision),
+    },
+    follow_up: { kind: BatchFollowUpKind.NONE },
+  };
 }
 
 export function build_outcome(
