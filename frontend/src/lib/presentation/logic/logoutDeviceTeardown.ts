@@ -23,6 +23,15 @@ const LOGOUT_DEVICE_TEARDOWN_STEP = {
 const LOGOUT_DEVICE_TEARDOWN_COMPLETED_EVENT =
   "logout_device_teardown_completed";
 const LOGOUT_DEVICE_TEARDOWN_FAILED_EVENT = "logout_device_teardown_failed";
+const LOGOUT_SYNC_SETTLE_TIMED_OUT_EVENT = "logout_sync_settle_timed_out";
+
+const SYNC_SETTLE_OUTCOME = {
+  SETTLED: "settled",
+  TIMED_OUT: "timed_out",
+} as const;
+
+type SyncSettleOutcome =
+  (typeof SYNC_SETTLE_OUTCOME)[keyof typeof SYNC_SETTLE_OUTCOME];
 
 type LogoutDeviceTeardownStep =
   (typeof LOGOUT_DEVICE_TEARDOWN_STEP)[keyof typeof LOGOUT_DEVICE_TEARDOWN_STEP];
@@ -36,6 +45,7 @@ type LogoutDeviceTeardownState =
     };
 
 export interface LogoutDeviceTeardownCommand extends SignedOutLandingCommand {
+  sync_settle_timeout_ms: number;
   stop_background_sync(): Promise<unknown>;
   cancel_automatic_device_backup_write(): boolean;
   delete_device_backup(): Promise<DeviceBackupDeleteState>;
@@ -124,11 +134,33 @@ function build_ordered_teardown_steps(
   ];
 }
 
+async function stop_background_sync_within_timeout(
+  command: LogoutDeviceTeardownCommand,
+): Promise<SyncSettleOutcome> {
+  const outcome = await Promise.race([
+    command
+      .stop_background_sync()
+      .then((): SyncSettleOutcome => SYNC_SETTLE_OUTCOME.SETTLED),
+    new Promise<SyncSettleOutcome>((resolve) =>
+      setTimeout(
+        () => resolve(SYNC_SETTLE_OUTCOME.TIMED_OUT),
+        command.sync_settle_timeout_ms,
+      ),
+    ),
+  ]);
+  if (outcome === SYNC_SETTLE_OUTCOME.TIMED_OUT)
+    console.warn("[Logout] In-flight sync did not settle; signing out anyway", {
+      event: LOGOUT_SYNC_SETTLE_TIMED_OUT_EVENT,
+      timeout_ms: command.sync_settle_timeout_ms,
+    });
+  return outcome;
+}
+
 export async function execute_logout_device_teardown(
   command: LogoutDeviceTeardownCommand,
   request: LogoutDeviceTeardownRequest,
 ): Promise<LogoutDeviceTeardownState> {
-  await command.stop_background_sync();
+  await stop_background_sync_within_timeout(command);
   command.cancel_automatic_device_backup_write();
   for (const run_step of build_ordered_teardown_steps(command)) {
     const step_state = await run_step();

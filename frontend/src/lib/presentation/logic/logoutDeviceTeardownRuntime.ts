@@ -33,8 +33,11 @@ async function prepare_signed_out_data(): AsyncResult<boolean> {
   return create_success_result(true);
 }
 
+const LOGOUT_SYNC_SETTLE_TIMEOUT_MS = 5000;
+
 function create_runtime_logout_device_teardown_command(): LogoutDeviceTeardownCommand {
   return {
+    sync_settle_timeout_ms: LOGOUT_SYNC_SETTLE_TIMEOUT_MS,
     stop_background_sync: stop_background_sync_and_wait_for_idle,
     cancel_automatic_device_backup_write,
     delete_device_backup: () =>

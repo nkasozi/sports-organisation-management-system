@@ -1,5 +1,6 @@
 export const UNAUTHORIZED_REASON_CODE = {
   MISSING_EMAIL: "missing_email",
+  IDENTITY_UNAVAILABLE: "identity_unavailable",
   ACCESS_DENIED: "access_denied",
   NOT_REGISTERED: "not_registered",
 } as const;
@@ -11,6 +12,8 @@ export const UNAUTHORIZED_REASON_MESSAGE = {
   DEFAULT_DENIAL: "You don't have access to this system.",
   MISSING_EMAIL:
     "Your account has no email address. Authentication requires an email. Please contact your administrator.",
+  IDENTITY_UNAVAILABLE:
+    "We couldn't load your account from the sign-in service, which may be having problems. Please try again in a few minutes.",
   ACCESS_DENIED:
     "Your account doesn't have access to this system yet. Please contact your organization administrator.",
   NOT_REGISTERED:
@@ -38,6 +41,8 @@ function describe_reason_code(reason_code: UnauthorizedReasonCode): string {
   switch (reason_code) {
     case UNAUTHORIZED_REASON_CODE.MISSING_EMAIL:
       return UNAUTHORIZED_REASON_MESSAGE.MISSING_EMAIL;
+    case UNAUTHORIZED_REASON_CODE.IDENTITY_UNAVAILABLE:
+      return UNAUTHORIZED_REASON_MESSAGE.IDENTITY_UNAVAILABLE;
     case UNAUTHORIZED_REASON_CODE.ACCESS_DENIED:
       return UNAUTHORIZED_REASON_MESSAGE.ACCESS_DENIED;
     case UNAUTHORIZED_REASON_CODE.NOT_REGISTERED:
