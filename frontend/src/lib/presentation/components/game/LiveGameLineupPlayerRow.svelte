@@ -3,6 +3,7 @@
         LineupPlayer,
         PlayerTimeOnStatus,
     } from "$lib/core/entities/FixtureLineup";
+    import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
     import { get_time_on_options } from "$lib/presentation/logic/liveGameDetailState";
 
     import {
@@ -41,6 +42,10 @@
     export let subdued: boolean;
     export let text_tone: LineupRowTone;
 
+    $: time_on_options = get_time_on_options(elapsed_minutes).map((option) => ({
+        value: option.value,
+        label: get_time_on_short_label(option),
+    }));
     $: container_class = subdued
         ? "flex items-center gap-2 text-sm py-1 opacity-80"
         : "flex items-center gap-2 text-sm py-1";
@@ -73,22 +78,15 @@
     </span>
 
     {#if is_game_active}
-        <select
-            class="w-16 text-xs px-1 py-0.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-            value={player.time_on || fallback_time_on}
-            on:change={(event) =>
-                void on_time_on_change(
-                    player.id,
-                    (event.currentTarget as HTMLSelectElement)
-                        .value as PlayerTimeOnStatus,
-                )}
-        >
-            {#each get_time_on_options(elapsed_minutes) as option}
-                <option value={option.value}
-                    >{get_time_on_short_label(option)}</option
-                >
-            {/each}
-        </select>
+        <div class="w-16 flex-shrink-0">
+            <SearchableSelectField
+                name={`lineup_time_on_${player.id}`}
+                value={player.time_on || fallback_time_on}
+                options={time_on_options}
+                on:change={(event) =>
+                    void on_time_on_change(player.id, event.detail.value)}
+            />
+        </div>
     {:else if show_position_when_inactive && player.position}
         <span class="text-xs text-gray-500 dark:text-gray-400"
             >{player.position}</span

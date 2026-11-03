@@ -5,6 +5,7 @@
 
     import StatsLeaderboardRow from "./StatsLeaderboardRow.svelte";
     import StatsPlayerGames from "./StatsPlayerGames.svelte";
+    import StatsSectionCard from "./StatsSectionCard.svelte";
 
     export let title: string;
     export let icon: string;
@@ -26,13 +27,7 @@
     }
 </script>
 
-<div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-    <h3
-        class="text-base sm:text-lg font-semibold text-accent-900 dark:text-accent-100 mb-4 flex items-center gap-2"
-    >
-        <span>{icon}</span>
-        {title}
-    </h3>
+<StatsSectionCard {title} {icon}>
     {#if players.length === 0}
         <div class="text-center py-4 text-gray-500 dark:text-gray-400">
             {empty_message}
@@ -64,4 +59,4 @@
             {/each}
         </div>
     {/if}
-</div>
+</StatsSectionCard>

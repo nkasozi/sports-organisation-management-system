@@ -2,6 +2,7 @@
     import { get_use_cases_container } from "$lib/infrastructure/container";
     import { configure_scheduled_interval } from "$lib/infrastructure/sync/backgroundSyncService";
     import SettingsSectionCard from "$lib/presentation/components/settings/SettingsSectionCard.svelte";
+    import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
     import {
         is_allowed_sync_interval,
         SYNC_INTERVAL_OPTIONS,
@@ -14,6 +15,15 @@
         message: string,
         type: "success" | "error" | "info",
     ) => void;
+
+    const sync_interval_select_options = SYNC_INTERVAL_OPTIONS.map(
+        (option) => ({ value: String(option.value), label: option.label }),
+    );
+
+    function choose_sync_interval(selected_value: string): Promise<void> {
+        selected_sync_interval_ms = Number(selected_value);
+        return handle_sync_interval_change();
+    }
 
     async function handle_sync_interval_change(): Promise<void> {
         if (
@@ -54,21 +64,20 @@
 >
     <div>
         <label
-            for="sync_interval"
+            for="searchable-select-sync_interval"
             class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-2"
         >
             Scheduled Sync Interval
         </label>
-        <select
-            id="sync_interval"
-            class="select-styled w-full max-w-xs"
-            bind:value={selected_sync_interval_ms}
-            on:change={handle_sync_interval_change}
-        >
-            {#each SYNC_INTERVAL_OPTIONS as option}
-                <option value={option.value}>{option.label}</option>
-            {/each}
-        </select>
+        <div class="w-full max-w-xs">
+            <SearchableSelectField
+                name="sync_interval"
+                value={String(selected_sync_interval_ms)}
+                options={sync_interval_select_options}
+                on:change={(event) =>
+                    void choose_sync_interval(event.detail.value)}
+            />
+        </div>
         <p class="mt-2 text-xs text-accent-500 dark:text-accent-400">
             Changes apply to all users in your organization after their next
             sync.

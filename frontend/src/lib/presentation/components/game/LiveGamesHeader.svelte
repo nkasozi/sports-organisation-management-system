@@ -1,5 +1,7 @@
 <script lang="ts">
     import type { Organization } from "$lib/core/entities/Organization";
+    import { build_named_record_options } from "$lib/presentation/components/ui/searchable_select_options";
+    import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
 
     export let organizations: Organization[] = [];
     export let selected_organization_id = "";
@@ -7,6 +9,14 @@
     export let is_loading_fixtures: boolean;
     export let on_organization_change: () => void;
     export let can_start_games: boolean = true;
+
+    $: organization_options = build_named_record_options(organizations);
+
+    function choose_organization(organization_id: string): boolean {
+        selected_organization_id = organization_id;
+        on_organization_change();
+        return true;
+    }
 
     function get_current_organization_name(): string {
         return (
@@ -38,18 +48,16 @@
         {#if organizations.length > 0}
             <div class="flex-shrink-0">
                 {#if can_change_organizations}
-                    <select
-                        bind:value={selected_organization_id}
-                        on:change={on_organization_change}
-                        class="select-styled w-full sm:w-auto sm:min-w-[220px]"
-                        disabled={is_loading_fixtures}
-                    >
-                        {#each organizations as organization}
-                            <option value={organization.id}
-                                >{organization.name}</option
-                            >
-                        {/each}
-                    </select>
+                    <div class="w-full sm:w-auto sm:min-w-[220px]">
+                        <SearchableSelectField
+                            name="live_games_organization"
+                            value={selected_organization_id}
+                            options={organization_options}
+                            disabled={is_loading_fixtures}
+                            on:change={(event) =>
+                                choose_organization(event.detail.value)}
+                        />
+                    </div>
                 {:else}
                     <span
                         class="inline-block text-sm font-medium text-accent-700 dark:text-accent-300 px-3 py-2 bg-accent-100 dark:bg-accent-800 rounded-[0.175rem]"

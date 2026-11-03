@@ -3,6 +3,10 @@
     import type { Competition } from "$lib/core/entities/Competition";
     import type { Organization } from "$lib/core/entities/Organization";
     import type { Team } from "$lib/core/entities/Team";
+    import { build_named_record_options } from "$lib/presentation/components/ui/searchable_select_options";
+    import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
+
+    import CalendarPageFilters from "./CalendarPageFilters.svelte";
 
     export let organizations: Organization[];
     export let selected_organization_id: string;
@@ -24,6 +28,13 @@
     export let on_filter_change: () => Promise<void>;
     export let on_clear_filters: () => Promise<void>;
     export let on_open_category_modal: () => void;
+
+    $: organization_options = build_named_record_options(organizations);
+
+    function choose_organization(organization_id: string): Promise<void> {
+        selected_organization_id = organization_id;
+        return on_organization_change();
+    }
 </script>
 
 <div
@@ -43,15 +54,15 @@
         class="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto"
     >
         {#if can_user_change_organizations}
-            <select
-                bind:value={selected_organization_id}
-                class="select-styled w-full sm:w-auto min-w-0 sm:min-w-[200px]"
-                on:change={() => void on_organization_change()}
-            >
-                {#each organizations as organization}
-                    <option value={organization.id}>{organization.name}</option>
-                {/each}
-            </select>
+            <div class="w-full sm:w-auto min-w-0 sm:min-w-[200px]">
+                <SearchableSelectField
+                    name="calendar_organization"
+                    value={selected_organization_id}
+                    options={organization_options}
+                    on:change={(event) =>
+                        void choose_organization(event.detail.value)}
+                />
+            </div>
         {:else}
             <span
                 class="text-sm font-medium text-accent-700 dark:text-accent-300 px-3 py-2 bg-accent-100 dark:bg-accent-800 rounded-[0.175rem]"
@@ -86,83 +97,19 @@
     </div>
 </div>
 
-<div
-    class="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 pb-4 border-b border-gray-200 dark:border-gray-700"
->
-    <span class="text-sm font-medium text-accent-700 dark:text-accent-300"
-        >Filters:</span
-    >
-    <select
-        bind:value={filter_category_id}
-        disabled={filter_loading}
-        class="select-styled w-full sm:w-auto disabled:opacity-50"
-        on:change={() => void on_filter_change()}
-    >
-        <option value="">All Categories</option>
-        {#each categories as category}
-            <option value={category.id}>{category.name}</option>
-        {/each}
-    </select>
-    <select
-        bind:value={filter_competition_id}
-        disabled={filter_loading}
-        class="select-styled w-full sm:w-auto disabled:opacity-50"
-        on:change={() => void on_filter_change()}
-    >
-        <option value="">All Competitions</option>
-        {#each competitions as competition}
-            <option value={competition.id}>{competition.name}</option>
-        {/each}
-    </select>
-    <select
-        bind:value={filter_team_id}
-        disabled={filter_loading}
-        class="select-styled w-full sm:w-auto disabled:opacity-50"
-        on:change={() => void on_filter_change()}
-    >
-        <option value="">All Teams</option>
-        {#each teams as team}
-            <option value={team.id}>{team.name}</option>
-        {/each}
-    </select>
-    {#if filter_category_id || filter_competition_id || filter_team_id}
-        <button
-            type="button"
-            disabled={filter_loading}
-            class="text-sm text-primary-600 dark:text-primary-400 hover:underline disabled:opacity-50"
-            on:click={() => void on_clear_filters()}>Clear Filters</button
-        >
-    {/if}
-    {#if filter_loading}
-        <div class="flex items-center gap-2 text-sm text-accent-500">
-            <svg
-                class="animate-spin h-4 w-4"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                ><circle
-                    class="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    stroke-width="4"
-                ></circle><path
-                    class="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path></svg
-            >Filtering...
-        </div>
-    {/if}
-    {#if can_user_add_categories}
-        <button
-            type="button"
-            class="ml-auto text-sm text-accent-600 dark:text-accent-400 hover:text-accent-900 dark:hover:text-accent-100"
-            on:click={on_open_category_modal}>+ New Category</button
-        >
-    {/if}
-</div>
+<CalendarPageFilters
+    {teams}
+    {competitions}
+    {categories}
+    bind:filter_category_id
+    bind:filter_competition_id
+    bind:filter_team_id
+    {filter_loading}
+    {can_user_add_categories}
+    {on_filter_change}
+    {on_clear_filters}
+    {on_open_category_modal}
+/>
 
 <div class="flex flex-wrap gap-2 pb-2">
     {#each categories as category}

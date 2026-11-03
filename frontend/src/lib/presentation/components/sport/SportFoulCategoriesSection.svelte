@@ -1,5 +1,13 @@
 <script lang="ts">
-    import type { CreateSportInput } from "$lib/core/entities/Sport";
+    import type {
+        CreateSportInput,
+        FoulCategory,
+    } from "$lib/core/entities/Sport";
+    import {
+        build_named_record_options_with_blank,
+        keep_first_option_per_value,
+    } from "$lib/presentation/components/ui/searchable_select_options";
+    import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
     import {
         add_foul_category,
         generate_sport_identifier,
@@ -15,6 +23,24 @@
 
     function handle_remove_foul_category(index: number): void {
         form_data = remove_foul_category(form_data, index);
+    }
+
+    $: card_options = keep_first_option_per_value(
+        build_named_record_options_with_blank("No Card", form_data.card_types),
+    );
+
+    function choose_foul_severity(
+        index: number,
+        selected_value: string,
+    ): boolean {
+        form_data.foul_categories[index].severity =
+            selected_value as FoulCategory["severity"];
+        return true;
+    }
+
+    function choose_foul_card(index: number, selected_value: string): boolean {
+        form_data.foul_categories[index].results_in_card = selected_value;
+        return true;
     }
 </script>
 
@@ -51,27 +77,28 @@
                                     current_foul.name,
                                 ))}
                         />
-                        <select
-                            class="input w-32"
-                            bind:value={current_foul.severity}
-                        >
-                            {#each SPORT_FOUL_SEVERITY_OPTIONS as current_option}
-                                <option value={current_option.value}
-                                    >{current_option.label}</option
-                                >
-                            {/each}
-                        </select>
-                        <select
-                            class="input w-36"
-                            bind:value={current_foul.results_in_card}
-                        >
-                            <option value="">No Card</option>
-                            {#each form_data.card_types as current_card}
-                                <option value={current_card.id}
-                                    >{current_card.name}</option
-                                >
-                            {/each}
-                        </select>
+                        <div class="w-32">
+                            <SearchableSelectField
+                                name={`foul_category_severity_${index}`}
+                                value={current_foul.severity}
+                                options={SPORT_FOUL_SEVERITY_OPTIONS}
+                                on:change={(event) =>
+                                    choose_foul_severity(
+                                        index,
+                                        event.detail.value,
+                                    )}
+                            />
+                        </div>
+                        <div class="w-36">
+                            <SearchableSelectField
+                                name={`foul_category_card_${index}`}
+                                value={current_foul.results_in_card}
+                                options={card_options}
+                                placeholder="No Card"
+                                on:change={(event) =>
+                                    choose_foul_card(index, event.detail.value)}
+                            />
+                        </div>
                         <button
                             type="button"
                             aria-label="Remove foul category"

@@ -3,11 +3,40 @@
         CreateCompetitionInput,
         UpdateCompetitionInput,
     } from "$lib/core/entities/Competition";
-    import { SQUAD_GENERATION_STRATEGY } from "$lib/core/entities/CompetitionTypes";
+    import {
+        SQUAD_GENERATION_STRATEGY,
+        type SquadGenerationStrategy,
+    } from "$lib/core/entities/CompetitionTypes";
     import InfoTooltip from "$lib/presentation/components/ui/InfoTooltip.svelte";
+    import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
 
     export let form_data: CreateCompetitionInput | UpdateCompetitionInput;
     export let on_toggle_auto_squad_submission: (enabled: boolean) => void;
+
+    const SQUAD_GENERATION_STRATEGY_OPTIONS = [
+        {
+            value: SQUAD_GENERATION_STRATEGY.FIRST_AVAILABLE,
+            label: "First Available Players",
+        },
+        {
+            value: SQUAD_GENERATION_STRATEGY.PREVIOUS_MATCH,
+            label: "Previous Match Squad",
+        },
+    ];
+
+    function is_squad_generation_strategy(
+        value: string,
+    ): value is SquadGenerationStrategy {
+        return (Object.values(SQUAD_GENERATION_STRATEGY) as string[]).includes(
+            value,
+        );
+    }
+
+    function choose_squad_generation_strategy(selected_value: string): boolean {
+        if (!is_squad_generation_strategy(selected_value)) return false;
+        form_data.squad_generation_strategy = selected_value;
+        return true;
+    }
 </script>
 
 <div class="border-t border-accent-200 dark:border-accent-700 pt-6 space-y-4">
@@ -37,7 +66,7 @@
             <div>
                 <label
                     class="flex items-center gap-1 text-sm font-medium text-accent-900 dark:text-accent-100 mb-1"
-                    for="squad_generation_strategy"
+                    for="searchable-select-squad_generation_strategy"
                 >
                     Squad Generation Strategy
                     <InfoTooltip
@@ -45,16 +74,17 @@
                         position="right"
                     />
                 </label>
-                <select
-                    id="squad_generation_strategy"
-                    bind:value={form_data.squad_generation_strategy}
-                    class="block w-full sm:w-64 px-3 py-2 border border-accent-300 rounded-[0.175rem] shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-accent-800 dark:border-accent-600 dark:text-white"
-                >
-                    <option value="first_available"
-                        >First Available Players</option
-                    >
-                    <option value="previous_match">Previous Match Squad</option>
-                </select>
+                <div class="w-full sm:w-64">
+                    <SearchableSelectField
+                        name="squad_generation_strategy"
+                        value={form_data.squad_generation_strategy ?? ""}
+                        options={SQUAD_GENERATION_STRATEGY_OPTIONS}
+                        on:change={(event) =>
+                            choose_squad_generation_strategy(
+                                event.detail.value,
+                            )}
+                    />
+                </div>
                 <p class="text-xs text-accent-500 mt-1">
                     {#if form_data.squad_generation_strategy === SQUAD_GENERATION_STRATEGY.FIRST_AVAILABLE}
                         Selects the first X players from the team roster

@@ -1,4 +1,5 @@
 <script lang="ts">
+    import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
     import type {
         CardSortMode,
         CardStatCategory,
@@ -24,24 +25,33 @@
     export let format_date: (date_string: string) => string;
     export let get_team_name: (team_id: string) => string;
     export let on_open_match_report: (fixture_id: string) => void;
+
+    $: team_filter_options = [
+        {
+            value: COMPETITION_STATS_ALL_TEAMS_FILTER,
+            label: STATS_SECTION_TEXT.ALL_TEAMS,
+        },
+        ...stats_available_teams.map((team_name) => ({
+            value: team_name,
+            label: team_name,
+        })),
+    ];
 </script>
 
 <div class="space-y-4 sm:space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
         <span
             class="text-sm font-medium text-accent-600 dark:text-accent-400 shrink-0"
-            >Filter by team:</span
+            >{STATS_SECTION_TEXT.TEAM_FILTER_LABEL}</span
         >
-        <select
-            bind:value={stats_team_filter}
-            class="text-sm rounded-[0.175rem] border border-accent-200 dark:border-accent-700 bg-white dark:bg-accent-800 text-accent-900 dark:text-accent-100 px-3 py-1.5 focus:ring-2 focus:ring-theme-primary-500 focus:border-transparent w-full sm:w-auto sm:max-w-xs"
-        >
-            <option value={COMPETITION_STATS_ALL_TEAMS_FILTER}>All Teams</option
-            >
-            {#each stats_available_teams as team_name}
-                <option value={team_name}>{team_name}</option>
-            {/each}
-        </select>
+        <div class="w-full sm:w-64">
+            <SearchableSelectField
+                name="stats_team_filter"
+                value={stats_team_filter}
+                options={team_filter_options}
+                on:change={(event) => (stats_team_filter = event.detail.value)}
+            />
+        </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">

@@ -1,4 +1,5 @@
 <script lang="ts">
+    import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
     import type { SettingsOption } from "$lib/presentation/logic/settingsPageState";
     import type { SocialMediaLink } from "$lib/presentation/stores/branding";
 
@@ -18,22 +19,18 @@
 >
     <div class="flex-1 min-w-0">
         <label
-            for={`platform_${index}`}
+            for={`searchable-select-platform_${index}`}
             class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-2"
         >
             Platform
         </label>
-        <select
-            id={`platform_${index}`}
-            class="select-styled w-full"
+        <SearchableSelectField
+            name={`platform_${index}`}
             value={link.platform}
+            options={[...social_media_options]}
             on:change={(event) =>
-                on_platform_change(link.platform, event.currentTarget.value)}
-        >
-            {#each social_media_options as option}
-                <option value={option.value}>{option.label}</option>
-            {/each}
-        </select>
+                on_platform_change(link.platform, event.detail.value)}
+        />
     </div>
 
     <div class="flex-1 min-w-0">

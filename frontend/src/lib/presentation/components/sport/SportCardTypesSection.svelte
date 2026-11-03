@@ -1,5 +1,6 @@
 <script lang="ts">
-    import type { CreateSportInput } from "$lib/core/entities/Sport";
+    import type { CardType, CreateSportInput } from "$lib/core/entities/Sport";
+    import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
     import {
         add_card_type,
         generate_sport_identifier,
@@ -15,6 +16,15 @@
 
     function handle_remove_card_type(index: number): void {
         form_data = remove_card_type(form_data, index);
+    }
+
+    function choose_card_severity(
+        index: number,
+        selected_value: string,
+    ): boolean {
+        form_data.card_types[index].severity =
+            selected_value as CardType["severity"];
+        return true;
     }
 </script>
 
@@ -56,16 +66,18 @@
                                     current_card.name,
                                 ))}
                         />
-                        <select
-                            class="input w-32"
-                            bind:value={current_card.severity}
-                        >
-                            {#each SPORT_CARD_SEVERITY_OPTIONS as current_option}
-                                <option value={current_option.value}
-                                    >{current_option.label}</option
-                                >
-                            {/each}
-                        </select>
+                        <div class="w-32">
+                            <SearchableSelectField
+                                name={`card_type_severity_${index}`}
+                                value={current_card.severity}
+                                options={SPORT_CARD_SEVERITY_OPTIONS}
+                                on:change={(event) =>
+                                    choose_card_severity(
+                                        index,
+                                        event.detail.value,
+                                    )}
+                            />
+                        </div>
                         <button
                             type="button"
                             aria-label="Remove card type"

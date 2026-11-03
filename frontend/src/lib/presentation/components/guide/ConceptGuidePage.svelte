@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
 
+    import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
     import { get_concept_definition } from "$lib/presentation/logic/conceptGuideCatalog";
     import { read_profile_organization_id } from "$lib/presentation/logic/conceptGuideCurrentUser";
     import { create_concept_guide_sources } from "$lib/presentation/logic/conceptGuideDependencies";
@@ -76,6 +77,11 @@
         return refresh_snapshot();
     }
 
+    function select_competition(next_id: string): Promise<boolean> {
+        competition_id = next_id;
+        return refresh_snapshot();
+    }
+
     onMount(async () => {
         const organizations = await load_guide_organizations(sources);
         organization_options = to_guide_options(organizations);
@@ -101,29 +107,26 @@
         </div>
         <div class="flex flex-wrap gap-2">
             {#if organization_options.length > 1}
-                <select
-                    class="select-styled w-full sm:w-auto sm:min-w-[240px]"
-                    aria-label="Organization"
-                    value={organization_id}
-                    on:change={(event) =>
-                        void select_organization(event.currentTarget.value)}
-                >
-                    {#each organization_options as option (option.value)}
-                        <option value={option.value}>{option.label}</option>
-                    {/each}
-                </select>
+                <div class="w-full sm:w-auto sm:min-w-[240px]">
+                    <SearchableSelectField
+                        name="concept_guide_organization"
+                        value={organization_id}
+                        options={organization_options}
+                        on:change={(event) =>
+                            void select_organization(event.detail.value)}
+                    />
+                </div>
             {/if}
             {#if competition_options.length > 0}
-                <select
-                    class="select-styled w-full sm:w-auto sm:min-w-[240px]"
-                    aria-label="Competition"
-                    bind:value={competition_id}
-                    on:change={() => void refresh_snapshot()}
-                >
-                    {#each competition_options as option (option.value)}
-                        <option value={option.value}>{option.label}</option>
-                    {/each}
-                </select>
+                <div class="w-full sm:w-auto sm:min-w-[240px]">
+                    <SearchableSelectField
+                        name="concept_guide_competition"
+                        value={competition_id}
+                        options={competition_options}
+                        on:change={(event) =>
+                            void select_competition(event.detail.value)}
+                    />
+                </div>
             {/if}
         </div>
     </div>
