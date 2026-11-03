@@ -35,6 +35,8 @@ function create_test_fixture(overrides: {
   return {
     id: "fixture_1",
     home_team_id: "team_1",
+    scheduled_date: "2024-06-01",
+    scheduled_time: "10:00",
     away_team_id: "team_2",
     ...overrides,
   } as unknown as Fixture;
@@ -71,6 +73,7 @@ describe("calculate_player_stats card counts", () => {
         team_map,
         create_score_award_resolver([]),
         BASKETBALL_CARD_CATEGORIES,
+        new Map(),
       )[0].card_counts,
     ).toEqual({ technical_foul: 1 });
   });
@@ -101,6 +104,7 @@ describe("calculate_player_stats card counts", () => {
         team_map,
         create_score_award_resolver([]),
         FOOTBALL_CARD_CATEGORIES,
+        new Map(),
       )[0].card_counts,
     ).toEqual({ red_card: 1 });
   });

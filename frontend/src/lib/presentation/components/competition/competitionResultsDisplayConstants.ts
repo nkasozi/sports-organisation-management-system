@@ -117,3 +117,22 @@ export const DOWNLOAD_ALL_REPORTS_TEXT = {
   IDLE: "Download All Reports",
   GENERATING: "Generating All...",
 } as const;
+
+export const STATS_DETAIL_TEXT = {
+  SHOW_GAMES: "Show the games",
+  HIDE_GAMES: "Hide the games",
+  SCORE: "Goal",
+  ASSIST: "Assist",
+  VERSUS: "vs",
+  MATCH_REPORT: "Match report",
+  TOP_ASSISTS: "Top Assists",
+  NO_ASSISTS: "No assists recorded yet.",
+} as const;
+
+export const STATS_SECTION_TEXT = {
+  TOP_SCORERS: "Top Scorers",
+  SCORERS_ICON: "🏅",
+  ASSISTS_ICON: "🤝",
+  NO_SCORES: "No scores recorded yet.",
+  NO_SCORES_FOR: "No scores recorded for",
+} as const;

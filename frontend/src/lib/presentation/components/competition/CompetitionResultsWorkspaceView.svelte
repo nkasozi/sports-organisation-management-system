@@ -134,6 +134,7 @@
     stats_card_categories={workspace_state.stats_card_categories}
     bind:stats_card_sort
     stats_filtered_scorers={workspace_state.stats_filtered_scorers as PlayerStats[]}
+    stats_filtered_assisters={workspace_state.stats_filtered_assisters as PlayerStats[]}
     stats_filtered_card_players={workspace_state.stats_filtered_card_players as PlayerStats[]}
     {format_date}
     {get_fixture_stage_name}

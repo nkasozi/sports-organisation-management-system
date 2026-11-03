@@ -8,13 +8,27 @@
         type PlayerStats,
         TOTAL_CARD_SORT_MODE,
     } from "$lib/presentation/logic/competitionResultsCardStats";
+    import { PLAYER_STAT_MOMENT_KIND } from "$lib/presentation/logic/competitionResultsPlayerMoments";
 
     import { COMPETITION_STATS_ALL_TEAMS_FILTER } from "./competitionResultsDisplayConstants";
+    import StatsLeaderboardRow from "./StatsLeaderboardRow.svelte";
+    import StatsPlayerGames from "./StatsPlayerGames.svelte";
 
     export let stats_team_filter: string;
     export let stats_card_categories: CardStatCategory[];
     export let stats_card_sort: CardSortMode;
     export let stats_filtered_card_players: PlayerStats[];
+    export let format_date: (date_string: string) => string;
+    export let get_team_name: (team_id: string) => string;
+    export let on_open_match_report: (fixture_id: string) => void;
+
+    let expanded_player_key = "";
+
+    function toggle_player(player_key: string): string {
+        expanded_player_key =
+            expanded_player_key === player_key ? "" : player_key;
+        return expanded_player_key;
+    }
 
     const CHIP_BASE_CLASSES =
         "px-2.5 py-1.5 transition-colors flex items-center gap-1";
@@ -93,29 +107,17 @@
         </div>
     {:else}
         <div class="space-y-2">
-            {#each stats_filtered_card_players as player, index}
-                <div
-                    class="flex items-center justify-between p-2 sm:p-3 bg-white dark:bg-gray-900 rounded-lg"
+            {#each stats_filtered_card_players as player, index (player.player_key)}
+                <StatsLeaderboardRow
+                    rank={index + 1}
+                    {player}
+                    is_expanded={expanded_player_key === player.player_key}
+                    on_toggle={toggle_player}
                 >
-                    <div class="flex items-center gap-2 sm:gap-3 min-w-0">
-                        <span
-                            class={`w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 flex items-center justify-center text-xs sm:text-sm font-bold rounded-full ${index < 3 ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400" : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"}`}
-                            >{index + 1}</span
-                        >
-                        <div class="min-w-0">
-                            <div
-                                class="text-sm font-medium text-accent-900 dark:text-accent-100 truncate"
-                            >
-                                {player.player_name}
-                            </div>
-                            <div
-                                class="text-xs text-gray-500 dark:text-gray-400 truncate"
-                            >
-                                {player.team_name}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex flex-wrap justify-end gap-2 sm:gap-3 ml-2">
+                    <div
+                        slot="value"
+                        class="flex flex-wrap justify-end gap-2 sm:gap-3"
+                    >
                         {#each stats_card_categories as category (category.card_type_id)}
                             {#if count_player_card_type(player, category.card_type_id) > 0}
                                 <span
@@ -135,7 +137,16 @@
                             {/if}
                         {/each}
                     </div>
-                </div>
+                    <StatsPlayerGames
+                        slot="details"
+                        {player}
+                        kind={PLAYER_STAT_MOMENT_KIND.CARD}
+                        card_categories={stats_card_categories}
+                        {format_date}
+                        {get_team_name}
+                        {on_open_match_report}
+                    />
+                </StatsLeaderboardRow>
             {/each}
         </div>
     {/if}

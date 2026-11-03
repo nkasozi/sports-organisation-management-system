@@ -48,11 +48,13 @@ function create_player(
   card_counts: Record<string, number>,
 ): PlayerStats {
   return {
+    player_key: `${player_name}|team_1`,
     player_name,
     team_name: "Falcons",
     points: 0,
     assists: 0,
     card_counts,
+    moments: [],
   };
 }
 
