@@ -61,6 +61,7 @@
               fixtures: stage_results_sections.flatMap(
                   (section) => section.fixtures,
               ),
+              show_placeholders: true,
           })
         : EMPTY_BRACKET_LAYOUT;
     $: is_bracket_first =

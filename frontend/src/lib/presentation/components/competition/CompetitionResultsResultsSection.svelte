@@ -83,6 +83,7 @@
         ? build_competition_bracket({
               stages: stage_results_sections.map((section) => section.stage),
               fixtures: matching_fixtures,
+              show_placeholders: false,
           })
         : EMPTY_BRACKET_LAYOUT;
 
