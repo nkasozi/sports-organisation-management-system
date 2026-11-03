@@ -103,6 +103,7 @@ import type * as lib_sync_metadata_projection from "../lib/sync_metadata_project
 import type * as lib_sync_mutation_support from "../lib/sync_mutation_support.js";
 import type * as lib_sync_read_authorization from "../lib/sync_read_authorization.js";
 import type * as lib_sync_read_support from "../lib/sync_read_support.js";
+import type * as lib_sync_record_content_guard from "../lib/sync_record_content_guard.js";
 import type * as lib_sync_record_store from "../lib/sync_record_store.js";
 import type * as lib_sync_sequence_counter from "../lib/sync_sequence_counter.js";
 import type * as lib_sync_table_catalog from "../lib/sync_table_catalog.js";
@@ -155,6 +156,9 @@ import type * as shared_audit_value_format from "../shared_audit_value_format.js
 import type * as shared_entity_category_map from "../shared_entity_category_map.js";
 import type * as shared_entity_role_grants from "../shared_entity_role_grants.js";
 import type * as shared_entity_types from "../shared_entity_types.js";
+import type * as shared_field_rules from "../shared_field_rules.js";
+import type * as shared_field_rules_catalog from "../shared_field_rules_catalog.js";
+import type * as shared_field_rules_dates from "../shared_field_rules_dates.js";
 import type * as shared_fixture_clock from "../shared_fixture_clock.js";
 import type * as shared_game_event_labels from "../shared_game_event_labels.js";
 import type * as shared_own_record_permissions from "../shared_own_record_permissions.js";
@@ -283,6 +287,7 @@ declare const fullApi: ApiFromModules<{
   "lib/sync_mutation_support": typeof lib_sync_mutation_support;
   "lib/sync_read_authorization": typeof lib_sync_read_authorization;
   "lib/sync_read_support": typeof lib_sync_read_support;
+  "lib/sync_record_content_guard": typeof lib_sync_record_content_guard;
   "lib/sync_record_store": typeof lib_sync_record_store;
   "lib/sync_sequence_counter": typeof lib_sync_sequence_counter;
   "lib/sync_table_catalog": typeof lib_sync_table_catalog;
@@ -335,6 +340,9 @@ declare const fullApi: ApiFromModules<{
   shared_entity_category_map: typeof shared_entity_category_map;
   shared_entity_role_grants: typeof shared_entity_role_grants;
   shared_entity_types: typeof shared_entity_types;
+  shared_field_rules: typeof shared_field_rules;
+  shared_field_rules_catalog: typeof shared_field_rules_catalog;
+  shared_field_rules_dates: typeof shared_field_rules_dates;
   shared_fixture_clock: typeof shared_fixture_clock;
   shared_game_event_labels: typeof shared_game_event_labels;
   shared_own_record_permissions: typeof shared_own_record_permissions;
