@@ -66,7 +66,6 @@ function draw_lineup_table(
   layout: LineupTableLayout,
   side: LineupTableSide,
 ): number {
-  if (side.players.length === 0) return layout.start_y;
   autoTable(doc, {
     startY: layout.start_y,
     head: layout.headers,
