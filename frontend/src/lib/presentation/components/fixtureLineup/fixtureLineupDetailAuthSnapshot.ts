@@ -1,4 +1,10 @@
+import {
+  can_correct_started_lineup,
+  has_post_kickoff_lineup_permission,
+  LINEUP_FIXTURE_STATUS,
+} from "$convex/shared_lineup_permissions";
 import type {
+  FixtureLineupDetailFixtureState,
   FixtureLineupDetailProfileState,
   FixtureLineupDetailTokenState,
 } from "$lib/presentation/logic/fixtureLineupDetailPageContracts";
@@ -51,4 +57,29 @@ export function build_fixture_lineup_detail_auth_snapshot(
     ),
     current_token_state: build_token_state(auth_state.current_token),
   };
+}
+
+export function can_correct_fixture_lineup(
+  fixture_state: FixtureLineupDetailFixtureState,
+  profile_state: AuthState["current_profile"],
+): boolean {
+  return (
+    fixture_state.status === PRESENCE_STATUS.PRESENT &&
+    profile_state.status === PRESENCE_STATUS.PRESENT &&
+    can_correct_started_lineup(
+      fixture_state.fixture.status,
+      has_post_kickoff_lineup_permission(profile_state.profile.role),
+    )
+  );
+}
+
+export function is_lineup_editable_fixture(
+  fixture_state: FixtureLineupDetailFixtureState,
+  can_correct_started: boolean,
+): boolean {
+  return (
+    can_correct_started ||
+    (fixture_state.status === PRESENCE_STATUS.PRESENT &&
+      fixture_state.fixture.status === LINEUP_FIXTURE_STATUS.SCHEDULED)
+  );
 }

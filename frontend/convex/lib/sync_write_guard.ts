@@ -2,6 +2,7 @@ import type { MutationCtx } from "../_generated/server";
 import type { SystemUserRecord } from "./auth_middleware";
 import { omit_blank_optional_numbers } from "./blank_number_fields";
 import { resolve_caller_scope } from "./caller_scope";
+import { permits_lineup_write_for_fixture } from "./lineup_write_guard";
 import {
   create_none_option,
   create_some_option,
@@ -143,6 +144,11 @@ async function guard_owned_record_write(
   const scope_rejection = await find_scoped_write_rejection(ctx, command);
   if (scope_rejection.status === OptionStatus.SOME)
     return reject_sync_write(scope_rejection.value, scope_rejection.value);
+  if (!(await permits_lineup_write_for_fixture(ctx, command)))
+    return reject_sync_write(
+      SyncWriteRejection.PERMISSION_DENIED,
+      "Post-kickoff lineup corrections require permission.",
+    );
   if (command.incoming_record.status === OptionStatus.NONE)
     return command.table_name === SYSTEM_USERS_TABLE_NAME
       ? guard_system_user_fields(ctx, command, create_none_option())

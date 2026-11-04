@@ -1,3 +1,4 @@
+import { can_correct_started_lineup } from "$convex/shared_lineup_permissions";
 import type { Competition } from "$lib/core/entities/Competition";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
@@ -8,6 +9,7 @@ import { get_fixture_display_name } from "./fixtureLineupCreateState";
 
 interface FixtureLineupCreateFixtureSelectionParams {
   organization_id: string;
+  can_correct_started?: boolean;
   fixtures: Fixture[];
   all_teams: Team[];
   all_competitions: Competition[];
@@ -73,17 +75,22 @@ export function build_fixture_lineup_create_fixture_selection_state(
     params.team_is_restricted,
     params.user_team,
   );
-  const fixtures_for_organization = fixtures_for_user_team.filter(
-    (fixture: Fixture) =>
-      fixture.status === FIXTURE_STATUS.SCHEDULED &&
-      !params.fixtures_with_complete_lineups.has(fixture.id),
+  const eligible_fixtures = fixtures_for_user_team.filter(
+    (fixture) =>
+      fixture.status === FIXTURE_STATUS.SCHEDULED ||
+      can_correct_started_lineup(
+        fixture.status,
+        params.can_correct_started === true,
+      ),
+  );
+  const fixtures_for_organization = eligible_fixtures.filter(
+    (fixture) => !params.fixtures_with_complete_lineups.has(fixture.id),
   );
   return {
     all_fixtures_for_org,
     fixtures_for_user_team,
-    non_scheduled_fixtures_count: fixtures_for_user_team.filter(
-      (fixture: Fixture) => fixture.status !== FIXTURE_STATUS.SCHEDULED,
-    ).length,
+    non_scheduled_fixtures_count:
+      fixtures_for_user_team.length - eligible_fixtures.length,
     fixtures_for_organization,
     fixture_select_options: build_fixture_lineup_create_fixture_select_options(
       fixtures_for_organization,

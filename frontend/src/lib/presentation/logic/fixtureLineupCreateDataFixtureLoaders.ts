@@ -1,3 +1,4 @@
+import { can_correct_started_lineup } from "$convex/shared_lineup_permissions";
 import { get_sport_by_id } from "$lib/adapters/persistence/sportService";
 import type { Competition } from "$lib/core/entities/Competition";
 import type { Fixture } from "$lib/core/entities/Fixture";
@@ -75,6 +76,7 @@ export function create_fixture_data_failure(
 export async function load_scheduled_fixture(
   fixture_id: string,
   dependencies: FixtureLineupCreateDependencies,
+  can_correct_started = false,
 ): Promise<FixtureDataStep<Fixture>> {
   const fixture_result =
     await dependencies.fixture_use_cases.get_by_id(fixture_id);
@@ -87,7 +89,10 @@ export async function load_scheduled_fixture(
       FIXTURE_DATA_FAILURE_REASON.FIXTURE_UNAVAILABLE,
     );
   const selected_fixture = fixture_result.data;
-  if (selected_fixture.status !== FIXTURE_STATUS.SCHEDULED)
+  if (
+    selected_fixture.status !== FIXTURE_STATUS.SCHEDULED &&
+    !can_correct_started_lineup(selected_fixture.status, can_correct_started)
+  )
     return create_fixture_data_failure(
       "This fixture cannot accept lineup submissions.",
       `The fixture status is "${selected_fixture.status.replace(/_/g, " ")}". Only fixtures with "scheduled" status can receive new lineups.`,

@@ -61,6 +61,8 @@ function create_game_context(email: string): FakeConvexContext {
         {
           local_id: "fixture_today",
           organization_id: ORGANIZATION_A_ID,
+          status: "scheduled",
+          home_team_id: "team_home",
           assigned_officials: [
             { official_id: "official_grace", role_id: "role_table" },
             { official_id: "official_peter", role_id: "role_umpire" },
@@ -70,6 +72,8 @@ function create_game_context(email: string): FakeConvexContext {
         {
           local_id: "fixture_other",
           organization_id: ORGANIZATION_A_ID,
+          status: "scheduled",
+          home_team_id: "team_home",
           assigned_officials: [],
           version: 1,
         },

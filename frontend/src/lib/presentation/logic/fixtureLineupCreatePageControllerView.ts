@@ -84,7 +84,9 @@ export function build_fixture_lineup_create_auth_profile_state(
   return current_profile.status === PRESENCE_STATUS.PRESENT
     ? {
         status: "present",
-        profile: current_profile.profile as unknown as UserScopeProfile,
+        profile: current_profile.profile as unknown as UserScopeProfile & {
+          role?: string;
+        },
       }
     : { status: "missing" };
 }

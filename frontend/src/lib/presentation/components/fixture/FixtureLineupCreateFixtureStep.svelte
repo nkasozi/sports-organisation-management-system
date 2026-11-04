@@ -79,11 +79,11 @@
         class="p-3 bg-violet-50 dark:bg-violet-900/20 rounded-lg border border-violet-200 dark:border-violet-700"
     >
         <p class="text-sm text-violet-800 dark:text-violet-200">
-            <span class="font-medium">Note:</span> Only showing scheduled
-            fixtures that still need lineups.{#if non_scheduled_fixtures_count > 0}
+            <span class="font-medium">Note:</span> Showing eligible fixtures
+            that still need lineups.{#if non_scheduled_fixtures_count > 0}
                 {non_scheduled_fixtures_count} fixture{non_scheduled_fixtures_count ===
                 1
                     ? " is"
-                    : "s are"} hidden (not scheduled).{/if}
+                    : "s are"} hidden (lineup entry is closed).{/if}
         </p>
     </div>{/if}

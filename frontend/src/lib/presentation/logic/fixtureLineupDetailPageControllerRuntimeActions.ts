@@ -22,6 +22,7 @@ export function toggle_fixture_lineup_detail_runtime_player(
       lineup_state.lineup,
       command.get_team_players(),
       player_id,
+      command.can_correct_started?.(),
     ),
   });
 }

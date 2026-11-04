@@ -40,8 +40,9 @@ export function toggle_fixture_lineup_player_selection(
   lineup: FixtureLineup,
   team_players: TeamPlayer[],
   player_id: string,
+  can_correct_started = false,
 ): FixtureLineup {
-  if (lineup.status === LINEUP_STATUS.LOCKED) {
+  if (lineup.status === LINEUP_STATUS.LOCKED && !can_correct_started) {
     return lineup;
   }
 

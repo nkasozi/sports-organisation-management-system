@@ -110,6 +110,7 @@ function create_lineup_queries(
 
 function create_guarded_lineup_edits(
   repositories: LineupRepositories,
+  can_correct_started: () => boolean,
 ): Pick<FixtureLineupUseCases, "update" | "delete"> {
   const repository = repositories.lineup_repository;
   return {
@@ -118,6 +119,7 @@ function create_guarded_lineup_edits(
         repositories,
         id,
         LINEUP_ACTION.UPDATE,
+        can_correct_started(),
       );
       if (!lineup_result.success) return lineup_result;
       return relay_repository_result(
@@ -143,6 +145,7 @@ function create_guarded_lineup_edits(
 export function create_fixture_lineup_use_cases(
   repository: FixtureLineupRepository,
   fixture_repository: FixtureRepository,
+  can_correct_started = () => false,
 ): FixtureLineupUseCases {
   const repositories: LineupRepositories = {
     lineup_repository: repository,
@@ -150,7 +153,7 @@ export function create_fixture_lineup_use_cases(
   };
   return {
     ...create_lineup_queries(repository),
-    ...create_guarded_lineup_edits(repositories),
+    ...create_guarded_lineup_edits(repositories, can_correct_started),
     create: (input) => create_unique_lineup(repository, input),
     submit_lineup: (id) =>
       transition_lineup(repository, id, LINEUP_ACTION.SUBMIT),
