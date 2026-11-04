@@ -45,12 +45,39 @@
     export let away_players: LineupPlayer[] = [];
     export let view_state: MatchReportViewState =
         default_match_report_view_state;
+
+    $: missing_lineup_teams = [
+        home_players.length === 0
+            ? home_team_state.status === PRESENCE_STATUS.PRESENT
+                ? home_team_state.team.name
+                : "the home team"
+            : "",
+        away_players.length === 0
+            ? away_team_state.status === PRESENCE_STATUS.PRESENT
+                ? away_team_state.team.name
+                : "the away team"
+            : "",
+    ].filter(Boolean);
 </script>
 
 <div class="flex-1 p-4">
     <div class="max-w-3xl mx-auto">
         {#if view_state.is_game_scheduled}
             <MatchReportScheduledNotice {fixture} {venue_state} />
+        {/if}
+
+        {#if view_state.is_game_completed && missing_lineup_teams.length > 0}
+            <div
+                role="status"
+                class="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"
+            >
+                <p class="font-semibold">Can't generate a full match report</p>
+                <p class="mt-1 text-sm">
+                    Missing match lineups for {missing_lineup_teams.join(
+                        " and ",
+                    )}.
+                </p>
+            </div>
         {/if}
 
         {#if view_state.has_lineups || view_state.is_game_scheduled || view_state.is_game_in_progress}
