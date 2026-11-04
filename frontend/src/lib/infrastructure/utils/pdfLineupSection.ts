@@ -36,6 +36,9 @@ interface LineupTableSide {
   right_margin: number;
 }
 
+const WARNING_RED: [number, number, number] = [153, 27, 27];
+const WARNING_BACKGROUND: [number, number, number] = [254, 242, 242];
+
 const CARD_COLUMN_WIDTH = 5;
 const BASE_HEADERS = ["Time On", "Shirt No.", "Names"];
 const BASE_HEADER_WIDTHS = [10, 10, 40];
@@ -63,6 +66,7 @@ function draw_lineup_table(
   layout: LineupTableLayout,
   side: LineupTableSide,
 ): number {
+  if (side.players.length === 0) return layout.start_y;
   autoTable(doc, {
     startY: layout.start_y,
     head: layout.headers,
@@ -95,12 +99,42 @@ function draw_lineup_table(
   );
 }
 
+function draw_missing_lineup_warning(
+  doc: jsPDF,
+  data: MatchReportData,
+  start_y: number,
+): number {
+  const missing_teams = [
+    data.home_players.length === 0 ? data.home_team.name : "",
+    data.away_players.length === 0 ? data.away_team.name : "",
+  ].filter(Boolean);
+  if (missing_teams.length === 0) return start_y;
+  autoTable(doc, {
+    startY: start_y,
+    body: [
+      [
+        `Can't generate a full match report. Missing match lineups for ${missing_teams.join(" and ")}.`,
+      ],
+    ],
+    theme: "plain",
+    styles: {
+      fillColor: WARNING_BACKGROUND,
+      textColor: WARNING_RED,
+      fontStyle: "bold",
+      cellPadding: 3,
+    },
+    margin: { left: MARGIN_LEFT, right: MARGIN_RIGHT },
+  });
+  return ((doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? start_y) + 3;
+}
+
 export function draw_lineup_section(
   doc: jsPDF,
   data: MatchReportData,
   y_start: number,
 ): number {
-  const layout = build_lineup_layout(data.card_types || [], y_start + 3);
+  const lineup_y = draw_missing_lineup_warning(doc, data, y_start + 3);
+  const layout = build_lineup_layout(data.card_types || [], lineup_y);
   const center_margin = PAGE_WIDTH / 2 + 5;
   const home_final_y = draw_lineup_table(doc, layout, {
     players: data.home_players,

@@ -94,6 +94,22 @@ describe("draw_lineup_section", () => {
     });
   });
 
+  it("names the missing team and renders the available lineup", () => {
+    const report = create_report();
+    report.away_team.name = "Rockets";
+    report.away_players = [];
+
+    draw_lineup_section(doc as never, report, 40);
+
+    expect(mocks.auto_table).toHaveBeenCalledTimes(2);
+    expect(table_call(0).body).toEqual([
+      [
+        "Can't generate a full match report. Missing match lineups for Rockets.",
+      ],
+    ]);
+    expect(table_call(1).body[0]).toContain("ANN");
+  });
+
   it("draws home and away tables then the staff rows", () => {
     const result = draw_lineup_section(doc as never, create_report(), 40);
 
