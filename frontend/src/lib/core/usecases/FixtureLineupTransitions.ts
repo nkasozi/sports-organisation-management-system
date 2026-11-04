@@ -38,9 +38,7 @@ import {
 } from "./FixtureLineupStateMachine";
 
 type LineupId = ScalarValueInput<FixtureLineup["id"]>;
-
 const log_target = create_log_target_builder(FIXTURE_LINEUP_LOG_SCOPE);
-
 export function fail_missing_lineup_id(): Result<never> {
   return fail_missing_identifier(
     log_target(FIXTURE_LINEUP_EVENT.ID_MISSING),
@@ -109,11 +107,17 @@ export async function find_unlocked_lineup(
   repositories: LineupRepositories,
   id: LineupId,
   action: LineupEditAction,
+  has_correction_permission = false,
 ): AsyncResult<FixtureLineup> {
   const found = await find_lineup_with_fixture_status(repositories, id);
   if (!found.success) return found;
   return settle_decision(
-    decide_lineup_edit(found.data.lineup, action, found.data.fixture_status),
+    decide_lineup_edit(
+      found.data.lineup,
+      action,
+      found.data.fixture_status,
+      has_correction_permission,
+    ),
     id,
     action,
   );

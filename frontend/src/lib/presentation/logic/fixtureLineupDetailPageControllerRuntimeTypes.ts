@@ -26,6 +26,7 @@ export interface FixtureLineupDetailPageControllerRuntimeCommand {
     current_token_state: FixtureLineupDetailTokenState;
   };
   get_lineup_state: () => FixtureLineupDetailLineupState;
+  can_correct_started?: () => boolean;
   get_team_players: () => TeamPlayer[];
   goto: (path: string) => Promise<unknown>;
   is_browser: boolean;

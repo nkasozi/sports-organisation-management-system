@@ -17,7 +17,7 @@ export type FixtureLineupCreateTeamState =
 
 export type FixtureLineupCreateAuthProfileState =
   | { status: "missing" }
-  | { status: "present"; profile: UserScopeProfile };
+  | { status: "present"; profile: UserScopeProfile & { role?: string } };
 
 export function create_missing_fixture_lineup_create_organization_state(): FixtureLineupCreateOrganizationState {
   return { status: "missing" };

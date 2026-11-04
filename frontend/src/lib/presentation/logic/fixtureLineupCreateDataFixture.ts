@@ -1,3 +1,4 @@
+import { has_post_kickoff_lineup_permission } from "$convex/shared_lineup_permissions";
 import type { Competition } from "$lib/core/entities/Competition";
 import type { Team } from "$lib/core/entities/Team";
 import { get_authorization_preselect_values } from "$lib/core/interfaces/ports";
@@ -146,7 +147,14 @@ export async function load_fixture_lineup_create_fixture_data(
   current_auth_profile_state: FixtureLineupCreateAuthProfileState,
   dependencies: FixtureLineupCreateDependencies,
 ): Promise<FixtureDataStep<FixtureLineupCreateFixtureData>> {
-  const fixture_step = await load_scheduled_fixture(fixture_id, dependencies);
+  const fixture_step = await load_scheduled_fixture(
+    fixture_id,
+    dependencies,
+    current_auth_profile_state.status === PRESENCE_STATUS.PRESENT &&
+      has_post_kickoff_lineup_permission(
+        current_auth_profile_state.profile.role,
+      ),
+  );
   if (!fixture_step.success) return fixture_step;
   const selected_fixture = fixture_step.data;
   const competition_step = await load_fixture_competition(

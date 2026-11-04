@@ -16,6 +16,7 @@
     export let home_team_state: FixtureLineupDetailTeamState;
     export let away_team_state: FixtureLineupDetailTeamState;
     export let can_modify_lineup: boolean;
+    export let can_correct_started = false;
     export let permission_info_message: string;
     export let selected_player_ids: Set<string>;
     export let saving: boolean;
@@ -39,6 +40,7 @@
         {lineup}
         {team_players}
         {can_modify_lineup}
+        {can_correct_started}
         {selected_player_ids}
         {saving}
         {on_toggle_player_selection}

@@ -1,3 +1,5 @@
+import { can_correct_started_lineup } from "$convex/shared_lineup_permissions";
+
 import type {
   FixtureLineup,
   LineupPlayer,
@@ -105,7 +107,13 @@ export function decide_lineup_edit(
   lineup: FixtureLineup,
   action: LineupEditAction,
   fixture_status: FixtureStatusValue,
+  has_correction_permission = false,
 ): LineupDecision<FixtureLineup> {
+  if (
+    action === LINEUP_ACTION.UPDATE &&
+    can_correct_started_lineup(fixture_status, has_correction_permission)
+  )
+    return allow(lineup);
   switch (fixture_status) {
     case FIXTURE_STATUS.SCHEDULED:
       return decide_lineup_status_edit(lineup, action);

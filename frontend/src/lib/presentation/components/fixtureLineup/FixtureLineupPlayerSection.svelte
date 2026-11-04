@@ -6,6 +6,7 @@
     export let lineup: FixtureLineup;
     export let team_players: TeamPlayer[];
     export let can_modify_lineup: boolean;
+    export let can_correct_started = false;
     export let selected_player_ids: Set<string>;
     export let saving: boolean;
     export let on_toggle_player_selection: (player_id: string) => void;
@@ -14,7 +15,8 @@
     export let on_submit: () => void | Promise<void>;
 
     $: can_manage_players =
-        lineup.status !== LINEUP_STATUS.LOCKED && can_modify_lineup;
+        (lineup.status !== LINEUP_STATUS.LOCKED || can_correct_started) &&
+        can_modify_lineup;
 </script>
 
 <div
@@ -113,7 +115,7 @@
         <button type="button" class="btn btn-outline" on:click={on_back}>
             Back to List
         </button>
-        {#if lineup.status === LINEUP_STATUS.DRAFT && can_modify_lineup}
+        {#if can_manage_players}
             <button
                 type="button"
                 class="btn btn-outline"
@@ -122,6 +124,8 @@
             >
                 {saving ? "Saving..." : "Save Changes"}
             </button>
+        {/if}
+        {#if lineup.status === LINEUP_STATUS.DRAFT && can_manage_players}
             <button
                 type="button"
                 class="btn btn-primary-action"

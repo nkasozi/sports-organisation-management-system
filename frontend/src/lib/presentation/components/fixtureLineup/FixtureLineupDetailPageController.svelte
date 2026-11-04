@@ -26,7 +26,11 @@
     import { access_denial_store } from "$lib/presentation/stores/accessDenial";
     import { auth_store } from "$lib/presentation/stores/auth";
 
-    import { build_fixture_lineup_detail_auth_snapshot } from "./fixtureLineupDetailAuthSnapshot";
+    import {
+        build_fixture_lineup_detail_auth_snapshot,
+        can_correct_fixture_lineup,
+        is_lineup_editable_fixture,
+    } from "./fixtureLineupDetailAuthSnapshot";
     import {
         FIXTURE_LINEUP_DETAIL_LOG_EVENTS,
         FIXTURE_LINEUP_DETAIL_PAGE_TEXT,
@@ -42,7 +46,6 @@
         type FixtureLineupDetailPageStatusState,
         request_fixture_lineup_detail_action,
     } from "./fixtureLineupDetailPageStatus";
-
     export let lineup_id: string;
 
     const fixture_lineup_use_cases = get_fixture_lineup_use_cases();
@@ -51,7 +54,6 @@
     const player_use_cases = get_player_use_cases();
     const membership_use_cases = get_player_team_membership_use_cases();
     const player_position_use_cases = get_player_position_use_cases();
-
     const MISSING_STATE = { status: PRESENCE_STATUS.MISSING } as const;
 
     let lineup_state: FixtureLineupDetailLineupState = MISSING_STATE,
@@ -96,6 +98,10 @@
 
     $: selected_player_ids =
         build_fixture_lineup_selected_player_ids(lineup_state);
+    $: can_correct_started = can_correct_fixture_lineup(
+        fixture_state,
+        $auth_store.current_profile,
+    );
     const runtime = create_fixture_lineup_detail_page_controller_runtime({
         access_denied_message: FIXTURE_LINEUP_DETAIL_PAGE_TEXT.ACCESS_DENIED,
         access_denial_path: FIXTURE_LINEUP_DETAIL_PAGE_TEXT.LINEUP_LIST_PATH,
@@ -105,6 +111,7 @@
         get_auth_state: () =>
             build_fixture_lineup_detail_auth_snapshot(get(auth_store)),
         get_lineup_state: () => lineup_state,
+        can_correct_started: () => can_correct_started,
         get_team_players: () => team_players,
         goto,
         is_browser: browser,
@@ -152,7 +159,6 @@
             team_use_cases,
         },
     });
-
     onMount(() => void runtime.initialize_page());
 </script>
 
@@ -168,7 +174,9 @@
     {team_players}
     {home_team_state}
     {away_team_state}
-    {can_modify_lineup}
+    can_modify_lineup={can_modify_lineup &&
+        is_lineup_editable_fixture(fixture_state, can_correct_started)}
+    {can_correct_started}
     {permission_info_message}
     selected_player_ids={[...selected_player_ids]}
     on_toggle_player_selection={runtime.handle_toggle_player_selection}
@@ -184,7 +192,6 @@
             runtime.handle_submit,
         )}
 />
-
 <Toast
     message={toast_message}
     type="error"

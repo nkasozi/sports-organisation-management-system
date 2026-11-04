@@ -1,4 +1,9 @@
+import { get } from "svelte/store";
+
+import { has_post_kickoff_lineup_permission } from "$convex/shared_lineup_permissions";
 import { create_fixture_officials_sync } from "$lib/core/usecases/FixtureOfficialsSync";
+import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
+import { auth_store } from "$lib/presentation/stores/auth";
 
 import type { AuditLogUseCases } from "../../core/usecases/AuditLogUseCases";
 import { create_audit_log_use_cases } from "../../core/usecases/AuditLogUseCases";
@@ -74,6 +79,13 @@ export function get_fixture_lineup_use_cases(): FixtureLineupUseCases {
   return create_fixture_lineup_use_cases(
     container.fixture_lineup_repository,
     container.fixture_repository,
+    () => {
+      const { current_profile } = get(auth_store);
+      return (
+        current_profile.status === PRESENCE_STATUS.PRESENT &&
+        has_post_kickoff_lineup_permission(current_profile.profile.role)
+      );
+    },
   );
 }
 

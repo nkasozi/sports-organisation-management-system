@@ -1,3 +1,4 @@
+import { has_post_kickoff_lineup_permission } from "$convex/shared_lineup_permissions";
 import type { Competition } from "$lib/core/entities/Competition";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { CreateFixtureLineupInput } from "$lib/core/entities/FixtureLineup";
@@ -130,6 +131,15 @@ function build_derived_wizard_steps(
   );
 }
 
+function can_correct_started_fixtures(
+  profile_state: FixtureLineupCreateAuthProfileState,
+): boolean {
+  return (
+    profile_state.status === PRESENCE_STATUS.PRESENT &&
+    has_post_kickoff_lineup_permission(profile_state.profile.role)
+  );
+}
+
 export function build_fixture_lineup_create_page_derived_state(
   params: FixtureLineupCreateDerivedStateParams,
 ): FixtureLineupCreateDerivedState {
@@ -137,9 +147,8 @@ export function build_fixture_lineup_create_page_derived_state(
     params.current_auth_profile_state,
     "team_id",
   );
-  const user_team = get_fixture_lineup_create_user_team(
-    params.current_auth_profile_state,
-  );
+  const profile_state = params.current_auth_profile_state;
+  const user_team = get_fixture_lineup_create_user_team(profile_state);
   return {
     organization_is_restricted: is_fixture_lineup_create_field_restricted(
       params.current_auth_profile_state,
@@ -153,6 +162,7 @@ export function build_fixture_lineup_create_page_derived_state(
     ),
     ...build_fixture_lineup_create_fixture_selection_state({
       organization_id: params.form_data.organization_id,
+      can_correct_started: can_correct_started_fixtures(profile_state),
       fixtures: params.fixtures,
       all_teams: params.all_teams,
       all_competitions: params.all_competitions,
