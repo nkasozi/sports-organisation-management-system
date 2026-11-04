@@ -80,7 +80,7 @@
             </div>
         {/if}
 
-        {#if view_state.has_lineups || view_state.is_game_scheduled || view_state.is_game_in_progress}
+        {#if view_state.has_lineups || view_state.is_game_scheduled || view_state.is_game_in_progress || view_state.is_game_completed}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <MatchReportLineupCard
                     team_name={home_team_state.status ===
